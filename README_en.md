@@ -116,6 +116,7 @@ All features are Carpet-rule-driven, off by default, enabled on demand.
 
 - **BlueMap fix** — referenced from [fabric-carpet PR #2142](https://github.com/gnembon/fabric-carpet/pull/2142)
 - **XaeroLib fix** — thanks to [Wzp-2008](https://github.com/Wzp-2008) for the patch provided in [LuckPerms #4232](https://github.com/LuckPerms/LuckPerms/issues/4232)
+- **Fake Player Name Suggestions (fakePlayerNameSuggestions)** — referenced from [Ivan-Carpet-Addition](https://github.com/Ivan-1F/Ivan-Carpet-Addition)
 - **Daydreaming (sleepingDuringTheDay)** — referenced from [plusls-carpet-addition](https://github.com/Nyan-Work/plusls-carpet-addition) (PCA)
 - **Unicode Argument Support (unicodeArgumentsSupport)** — ported from [YetAnotherCarpetAddition](https://github.com/hotpad100c/yetanothercarpetaddition) (YACA)
 - Thanks to [Liuyue_awa](https://github.com/liuyuexiaoyu1) and [Carpet-Igny-Addition](https://github.com/liuyuexiaoyu1/Carpet-Igny-Addition)
