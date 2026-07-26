@@ -29,16 +29,14 @@
 | 规则 | 类型 | 默认值 | 简介 |
 |------|------|--------|------|
 | `TppFakePlayer` | boolean | `false` | 假人珍珠传送站，启用 `/tpp` 和 `/tppset` 命令 |
-| `fakePlayerNameSuggestions` | string | `Steve,Alex` | 自定义 `/player` 命令的名称建议列表 |
 | `fakePlayerSkinMode` | string | `default` | 假人皮肤模式：`default` / `summon` / `same_skin` |
 | `fakePlayerSkinSet` | string | `Brokeyuan` | 统一皮肤模式下使用的玩家皮肤名 |
-
 
 ### 移植功能
 
 | 规则 | 类型 | 默认值 | 简介 |
 |------|------|--------|------|
-| `sleepingDuringTheDay` | boolean | `false` | 允许白天睡觉，醒来后切换至夜晚（参考 PCA） |
+| `fakePlayerNameSuggestions` | string | `Steve,Alex` | 自定义 `/player` 命令的名称建议列表（移植自 Ivan-Carpet-Addition） |
 | `unicodeArgumentsSupport` | boolean | `false` | 命令参数支持非 ASCII 字符，可召唤中文名假人（移植自 YACA） |
 
 ### 玩家交互
@@ -55,6 +53,7 @@
 
 | 规则 | 类型 | 默认值 | 简介 |
 |------|------|--------|------|
+| `sleepingDuringTheDay` | boolean | `false` | 允许白天睡觉，醒来后切换至夜晚（参考 PCA） |
 | `playerhat` | boolean | `false` | `/hat` 命令将物品戴在头上，头部不死图腾可触发死亡保护 |
 | `betterSnowBall` | boolean | `false` | 雪球可对玩家造成击退和伤害 |
 | `invisibleInTallGrass` | boolean | `false` | 头部位于高草丛时自动隐形 |
@@ -116,7 +115,7 @@
 
 - **BlueMap 修复** — 参考 [fabric-carpet PR #2142](https://github.com/gnembon/fabric-carpet/pull/2142)
 - **XaeroLib 修复** — 感谢 [Wzp-2008](https://github.com/Wzp-2008) 在 [LuckPerms #4232](https://github.com/LuckPerms/LuckPerms/issues/4232) 提供的补丁方案
-- **假人名称建议（fakePlayerNameSuggestions）** — 参考 [Ivan-Carpet-Addition](https://github.com/Ivan-1F/Ivan-Carpet-Addition)
+- **假人名称建议（fakePlayerNameSuggestions）** — 移植自 [Ivan-Carpet-Addition](https://github.com/Ivan-1F/Ivan-Carpet-Addition)
 - **白日做梦（sleepingDuringTheDay）** — 参考 [plusls-carpet-addition](https://github.com/Nyan-Work/plusls-carpet-addition) (PCA)
 - **Unicode 参数支持（unicodeArgumentsSupport）** — 移植自 [YetAnotherCarpetAddition](https://github.com/hotpad100c/yetanothercarpetaddition) (YACA)
 - 感谢 [Liuyue_awa](https://github.com/liuyuexiaoyu1) 及其项目 [Carpet-Igny-Addition](https://github.com/liuyuexiaoyu1/Carpet-Igny-Addition)
