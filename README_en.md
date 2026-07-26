@@ -17,6 +17,13 @@ All features are Carpet-rule-driven, off by default, enabled on demand.
 
 ## Features
 
+### Bugfixes
+
+| Rule | Type | Default | Description |
+|------|------|---------|-------------|
+| `FixXaeroLib` | boolean | `false` | Fixes fake player data loss when Xaero's maps are used with LuckPerms |
+| `FixBluemap` | boolean | `false` | Fixes fake players not triggering Fabric API connection events, allowing BlueMap and similar mods to track bots properly |
+
 ### Fake Player Enhancements
 
 | Rule | Type | Default | Description |
@@ -26,12 +33,6 @@ All features are Carpet-rule-driven, off by default, enabled on demand.
 | `fakePlayerSkinMode` | string | `default` | Fake player skin mode: `default` / `summon` / `same_skin` |
 | `fakePlayerSkinSet` | string | `Brokeyuan` | Player name used for the shared skin in `same_skin` mode |
 
-### Bugfixes
-
-| Rule | Type | Default | Description |
-|------|------|---------|-------------|
-| `FixXaeroLib` | boolean | `false` | Fixes fake player data loss when Xaero's maps are used with LuckPerms |
-| `FixBluemap` | boolean | `false` | Fixes fake players not triggering Fabric API connection events, allowing BlueMap and similar mods to track bots properly |
 
 ### Ported Features
 
