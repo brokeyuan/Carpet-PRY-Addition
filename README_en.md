@@ -29,16 +29,14 @@ All features are Carpet-rule-driven, off by default, enabled on demand.
 | Rule | Type | Default | Description |
 |------|------|---------|-------------|
 | `TppFakePlayer` | boolean | `false` | Fake player pearl teleport stations, enables `/tpp` and `/tppset` commands |
-| `fakePlayerNameSuggestions` | string | `Steve,Alex` | Customize autocomplete suggestions for the `/player` command |
 | `fakePlayerSkinMode` | string | `default` | Fake player skin mode: `default` / `summon` / `same_skin` |
 | `fakePlayerSkinSet` | string | `Brokeyuan` | Player name used for the shared skin in `same_skin` mode |
-
 
 ### Ported Features
 
 | Rule | Type | Default | Description |
 |------|------|---------|-------------|
-| `sleepingDuringTheDay` | boolean | `false` | Sleep during daytime to skip to night (referenced from PCA) |
+| `fakePlayerNameSuggestions` | string | `Steve,Alex` | Customize autocomplete suggestions for the `/player` command (ported from Ivan-Carpet-Addition) |
 | `unicodeArgumentsSupport` | boolean | `false` | Allow non-ASCII characters in command arguments, enabling fake players with CJK names (ported from YACA) |
 
 ### Player Interaction
@@ -55,6 +53,7 @@ All features are Carpet-rule-driven, off by default, enabled on demand.
 
 | Rule | Type | Default | Description |
 |------|------|---------|-------------|
+| `sleepingDuringTheDay` | boolean | `false` | Sleep during daytime to skip to night (referenced from PCA) |
 | `playerhat` | boolean | `false` | `/hat` command to wear items on head; Totem of Undying in head slot triggers death protection |
 | `betterSnowBall` | boolean | `false` | Snowballs deal knockback and damage to players |
 | `invisibleInTallGrass` | boolean | `false` | Auto-invisibility when head is inside tall grass |
@@ -116,7 +115,7 @@ All features are Carpet-rule-driven, off by default, enabled on demand.
 
 - **BlueMap fix** — referenced from [fabric-carpet PR #2142](https://github.com/gnembon/fabric-carpet/pull/2142)
 - **XaeroLib fix** — thanks to [Wzp-2008](https://github.com/Wzp-2008) for the patch provided in [LuckPerms #4232](https://github.com/LuckPerms/LuckPerms/issues/4232)
-- **Fake Player Name Suggestions (fakePlayerNameSuggestions)** — referenced from [Ivan-Carpet-Addition](https://github.com/Ivan-1F/Ivan-Carpet-Addition)
+- **Fake Player Name Suggestions (fakePlayerNameSuggestions)** — ported from [Ivan-Carpet-Addition](https://github.com/Ivan-1F/Ivan-Carpet-Addition)
 - **Daydreaming (sleepingDuringTheDay)** — referenced from [plusls-carpet-addition](https://github.com/Nyan-Work/plusls-carpet-addition) (PCA)
 - **Unicode Argument Support (unicodeArgumentsSupport)** — ported from [YetAnotherCarpetAddition](https://github.com/hotpad100c/yetanothercarpetaddition) (YACA)
 - Thanks to [Liuyue_awa](https://github.com/liuyuexiaoyu1) and [Carpet-Igny-Addition](https://github.com/liuyuexiaoyu1/Carpet-Igny-Addition)
