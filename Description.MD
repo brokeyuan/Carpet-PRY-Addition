@@ -1,10 +1,10 @@
-Carpet PRY Addition is a server-side Fabric extension for the [fabric-carpet](https://github.com/gnembon/fabric-carpet) mod, developed for the **Primaryuan Server**. It adds 15 configurable Carpet rules and several new commands covering bug fixes, fake player enhancements, and survival gameplay expansion.
+Carpet PRY Addition is a server-side Fabric extension for the [fabric-carpet](https://github.com/gnembon/fabric-carpet) mod, developed for the **Primaryuan Server**. It adds 16 configurable Carpet rules and several new commands covering bug fixes, fake player enhancements, and survival gameplay expansion.
 
 ---
 
 ## Fix
 
-### Xaero Minimap + LuckPerms Compatibility Fix (`xaerolibFix`)
+### Xaero Minimap + LuckPerms Compatibility Fix (`FixXaeroLib`)
 
 Resolves an issue where fake player (carpet bot) data is lost or inventory is forced empty when **Xaero's Minimap / World Map** and **LuckPerms** are used together on the server.
 
@@ -13,6 +13,10 @@ Related upstream issues:
 - [Xaero's World Map #1191](https://legacy.curseforge.com/minecraft/mc-mods/xaeros-world-map/issues/1191) — When using with LuckPerms and carpet, carpet bot's player data initialize failed
 - [LuckPerms #4232](https://github.com/LuckPerms/LuckPerms/issues/4232) — When using with Xaero's Minimap and Xaero's World map, carpet bot's inventory empty
 - [fabric-carpet #2158](https://github.com/gnembon/fabric-carpet/issues/2158) — Bot's inventory force empty with LuckPerms xaerolib (include in Xaero's Minimap and Xaero's Worldmap)
+
+### BlueMap Compatibility Fix (`FixBluemap`)
+
+Fixes an issue where fake players do not trigger Fabric API connection events, causing mods like **BlueMap** to fail tracking fake player join/leave correctly.
 
 ---
 
@@ -99,4 +103,3 @@ Hold a **Totem of Undying** in your main hand and a **Golden Carrot** in your of
 - All rules are **off by default** — use `/carpet` or the Carpet configuration files to enable the ones you want.
 - **Source code:** [GitHub](https://github.com/brokeyuan/Carpet-Primaryuan-Addition)
 - **Documentation:** [Wiki](https://primaryuan.top:2026/Primaryuan/mod/PRY/readme.html) | [GitHub README](https://github.com/brokeyuan/Carpet-Primaryuan-Addition/blob/master/README_en.md)
-
