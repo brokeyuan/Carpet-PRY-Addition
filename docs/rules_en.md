@@ -2,6 +2,8 @@
 
 > Mod ID: `carpet-pry-addition` | Version: `1.1.2`
 >
+> Total: **16 rules**
+>
 > **Tip: Use `Ctrl+F` to quickly find the rule you want**
 
 ---
@@ -19,8 +21,6 @@
 - [Ported Features (PORTING)](#ported-features-porting)
   - [sleepingDuringTheDay - Daydreaming](#sleepingduringtheday---daydreaming)
   - [unicodeArgumentsSupport - Unicode Argument Support](#unicodeargumentssupport---unicode-argument-support)
-- [Commands (COMMAND)](#commands-command)
-  - [playerhat - Player Hat](#playerhat---player-hat)
 - [Player Interaction](#player-interaction)
   - [ridingPlayers - Riding Players](#ridingplayers---riding-players)
   - [pickupPlayers - Picking Up Players](#pickupplayers---picking-up-players)
@@ -28,6 +28,7 @@
   - [ridingPlayersDismountOnGameModeChange - Dismount on Game Mode Change](#ridingplayersdismountongamemodechange---dismount-on-game-mode-change)
   - [ridingPlayersClientAllowInteractions - Allow Interaction While Riding (Client)](#ridingplayersclientallowinteractions---allow-interaction-while-riding-client)
 - [Survival Features](#survival-features)
+  - [playerhat - Player Hat](#playerhat---player-hat)
   - [betterSnowBall - Better Snowball](#bettersnowball---better-snowball)
   - [invisibleInTallGrass - Invisibility Grass](#invisibleintallgrass---invisibility-grass)
 
@@ -118,6 +119,12 @@ Fixes the issue where higher versions of Xaero combined with LuckPerms cause fak
 | **Suggested Options** | `false`, `true` |
 | **Categories** | `PRIMARYUAN`, `BUGFIX` |
 
+#### Related Issues
+
+- [fabric-carpet #2158](https://github.com/gnembon/fabric-carpet/issues/2158) — Bot's inventory force empty with LuckPerms + xaerolib
+- [LuckPerms #4232](https://github.com/LuckPerms/LuckPerms/issues/4232) — Patch provided by [Wzp-2008](https://github.com/Wzp-2008)
+- [Xaero's World Map #1191](https://legacy.curseforge.com/minecraft/mc-mods/xaeros-world-map/issues/1191) — fake player data initialize failed
+
 ---
 
 ### FixBluemap - BlueMap Compatibility Patch
@@ -132,6 +139,12 @@ Fixes fake players not triggering Fabric API connection events, causing mods lik
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
 | **Categories** | `PRIMARYUAN`, `BUGFIX` |
+
+#### Related Issues
+
+- [fabric-carpet #1962](https://github.com/gnembon/fabric-carpet/issues/1962) — Compatibility issue with Bluemap
+- [fabric-carpet PR #2142](https://github.com/gnembon/fabric-carpet/pull/2142)
+- [BlueMap #598](https://github.com/BlueMap-Minecraft/BlueMap/issues/598) — Unable to properly handle fake players who go offline
 
 ---
 
@@ -164,23 +177,6 @@ Allows the use of non-ASCII characters in command arguments (Chinese, Japanese, 
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
 | **Categories** | `PRIMARYUAN`, `PORTING` |
-
----
-
-## Commands (COMMAND)
-
-### playerhat - Player Hat
-
-Allows players to wear items on their head and adds the /hat command. When a Totem of Undying is placed in the head slot, the death protection effect is triggered.
-
-| Property | Value |
-|----------|-------|
-| **Rule Name** | `playerhat` |
-| **Description** | Allows players to wear items on their head and adds the /hat command. When a Totem of Undying is placed in the head slot, the death protection effect is triggered |
-| **Type** | `boolean` |
-| **Default Value** | `false` |
-| **Suggested Options** | `false`, `true` |
-| **Categories** | `PRIMARYUAN`, `SURVIVAL`, `COMMAND` |
 
 ---
 
@@ -262,6 +258,21 @@ Requires client installation. When there are passengers on top, you can still in
 ---
 
 ## Survival Features
+
+### playerhat - Player Hat
+
+Allows players to wear items on their head and adds the /hat command. When a Totem of Undying is placed in the head slot, the death protection effect is triggered.
+
+| Property | Value |
+|----------|-------|
+| **Rule Name** | `playerhat` |
+| **Description** | Allows players to wear items on their head and adds the /hat command. When a Totem of Undying is placed in the head slot, the death protection effect is triggered |
+| **Type** | `boolean` |
+| **Default Value** | `false` |
+| **Suggested Options** | `false`, `true` |
+| **Categories** | `PRIMARYUAN`, `SURVIVAL`, `COMMAND` |
+
+---
 
 ### betterSnowBall - Better Snowball
 
