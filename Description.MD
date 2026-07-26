@@ -108,3 +108,14 @@ Hold a **Totem of Undying** in your main hand and a **Golden Carrot** in your of
 - All rules are **off by default** — use `/carpet` or the Carpet configuration files to enable the ones you want.
 - **Source code:** [GitHub](https://github.com/brokeyuan/Carpet-Primaryuan-Addition)
 - **Documentation:** [Wiki](https://primaryuan.top:2026/Primaryuan/mod/PRY/readme.html) | [GitHub README](https://github.com/brokeyuan/Carpet-Primaryuan-Addition/blob/master/README_en.md)
+
+---
+
+## Credits
+
+- **BlueMap fix** — referenced from [fabric-carpet PR #2142](https://github.com/gnembon/fabric-carpet/pull/2142)
+- **XaeroLib fix** — thanks to [Wzp-2008](https://github.com/Wzp-2008) for the patch in [LuckPerms #4232](https://github.com/LuckPerms/LuckPerms/issues/4232)
+- **Daydreaming** — referenced from [plusls-carpet-addition](https://github.com/Nyan-Work/plusls-carpet-addition) (PCA)
+- **Unicode arguments** — ported from [YetAnotherCarpetAddition](https://github.com/hotpad100c/yetanothercarpetaddition) (YACA)
+- Thanks to [Liuyue_awa](https://github.com/liuyuexiaoyu1) and [Carpet-Igny-Addition](https://github.com/liuyuexiaoyu1/Carpet-Igny-Addition)
+- Built on [fabric-carpet](https://github.com/gnembon/fabric-carpet)
