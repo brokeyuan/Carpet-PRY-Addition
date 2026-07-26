@@ -17,6 +17,13 @@
 
 ## 功能特性
 
+### 漏洞修复
+
+| 规则 | 类型 | 默认值 | 简介 |
+|------|------|--------|------|
+| `FixXaeroLib` | boolean | `false` | 修复 Xaero 地图 + LuckPerms 导致假人数据丢失的问题 |
+| `FixBluemap` | boolean | `false` | 修复假人不触发 Fabric API 连接事件导致 BlueMap 等模组追踪异常 |
+
 ### 假人相关
 
 | 规则 | 类型 | 默认值 | 简介 |
@@ -26,12 +33,6 @@
 | `fakePlayerSkinMode` | string | `default` | 假人皮肤模式：`default` / `summon` / `same_skin` |
 | `fakePlayerSkinSet` | string | `Brokeyuan` | 统一皮肤模式下使用的玩家皮肤名 |
 
-### 漏洞修复
-
-| 规则 | 类型 | 默认值 | 简介 |
-|------|------|--------|------|
-| `FixXaeroLib` | boolean | `false` | 修复 Xaero 地图 + LuckPerms 导致假人数据丢失的问题 |
-| `FixBluemap` | boolean | `false` | 修复假人不触发 Fabric API 连接事件导致 BlueMap 等模组追踪异常 |
 
 ### 移植功能
 
