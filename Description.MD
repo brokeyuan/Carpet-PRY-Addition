@@ -115,6 +115,7 @@ Hold a **Totem of Undying** in your main hand and a **Golden Carrot** in your of
 
 - **BlueMap fix** — referenced from [fabric-carpet PR #2142](https://github.com/gnembon/fabric-carpet/pull/2142)
 - **XaeroLib fix** — thanks to [Wzp-2008](https://github.com/Wzp-2008) for the patch in [LuckPerms #4232](https://github.com/LuckPerms/LuckPerms/issues/4232)
+- **Fake Player Name Suggestions** — referenced from [Ivan-Carpet-Addition](https://github.com/Ivan-1F/Ivan-Carpet-Addition)
 - **Daydreaming** — referenced from [plusls-carpet-addition](https://github.com/Nyan-Work/plusls-carpet-addition) (PCA)
 - **Unicode arguments** — ported from [YetAnotherCarpetAddition](https://github.com/hotpad100c/yetanothercarpetaddition) (YACA)
 - Thanks to [Liuyue_awa](https://github.com/liuyuexiaoyu1) and [Carpet-Igny-Addition](https://github.com/liuyuexiaoyu1/Carpet-Igny-Addition)
