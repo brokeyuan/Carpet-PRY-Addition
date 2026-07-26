@@ -2,6 +2,8 @@
 
 > Mod ID: `carpet-pry-addition` | 版本: `1.1.2`
 >
+> 共 **16 条**规则
+>
 > **提示：可以使用 `Ctrl+F` 快速查找自己想要的规则**
 
 ---
@@ -19,8 +21,6 @@
 - [移植功能 (PORTING)](#移植功能-porting)
   - [sleepingDuringTheDay - 白日做梦](#sleepingduringtheday---白日做梦)
   - [unicodeArgumentsSupport - Unicode 参数支持](#unicodeargumentssupport---unicode-参数支持)
-- [命令相关 (COMMAND)](#命令相关-command)
-  - [playerhat - 玩家帽子](#playerhat---玩家帽子)
 - [玩家交互](#玩家交互)
   - [ridingPlayers - 骑乘玩家](#ridingplayers---骑乘玩家)
   - [pickupPlayers - 捡起玩家](#pickupplayers---捡起玩家)
@@ -28,6 +28,7 @@
   - [ridingPlayersDismountOnGameModeChange - 玩家骑乘更改模式下车](#ridingplayersdismountongamemodechange---玩家骑乘更改模式下车)
   - [ridingPlayersClientAllowInteractions - 玩家骑乘时可交互（客户端）](#ridingplayersclientallowinteractions---玩家骑乘时可交互客户端)
 - [生存功能](#生存功能)
+  - [playerhat - 玩家帽子](#playerhat---玩家帽子)
   - [betterSnowBall - 更好的雪球](#bettersnowball---更好的雪球)
   - [invisibleInTallGrass - 隐身草](#invisibleintallgrass---隐身草)
 
@@ -118,6 +119,12 @@
 | **参考选项** | `false`, `true` |
 | **分类** | `PRIMARYUAN`, `BUGFIX` |
 
+#### 相关 issue
+
+- [fabric-carpet #2158](https://github.com/gnembon/fabric-carpet/issues/2158) — Bot's inventory force empty with LuckPerms + xaerolib
+- [LuckPerms #4232](https://github.com/LuckPerms/LuckPerms/issues/4232) — [Wzp-2008](https://github.com/Wzp-2008) 提供补丁方案
+- [Xaero's World Map #1191](https://legacy.curseforge.com/minecraft/mc-mods/xaeros-world-map/issues/1191) — fake player data initialize failed
+
 ---
 
 ### FixBluemap - BlueMap兼容性修复补丁
@@ -132,6 +139,12 @@
 | **默认值** | `false` |
 | **参考选项** | `false`, `true` |
 | **分类** | `PRIMARYUAN`, `BUGFIX` |
+
+#### 相关 issue
+
+- [fabric-carpet #1962](https://github.com/gnembon/fabric-carpet/issues/1962) — Compatibility issue with Bluemap
+- [fabric-carpet PR #2142](https://github.com/gnembon/fabric-carpet/pull/2142)
+- [BlueMap #598](https://github.com/BlueMap-Minecraft/BlueMap/issues/598) — Unable to properly handle fake players who go offline
 
 ---
 
@@ -164,23 +177,6 @@
 | **默认值** | `false` |
 | **参考选项** | `false`, `true` |
 | **分类** | `PRIMARYUAN`, `PORTING` |
-
----
-
-## 命令相关 (COMMAND)
-
-### playerhat - 玩家帽子
-
-允许玩家将物品戴在头上，并添加/hat指令。头部放置不死图腾时可触发死亡保护效果。
-
-| 属性 | 值 |
-|------|-----|
-| **规则名** | `playerhat` |
-| **描述** | 允许玩家将物品戴在头上，并添加/hat指令。头部放置不死图腾时可触发死亡保护效果 |
-| **类型** | `boolean` |
-| **默认值** | `false` |
-| **参考选项** | `false`, `true` |
-| **分类** | `PRIMARYUAN`, `SURVIVAL`, `COMMAND` |
 
 ---
 
@@ -262,6 +258,21 @@
 ---
 
 ## 生存功能
+
+### playerhat - 玩家帽子
+
+允许玩家将物品戴在头上，并添加/hat指令。头部放置不死图腾时可触发死亡保护效果。
+
+| 属性 | 值 |
+|------|-----|
+| **规则名** | `playerhat` |
+| **描述** | 允许玩家将物品戴在头上，并添加/hat指令。头部放置不死图腾时可触发死亡保护效果 |
+| **类型** | `boolean` |
+| **默认值** | `false` |
+| **参考选项** | `false`, `true` |
+| **分类** | `PRIMARYUAN`, `SURVIVAL`, `COMMAND` |
+
+---
 
 ### betterSnowBall - 更好的雪球
 
