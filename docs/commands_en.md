@@ -190,7 +190,7 @@ Wears the main-hand item on the head, swapping it with the item currently on the
 
 ### Related Rules
 
-**playerhat** - When enabled, a Totem of Undying placed in the head slot triggers the death protection effect when the player takes fatal damage:
+**playerhat** - When enabled, placing a Totem of Undying in the head slot first triggers the normal Totem of Undying revive effect upon fatal damage, then additionally grants:
 - Regeneration II
 - Absorption II
 - Fire Resistance I
@@ -222,11 +222,15 @@ Wears the main-hand item on the head, swapping it with the item currently on the
 
 #### Description
 
-Set whether other players are allowed to ride you.
+Set whether other players are allowed to ride you. When you set it to `on`, other players holding a **Totem of Undying** in their main hand can right-click you to ride on your head.
 
-#### Related Rules
+#### Interaction Conditions
 
-**ridingPlayers** - When holding a Totem of Undying in the main hand, you can ride other players.
+- Rider (the person on top): must hold a **Totem of Undying** in main hand
+- Mount (the person below): must execute `/ride on` to allow it
+- Stack limit is controlled by the `ridingPlayersPickUpLimit` rule (default: 16)
+- When `ridingPlayersDismountOnGameModeChange` is enabled, game mode changes force passengers to dismount
+- When `ridingPlayersClientAllowInteractions` is enabled (default), you can still interact with blocks/entities while carrying passengers (requires client-side install)
 
 #### Usage Examples
 
@@ -256,11 +260,13 @@ Set whether other players are allowed to ride you.
 
 #### Description
 
-Set whether other players are allowed to pick you up.
+Set whether other players are allowed to pick you up (make you ride on their head). When you set it to `on`, other players holding a **Totem of Undying** in their main hand and a **Golden Carrot** in their off-hand can right-click you to pick you up.
 
-#### Related Rules
+#### Interaction Conditions
 
-**pickupPlayers** - When holding a Totem of Undying in the main hand and a Golden Carrot in the off-hand, you can pick up other players.
+- Picker (the person below): must hold a **Totem of Undying** in main hand + **Golden Carrot** in off-hand
+- Pickee (the person on top): must execute `/pickup on` to allow it
+- Stack limit is controlled by the `ridingPlayersPickUpLimit` rule (default: 16), shared with riding
 
 #### Usage Examples
 
