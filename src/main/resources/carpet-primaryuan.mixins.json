@@ -5,7 +5,6 @@
   "compatibilityLevel": "JAVA_{{COMPATIBILITY_LEVEL}}",
   "mixins": [
     "rule.entitiesRidingPlayers.EntityMixin",
-    "rule.entitiesRidingPlayers.RideCommandMixin",
     "rule.entitiesRidingPlayers.PlayerMixin",
     "rule.invisibleInTallGrass.PlayerMixin",
     "rule.entitiesRidingPlayers.ServerPlayerMixin",

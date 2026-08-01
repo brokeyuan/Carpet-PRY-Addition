@@ -12,7 +12,7 @@
   - [/tppset - 站点管理](#tppset---站点管理)
 - [/hat - 玩家帽子](#hat---玩家帽子)
 - [骑乘权限命令](#骑乘权限命令)
-  - [/ride - 骑乘权限管理](#ride---骑乘权限管理)
+  - [/riding - 骑乘权限管理](#riding---骑乘权限管理)
   - [/pickup - 捡起权限管理](#pickup---捡起权限管理)
 
 ---
@@ -206,13 +206,13 @@
 
 ## 骑乘权限命令
 
-### /ride - 骑乘权限管理
+### /riding - 骑乘权限管理
 
 #### 语法
 
 ```
-/ride on     # 允许其他玩家骑乘你
-/ride off    # 禁止其他玩家骑乘你
+/riding on     # 允许其他玩家骑乘你
+/riding off    # 禁止其他玩家骑乘你
 ```
 
 #### 权限
@@ -227,7 +227,7 @@
 #### 交互条件
 
 - 骑乘者（上面的人）：主手持**不死图腾**
-- 被骑乘者（下面的人）：需执行 `/ride on` 允许
+- 被骑乘者（下面的人）：需执行 `/riding on` 允许
 - 堆叠上限由 `ridingPlayersPickUpLimit` 规则控制（默认 16）
 - 当 `ridingPlayersDismountOnGameModeChange` 启用时，游戏模式变更会自动让乘客下车
 - 当 `ridingPlayersClientAllowInteractions` 启用时（默认），骑乘状态下仍可与方块/实体交互（需客户端安装）
@@ -236,10 +236,10 @@
 
 ```bash
 # 允许其他玩家骑乘你
-/ride on
+/riding on
 
 # 禁止其他玩家骑乘你
-/ride off
+/riding off
 ```
 
 ---

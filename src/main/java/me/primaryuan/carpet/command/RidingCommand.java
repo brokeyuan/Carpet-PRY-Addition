@@ -14,7 +14,7 @@ public class RidingCommand {
 
     public static void register() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-            dispatcher.register(Commands.literal("ride")
+            dispatcher.register(Commands.literal("riding")
                     .requires(source -> {
                         if (!source.isPlayer()) return true;
                         if (isAdmin(source)) return true;

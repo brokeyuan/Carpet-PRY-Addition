@@ -65,7 +65,7 @@ All features are Carpet-rule-driven, off by default, enabled on demand.
 | `/tpp <station>` | Teleport via pearl stations |
 | `/tppset` | Manage teleport stations |
 | `/hat` | Wear main-hand item on head |
-| `/ride on\|off` | Toggle permission for others to ride you |
+| `/riding on\|off` | Toggle permission for others to ride you |
 | `/pickup on\|off` | Toggle permission for others to pick you up |
 
 ## Installation

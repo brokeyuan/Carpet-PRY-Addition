@@ -12,7 +12,7 @@
   - [/tppset - Station Management](#tppset---station-management)
 - [/hat - Player Hat](#hat---player-hat)
 - [Riding Permission Commands](#riding-permission-commands)
-  - [/ride - Riding Permission Management](#ride---riding-permission-management)
+  - [/riding - Riding Permission Management](#riding---riding-permission-management)
   - [/pickup - Pickup Permission Management](#pickup---pickup-permission-management)
 
 ---
@@ -206,13 +206,13 @@ Wears the main-hand item on the head, swapping it with the item currently on the
 
 ## Riding Permission Commands
 
-### /ride - Riding Permission Management
+### /riding - Riding Permission Management
 
 #### Syntax
 
 ```
-/ride on     # Allow other players to ride you
-/ride off    # Forbid other players from riding you
+/riding on     # Allow other players to ride you
+/riding off    # Forbid other players from riding you
 ```
 
 #### Permission
@@ -227,7 +227,7 @@ Set whether other players are allowed to ride you. When you set it to `on`, othe
 #### Interaction Conditions
 
 - Rider (the person on top): must hold a **Totem of Undying** in main hand
-- Mount (the person below): must execute `/ride on` to allow it
+- Mount (the person below): must execute `/riding on` to allow it
 - Stack limit is controlled by the `ridingPlayersPickUpLimit` rule (default: 16)
 - When `ridingPlayersDismountOnGameModeChange` is enabled, game mode changes force passengers to dismount
 - When `ridingPlayersClientAllowInteractions` is enabled (default), you can still interact with blocks/entities while carrying passengers (requires client-side install)
@@ -236,10 +236,10 @@ Set whether other players are allowed to ride you. When you set it to `on`, othe
 
 ```bash
 # Allow other players to ride you
-/ride on
+/riding on
 
 # Forbid other players from riding you
-/ride off
+/riding off
 ```
 
 ---
