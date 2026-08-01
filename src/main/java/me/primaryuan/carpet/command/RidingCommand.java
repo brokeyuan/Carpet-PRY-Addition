@@ -25,7 +25,7 @@ public class RidingCommand {
                     .then(Commands.literal("off")
                             .executes(RidingCommand::rideOff)));
 
-            dispatcher.register(Commands.literal("pickup")
+            dispatcher.register(Commands.literal("picking")
                     .requires(source -> {
                         if (!source.isPlayer()) return true;
                         if (isAdmin(source)) return true;

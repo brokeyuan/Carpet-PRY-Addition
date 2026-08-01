@@ -13,7 +13,7 @@
 - [/hat - Player Hat](#hat---player-hat)
 - [Riding Permission Commands](#riding-permission-commands)
   - [/riding - Riding Permission Management](#riding---riding-permission-management)
-  - [/pickup - Pickup Permission Management](#pickup---pickup-permission-management)
+  - [/picking - Pickup Permission Management](#picking---pickup-permission-management)
 
 ---
 
@@ -244,13 +244,13 @@ Set whether other players are allowed to ride you. When you set it to `on`, othe
 
 ---
 
-### /pickup - Pickup Permission Management
+### /picking - Pickup Permission Management
 
 #### Syntax
 
 ```
-/pickup on     # Allow other players to pick you up
-/pickup off    # Forbid other players from picking you up
+/picking on     # Allow other players to pick you up
+/picking off    # Forbid other players from picking you up
 ```
 
 #### Permission
@@ -265,15 +265,15 @@ Set whether other players are allowed to pick you up (make you ride on their hea
 #### Interaction Conditions
 
 - Picker (the person below): must hold a **Totem of Undying** in main hand + **Golden Carrot** in off-hand
-- Pickee (the person on top): must execute `/pickup on` to allow it
+- Pickee (the person on top): must execute `/picking on` to allow it
 - Stack limit is controlled by the `ridingPlayersPickUpLimit` rule (default: 16), shared with riding
 
 #### Usage Examples
 
 ```bash
 # Allow other players to pick you up
-/pickup on
+/picking on
 
 # Forbid other players from picking you up
-/pickup off
+/picking off
 ```

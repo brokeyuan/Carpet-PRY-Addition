@@ -66,7 +66,7 @@ All features are Carpet-rule-driven, off by default, enabled on demand.
 | `/tppset` | Manage teleport stations |
 | `/hat` | Wear main-hand item on head |
 | `/riding on\|off` | Toggle permission for others to ride you |
-| `/pickup on\|off` | Toggle permission for others to pick you up |
+| `/picking on\|off` | Toggle permission for others to pick you up |
 
 ## Installation
 

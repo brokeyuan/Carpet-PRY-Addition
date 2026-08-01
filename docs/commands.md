@@ -13,7 +13,7 @@
 - [/hat - 玩家帽子](#hat---玩家帽子)
 - [骑乘权限命令](#骑乘权限命令)
   - [/riding - 骑乘权限管理](#riding---骑乘权限管理)
-  - [/pickup - 捡起权限管理](#pickup---捡起权限管理)
+  - [/picking - 捡起权限管理](#picking---捡起权限管理)
 
 ---
 
@@ -244,13 +244,13 @@
 
 ---
 
-### /pickup - 捡起权限管理
+### /picking - 捡起权限管理
 
 #### 语法
 
 ```
-/pickup on     # 允许其他玩家捡起你
-/pickup off    # 禁止其他玩家捡起你
+/picking on     # 允许其他玩家捡起你
+/picking off    # 禁止其他玩家捡起你
 ```
 
 #### 权限
@@ -265,15 +265,15 @@
 #### 交互条件
 
 - 捡起者（下面的人）：主手持**不死图腾** + 副手持**金胡萝卜**
-- 被捡起者（上面的人）：需执行 `/pickup on` 允许
+- 被捡起者（上面的人）：需执行 `/picking on` 允许
 - 堆叠上限由 `ridingPlayersPickUpLimit` 规则控制（默认 16），与骑乘共用
 
 #### 使用示例
 
 ```bash
 # 允许其他玩家捡起你
-/pickup on
+/picking on
 
 # 禁止其他玩家捡起你
-/pickup off
+/picking off
 ```
