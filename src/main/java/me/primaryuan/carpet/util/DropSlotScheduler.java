@@ -95,19 +95,19 @@ public final class DropSlotScheduler {
         UUID id = player.getUUID();
         Map<String, DropTask> playerTasks = tasks.get(id);
         if (playerTasks == null) {
-            source.sendSuccess(() -> ServerI18n.tr(source, "carpetprimaryuan.command.dropstack.no_task", slotKey), false);
+            source.sendSuccess(() -> ServerI18n.tr(source, "carpetprimaryuan.command.dropall.no_task", slotKey), false);
             return true;
         }
         DropTask task = playerTasks.remove(slotKey);
         if (task == null) {
-            source.sendSuccess(() -> ServerI18n.tr(source, "carpetprimaryuan.command.dropstack.no_task", slotKey), false);
+            source.sendSuccess(() -> ServerI18n.tr(source, "carpetprimaryuan.command.dropall.no_task", slotKey), false);
             return true;
         }
         if (playerTasks.isEmpty()) {
             tasks.remove(id);
         }
         final int dropped = task.droppedStacks;
-        source.sendSuccess(() -> ServerI18n.tr(source, "carpetprimaryuan.command.dropstack.stopped", slotKey, dropped), true);
+        source.sendSuccess(() -> ServerI18n.tr(source, "carpetprimaryuan.command.dropall.stopped", slotKey, dropped), true);
         return true;
     }
 
@@ -167,7 +167,7 @@ public final class DropSlotScheduler {
         ServerPlayer player = task.player;
         if (player == null || player.hasDisconnected() || player.isRemoved()) {
             task.source.sendSuccess(() -> ServerI18n.tr(task.source,
-                    "carpetprimaryuan.command.dropstack.player_offline",
+                    "carpetprimaryuan.command.dropall.player_offline",
                     player == null ? "?" : player.getName().getString(), task.slotKey), false);
             playerTasks.remove(task.slotKey);
             return;
@@ -181,7 +181,7 @@ public final class DropSlotScheduler {
         if (count <= 0) {
             // 没有可丢的物品：完成
             task.source.sendSuccess(() -> ServerI18n.tr(task.source,
-                    "carpetprimaryuan.command.dropstack.complete",
+                    "carpetprimaryuan.command.dropall.complete",
                     player.getName().getString(), task.slotKey,
                     task.droppedStacks, task.droppedItems), true);
             playerTasks.remove(task.slotKey);

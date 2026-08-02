@@ -209,32 +209,24 @@ Wears the main-hand item on the head, swapping it with the item currently on the
 
 ### Command Syntax
 
-Extends Carpet's built-in `/player <name> dropStack` command tree via Mixin, appending action modifier sub-nodes after the existing `all` / `mainhand` / `offhand` / `<slot>` nodes:
+Adds an independent `dropall` sub-command to Carpet's `/player <name>` command tree via Mixin, letting fake players drop all inventory items at a configured pace:
 
 ```
-/player <name> dropStack <slot> <modifier>
+/player <name> dropall [once|continuous|interval <ticks>|after <ticks>|perTick <times>|randomly <min> <max>|stop]
 ```
-
-Where `<slot>` is one of:
-
-| slot value | meaning |
-|------------|---------|
-| `all` | Drops from the first non-empty slot in inventory (stack by stack until empty) |
-| `mainhand` | Current main-hand slot |
-| `offhand` | Off-hand slot |
-| `<n>` | Specific slot index (0-40) |
 
 `<modifier>` can be one of the following seven:
 
 | Modifier | Syntax | Behavior |
 |----------|--------|----------|
-| `once` | `dropStack <slot> once` | Drop once immediately (same as vanilla behavior without modifier) |
-| `continuous` | `dropStack <slot> continuous` | Drop once per server tick until inventory is empty |
-| `interval` | `dropStack <slot> interval <ticks>` | Drop once every `<ticks>` ticks |
-| `after` | `dropStack <slot> after <ticks>` | Drop once after `<ticks>` ticks (one-shot) |
-| `perTick` | `dropStack <slot> perTick <times>` | Drop `<times>` times per second (20 ticks) |
-| `randomly` | `dropStack <slot> randomly <min> <max>` | Use a random value in `[min, max]` ticks as the next interval (re-rolled each time) |
-| `stop` | `dropStack <slot> stop` | Stop the drop task for this slot only; does not affect other slots |
+| (none) | `dropall` | Drop once immediately (equivalent to `once`) |
+| `once` | `dropall once` | Drop once immediately (not affected by rule) |
+| `continuous` | `dropall continuous` | Drop once per server tick until inventory is empty |
+| `interval` | `dropall interval <ticks>` | Drop once every `<ticks>` ticks |
+| `after` | `dropall after <ticks>` | Drop once after `<ticks>` ticks (one-shot) |
+| `perTick` | `dropall perTick <times>` | Drop `<times>` times per second (20 ticks) |
+| `randomly` | `dropall randomly <min> <max>` | Use a random value in `[min, max]` ticks as the next interval (re-rolled each time) |
+| `stop` | `dropall stop` | Stop the continuous drop task |
 
 ### Permission
 
@@ -242,45 +234,52 @@ Reuses Carpet's own permission check on the `/player` command (controlled by Car
 
 ### Related Rule
 
-- **fakePlayerDropStackModifiers** — must be `true` for the modifier sub-nodes to be mounted. When the rule is `false`, `dropStack` behaves exactly like vanilla Carpet.
+- **fakePlayerDropStackModifiers** — controls whether the continuous drop feature (`continuous`/`interval`/`after`/`perTick`/`randomly`/`stop`) is enabled.
+  - When the rule is `false`: `dropall once` and `dropall` (no argument) still work (drop once, equivalent to vanilla `dropStack all`); other modifiers are rejected with a hint that the rule is disabled.
+  - When the rule is `true`: all modifiers work normally.
+  - The command itself is always registered regardless of the rule.
 
 ### Relationship with Vanilla dropStack
 
-- When the rule is enabled, the vanilla `/player <name> dropStack [all|mainhand|offhand|<slot>]` (no modifier) still works as before — it drops once immediately.
-- The new modifier sub-nodes are merged into the existing command tree without breaking existing usage.
-- Running `/player <name> stop` also clears all extended drop tasks maintained by this mod.
+- `dropall` is a completely independent sub-command and does not modify Carpet's vanilla `dropStack` command tree.
+- `dropStack all` (Carpet vanilla) → drops once immediately
+- `dropall continuous` (new) → drops continuously until inventory is empty
+- Running `/player <name> stop` also clears all continuous drop tasks maintained by this mod.
 
 ### Examples
 
 ```bash
+# Drop everything once (equivalent to vanilla dropStack all)
+/player Steve dropall
+
 # Fake player drops inventory every tick until empty (auto-stops)
-/player Steve dropStack all continuous
+/player Steve dropall continuous
 
-# Drop main-hand item every 10 ticks
-/player Steve dropStack mainhand interval 10
+# Drop once every 10 ticks
+/player Steve dropall interval 10
 
-# Drop off-hand item once after 20 ticks (one-shot)
-/player Steve dropStack offhand after 20
+# Drop once after 20 ticks (one-shot)
+/player Steve dropall after 20
 
-# Drop inventory 4 times per second
-/player Steve dropStack all perTick 4
+# Drop 4 times per second
+/player Steve dropall perTick 4
 
 # Drop at random intervals between 5 and 20 ticks
-/player Steve dropStack all randomly 5 20
+/player Steve dropall randomly 5 20
 
-# Stop the drop task for the all slot only (other slots unaffected)
-/player Steve dropStack all stop
+# Stop the continuous drop task
+/player Steve dropall stop
 
-# Stop all actions of this fake player (including all extended drop tasks)
+# Stop all actions of this fake player (including continuous drop tasks)
 /player Steve stop
 ```
 
 ### Auto-Stop Conditions
 
-- `all` mode: auto-stops when all non-empty slots in inventory have been emptied, sending a completion message (with stack count and total item count) to the initiator.
+- `continuous`/`interval`/`perTick`/`randomly` modes: auto-stop when all non-empty slots in inventory have been emptied, sending a completion message (with stack count and total item count) to the initiator.
 - `after` mode: auto-stops after executing once.
 - Target fake player disconnects: all related tasks are cleaned up automatically to avoid tick listener leaks.
-- If a drop task is already running for the same slot, a new trigger is rejected with a hint to `stop` first.
+- If a dropall task is already running for the same fake player, a new trigger is rejected with a hint to `stop` first.
 
 ---
 

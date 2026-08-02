@@ -31,7 +31,7 @@
 | `TppFakePlayer` | boolean | `false` | 假人珍珠传送站，启用 `/tpp` 和 `/tppset` 命令 |
 | `fakePlayerSkinMode` | string | `default` | 假人皮肤模式：`default` / `summon` / `same_skin` |
 | `fakePlayerSkinSet` | string | `Brokeyuan` | 统一皮肤模式下使用的玩家皮肤名 |
-| `fakePlayerDropStackModifiers` | boolean | `false` | 给 `/player <name> dropStack` 追加 `once/continuous/interval/after/perTick/randomly/stop` 动作修饰子节点，让假人按节奏持续丢出物品 |
+| `fakePlayerDropStackModifiers` | boolean | `false` | 新增独立的 `/player <name> dropall [once\|continuous\|interval\|after\|perTick\|randomly\|stop]` 子命令，让假人按节奏持续丢出背包所有物品。规则关闭时 `dropall once` 仍可用（等价原版 `dropStack all`） |
 
 ### 移植功能
 

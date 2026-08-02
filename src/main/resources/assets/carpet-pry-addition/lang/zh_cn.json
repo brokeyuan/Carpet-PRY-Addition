@@ -33,7 +33,7 @@
   "carpet.rule.betterSnowBall.desc": "雪中塞石。允许雪球给玩家造成击退和伤害",
 
   "carpet.rule.fakePlayerDropStackModifiers.name": "假人持续清空背包",
-  "carpet.rule.fakePlayerDropStackModifiers.desc": "给 /player <name> dropStack [all|mainhand|offhand|<slot>] 后面追加 once/continuous/interval <ticks>/after <ticks>/perTick <times>/randomly <min> <max>/stop 动作修饰子节点，让假人按设定节奏持续丢出物品",
+  "carpet.rule.fakePlayerDropStackModifiers.desc": "给 /player <name> 下追加独立的 dropall 子命令，让假人按设定节奏持续丢出背包所有物品。命令：/player <name> dropall [once|continuous|interval <ticks>|after <ticks>|perTick <times>|randomly <min> <max>|stop]",
 
   "carpetprimaryuan.command.hat.disabled": "§c帽子功能未启用，请联系管理员使用 /carpet playerhat true 开启",
   "carpetprimaryuan.command.hat.empty_hand": "§c请手持要戴的物品",
@@ -74,16 +74,16 @@
   "carpetprimaryuan.command.tpp.rules_station_entry": "  §f%s§7: §f%d",
   "carpetprimaryuan.command.tpp.rules_no_station_counts": "§7站点级右键次数: §f无（全部使用全局默认值）",
 
-  "carpetprimaryuan.command.dropstack.started_continuous": "§a假人 %s 已开始持续丢出 %s 槽位物品",
-  "carpetprimaryuan.command.dropstack.started_interval": "§a假人 %s 已开始每 %d tick 丢出一次 %s 槽位物品",
-  "carpetprimaryuan.command.dropstack.started_after": "§a假人 %s 将在 %d tick 后丢出一次 %s 槽位物品",
-  "carpetprimaryuan.command.dropstack.started_perTick": "§a假人 %s 已开始每秒 %d 次丢出 %s 槽位物品",
-  "carpetprimaryuan.command.dropstack.started_randomly": "§a假人 %s 已开始随机间隔 %d-%d tick 丢出 %s 槽位物品",
-  "carpetprimaryuan.command.dropstack.already_running": "§c该假人的 %s 槽位已有进行中的丢出任务，请先 stop",
-  "carpetprimaryuan.command.dropstack.stopped": "§a已停止 %s 槽位的丢出任务，共丢出 %d 组",
-  "carpetprimaryuan.command.dropstack.no_task": "§e%s 槽位没有正在进行的丢出任务",
-  "carpetprimaryuan.command.dropstack.complete": "§a假人 %s 的 %s 槽位丢出任务完成，共丢出 %d 组 %d 个物品",
-  "carpetprimaryuan.command.dropstack.player_offline": "§c假人 %s 已下线，%s 槽位丢出任务自动停止",
-  "carpetprimaryuan.command.dropstack.rule_disabled_fallback": "§efakePlayerDropStackModifiers 规则未启用，已执行一次原版丢出",
-  "carpetprimaryuan.command.dropstack.rule_disabled_no_task": "§efakePlayerDropStackModifiers 规则未启用，无持续丢出任务可停止"
+  "carpetprimaryuan.command.dropall.started_continuous": "§a假人 %s 已开始持续丢出 %s 物品",
+  "carpetprimaryuan.command.dropall.started_interval": "§a假人 %s 已开始每 %d tick 丢出一次 %s 物品",
+  "carpetprimaryuan.command.dropall.started_after": "§a假人 %s 将在 %d tick 后丢出一次 %s 物品",
+  "carpetprimaryuan.command.dropall.started_perTick": "§a假人 %s 已开始每秒 %d 次丢出 %s 物品",
+  "carpetprimaryuan.command.dropall.started_randomly": "§a假人 %s 已开始随机间隔 %d-%d tick 丢出 %s 物品",
+  "carpetprimaryuan.command.dropall.already_running": "§c该假人的 %s 任务已有进行中，请先 stop",
+  "carpetprimaryuan.command.dropall.stopped": "§a已停止 %s 丢出任务，共丢出 %d 组",
+  "carpetprimaryuan.command.dropall.no_task": "§e%s 没有正在进行的丢出任务",
+  "carpetprimaryuan.command.dropall.complete": "§a假人 %s 的 %s 丢出任务完成，共丢出 %d 组 %d 个物品",
+  "carpetprimaryuan.command.dropall.player_offline": "§c假人 %s 已下线，%s 丢出任务自动停止",
+  "carpetprimaryuan.command.dropall.rule_disabled": "§efakePlayerDropStackModifiers 规则未启用，请使用 /carpet fakePlayerDropStackModifiers true 开启后再执行持续丢出",
+  "carpetprimaryuan.command.dropall.rule_disabled_no_task": "§efakePlayerDropStackModifiers 规则未启用，无持续丢出任务可停止"
 }

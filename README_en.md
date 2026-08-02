@@ -31,7 +31,7 @@ All features are Carpet-rule-driven, off by default, enabled on demand.
 | `TppFakePlayer` | boolean | `false` | Fake player pearl teleport stations, enables `/tpp` and `/tppset` commands |
 | `fakePlayerSkinMode` | string | `default` | Fake player skin mode: `default` / `summon` / `same_skin` |
 | `fakePlayerSkinSet` | string | `Brokeyuan` | Player name used for the shared skin in `same_skin` mode |
-| `fakePlayerDropStackModifiers` | boolean | `false` | Appends `once/continuous/interval/after/perTick/randomly/stop` action modifier sub-nodes to `/player <name> dropStack`, letting fake players drop items at a configured pace |
+| `fakePlayerDropStackModifiers` | boolean | `false` | Adds an independent `/player <name> dropall [once\|continuous\|interval\|after\|perTick\|randomly\|stop]` sub-command, letting fake players drop all inventory items at a configured pace. When disabled, `dropall once` still works (equivalent to vanilla `dropStack all`) |
 
 ### Ported Features
 

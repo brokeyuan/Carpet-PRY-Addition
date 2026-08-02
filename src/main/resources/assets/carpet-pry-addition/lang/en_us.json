@@ -33,7 +33,7 @@
   "carpet.rule.betterSnowBall.desc": "Stone hidden in snow. Allows snowballs to deal knockback and damage to players",
 
   "carpet.rule.fakePlayerDropStackModifiers.name": "Fake Player Continuous Drop",
-  "carpet.rule.fakePlayerDropStackModifiers.desc": "Appends once/continuous/interval <ticks>/after <ticks>/perTick <times>/randomly <min> <max>/stop action modifier sub-nodes to /player <name> dropStack [all|mainhand|offhand|<slot>], letting fake players drop items at a configured pace",
+  "carpet.rule.fakePlayerDropStackModifiers.desc": "Adds an independent dropall sub-command to /player <name>, letting fake players drop all inventory items at a configured pace. Command: /player <name> dropall [once|continuous|interval <ticks>|after <ticks>|perTick <times>|randomly <min> <max>|stop]",
 
   "carpetprimaryuan.command.hat.disabled": "§cHat feature is not enabled. Please ask admin to run /carpet playerhat true",
   "carpetprimaryuan.command.hat.empty_hand": "§cPlease hold the item you want to wear",
@@ -74,16 +74,16 @@
   "carpetprimaryuan.command.tpp.rules_station_entry": "  §f%s§7: §f%d",
   "carpetprimaryuan.command.tpp.rules_no_station_counts": "§7Station-level use counts: §fNone (all using global default)",
 
-  "carpetprimaryuan.command.dropstack.started_continuous": "§aFake player %s started dropping %s slot items continuously",
-  "carpetprimaryuan.command.dropstack.started_interval": "§aFake player %s started dropping %s slot items every %d ticks",
-  "carpetprimaryuan.command.dropstack.started_after": "§aFake player %s will drop %s slot items once after %d ticks",
-  "carpetprimaryuan.command.dropstack.started_perTick": "§aFake player %s started dropping %s slot items %d times per second",
-  "carpetprimaryuan.command.dropstack.started_randomly": "§aFake player %s started dropping %s slot items at random %d-%d tick intervals",
-  "carpetprimaryuan.command.dropstack.already_running": "§cThe %s slot of this fake player already has a drop task in progress, please stop it first",
-  "carpetprimaryuan.command.dropstack.stopped": "§aStopped the drop task for %s slot, dropped %d stacks in total",
-  "carpetprimaryuan.command.dropstack.no_task": "§e%s slot has no ongoing drop task",
-  "carpetprimaryuan.command.dropstack.complete": "§aFake player %s's %s slot drop task complete, dropped %d stacks totaling %d items",
-  "carpetprimaryuan.command.dropstack.player_offline": "§cFake player %s went offline, %s slot drop task automatically stopped",
-  "carpetprimaryuan.command.dropstack.rule_disabled_fallback": "§efakePlayerDropStackModifiers rule is disabled, performed a single original drop instead",
-  "carpetprimaryuan.command.dropstack.rule_disabled_no_task": "§efakePlayerDropStackModifiers rule is disabled, no continuous drop task to stop"
+  "carpetprimaryuan.command.dropall.started_continuous": "§aFake player %s started dropping %s items continuously",
+  "carpetprimaryuan.command.dropall.started_interval": "§aFake player %s started dropping %s items every %d ticks",
+  "carpetprimaryuan.command.dropall.started_after": "§aFake player %s will drop %s items once after %d ticks",
+  "carpetprimaryuan.command.dropall.started_perTick": "§aFake player %s started dropping %s items %d times per second",
+  "carpetprimaryuan.command.dropall.started_randomly": "§aFake player %s started dropping %s items at random %d-%d tick intervals",
+  "carpetprimaryuan.command.dropall.already_running": "§cThis fake player already has an ongoing %s drop task, please stop it first",
+  "carpetprimaryuan.command.dropall.stopped": "§aStopped the %s drop task, dropped %d stacks in total",
+  "carpetprimaryuan.command.dropall.no_task": "§e%s has no ongoing drop task",
+  "carpetprimaryuan.command.dropall.complete": "§aFake player %s's %s drop task complete, dropped %d stacks totaling %d items",
+  "carpetprimaryuan.command.dropall.player_offline": "§cFake player %s went offline, %s drop task automatically stopped",
+  "carpetprimaryuan.command.dropall.rule_disabled": "§efakePlayerDropStackModifiers rule is disabled. Use /carpet fakePlayerDropStackModifiers true to enable continuous drop",
+  "carpetprimaryuan.command.dropall.rule_disabled_no_task": "§efakePlayerDropStackModifiers rule is disabled, no continuous drop task to stop"
 }
