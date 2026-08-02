@@ -46,7 +46,7 @@ public final class PlayerCommandExtension {
         LiteralArgumentBuilder<CommandSourceStack> rebuilder = Commands.literal(original.getLiteral());
         // 原版 makeDropCommand 的顶层无 executes，无需复制 command
         // 遍历 original 已有的子节点，重建并追加修饰
-        for (CommandNode<CommandSourceStack> child : original.getChildren()) {
+        for (CommandNode<CommandSourceStack> child : original.getArguments()) {
             if (child instanceof LiteralCommandNode<CommandSourceStack> litChild) {
                 String lit = litChild.getLiteral();
                 int slot;
