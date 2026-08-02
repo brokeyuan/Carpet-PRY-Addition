@@ -32,6 +32,9 @@
   "carpet.rule.betterSnowBall.name": "更好的雪球",
   "carpet.rule.betterSnowBall.desc": "雪中藏石。允許雪球給玩家造成擊退和傷害",
 
+  "carpet.rule.fakePlayerDropStackModifiers.name": "假人持續清空背包",
+  "carpet.rule.fakePlayerDropStackModifiers.desc": "給 /player <name> dropStack [all|mainhand|offhand|<slot>] 後面追加 once/continuous/interval <ticks>/after <ticks>/perTick <times>/randomly <min> <max>/stop 動作修飾子節點，讓假人按設定節奏持續丟出物品",
+
   "carpetprimaryuan.command.hat.disabled": "§c帽子功能未啟用，請聯絡管理員使用 /carpet playerhat true 開啟",
   "carpetprimaryuan.command.hat.empty_hand": "§c請手持要戴的物品",
   "carpetprimaryuan.command.hat.equipped": "§a已將 %s 戴在頭上",
@@ -69,5 +72,16 @@
   "carpetprimaryuan.command.tpp.rules_global_count": "§7全域預設右鍵次數: §f%d",
   "carpetprimaryuan.command.tpp.rules_station_counts": "§7站點級右鍵次數:",
   "carpetprimaryuan.command.tpp.rules_station_entry": "  §f%s§7: §f%d",
-  "carpetprimaryuan.command.tpp.rules_no_station_counts": "§7站點級右鍵次數: §f無（全部使用全域預設值）"
+  "carpetprimaryuan.command.tpp.rules_no_station_counts": "§7站點級右鍵次數: §f無（全部使用全域預設值）",
+
+  "carpetprimaryuan.command.dropstack.started_continuous": "§a假人 %s 已開始持續丟出 %s 槽位物品",
+  "carpetprimaryuan.command.dropstack.started_interval": "§a假人 %s 已開始每 %d tick 丟出一次 %s 槽位物品",
+  "carpetprimaryuan.command.dropstack.started_after": "§a假人 %s 將在 %d tick 後丟出一次 %s 槽位物品",
+  "carpetprimaryuan.command.dropstack.started_perTick": "§a假人 %s 已開始每秒 %d 次丟出 %s 槽位物品",
+  "carpetprimaryuan.command.dropstack.started_randomly": "§a假人 %s 已開始隨機間隔 %d-%d tick 丟出 %s 槽位物品",
+  "carpetprimaryuan.command.dropstack.already_running": "§c該假人的 %s 槽位已有進行中的丟出任務，請先 stop",
+  "carpetprimaryuan.command.dropstack.stopped": "§a已停止 %s 槽位的丟出任務，共丟出 %d 組",
+  "carpetprimaryuan.command.dropstack.no_task": "§e%s 槽位沒有正在進行的丟出任務",
+  "carpetprimaryuan.command.dropstack.complete": "§a假人 %s 的 %s 槽位丟出任務完成，共丟出 %d 組 %d 個物品",
+  "carpetprimaryuan.command.dropstack.player_offline": "§c假人 %s 已下線，%s 槽位丟出任務自動停止"
 }

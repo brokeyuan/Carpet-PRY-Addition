@@ -11,7 +11,7 @@
 
 ## Introduction
 
-**Carpet-Primaryuan-Addition** is a server-side Fabric extension for [Fabric Carpet](https://github.com/gnembon/fabric-carpet), developed for the **Primaryuan Server**. It adds **16** configurable Carpet rules and **5** new commands covering fake player enhancements, mod compatibility fixes, ported features, player interactions, and survival gameplay expansion.
+**Carpet-Primaryuan-Addition** is a server-side Fabric extension for [Fabric Carpet](https://github.com/gnembon/fabric-carpet), developed for the **Primaryuan Server**. It adds **17** configurable Carpet rules and **5** new commands covering fake player enhancements, mod compatibility fixes, ported features, player interactions, and survival gameplay expansion.
 
 All features are Carpet-rule-driven, off by default, enabled on demand.
 
@@ -31,6 +31,7 @@ All features are Carpet-rule-driven, off by default, enabled on demand.
 | `TppFakePlayer` | boolean | `false` | Fake player pearl teleport stations, enables `/tpp` and `/tppset` commands |
 | `fakePlayerSkinMode` | string | `default` | Fake player skin mode: `default` / `summon` / `same_skin` |
 | `fakePlayerSkinSet` | string | `Brokeyuan` | Player name used for the shared skin in `same_skin` mode |
+| `fakePlayerDropStackModifiers` | boolean | `false` | Appends `once/continuous/interval/after/perTick/randomly/stop` action modifier sub-nodes to `/player <name> dropStack`, letting fake players drop items at a configured pace |
 
 ### Ported Features
 

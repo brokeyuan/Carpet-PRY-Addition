@@ -17,7 +17,9 @@
     "rule.FixXaeroLib.PlayerConfigChannelPermissionUpdaterMixin",
     "rule.FixBluemap.PlayerListFakePlayerEventsMixin",
     "rule.playerhat.LivingEntityMixin",
-    "rule.betterSnowBall.SnowballMixin"
+    "rule.betterSnowBall.SnowballMixin",
+    "rule.fakePlayerDropStackModifiers.PlayerCommandMixin",
+    "rule.fakePlayerDropStackModifiers.EntityPlayerActionPackMixin"
   ],
   "client": [
     "rule.entitiesRidingPlayers.ProjectileUtilMixin"

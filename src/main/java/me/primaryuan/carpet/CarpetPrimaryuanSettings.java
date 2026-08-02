@@ -103,6 +103,11 @@ public class CarpetPrimaryuanSettings {
     )
     public static boolean unicodeArgumentsSupport = false;
 
+    @Rule(
+            categories = {PRIMARYUAN, BOT, COMMAND}
+    )
+    public static boolean fakePlayerDropStackModifiers = false;
+
     public static String fakePlayerTpStations = "";
 
     public static Map<String, String> tppPlayerAliases = new ConcurrentHashMap<>();

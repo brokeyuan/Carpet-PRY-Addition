@@ -11,6 +11,7 @@
   - [/tpp - 假人珍珠传送](#tpp---假人珍珠传送)
   - [/tppset - 站点管理](#tppset---站点管理)
 - [/hat - 玩家帽子](#hat---玩家帽子)
+- [假人持续清空背包](#假人持续清空背包)
 - [骑乘权限命令](#骑乘权限命令)
   - [/riding - 骑乘权限管理](#riding---骑乘权限管理)
   - [/picking - 捡起权限管理](#picking---捡起权限管理)
@@ -201,6 +202,85 @@
 # 手持钻石块，将其戴在头上
 /hat
 ```
+
+---
+
+## 假人持续清空背包
+
+### 命令语法
+
+通过 Mixin 扩展 Carpet 自带的 `/player <name> dropStack` 命令树，在原有的 `all` / `mainhand` / `offhand` / `<slot>` 子节点后追加动作修饰子节点：
+
+```
+/player <name> dropStack <slot> <modifier>
+```
+
+其中 `<slot>` 取值如下：
+
+| slot 值 | 含义 |
+|---------|------|
+| `all` | 从背包中第一个非空槽位开始丢出（逐组丢，直到清空） |
+| `mainhand` | 当前主手槽位 |
+| `offhand` | 副手槽位 |
+| `<n>` | 指定槽位编号（0-40） |
+
+`<modifier>` 可选以下七种：
+
+| 修饰参数 | 语法 | 行为 |
+|---------|------|------|
+| `once` | `dropStack <slot> once` | 立即丢一次（与不传修饰参数的原版行为一致） |
+| `continuous` | `dropStack <slot> continuous` | 每个 server tick 丢一次，直到清空 |
+| `interval` | `dropStack <slot> interval <ticks>` | 每隔 `<ticks>` tick 丢一次 |
+| `after` | `dropStack <slot> after <ticks>` | 在 `<ticks>` tick 之后丢一次（一次性） |
+| `perTick` | `dropStack <slot> perTick <times>` | 每秒（20 tick）丢 `<times>` 次 |
+| `randomly` | `dropStack <slot> randomly <min> <max>` | 在 `[min, max]` tick 区间随机取值作为本次间隔，每次重新随机 |
+| `stop` | `dropStack <slot> stop` | 停止该槽位对应的丢出任务，不影响其他槽位 |
+
+### 权限
+
+沿用 Carpet `/player` 命令本身的权限检查（由 Carpet 的 `commandPlayer` 规则控制），不额外限制。
+
+### 相关规则
+
+- **fakePlayerDropStackModifiers** — 必须为 `true` 才会挂载上述修饰子节点。规则关闭时 `dropStack` 行为完全等同原版 Carpet。
+
+### 与原版 dropStack 的关系
+
+- 启用规则后，原版的 `/player <name> dropStack [all|mainhand|offhand|<slot>]`（无修饰参数）行为不变，仍然立即丢一次。
+- 新增的修饰子节点只是合并到原命令树下，不会破坏原有用法。
+- 执行 `/player <name> stop` 会同步清理本项目维护的所有持续丢出任务。
+
+### 使用示例
+
+```bash
+# 假人逐 tick 丢出背包所有物品，直到背包清空（自动停止）
+/player Steve dropStack all continuous
+
+# 每 10 tick 丢一次主手物品
+/player Steve dropStack mainhand interval 10
+
+# 20 tick 后丢一次副手物品（一次性）
+/player Steve dropStack offhand after 20
+
+# 每秒丢 4 次背包物品
+/player Steve dropStack all perTick 4
+
+# 在 5~20 tick 之间随机间隔丢出
+/player Steve dropStack all randomly 5 20
+
+# 停止 all 槽位的丢出任务（不影响其他槽位）
+/player Steve dropStack all stop
+
+# 停止该假人所有动作（包括所有扩展丢出任务）
+/player Steve stop
+```
+
+### 自动停止条件
+
+- `all` 模式：背包中所有非空槽位均被清空后自动停止，并向发起者发送完成消息（含丢出组数与物品总数）。
+- `after` 模式：执行一次后自动结束。
+- 目标假人下线：所有相关任务自动清理，避免 tick 监听泄漏。
+- 同一槽位已有进行中的任务时，再次触发会被拒绝并提示先 `stop`。
 
 ---
 

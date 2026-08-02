@@ -11,6 +11,7 @@
   - [/tpp - Fake Player Pearl Teleport](#tpp---fake-player-pearl-teleport)
   - [/tppset - Station Management](#tppset---station-management)
 - [/hat - Player Hat](#hat---player-hat)
+- [Fake Player Continuous Inventory Drop](#fake-player-continuous-inventory-drop)
 - [Riding Permission Commands](#riding-permission-commands)
   - [/riding - Riding Permission Management](#riding---riding-permission-management)
   - [/picking - Pickup Permission Management](#picking---pickup-permission-management)
@@ -201,6 +202,85 @@ Wears the main-hand item on the head, swapping it with the item currently on the
 # Hold a diamond block and wear it on your head
 /hat
 ```
+
+---
+
+## Fake Player Continuous Inventory Drop
+
+### Command Syntax
+
+Extends Carpet's built-in `/player <name> dropStack` command tree via Mixin, appending action modifier sub-nodes after the existing `all` / `mainhand` / `offhand` / `<slot>` nodes:
+
+```
+/player <name> dropStack <slot> <modifier>
+```
+
+Where `<slot>` is one of:
+
+| slot value | meaning |
+|------------|---------|
+| `all` | Drops from the first non-empty slot in inventory (stack by stack until empty) |
+| `mainhand` | Current main-hand slot |
+| `offhand` | Off-hand slot |
+| `<n>` | Specific slot index (0-40) |
+
+`<modifier>` can be one of the following seven:
+
+| Modifier | Syntax | Behavior |
+|----------|--------|----------|
+| `once` | `dropStack <slot> once` | Drop once immediately (same as vanilla behavior without modifier) |
+| `continuous` | `dropStack <slot> continuous` | Drop once per server tick until inventory is empty |
+| `interval` | `dropStack <slot> interval <ticks>` | Drop once every `<ticks>` ticks |
+| `after` | `dropStack <slot> after <ticks>` | Drop once after `<ticks>` ticks (one-shot) |
+| `perTick` | `dropStack <slot> perTick <times>` | Drop `<times>` times per second (20 ticks) |
+| `randomly` | `dropStack <slot> randomly <min> <max>` | Use a random value in `[min, max]` ticks as the next interval (re-rolled each time) |
+| `stop` | `dropStack <slot> stop` | Stop the drop task for this slot only; does not affect other slots |
+
+### Permission
+
+Reuses Carpet's own permission check on the `/player` command (controlled by Carpet's `commandPlayer` rule), with no additional restriction.
+
+### Related Rule
+
+- **fakePlayerDropStackModifiers** — must be `true` for the modifier sub-nodes to be mounted. When the rule is `false`, `dropStack` behaves exactly like vanilla Carpet.
+
+### Relationship with Vanilla dropStack
+
+- When the rule is enabled, the vanilla `/player <name> dropStack [all|mainhand|offhand|<slot>]` (no modifier) still works as before — it drops once immediately.
+- The new modifier sub-nodes are merged into the existing command tree without breaking existing usage.
+- Running `/player <name> stop` also clears all extended drop tasks maintained by this mod.
+
+### Examples
+
+```bash
+# Fake player drops inventory every tick until empty (auto-stops)
+/player Steve dropStack all continuous
+
+# Drop main-hand item every 10 ticks
+/player Steve dropStack mainhand interval 10
+
+# Drop off-hand item once after 20 ticks (one-shot)
+/player Steve dropStack offhand after 20
+
+# Drop inventory 4 times per second
+/player Steve dropStack all perTick 4
+
+# Drop at random intervals between 5 and 20 ticks
+/player Steve dropStack all randomly 5 20
+
+# Stop the drop task for the all slot only (other slots unaffected)
+/player Steve dropStack all stop
+
+# Stop all actions of this fake player (including all extended drop tasks)
+/player Steve stop
+```
+
+### Auto-Stop Conditions
+
+- `all` mode: auto-stops when all non-empty slots in inventory have been emptied, sending a completion message (with stack count and total item count) to the initiator.
+- `after` mode: auto-stops after executing once.
+- Target fake player disconnects: all related tasks are cleaned up automatically to avoid tick listener leaks.
+- If a drop task is already running for the same slot, a new trigger is rejected with a hint to `stop` first.
 
 ---
 
