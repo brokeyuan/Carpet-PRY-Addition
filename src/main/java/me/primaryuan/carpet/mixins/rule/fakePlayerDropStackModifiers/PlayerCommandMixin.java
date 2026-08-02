@@ -28,11 +28,9 @@ public class PlayerCommandMixin {
         if (!"dropStack".equals(actionName)) {
             return;
         }
-        if (!CarpetPrimaryuanSettings.fakePlayerDropStackModifiers) {
-            return;
-        }
-        // 完全手动构建 dropStack 命令树：
-        // 为每个 slot 节点（all/mainhand/offhand/<slot>）保留原版 executes + 追加修饰子节点。
+        // 无条件替换命令树：规则检查下沉到各 executes 回调内部运行时判断。
+        // 原因：命令树只在服务器启动时注册一次，运行时切换规则不会重建命令树。
+        // 因此注册时必须无条件挂载，规则关闭时由回调内部回退到原版行为。
         cir.setReturnValue(PlayerCommandExtension.rebuildDropStackBuilder());
     }
 }

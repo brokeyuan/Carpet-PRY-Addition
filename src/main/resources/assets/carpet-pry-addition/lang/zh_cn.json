@@ -83,5 +83,7 @@
   "carpetprimaryuan.command.dropstack.stopped": "§a已停止 %s 槽位的丢出任务，共丢出 %d 组",
   "carpetprimaryuan.command.dropstack.no_task": "§e%s 槽位没有正在进行的丢出任务",
   "carpetprimaryuan.command.dropstack.complete": "§a假人 %s 的 %s 槽位丢出任务完成，共丢出 %d 组 %d 个物品",
-  "carpetprimaryuan.command.dropstack.player_offline": "§c假人 %s 已下线，%s 槽位丢出任务自动停止"
+  "carpetprimaryuan.command.dropstack.player_offline": "§c假人 %s 已下线，%s 槽位丢出任务自动停止",
+  "carpetprimaryuan.command.dropstack.rule_disabled_fallback": "§efakePlayerDropStackModifiers 规则未启用，已执行一次原版丢出",
+  "carpetprimaryuan.command.dropstack.rule_disabled_no_task": "§efakePlayerDropStackModifiers 规则未启用，无持续丢出任务可停止"
 }

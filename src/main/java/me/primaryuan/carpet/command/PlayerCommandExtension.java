@@ -147,106 +147,133 @@ public final class PlayerCommandExtension {
     // ===== 固定 slot（all/mainhand/offhand）的命令回调 =====
 
     private static int runOnce(CommandContext<CommandSourceStack> ctx, int slot) throws CommandSyntaxException {
-        ServerPlayer player = resolvePlayer(ctx);
-        if (player == null) return 0;
-        DropSlotScheduler.dropOnce(player, slot);
-        return 1;
+        // once 等价于原版单次丢出，不受规则开关影响
+        return dropOnceCarpet(ctx, slot);
+    }
+
+    /**
+     * 调度类回调的统一入口：规则关闭时回退到原版单次丢出行为。
+     * 原因：命令树在服务器启动时一次性注册，运行时切换规则不会重建命令树，
+     * 因此规则检查必须在 executes 回调内部运行时判断。
+     */
+    private static int runScheduled(CommandContext<CommandSourceStack> ctx, int slot, String slotKey,
+                                     java.util.function.Function<CommandSourceStack, Boolean> scheduler) throws CommandSyntaxException {
+        CommandSourceStack source = ctx.getSource();
+        if (!CarpetPrimaryuanSettings.fakePlayerDropStackModifiers) {
+            // 规则关闭：回退到原版单次丢出
+            source.sendSuccess(() -> ServerI18n.tr(source,
+                    "carpetprimaryuan.command.dropstack.rule_disabled_fallback"), false);
+            return dropOnceCarpet(ctx, slot);
+        }
+        return scheduler.apply(source) ? 1 : 0;
     }
 
     private static int startContinuous(CommandContext<CommandSourceStack> ctx, int slot, String slotKey) throws CommandSyntaxException {
-        ServerPlayer player = resolvePlayer(ctx);
-        if (player == null) return 0;
-        CommandSourceStack source = ctx.getSource();
-        boolean ok = DropSlotScheduler.startContinuous(player, slot, slotKey, source);
-        if (!ok) {
-            source.sendSuccess(() -> ServerI18n.tr(source,
-                    "carpetprimaryuan.command.dropstack.already_running", slotKey), false);
-        } else {
-            source.sendSuccess(() -> ServerI18n.tr(source,
-                    "carpetprimaryuan.command.dropstack.started_continuous",
-                    player.getName().getString(), slotKey), true);
-        }
-        return 1;
+        return runScheduled(ctx, slot, slotKey, source -> {
+            ServerPlayer player = resolvePlayer(ctx);
+            if (player == null) return false;
+            boolean ok = DropSlotScheduler.startContinuous(player, slot, slotKey, source);
+            if (!ok) {
+                source.sendSuccess(() -> ServerI18n.tr(source,
+                        "carpetprimaryuan.command.dropstack.already_running", slotKey), false);
+            } else {
+                source.sendSuccess(() -> ServerI18n.tr(source,
+                        "carpetprimaryuan.command.dropstack.started_continuous",
+                        player.getName().getString(), slotKey), true);
+            }
+            return true;
+        });
     }
 
     private static int startInterval(CommandContext<CommandSourceStack> ctx, int slot, String slotKey) throws CommandSyntaxException {
-        ServerPlayer player = resolvePlayer(ctx);
-        if (player == null) return 0;
-        int ticks = IntegerArgumentType.getInteger(ctx, "ticks");
-        CommandSourceStack source = ctx.getSource();
-        boolean ok = DropSlotScheduler.startInterval(player, slot, slotKey, ticks, source);
-        if (!ok) {
-            source.sendSuccess(() -> ServerI18n.tr(source,
-                    "carpetprimaryuan.command.dropstack.already_running", slotKey), false);
-        } else {
-            source.sendSuccess(() -> ServerI18n.tr(source,
-                    "carpetprimaryuan.command.dropstack.started_interval",
-                    player.getName().getString(), ticks, slotKey), true);
-        }
-        return 1;
+        return runScheduled(ctx, slot, slotKey, source -> {
+            ServerPlayer player = resolvePlayer(ctx);
+            if (player == null) return false;
+            int ticks = IntegerArgumentType.getInteger(ctx, "ticks");
+            boolean ok = DropSlotScheduler.startInterval(player, slot, slotKey, ticks, source);
+            if (!ok) {
+                source.sendSuccess(() -> ServerI18n.tr(source,
+                        "carpetprimaryuan.command.dropstack.already_running", slotKey), false);
+            } else {
+                source.sendSuccess(() -> ServerI18n.tr(source,
+                        "carpetprimaryuan.command.dropstack.started_interval",
+                        player.getName().getString(), ticks, slotKey), true);
+            }
+            return true;
+        });
     }
 
     private static int startAfter(CommandContext<CommandSourceStack> ctx, int slot, String slotKey) throws CommandSyntaxException {
-        ServerPlayer player = resolvePlayer(ctx);
-        if (player == null) return 0;
-        int delay = IntegerArgumentType.getInteger(ctx, "ticks");
-        CommandSourceStack source = ctx.getSource();
-        boolean ok = DropSlotScheduler.startAfter(player, slot, slotKey, delay, source);
-        if (!ok) {
-            source.sendSuccess(() -> ServerI18n.tr(source,
-                    "carpetprimaryuan.command.dropstack.already_running", slotKey), false);
-        } else {
-            source.sendSuccess(() -> ServerI18n.tr(source,
-                    "carpetprimaryuan.command.dropstack.started_after",
-                    player.getName().getString(), delay, slotKey), true);
-        }
-        return 1;
+        return runScheduled(ctx, slot, slotKey, source -> {
+            ServerPlayer player = resolvePlayer(ctx);
+            if (player == null) return false;
+            int delay = IntegerArgumentType.getInteger(ctx, "ticks");
+            boolean ok = DropSlotScheduler.startAfter(player, slot, slotKey, delay, source);
+            if (!ok) {
+                source.sendSuccess(() -> ServerI18n.tr(source,
+                        "carpetprimaryuan.command.dropstack.already_running", slotKey), false);
+            } else {
+                source.sendSuccess(() -> ServerI18n.tr(source,
+                        "carpetprimaryuan.command.dropstack.started_after",
+                        player.getName().getString(), delay, slotKey), true);
+            }
+            return true;
+        });
     }
 
     private static int startPerTick(CommandContext<CommandSourceStack> ctx, int slot, String slotKey) throws CommandSyntaxException {
-        ServerPlayer player = resolvePlayer(ctx);
-        if (player == null) return 0;
-        int times = IntegerArgumentType.getInteger(ctx, "times");
-        CommandSourceStack source = ctx.getSource();
-        boolean ok = DropSlotScheduler.startPerTick(player, slot, slotKey, times, source);
-        if (!ok) {
-            source.sendSuccess(() -> ServerI18n.tr(source,
-                    "carpetprimaryuan.command.dropstack.already_running", slotKey), false);
-        } else {
-            source.sendSuccess(() -> ServerI18n.tr(source,
-                    "carpetprimaryuan.command.dropstack.started_perTick",
-                    player.getName().getString(), times, slotKey), true);
-        }
-        return 1;
+        return runScheduled(ctx, slot, slotKey, source -> {
+            ServerPlayer player = resolvePlayer(ctx);
+            if (player == null) return false;
+            int times = IntegerArgumentType.getInteger(ctx, "times");
+            boolean ok = DropSlotScheduler.startPerTick(player, slot, slotKey, times, source);
+            if (!ok) {
+                source.sendSuccess(() -> ServerI18n.tr(source,
+                        "carpetprimaryuan.command.dropstack.already_running", slotKey), false);
+            } else {
+                source.sendSuccess(() -> ServerI18n.tr(source,
+                        "carpetprimaryuan.command.dropstack.started_perTick",
+                        player.getName().getString(), times, slotKey), true);
+            }
+            return true;
+        });
     }
 
     private static int startRandomly(CommandContext<CommandSourceStack> ctx, int slot, String slotKey) throws CommandSyntaxException {
-        ServerPlayer player = resolvePlayer(ctx);
-        if (player == null) return 0;
-        int minVal = IntegerArgumentType.getInteger(ctx, "min");
-        int maxVal = IntegerArgumentType.getInteger(ctx, "max");
-        if (maxVal < minVal) {
-            int t = minVal; minVal = maxVal; maxVal = t;
-        }
-        final int min = minVal;
-        final int max = maxVal;
-        CommandSourceStack source = ctx.getSource();
-        boolean ok = DropSlotScheduler.startRandomly(player, slot, slotKey, min, max, source);
-        if (!ok) {
-            source.sendSuccess(() -> ServerI18n.tr(source,
-                    "carpetprimaryuan.command.dropstack.already_running", slotKey), false);
-        } else {
-            source.sendSuccess(() -> ServerI18n.tr(source,
-                    "carpetprimaryuan.command.dropstack.started_randomly",
-                    player.getName().getString(), min, max, slotKey), true);
-        }
-        return 1;
+        return runScheduled(ctx, slot, slotKey, source -> {
+            ServerPlayer player = resolvePlayer(ctx);
+            if (player == null) return false;
+            int minVal = IntegerArgumentType.getInteger(ctx, "min");
+            int maxVal = IntegerArgumentType.getInteger(ctx, "max");
+            if (maxVal < minVal) {
+                int t = minVal; minVal = maxVal; maxVal = t;
+            }
+            final int min = minVal;
+            final int max = maxVal;
+            boolean ok = DropSlotScheduler.startRandomly(player, slot, slotKey, min, max, source);
+            if (!ok) {
+                source.sendSuccess(() -> ServerI18n.tr(source,
+                        "carpetprimaryuan.command.dropstack.already_running", slotKey), false);
+            } else {
+                source.sendSuccess(() -> ServerI18n.tr(source,
+                        "carpetprimaryuan.command.dropstack.started_randomly",
+                        player.getName().getString(), min, max, slotKey), true);
+            }
+            return true;
+        });
     }
 
     private static int stopTask(CommandContext<CommandSourceStack> ctx, String slotKey) throws CommandSyntaxException {
+        CommandSourceStack source = ctx.getSource();
+        if (!CarpetPrimaryuanSettings.fakePlayerDropStackModifiers) {
+            // 规则关闭：无任务可停止
+            source.sendSuccess(() -> ServerI18n.tr(source,
+                    "carpetprimaryuan.command.dropstack.rule_disabled_no_task"), false);
+            return 0;
+        }
         ServerPlayer player = resolvePlayer(ctx);
         if (player == null) return 0;
-        DropSlotScheduler.stop(player, slotKey, ctx.getSource());
+        DropSlotScheduler.stop(player, slotKey, source);
         return 1;
     }
 

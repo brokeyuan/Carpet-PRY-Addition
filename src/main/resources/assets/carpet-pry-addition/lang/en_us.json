@@ -83,5 +83,7 @@
   "carpetprimaryuan.command.dropstack.stopped": "§aStopped the drop task for %s slot, dropped %d stacks in total",
   "carpetprimaryuan.command.dropstack.no_task": "§e%s slot has no ongoing drop task",
   "carpetprimaryuan.command.dropstack.complete": "§aFake player %s's %s slot drop task complete, dropped %d stacks totaling %d items",
-  "carpetprimaryuan.command.dropstack.player_offline": "§cFake player %s went offline, %s slot drop task automatically stopped"
+  "carpetprimaryuan.command.dropstack.player_offline": "§cFake player %s went offline, %s slot drop task automatically stopped",
+  "carpetprimaryuan.command.dropstack.rule_disabled_fallback": "§efakePlayerDropStackModifiers rule is disabled, performed a single original drop instead",
+  "carpetprimaryuan.command.dropstack.rule_disabled_no_task": "§efakePlayerDropStackModifiers rule is disabled, no continuous drop task to stop"
 }
