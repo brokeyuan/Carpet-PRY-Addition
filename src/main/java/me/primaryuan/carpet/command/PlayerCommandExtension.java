@@ -1,17 +1,11 @@
 package me.primaryuan.carpet.command;
 
-import com.mojang.brigadier.Command;
-import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
-import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.mojang.brigadier.tree.ArgumentCommandNode;
-import com.mojang.brigadier.tree.CommandNode;
-import com.mojang.brigadier.tree.LiteralCommandNode;
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import me.primaryuan.carpet.i18n.ServerI18n;
 import me.primaryuan.carpet.util.DropSlotScheduler;
@@ -27,56 +21,78 @@ import net.minecraft.server.level.ServerPlayer;
  *
  * 仅当 CarpetPrimaryuanSettings.fakePlayerDropStackModifiers 为 true 时挂载。
  *
- * 实现方式：重建整个 dropStack builder，复制 Carpet 原有子节点的 executes，
- * 并为每个子节点追加修饰子节点。不依赖 Brigadier then() 的同名节点合并行为。
+ * 实现方式：完全手动构建 dropStack 命令树，
+ * 为每个 slot 节点同时保留 Carpet 原版 executes（单次丢出）和修饰子节点。
  */
 public final class PlayerCommandExtension {
 
     private PlayerCommandExtension() {}
 
     /**
-     * 重建 dropStack builder：复制 Carpet 原有子节点（all/mainhand/offhand/<slot>）的 executes，
-     * 并为每个子节点追加 once/continuous/interval/after/perTick/randomly/stop 修饰子节点。
+     * 完全手动构建 dropStack builder。
+     * 不依赖原 builder 的 getArguments()，直接创建 4 个 slot 子节点，
+     * 每个节点包含：Carpet 原版 executes（单次丢出）+ 修饰子节点。
      *
-     * 调用方在 Mixin 中用 cir.setReturnValue(rebuildDropStackBuilder(original)) 替换返回值。
+     * Carpet 原版 dropStack 命令结构（来自 makeDropCommand）：
+     *   dropStack -> all | mainhand | offhand | <slot>
+     *   每个 slot 节点有 executes（单次丢出该槽位物品）
+     *
+     * 扩展后：
+     *   dropStack -> all | mainhand | offhand | <slot>
+     *   每个 slot 节点：
+     *     - executes（原版行为，单次丢出）
+     *     - once / continuous / interval / after / perTick / randomly / stop 子节点
+     *       （修饰子节点的 executes 调用 DropSlotScheduler 调度持续丢出）
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    public static LiteralArgumentBuilder<CommandSourceStack> rebuildDropStackBuilder(
-            LiteralArgumentBuilder<CommandSourceStack> original) {
-        LiteralArgumentBuilder<CommandSourceStack> rebuilder = Commands.literal(original.getLiteral());
-        // 原版 makeDropCommand 的顶层无 executes，无需复制 command
-        // 遍历 original 已有的子节点，重建并追加修饰
-        for (CommandNode<CommandSourceStack> child : original.getArguments()) {
-            if (child instanceof LiteralCommandNode<CommandSourceStack> litChild) {
-                String lit = litChild.getLiteral();
-                int slot;
-                String slotKey;
-                switch (lit) {
-                    case "all" -> { slot = DropSlotScheduler.SLOT_ALL; slotKey = "all"; }
-                    case "mainhand" -> { slot = DropSlotScheduler.SLOT_MAINHAND; slotKey = "mainhand"; }
-                    case "offhand" -> { slot = DropSlotScheduler.SLOT_OFFHAND; slotKey = "offhand"; }
-                    default -> { rebuilder.then(child); continue; }
-                }
-                LiteralArgumentBuilder<CommandSourceStack> newChild = Commands.literal(lit);
-                if (litChild.getCommand() != null) {
-                    newChild.executes(litChild.getCommand());
-                }
-                addModifiers(newChild, slot, slotKey);
-                rebuilder.then(newChild);
-            } else if (child instanceof ArgumentCommandNode) {
-                ArgumentCommandNode<CommandSourceStack, ?> argChild = (ArgumentCommandNode<CommandSourceStack, ?>) child;
-                ArgumentType type = argChild.getType();
-                RequiredArgumentBuilder newArg = Commands.argument(argChild.getName(), type);
-                if (argChild.getCommand() != null) {
-                    newArg.executes(argChild.getCommand());
-                }
-                addModifiersDynamic(newArg);
-                rebuilder.then(newArg);
-            } else {
-                rebuilder.then(child);
-            }
-        }
-        return rebuilder;
+    public static LiteralArgumentBuilder<CommandSourceStack> rebuildDropStackBuilder() {
+        LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal("dropStack");
+
+        // all: slot=-2, slotKey="all"
+        LiteralArgumentBuilder<CommandSourceStack> allNode = Commands.literal("all");
+        allNode.executes(ctx -> dropOnceCarpet(ctx, DropSlotScheduler.SLOT_ALL));
+        addModifiers(allNode, DropSlotScheduler.SLOT_ALL, "all");
+        builder.then(allNode);
+
+        // mainhand: slot=-1, slotKey="mainhand"
+        LiteralArgumentBuilder<CommandSourceStack> mainhandNode = Commands.literal("mainhand");
+        mainhandNode.executes(ctx -> dropOnceCarpet(ctx, DropSlotScheduler.SLOT_MAINHAND));
+        addModifiers(mainhandNode, DropSlotScheduler.SLOT_MAINHAND, "mainhand");
+        builder.then(mainhandNode);
+
+        // offhand: slot=40, slotKey="offhand"
+        LiteralArgumentBuilder<CommandSourceStack> offhandNode = Commands.literal("offhand");
+        offhandNode.executes(ctx -> dropOnceCarpet(ctx, DropSlotScheduler.SLOT_OFFHAND));
+        addModifiers(offhandNode, DropSlotScheduler.SLOT_OFFHAND, "offhand");
+        builder.then(offhandNode);
+
+        // <slot>: argument 0-40, slotKey="slot_<n>"
+        RequiredArgumentBuilder<CommandSourceStack, Integer> slotArg =
+                Commands.argument("slot", IntegerArgumentType.integer(0, 40));
+        slotArg.executes(PlayerCommandExtension::dropOnceDynamicCarpet);
+        addModifiersDynamic(slotArg);
+        builder.then(slotArg);
+
+        return builder;
+    }
+
+    // ===== Carpet 原版行为复刻 =====
+
+    /**
+     * 复刻 Carpet 原版 makeDropCommand 中 manipulator 的行为：
+     * 调用 EntityPlayerActionPack.drop(slot, true) 丢出指定槽位一次。
+     */
+    private static int dropOnceCarpet(CommandContext<CommandSourceStack> ctx, int slot) throws CommandSyntaxException {
+        ServerPlayer player = resolvePlayer(ctx);
+        if (player == null) return 0;
+        // 复刻 Carpet 原版 ap.drop(slot, true) 行为：丢出该槽位整组物品
+        carpet.helpers.EntityPlayerActionPack actionPack = ((carpet.fakes.ServerPlayerInterface) player).getActionPack();
+        actionPack.drop(slot, true);
+        return 1;
+    }
+
+    private static int dropOnceDynamicCarpet(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        int slot = IntegerArgumentType.getInteger(ctx, "slot");
+        return dropOnceCarpet(ctx, slot);
     }
 
     // ===== 修饰子节点挂载 =====
@@ -108,8 +124,7 @@ public final class PlayerCommandExtension {
      * 给动态 slot（argument("slot", ...)）的 RequiredArgumentBuilder 追加修饰子节点。
      * slot 从 context 动态读取，slotKey = "slot_" + slot。
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private static void addModifiersDynamic(RequiredArgumentBuilder slotNode) {
+    private static void addModifiersDynamic(RequiredArgumentBuilder<CommandSourceStack, Integer> slotNode) {
         slotNode.then(Commands.literal("once").executes(PlayerCommandExtension::runOnceDynamic));
         slotNode.then(Commands.literal("continuous").executes(PlayerCommandExtension::startContinuousDynamic));
         slotNode.then(Commands.literal("interval")

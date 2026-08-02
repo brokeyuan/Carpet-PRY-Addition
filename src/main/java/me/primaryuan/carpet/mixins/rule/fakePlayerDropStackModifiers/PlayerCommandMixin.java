@@ -31,9 +31,8 @@ public class PlayerCommandMixin {
         if (!CarpetPrimaryuanSettings.fakePlayerDropStackModifiers) {
             return;
         }
-        // 重建整个 dropStack builder：复制 Carpet 原有子节点的 executes，
-        // 并为每个子节点追加 once/continuous/interval/after/perTick/randomly/stop 修饰子节点。
-        // 用 setReturnValue 替换，不依赖 Brigadier then() 的同名节点合并行为。
-        cir.setReturnValue(PlayerCommandExtension.rebuildDropStackBuilder(cir.getReturnValue()));
+        // 完全手动构建 dropStack 命令树：
+        // 为每个 slot 节点（all/mainhand/offhand/<slot>）保留原版 executes + 追加修饰子节点。
+        cir.setReturnValue(PlayerCommandExtension.rebuildDropStackBuilder());
     }
 }
