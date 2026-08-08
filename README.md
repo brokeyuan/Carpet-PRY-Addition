@@ -24,50 +24,16 @@
 | `FixXaeroLib` | boolean | `false` | 修复 Xaero 地图 + LuckPerms 导致假人数据丢失的问题 |
 | `FixBluemap` | boolean | `false` | 修复假人不触发 Fabric API 连接事件导致 BlueMap 等模组追踪异常 |
 
-### 假人相关
+## 文档
 
-| 规则 | 类型 | 默认值 | 简介 |
-|------|------|--------|------|
-| `TppFakePlayer` | boolean | `false` | 假人珍珠传送站，启用 `/tpp` 和 `/tppset` 命令 |
-| `fakePlayerSkinMode` | string | `default` | 假人皮肤模式：`default` / `summon` / `same_skin` |
-| `fakePlayerSkinSet` | string | `Brokeyuan` | 统一皮肤模式下使用的玩家皮肤名 |
-| `fakePlayerDropStackModifiers` | boolean | `false` | 新增独立的 `/player <name> dropall [once\|continuous\|interval\|after\|perTick\|randomly\|stop]` 子命令，让假人按节奏持续丢出背包所有物品。规则关闭时 `dropall once` 仍可用（等价原版 `dropStack all`） |
+- [规则](docs/rules.md) | [Rules](docs/rules_en.md)
+- [命令](docs/commands.md) | [Commands](docs/commands_en.md)
 
-### 移植功能
+## 下载
 
-| 规则 | 类型 | 默认值 | 简介 |
-|------|------|--------|------|
-| `fakePlayerNameSuggestions` | string | `Steve,Alex` | 自定义 `/player` 命令的名称建议列表（移植自 Ivan-Carpet-Addition） |
-| `unicodeArgumentsSupport` | boolean | `false` | 命令参数支持非 ASCII 字符，可召唤中文名假人（移植自 YACA） |
-
-### 玩家交互
-
-| 规则 | 类型 | 默认值 | 简介 |
-|------|------|--------|------|
-| `ridingPlayers` | boolean | `false` | 主手持不死图腾时可骑乘其他玩家 |
-| `pickupPlayers` | boolean | `false` | 主手持不死图腾 + 副手金胡萝卜时可捡起其他玩家 |
-| `ridingPlayersPickUpLimit` | int | `16` | 骑乘和捡起的最大堆叠人数（支持 16/32/自定义） |
-| `ridingPlayersDismountOnGameModeChange` | boolean | `false` | 游戏模式变更时乘客自动下车 |
-| `ridingPlayersClientAllowInteractions` | boolean | `true` | 骑乘状态下仍可与方块/实体交互（需客户端安装） |
-
-### 生存功能
-
-| 规则 | 类型 | 默认值 | 简介 |
-|------|------|--------|------|
-| `sleepingDuringTheDay` | boolean | `false` | 允许白天睡觉，醒来后切换至夜晚（参考 PCA） |
-| `playerhat` | boolean | `false` | `/hat` 命令将物品戴在头上，头部不死图腾可触发死亡保护 |
-| `betterSnowBall` | boolean | `false` | 雪球可对玩家造成击退和伤害 |
-| `invisibleInTallGrass` | boolean | `false` | 头部位于高草丛时自动隐形 |
-
-### 命令
-
-| 命令 | 说明 |
-|------|------|
-| `/tpp <站点>` | 珍珠传送站传送 |
-| `/tppset` | 传送站点管理 |
-| `/hat` | 将主手物品戴在头上 |
-| `/riding on\|off` | 设置是否允许他人骑乘自己 |
-| `/picking on\|off` | 设置是否允许他人捡起自己 |
+- [GitHub Release](https://github.com/brokeyuan/Carpet-Primaryuan-Addition/releases/latest)
+- [Modrinth](https://modrinth.com/mod/carpet-primaryuan-addition)
+- [CurseForge](https://www.curseforge.com/minecraft/mc-mods/carpet-primaryuan-addition)
 
 ## 安装
 
@@ -101,16 +67,6 @@
 | 26.1.2 | 维护中 |
 | 26.2 | 维护中 |
 
-## 文档
-
-- [规则](docs/rules.md) | [Rules](docs/rules_en.md)
-- [命令](docs/commands.md) | [Commands](docs/commands_en.md)
-
-## 下载
-
-- [GitHub Release](https://github.com/brokeyuan/Carpet-Primaryuan-Addition/releases/latest)
-- [Modrinth](https://modrinth.com/mod/carpet-primaryuan-addition)
-- [CurseForge](https://www.curseforge.com/minecraft/mc-mods/carpet-primaryuan-addition)
 
 ## 致谢
 
