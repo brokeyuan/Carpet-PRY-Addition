@@ -11,7 +11,7 @@
 
 ## 简介
 
-**Carpet-Primaryuan-Addition** 是一个基于 [Fabric Carpet](https://github.com/gnembon/fabric-carpet) 的服务端扩展模组，为主要元服务器（Primaryuan Server）开发。新增了 **17 条**可配置 Carpet 规则和 **5 个**新命令，涵盖假人管理增强、模组兼容性修复、功能移植、玩家交互和生存特性扩展。
+**Carpet-Primaryuan-Addition** 是一个基于 [Fabric Carpet](https://github.com/gnembon/fabric-carpet) 的服务端扩展模组，主要为PRY服务器（Primaryuan Server）开发。新增了 **17 条**可配置 Carpet 规则和 **5 个**新命令，涵盖假人管理增强、模组兼容性修复、功能移植、玩家交互和生存特性扩展。
 
 所有功能均为 Carpet 规则驱动，默认关闭，按需启用。
 
