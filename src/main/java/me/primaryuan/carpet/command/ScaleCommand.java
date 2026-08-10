@@ -157,29 +157,29 @@ public final class ScaleCommand {
         String valueStr = formatScale(value);
 
         //#if MC >= 12105
-        //$$ target.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.SCALE)
-        //$$         .setBaseValue(value);
-        //$$ if (isSelf) {
-        //$$     target.sendSystemMessage(ServerI18n.tr(target,
-        //$$             "carpetprimaryuan.command.scale." + selfKey, valueStr));
-        //$$ } else {
-        //$$     String name = target.getName().getString();
-        //$$     source.sendSuccess(() -> ServerI18n.tr(source,
-        //$$             "carpetprimaryuan.command.scale." + selfKey, name, valueStr), true);
-        //$$     target.sendSystemMessage(ServerI18n.tr(target,
-        //$$             "carpetprimaryuan.command.scale.adjusted_by_admin", valueStr));
-        //$$ }
-        //$$ return 1;
-        //#else
-        // 1.21~1.21.4 没有 Attributes.SCALE 字段，提示不支持
+        target.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.SCALE)
+                .setBaseValue(value);
         if (isSelf) {
             target.sendSystemMessage(ServerI18n.tr(target,
-                    "carpetprimaryuan.command.scale.unsupported_version"));
+                    "carpetprimaryuan.command.scale." + selfKey, valueStr));
         } else {
+            String name = target.getName().getString();
             source.sendSuccess(() -> ServerI18n.tr(source,
-                    "carpetprimaryuan.command.scale.unsupported_version"), false);
+                    "carpetprimaryuan.command.scale." + selfKey, name, valueStr), true);
+            target.sendSystemMessage(ServerI18n.tr(target,
+                    "carpetprimaryuan.command.scale.adjusted_by_admin", valueStr));
         }
-        return 0;
+        return 1;
+        //#else
+        //$$ // 1.21~1.21.4 没有 Attributes.SCALE 字段，提示不支持
+        //$$ if (isSelf) {
+        //$$     target.sendSystemMessage(ServerI18n.tr(target,
+        //$$             "carpetprimaryuan.command.scale.unsupported_version"));
+        //$$ } else {
+        //$$     source.sendSuccess(() -> ServerI18n.tr(source,
+        //$$             "carpetprimaryuan.command.scale.unsupported_version"), false);
+        //$$ }
+        //$$ return 0;
         //#endif
     }
 
@@ -205,9 +205,9 @@ public final class ScaleCommand {
             String remaining = builder.getRemainingLowerCase();
             for (ServerPlayer p : players) {
                 //#if MC >= 12110
-                //$$ String name = p.getGameProfile().name();
+                String name = p.getGameProfile().name();
                 //#else
-                String name = p.getGameProfile().getName();
+                //$$ String name = p.getGameProfile().getName();
                 //#endif
                 if (name.toLowerCase().startsWith(remaining)) {
                     builder.suggest(name);

@@ -19,9 +19,9 @@ public abstract class PlayerMixin {
     @Inject(method = "createAttributes", at = @At("RETURN"), cancellable = true, require = 0)
     private static void pryAddition$registerScaleAttribute(CallbackInfoReturnable<AttributeSupplier.Builder> cir) {
         //#if MC >= 12105
-        //$$ AttributeSupplier.Builder builder = cir.getReturnValue();
-        //$$ builder.add(net.minecraft.world.entity.ai.attributes.Attributes.SCALE, 1.0D);
-        //$$ cir.setReturnValue(builder);
+        AttributeSupplier.Builder builder = cir.getReturnValue();
+        builder.add(net.minecraft.world.entity.ai.attributes.Attributes.SCALE, 1.0D);
+        cir.setReturnValue(builder);
         //#endif
     }
 }
