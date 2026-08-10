@@ -12,6 +12,7 @@
   - [/tppset - Station Management](#tppset---station-management)
 - [/hat - Player Hat](#hat---player-hat)
 - [Fake Player Continuous Inventory Drop](#fake-player-continuous-inventory-drop)
+- [Player Scale Modifiers](#player-scale-modifiers)
 - [Riding Permission Commands](#riding-permission-commands)
   - [/riding - Riding Permission Management](#riding---riding-permission-management)
   - [/picking - Pickup Permission Management](#picking---pickup-permission-management)
@@ -280,6 +281,65 @@ Reuses Carpet's own permission check on the `/player` command (controlled by Car
 - `after` mode: auto-stops after a successful drop; if inventory is empty at the scheduled time, the task keeps checking every tick until an item is available to drop.
 - Target fake player disconnects: all related tasks are cleaned up automatically to avoid tick listener leaks.
 - If a dropall task is already running for the same fake player, a new trigger is rejected with a hint to `stop` first.
+
+---
+
+## Player Scale Modifiers
+
+### /scale - Player Scale Adjustment
+
+#### Syntax
+
+```
+/scale <value>                 # Player adjusts own scale (limited by playerScaleMin/Max)
+/scale reset                   # Player resets own scale to default (1.0)
+/scale <player> <value>        # Admin adjusts target player's scale (not limited by range)
+/scale <player> reset          # Admin resets target player's scale
+```
+
+#### Permissions
+
+- The entire `/scale` command visibility is controlled by the `playerScaleModifiers` rule; when disabled, the command is invisible
+- Player path (`/scale <value>`, `/scale reset`): limited by `playerScaleMin` and `playerScaleMax` range
+- Admin path (`/scale <player> ...`): requires OP level 4, not limited by range
+- Rule changes take effect immediately via Carpet `RuleObserver` refreshing the command tree, no relogin required
+
+#### Description
+
+Registers the `minecraft:scale` attribute for `Player` and adjusts player size via the `/scale` command. Players can change their own size, admins can change any online player's size.
+
+> **Version requirement**: `minecraft:scale` attribute was added to vanilla in Minecraft 1.21.5; on 1.21~1.21.4, executing `/scale` shows an unsupported-version message.
+
+#### Range Control
+
+- `playerScaleMin` (default 0.1): minimum scale value players can set
+- `playerScaleMax` (default 10.0): maximum scale value players can set
+- The admin path is not limited by this range and can set any value (0.0~100.0)
+
+#### Examples
+
+```bash
+# Shrink yourself to half size
+/scale 0.5
+
+# Reset to default size
+/scale reset
+
+# Admin makes Steve 2x larger
+/scale Steve 2.0
+
+# Admin resets Steve's scale
+/scale Steve reset
+```
+
+#### Messages
+
+- Set self: `§aYour scale has been set to 0.5`
+- Set other: `§aSteve's scale has been set to 2.0`
+- Out of range: `§cValue 0.05 is out of allowed range (0.1 ~ 10.0)`
+- Adjusted by admin: `§eAn admin has adjusted your scale to 2.0`
+- Player offline: `§cPlayer Steve is not online`
+- Unsupported version: `§cCurrent Minecraft version does not support minecraft:scale attribute (requires 1.21.5+)`
 
 ---
 

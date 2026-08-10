@@ -12,6 +12,7 @@
   - [/tppset - 站点管理](#tppset---站点管理)
 - [/hat - 玩家帽子](#hat---玩家帽子)
 - [假人持续清空背包](#假人持续清空背包)
+- [玩家随地大小变](#玩家随地大小变)
 - [骑乘权限命令](#骑乘权限命令)
   - [/riding - 骑乘权限管理](#riding---骑乘权限管理)
   - [/picking - 捡起权限管理](#picking---捡起权限管理)
@@ -280,6 +281,65 @@
 - `after` 模式：成功丢出一次后自动结束；若到时机时背包为空，任务保持每 tick 检查，直到有物品可丢出为止。
 - 目标假人下线：所有相关任务自动清理，避免 tick 监听泄漏。
 - 同一假人已有进行中的 dropall 任务时，再次触发会被拒绝并提示先 `stop`。
+
+---
+
+## 玩家随地大小变
+
+### /scale - 玩家大小调节
+
+#### 语法
+
+```
+/scale <value>                 # 玩家调节自己大小（受 playerScaleMin/Max 范围限制）
+/scale reset                   # 玩家恢复默认大小（1.0）
+/scale <player> <value>        # 管理员调节指定玩家大小（不受范围限制）
+/scale <player> reset          # 管理员重置指定玩家大小
+```
+
+#### 权限
+
+- 整个 `/scale` 命令受 `playerScaleModifiers` 规则控制可见性，规则关闭时命令不可见
+- 玩家路径（`/scale <value>`、`/scale reset`）：受 `playerScaleMin` 和 `playerScaleMax` 范围限制
+- 管理员路径（`/scale <player> ...`）：需要 OP 4 级权限，不受范围限制
+- 规则变更时通过 Carpet `RuleObserver` 立即刷新命令树，无需玩家重新登录
+
+#### 功能描述
+
+为 `Player` 注册 `minecraft:scale` 属性，并通过 `/scale` 命令调节玩家体型大小。玩家可调节自身大小，管理员可调节任意在线玩家大小。
+
+> **版本要求**：`minecraft:scale` 属性从 Minecraft 1.21.5 起加入原版，1.21~1.21.4 版本上执行 `/scale` 会提示版本不支持。
+
+#### 范围控制
+
+- `playerScaleMin`（默认 0.1）：玩家可设置的最小 scale 值
+- `playerScaleMax`（默认 10.0）：玩家可设置的最大 scale 值
+- 管理员路径不受此范围限制，可设置任意值（0.0~100.0）
+
+#### 使用示例
+
+```bash
+# 玩家变小到一半
+/scale 0.5
+
+# 玩家恢复默认大小
+/scale reset
+
+# 管理员把 Steve 变成 2 倍大小
+/scale Steve 2.0
+
+# 管理员重置 Steve 的大小
+/scale Steve reset
+```
+
+#### 提示消息
+
+- 成功设置自己：`§a你的大小已设为 0.5`
+- 成功设置他人：`§aSteve 的大小已设为 2.0`
+- 超出范围：`§c值 0.05 超出允许范围（0.1 ~ 10.0）`
+- 被管理员调整：`§e管理员将你的大小调整为 2.0`
+- 玩家不在线：`§c玩家 Steve 不在线`
+- 版本不支持：`§c当前 Minecraft 版本不支持 minecraft:scale 属性（需 1.21.5+）`
 
 ---
 

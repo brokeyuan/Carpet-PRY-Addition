@@ -108,6 +108,26 @@ public class CarpetPrimaryuanSettings {
     )
     public static boolean fakePlayerDropStackModifiers = false;
 
+    @Rule(
+            options = {"false", "true"},
+            categories = {PRIMARYUAN, SURVIVAL, FEATURE, COMMAND}
+    )
+    public static boolean playerScaleModifiers = false;
+
+    @Rule(
+            options = {"0.1", "0.25", "0.5"},
+            strict = false,
+            categories = {PRIMARYUAN, SURVIVAL, COMMAND}
+    )
+    public static double playerScaleMin = 0.1;
+
+    @Rule(
+            options = {"2.0", "5.0", "10.0"},
+            strict = false,
+            categories = {PRIMARYUAN, SURVIVAL, COMMAND}
+    )
+    public static double playerScaleMax = 10.0;
+
     public static String fakePlayerTpStations = "";
 
     public static Map<String, String> tppPlayerAliases = new ConcurrentHashMap<>();

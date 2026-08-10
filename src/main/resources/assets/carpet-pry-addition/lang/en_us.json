@@ -35,6 +35,13 @@
   "carpet.rule.fakePlayerDropStackModifiers.name": "Fake Player Continuous Drop",
   "carpet.rule.fakePlayerDropStackModifiers.desc": "Adds an independent dropall sub-command to /player <name>, letting fake players drop all inventory items at a configured pace. Command: /player <name> dropall [once|continuous|interval <ticks>|after <ticks>|perTick <times>|randomly <min> <max>|stop]",
 
+  "carpet.rule.playerScaleModifiers.name": "Player Scale Modifiers",
+  "carpet.rule.playerScaleModifiers.desc": "Registers minecraft:scale attribute for Player and adds /scale command letting players change their own size, admins can change any player's size. Only supported on 1.21.5+",
+  "carpet.rule.playerScaleMin.name": "Player Scale Min",
+  "carpet.rule.playerScaleMin.desc": "Minimum scale value players can set via /scale <value>; admin path is not limited by this",
+  "carpet.rule.playerScaleMax.name": "Player Scale Max",
+  "carpet.rule.playerScaleMax.desc": "Maximum scale value players can set via /scale <value>; admin path is not limited by this",
+
   "carpetprimaryuan.command.hat.disabled": "§cHat feature is not enabled. Please ask admin to run /carpet playerhat true",
   "carpetprimaryuan.command.hat.empty_hand": "§cPlease hold the item you want to wear",
   "carpetprimaryuan.command.hat.equipped": "§aEquipped %s on head",
@@ -82,5 +89,14 @@
   "carpetprimaryuan.command.dropall.already_running": "§cThis fake player already has an ongoing %s drop task, please stop it first",
   "carpetprimaryuan.command.dropall.stopped": "§aStopped the %s drop task, dropped %d stacks in total",
   "carpetprimaryuan.command.dropall.no_task": "§e%s has no ongoing drop task",
-  "carpetprimaryuan.command.dropall.player_offline": "§cFake player %s went offline, %s drop task automatically stopped"
+  "carpetprimaryuan.command.dropall.player_offline": "§cFake player %s went offline, %s drop task automatically stopped",
+
+  "carpetprimaryuan.command.scale.set_self": "§aYour scale has been set to %s",
+  "carpetprimaryuan.command.scale.set_other": "§a%s's scale has been set to %s",
+  "carpetprimaryuan.command.scale.reset_self": "§aYour scale has been reset to 1.0",
+  "carpetprimaryuan.command.scale.reset_other": "§a%s's scale has been reset to 1.0",
+  "carpetprimaryuan.command.scale.out_of_range": "§cValue %s is out of allowed range (%s ~ %s)",
+  "carpetprimaryuan.command.scale.player_offline": "§cPlayer %s is not online",
+  "carpetprimaryuan.command.scale.adjusted_by_admin": "§eAn admin has adjusted your scale to %s",
+  "carpetprimaryuan.command.scale.unsupported_version": "§cCurrent Minecraft version does not support minecraft:scale attribute (requires 1.21.5+)"
 }

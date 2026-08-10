@@ -31,7 +31,10 @@ All features are Carpet-rule-driven, off by default, enabled on demand.
 | `TppFakePlayer` | boolean | `false` | Fake player pearl teleport stations, enables `/tpp` and `/tppset` commands |
 | `fakePlayerSkinMode` | string | `default` | Fake player skin mode: `default` / `summon` / `same_skin` |
 | `fakePlayerSkinSet` | string | `Brokeyuan` | Player name used for the shared skin in `same_skin` mode |
-| `fakePlayerDropStackModifiers` | boolean | `false` | Adds an independent `/player <name> dropall [once\|continuous\|interval\|after\|perTick\|randomly\|stop]` sub-command, letting fake players drop all inventory items at a configured pace. When disabled, `dropall once` still works (equivalent to vanilla `dropStack all`) |
+| `fakePlayerDropStackModifiers` | boolean | `false` | Adds an independent `/player <name> dropall [once\|continuous\|interval\|after\|perTick\|randomly\|stop]` sub-command, letting fake players drop all inventory items at a configured pace. The entire `dropall` command is hidden when the rule is disabled |
+| `playerScaleModifiers` | boolean | `false` | Registers `minecraft:scale` attribute for Player and adds `/scale [player] <value\|reset>` command. Players change their own size (limited by `playerScaleMin`/`Max`), admins change any player's size. Requires Minecraft 1.21.5+ |
+| `playerScaleMin` | double | `0.1` | Minimum scale value players can set via `/scale <value>`; admin path is not limited |
+| `playerScaleMax` | double | `10.0` | Maximum scale value players can set via `/scale <value>`; admin path is not limited |
 
 ### Ported Features
 

@@ -8,6 +8,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import me.primaryuan.carpet.command.HatCommand;
 import me.primaryuan.carpet.command.RidingCommand;
+import me.primaryuan.carpet.command.ScaleCommand;
 import me.primaryuan.carpet.command.TppCommand;
 import me.primaryuan.carpet.handler.entitiesRidingPlayers.EntitiesRidingPlayersHandler;
 import me.primaryuan.carpet.settings.CarpetRuleRegistrar;
@@ -58,6 +59,9 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         RidingCommand.register();
         LOGGER.info("riding command registered");
 
+        ScaleCommand.register();
+        LOGGER.info("scale command registered");
+
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             if (CarpetPrimaryuanSettings.ridingPlayers) {
                 EntitiesRidingPlayersHandler.onLogOut(handler.player);
@@ -81,13 +85,15 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         });
         LOGGER.info("ridingPlayers use entity listener registered");
 
-        // 规则变更时刷新命令树，使 dropall 可见性立即随 fakePlayerDropStackModifiers 切换
+        // 规则变更时刷新命令树，使 dropall / scale 可见性立即随对应规则切换
         CarpetServer.settingsManager.registerRuleObserver((source, changedRule, userInput) -> {
-            if ("fakePlayerDropStackModifiers".equals(changedRule.name())) {
+            String ruleName = changedRule.name();
+            if ("fakePlayerDropStackModifiers".equals(ruleName)
+                    || "playerScaleModifiers".equals(ruleName)) {
                 CommandHelper.notifyPlayersCommandsChanged(source.getServer());
             }
         });
-        LOGGER.info("fakePlayerDropStackModifiers rule observer registered");
+        LOGGER.info("fakePlayerDropStackModifiers & playerScaleModifiers rule observer registered");
     }
 
     @Override

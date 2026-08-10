@@ -35,6 +35,13 @@
   "carpet.rule.fakePlayerDropStackModifiers.name": "假人持续清空背包",
   "carpet.rule.fakePlayerDropStackModifiers.desc": "给 /player <name> 下追加独立的 dropall 子命令，让假人按设定节奏持续丢出背包所有物品。命令：/player <name> dropall [once|continuous|interval <ticks>|after <ticks>|perTick <times>|randomly <min> <max>|stop]",
 
+  "carpet.rule.playerScaleModifiers.name": "玩家随地大小变",
+  "carpet.rule.playerScaleModifiers.desc": "为 Player 注册 minecraft:scale 属性，并添加 /scale 命令让玩家调节自身大小，管理员可调节任意玩家大小。仅 1.21.5+ 版本支持",
+  "carpet.rule.playerScaleMin.name": "玩家大小最小值",
+  "carpet.rule.playerScaleMin.desc": "玩家执行 /scale <value> 时可设置的最小 scale 值，管理员路径不受此限制",
+  "carpet.rule.playerScaleMax.name": "玩家大小最大值",
+  "carpet.rule.playerScaleMax.desc": "玩家执行 /scale <value> 时可设置的最大 scale 值，管理员路径不受此限制",
+
   "carpetprimaryuan.command.hat.disabled": "§c帽子功能未启用，请联系管理员使用 /carpet playerhat true 开启",
   "carpetprimaryuan.command.hat.empty_hand": "§c请手持要戴的物品",
   "carpetprimaryuan.command.hat.equipped": "§a已将 %s 戴在头上",
@@ -82,5 +89,14 @@
   "carpetprimaryuan.command.dropall.already_running": "§c该假人的 %s 任务已有进行中，请先 stop",
   "carpetprimaryuan.command.dropall.stopped": "§a已停止 %s 丢出任务，共丢出 %d 组",
   "carpetprimaryuan.command.dropall.no_task": "§e%s 没有正在进行的丢出任务",
-  "carpetprimaryuan.command.dropall.player_offline": "§c假人 %s 已下线，%s 丢出任务自动停止"
+  "carpetprimaryuan.command.dropall.player_offline": "§c假人 %s 已下线，%s 丢出任务自动停止",
+
+  "carpetprimaryuan.command.scale.set_self": "§a你的大小已设为 %s",
+  "carpetprimaryuan.command.scale.set_other": "§a%s 的大小已设为 %s",
+  "carpetprimaryuan.command.scale.reset_self": "§a你的大小已恢复为 1.0",
+  "carpetprimaryuan.command.scale.reset_other": "§a%s 的大小已恢复为 1.0",
+  "carpetprimaryuan.command.scale.out_of_range": "§c值 %s 超出允许范围（%s ~ %s）",
+  "carpetprimaryuan.command.scale.player_offline": "§c玩家 %s 不在线",
+  "carpetprimaryuan.command.scale.adjusted_by_admin": "§e管理员将你的大小调整为 %s",
+  "carpetprimaryuan.command.scale.unsupported_version": "§c当前 Minecraft 版本不支持 minecraft:scale 属性（需 1.21.5+）"
 }
