@@ -204,7 +204,11 @@ public final class ScaleCommand {
             var players = context.getSource().getServer().getPlayerList().getPlayers();
             String remaining = builder.getRemainingLowerCase();
             for (ServerPlayer p : players) {
-                String name = p.getGameProfile().name();
+                //#if MC >= 12111
+                //$$ String name = p.getGameProfile().name();
+                //#else
+                String name = p.getGameProfile().getName();
+                //#endif
                 if (name.toLowerCase().startsWith(remaining)) {
                     builder.suggest(name);
                 }
