@@ -28,11 +28,10 @@ import net.minecraft.server.level.ServerPlayer;
  *     - stop
  *
  * 行为：
- * - once / 顶层：立即丢一次全背包，不受规则限制。
- * - continuous / interval / after / perTick / randomly：受
- *   {@link CarpetPrimaryuanSettings#fakePlayerDropStackModifiers} 控制；
- *   规则关闭时拒绝执行并发送 rule_disabled 提示。
- * - stop：受规则控制；规则关闭时发送 rule_disabled_no_task 提示。
+ * - 整个 dropall 命令树（含 once）通过根节点 requires 谓词受
+ *   {@link CarpetPrimaryuanSettings#fakePlayerDropStackModifiers} 控制可见性；
+ *   规则关闭时整棵命令不可见（tab 补全不到、无法执行）。
+ * - 规则变更时由 RuleObserver 触发命令树重新下发，可见性立即生效。
  *
  * 调度统一委托 {@link DropSlotScheduler}，slotKey 固定为 "dropall"。
  */
@@ -52,39 +51,40 @@ public final class PlayerCommandExtension {
      * @return dropall 命令的 LiteralArgumentBuilder
      */
     public static LiteralArgumentBuilder<CommandSourceStack> buildDropAllNode() {
-        LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal("dropall");
+        LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal("dropall")
+                .requires(source -> CarpetPrimaryuanSettings.fakePlayerDropStackModifiers);
 
         // 顶层无参数等价 once
         builder.executes(PlayerCommandExtension::runOnce);
 
-        // once：不受规则限制，立即丢一次全背包
+        // once：立即丢一次全背包
         builder.then(Commands.literal("once").executes(PlayerCommandExtension::runOnce));
 
-        // continuous：每 tick 丢一次全背包，受规则限制
+        // continuous：每 tick 丢一次全背包
         builder.then(Commands.literal("continuous").executes(PlayerCommandExtension::startContinuous));
 
-        // interval <ticks>：每 ticks 丢一次全背包，受规则限制
+        // interval <ticks>：每 ticks 丢一次全背包
         builder.then(Commands.literal("interval")
                 .then(Commands.argument("ticks", IntegerArgumentType.integer(1))
                         .executes(PlayerCommandExtension::startInterval)));
 
-        // after <ticks>：延迟 ticks 后丢一次全背包，受规则限制
+        // after <ticks>：延迟 ticks 后丢一次全背包
         builder.then(Commands.literal("after")
                 .then(Commands.argument("ticks", IntegerArgumentType.integer(1))
                         .executes(PlayerCommandExtension::startAfter)));
 
-        // perTick <times>：每秒 times 次丢全背包，受规则限制
+        // perTick <times>：每秒 times 次丢全背包
         builder.then(Commands.literal("perTick")
                 .then(Commands.argument("times", IntegerArgumentType.integer(1, 20))
                         .executes(PlayerCommandExtension::startPerTick)));
 
-        // randomly <min> <max>：随机间隔 min-max tick 丢一次全背包，受规则限制
+        // randomly <min> <max>：随机间隔 min-max tick 丢一次全背包
         builder.then(Commands.literal("randomly")
                 .then(Commands.argument("min", IntegerArgumentType.integer(1))
                         .then(Commands.argument("max", IntegerArgumentType.integer(1))
                                 .executes(PlayerCommandExtension::startRandomly))));
 
-        // stop：停止 dropall 任务，受规则限制
+        // stop：停止 dropall 任务
         builder.then(Commands.literal("stop").executes(PlayerCommandExtension::stopTask));
 
         return builder;
@@ -93,7 +93,7 @@ public final class PlayerCommandExtension {
     // ===== 命令回调 =====
 
     /**
-     * once / 顶层：立即丢一次全背包，不受规则限制。
+     * once / 顶层：立即丢一次全背包。
      */
     private static int runOnce(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         ServerPlayer player = resolvePlayer(ctx);
@@ -103,15 +103,10 @@ public final class PlayerCommandExtension {
     }
 
     /**
-     * continuous：每 tick 丢一次全背包。受规则限制，规则关闭时拒绝执行。
+     * continuous：每 tick 丢一次全背包。
      */
     private static int startContinuous(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSourceStack source = ctx.getSource();
-        if (!CarpetPrimaryuanSettings.fakePlayerDropStackModifiers) {
-            source.sendSuccess(() -> ServerI18n.tr(source,
-                    "carpetprimaryuan.command.dropall.rule_disabled"), false);
-            return 0;
-        }
         ServerPlayer player = resolvePlayer(ctx);
         if (player == null) return 0;
         boolean ok = DropSlotScheduler.startContinuous(player, SLOT_ALL, SLOT_KEY, source);
@@ -127,15 +122,10 @@ public final class PlayerCommandExtension {
     }
 
     /**
-     * interval <ticks>：每 ticks 丢一次全背包。受规则限制。
+     * interval <ticks>：每 ticks 丢一次全背包。
      */
     private static int startInterval(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSourceStack source = ctx.getSource();
-        if (!CarpetPrimaryuanSettings.fakePlayerDropStackModifiers) {
-            source.sendSuccess(() -> ServerI18n.tr(source,
-                    "carpetprimaryuan.command.dropall.rule_disabled"), false);
-            return 0;
-        }
         ServerPlayer player = resolvePlayer(ctx);
         if (player == null) return 0;
         int ticks = IntegerArgumentType.getInteger(ctx, "ticks");
@@ -152,15 +142,10 @@ public final class PlayerCommandExtension {
     }
 
     /**
-     * after <ticks>：延迟 ticks 后丢一次全背包。受规则限制。
+     * after <ticks>：延迟 ticks 后丢一次全背包。
      */
     private static int startAfter(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSourceStack source = ctx.getSource();
-        if (!CarpetPrimaryuanSettings.fakePlayerDropStackModifiers) {
-            source.sendSuccess(() -> ServerI18n.tr(source,
-                    "carpetprimaryuan.command.dropall.rule_disabled"), false);
-            return 0;
-        }
         ServerPlayer player = resolvePlayer(ctx);
         if (player == null) return 0;
         int delay = IntegerArgumentType.getInteger(ctx, "ticks");
@@ -177,15 +162,10 @@ public final class PlayerCommandExtension {
     }
 
     /**
-     * perTick <times>：每秒 times 次丢全背包。受规则限制。
+     * perTick <times>：每秒 times 次丢全背包。
      */
     private static int startPerTick(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSourceStack source = ctx.getSource();
-        if (!CarpetPrimaryuanSettings.fakePlayerDropStackModifiers) {
-            source.sendSuccess(() -> ServerI18n.tr(source,
-                    "carpetprimaryuan.command.dropall.rule_disabled"), false);
-            return 0;
-        }
         ServerPlayer player = resolvePlayer(ctx);
         if (player == null) return 0;
         int times = IntegerArgumentType.getInteger(ctx, "times");
@@ -202,15 +182,10 @@ public final class PlayerCommandExtension {
     }
 
     /**
-     * randomly <min> <max>：随机间隔 min-max tick 丢一次全背包。受规则限制。
+     * randomly <min> <max>：随机间隔 min-max tick 丢一次全背包。
      */
     private static int startRandomly(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSourceStack source = ctx.getSource();
-        if (!CarpetPrimaryuanSettings.fakePlayerDropStackModifiers) {
-            source.sendSuccess(() -> ServerI18n.tr(source,
-                    "carpetprimaryuan.command.dropall.rule_disabled"), false);
-            return 0;
-        }
         ServerPlayer player = resolvePlayer(ctx);
         if (player == null) return 0;
         int minVal = IntegerArgumentType.getInteger(ctx, "min");
@@ -233,15 +208,10 @@ public final class PlayerCommandExtension {
     }
 
     /**
-     * stop：停止 dropall 任务。受规则限制；规则关闭时无任务可停止。
+     * stop：停止 dropall 任务。
      */
     private static int stopTask(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSourceStack source = ctx.getSource();
-        if (!CarpetPrimaryuanSettings.fakePlayerDropStackModifiers) {
-            source.sendSuccess(() -> ServerI18n.tr(source,
-                    "carpetprimaryuan.command.dropall.rule_disabled_no_task"), false);
-            return 0;
-        }
         ServerPlayer player = resolvePlayer(ctx);
         if (player == null) return 0;
         DropSlotScheduler.stop(player, SLOT_KEY, source);

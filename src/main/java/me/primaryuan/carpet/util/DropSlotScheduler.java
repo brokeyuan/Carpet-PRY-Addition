@@ -176,22 +176,15 @@ public final class DropSlotScheduler {
         task.ticksUntilNext--;
         if (task.ticksUntilNext > 0) return;
 
-        // 到时机，丢一组
+        // 到时机，尝试丢一组（背包空时 count == 0，任务保留等待新物品）
         int count = dropOneStack(player, task.slot);
-        if (count <= 0) {
-            // 没有可丢的物品：完成
-            task.source.sendSuccess(() -> ServerI18n.tr(task.source,
-                    "carpetprimaryuan.command.dropall.complete",
-                    player.getName().getString(), task.slotKey,
-                    task.droppedStacks, task.droppedItems), true);
-            playerTasks.remove(task.slotKey);
-            return;
+
+        if (count > 0) {
+            task.droppedStacks++;
+            task.droppedItems += count;
         }
 
-        task.droppedStacks++;
-        task.droppedItems += count;
-
-        // 计算下一次 ticksUntilNext
+        // 计算下一次 ticksUntilNext（背包空也保留任务，等待新物品）
         switch (task.mode) {
             case CONTINUOUS:
                 task.ticksUntilNext = 1;
@@ -200,8 +193,13 @@ public final class DropSlotScheduler {
                 task.ticksUntilNext = task.interval;
                 break;
             case AFTER:
-                // 一次性，已执行，移除
-                playerTasks.remove(task.slotKey);
+                if (count > 0) {
+                    // 一次性任务成功执行，移除
+                    playerTasks.remove(task.slotKey);
+                } else {
+                    // 背包空，每 tick 检查等待物品
+                    task.ticksUntilNext = 1;
+                }
                 break;
             case PERTICK:
                 task.ticksUntilNext = task.interval;

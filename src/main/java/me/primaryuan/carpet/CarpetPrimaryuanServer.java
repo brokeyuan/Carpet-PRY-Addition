@@ -2,6 +2,7 @@ package me.primaryuan.carpet;
 
 import carpet.CarpetExtension;
 import carpet.CarpetServer;
+import carpet.utils.CommandHelper;
 import com.google.common.collect.Maps;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -79,6 +80,14 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
             return InteractionResult.PASS;
         });
         LOGGER.info("ridingPlayers use entity listener registered");
+
+        // 规则变更时刷新命令树，使 dropall 可见性立即随 fakePlayerDropStackModifiers 切换
+        CarpetServer.settingsManager.registerRuleObserver((source, changedRule, userInput) -> {
+            if ("fakePlayerDropStackModifiers".equals(changedRule.name())) {
+                CommandHelper.notifyPlayersCommandsChanged(source.getServer());
+            }
+        });
+        LOGGER.info("fakePlayerDropStackModifiers rule observer registered");
     }
 
     @Override

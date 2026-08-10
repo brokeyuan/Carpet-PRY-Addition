@@ -220,7 +220,7 @@ Adds an independent `dropall` sub-command to Carpet's `/player <name>` command t
 | Modifier | Syntax | Behavior |
 |----------|--------|----------|
 | (none) | `dropall` | Drop once immediately (equivalent to `once`) |
-| `once` | `dropall once` | Drop once immediately (not affected by rule) |
+| `once` | `dropall once` | Drop once immediately |
 | `continuous` | `dropall continuous` | Drop once per server tick until inventory is empty |
 | `interval` | `dropall interval <ticks>` | Drop once every `<ticks>` ticks |
 | `after` | `dropall after <ticks>` | Drop once after `<ticks>` ticks (one-shot) |
@@ -234,16 +234,16 @@ Reuses Carpet's own permission check on the `/player` command (controlled by Car
 
 ### Related Rule
 
-- **fakePlayerDropStackModifiers** — controls whether the continuous drop feature (`continuous`/`interval`/`after`/`perTick`/`randomly`/`stop`) is enabled.
-  - When the rule is `false`: `dropall once` and `dropall` (no argument) still work (drop once, equivalent to vanilla `dropStack all`); other modifiers are rejected with a hint that the rule is disabled.
+- **fakePlayerDropStackModifiers** — controls the visibility of the entire `dropall` command.
+  - When the rule is `false`: the entire `dropall` command is invisible (not tab-completable, not executable); use vanilla `/player <name> dropStack all` for one-shot drops.
   - When the rule is `true`: all modifiers work normally.
-  - The command itself is always registered regardless of the rule.
+  - Rule changes take effect immediately: a Carpet `RuleObserver` re-dispatches the command tree on rule change, so players see visibility changes without relogging.
 
 ### Relationship with Vanilla dropStack
 
 - `dropall` is a completely independent sub-command and does not modify Carpet's vanilla `dropStack` command tree.
 - `dropStack all` (Carpet vanilla) → drops once immediately
-- `dropall continuous` (new) → drops continuously until inventory is empty
+- `dropall continuous` (new) → drops continuously, keeps waiting after inventory is empty
 - Running `/player <name> stop` also clears all continuous drop tasks maintained by this mod.
 
 ### Examples
@@ -252,7 +252,7 @@ Reuses Carpet's own permission check on the `/player` command (controlled by Car
 # Drop everything once (equivalent to vanilla dropStack all)
 /player Steve dropall
 
-# Fake player drops inventory every tick until empty (auto-stops)
+# Fake player drops inventory every tick (keeps waiting when empty, stop anytime)
 /player Steve dropall continuous
 
 # Drop once every 10 ticks
@@ -276,8 +276,8 @@ Reuses Carpet's own permission check on the `/player` command (controlled by Car
 
 ### Auto-Stop Conditions
 
-- `continuous`/`interval`/`perTick`/`randomly` modes: auto-stop when all non-empty slots in inventory have been emptied, sending a completion message (with stack count and total item count) to the initiator.
-- `after` mode: auto-stops after executing once.
+- `continuous`/`interval`/`perTick`/`randomly` modes: when inventory is empty, the task keeps running and waits for new items to be added; only a manual `stop` will stop it.
+- `after` mode: auto-stops after a successful drop; if inventory is empty at the scheduled time, the task keeps checking every tick until an item is available to drop.
 - Target fake player disconnects: all related tasks are cleaned up automatically to avoid tick listener leaks.
 - If a dropall task is already running for the same fake player, a new trigger is rejected with a hint to `stop` first.
 

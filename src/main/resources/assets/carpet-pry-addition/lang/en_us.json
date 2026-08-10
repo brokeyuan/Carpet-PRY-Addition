@@ -82,8 +82,5 @@
   "carpetprimaryuan.command.dropall.already_running": "§cThis fake player already has an ongoing %s drop task, please stop it first",
   "carpetprimaryuan.command.dropall.stopped": "§aStopped the %s drop task, dropped %d stacks in total",
   "carpetprimaryuan.command.dropall.no_task": "§e%s has no ongoing drop task",
-  "carpetprimaryuan.command.dropall.complete": "§aFake player %s's %s drop task complete, dropped %d stacks totaling %d items",
-  "carpetprimaryuan.command.dropall.player_offline": "§cFake player %s went offline, %s drop task automatically stopped",
-  "carpetprimaryuan.command.dropall.rule_disabled": "§efakePlayerDropStackModifiers rule is disabled. Use /carpet fakePlayerDropStackModifiers true to enable continuous drop",
-  "carpetprimaryuan.command.dropall.rule_disabled_no_task": "§efakePlayerDropStackModifiers rule is disabled, no continuous drop task to stop"
+  "carpetprimaryuan.command.dropall.player_offline": "§cFake player %s went offline, %s drop task automatically stopped"
 }

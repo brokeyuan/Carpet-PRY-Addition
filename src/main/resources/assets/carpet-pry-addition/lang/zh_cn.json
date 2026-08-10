@@ -82,8 +82,5 @@
   "carpetprimaryuan.command.dropall.already_running": "§c该假人的 %s 任务已有进行中，请先 stop",
   "carpetprimaryuan.command.dropall.stopped": "§a已停止 %s 丢出任务，共丢出 %d 组",
   "carpetprimaryuan.command.dropall.no_task": "§e%s 没有正在进行的丢出任务",
-  "carpetprimaryuan.command.dropall.complete": "§a假人 %s 的 %s 丢出任务完成，共丢出 %d 组 %d 个物品",
-  "carpetprimaryuan.command.dropall.player_offline": "§c假人 %s 已下线，%s 丢出任务自动停止",
-  "carpetprimaryuan.command.dropall.rule_disabled": "§efakePlayerDropStackModifiers 规则未启用，请使用 /carpet fakePlayerDropStackModifiers true 开启后再执行持续丢出",
-  "carpetprimaryuan.command.dropall.rule_disabled_no_task": "§efakePlayerDropStackModifiers 规则未启用，无持续丢出任务可停止"
+  "carpetprimaryuan.command.dropall.player_offline": "§c假人 %s 已下线，%s 丢出任务自动停止"
 }

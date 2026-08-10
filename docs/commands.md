@@ -220,7 +220,7 @@
 | 修饰参数 | 语法 | 行为 |
 |---------|------|------|
 | (无参数) | `dropall` | 立即丢一次（等价 `once`） |
-| `once` | `dropall once` | 立即丢一次全部（不受规则限制） |
+| `once` | `dropall once` | 立即丢一次全部 |
 | `continuous` | `dropall continuous` | 每个 server tick 丢一次，直到清空 |
 | `interval` | `dropall interval <ticks>` | 每隔 `<ticks>` tick 丢一次 |
 | `after` | `dropall after <ticks>` | 在 `<ticks>` tick 之后丢一次（一次性） |
@@ -234,16 +234,16 @@
 
 ### 相关规则
 
-- **fakePlayerDropStackModifiers** — 控制持续丢出功能（`continuous`/`interval`/`after`/`perTick`/`randomly`/`stop`）是否启用。
-  - 规则关闭时：`dropall once` 与 `dropall`（无参数）仍可执行（立即丢一次全部，等价原版 `dropStack all`），其他修饰参数会拒绝执行并提示规则未启用。
+- **fakePlayerDropStackModifiers** — 控制整个 `dropall` 命令的可见性。
+  - 规则关闭时：整个 `dropall` 命令不可见（tab 补全不到、无法执行），请使用原版 `/player <name> dropStack all` 实现一次性丢出。
   - 规则开启时：所有修饰参数正常工作。
-  - 命令本身始终注册，不受规则开关影响。
+  - 规则切换立即生效：通过 Carpet `RuleObserver` 在规则变更时重新下发命令树，玩家无需重新登录即可看到可见性变化。
 
 ### 与原版 dropStack 的关系
 
 - `dropall` 是完全独立的子命令，不修改 Carpet 原版 `dropStack` 命令树。
 - `dropStack all`（Carpet 原版）→ 立即丢一次全部
-- `dropall continuous`（新增）→ 持续丢出直到背包清空
+- `dropall continuous`（新增）→ 持续丢出，背包清空后保持等待新物品
 - 执行 `/player <name> stop` 会同步清理本项目维护的所有持续丢出任务。
 
 ### 使用示例
@@ -252,7 +252,7 @@
 # 立即丢一次全部（等价原版 dropStack all）
 /player Steve dropall
 
-# 假人逐 tick 丢出背包所有物品，直到背包清空（自动停止）
+# 假人逐 tick 丢出背包所有物品（背包清空后保持等待，可随时 stop）
 /player Steve dropall continuous
 
 # 每 10 tick 丢一次
@@ -276,8 +276,8 @@
 
 ### 自动停止条件
 
-- `continuous`/`interval`/`perTick`/`randomly` 模式：背包中所有非空槽位均被清空后自动停止，并向发起者发送完成消息（含丢出组数与物品总数）。
-- `after` 模式：执行一次后自动结束。
+- `continuous`/`interval`/`perTick`/`randomly` 模式：背包清空后任务保持运行，等待新物品装入后继续丢出；需手动 `stop` 才会停止。
+- `after` 模式：成功丢出一次后自动结束；若到时机时背包为空，任务保持每 tick 检查，直到有物品可丢出为止。
 - 目标假人下线：所有相关任务自动清理，避免 tick 监听泄漏。
 - 同一假人已有进行中的 dropall 任务时，再次触发会被拒绝并提示先 `stop`。
 
