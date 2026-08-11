@@ -288,58 +288,100 @@
 
 ### /scale - 玩家大小调节
 
+#### 命令结构（统一三层子命令：先操作，后数值/玩家）
+
+```
+scale
+  set
+    <value>                     # 给自己设置（受 playerScaleMin/Max 限制）
+    <value> <player>            # 给指定玩家设置（OP 或 everyone 模式）
+  reset
+    (无参数)                    # 自己恢复 1.0
+    <player>                    # 恢复指定玩家（OP 或 everyone 模式）
+  info
+    (无参数)                    # 查看自己当前大小 + 允许范围
+    <player>                    # 查看指定玩家当前大小
+```
+
 #### 语法
 
 ```
-/scale <value>                 # 玩家调节自己大小（受 playerScaleMin/Max 范围限制）
-/scale reset                   # 玩家恢复默认大小（1.0）
-/scale <player> <value>        # 管理员调节指定玩家大小（不受范围限制）
-/scale <player> reset          # 管理员重置指定玩家大小
+/scale set <value>                 # 玩家调节自己大小（受范围限制）
+/scale set <value> <player>        # 给指定玩家设置大小（权限：OP / everyone）
+/scale reset                       # 自己恢复 1.0
+/scale reset <player>              # 恢复指定玩家大小（权限：OP / everyone）
+/scale info                        # 查看自己当前大小 + 允许范围 + 当前模式
+/scale info <player>               # 查看指定玩家当前大小
 ```
 
-#### 权限
+#### 权限（三档规则）
 
-- 整个 `/scale` 命令受 `playerScaleModifiers` 规则控制可见性，规则关闭时命令不可见
-- 玩家路径（`/scale <value>`、`/scale reset`）：受 `playerScaleMin` 和 `playerScaleMax` 范围限制
-- 管理员路径（`/scale <player> ...`）：需要 OP 4 级权限，不受范围限制
-- 规则变更时通过 Carpet `RuleObserver` 立即刷新命令树，无需玩家重新登录
+| 规则值 | 行为 |
+|--------|------|
+| `false` | 整个 `/scale` 命令不可见 |
+| `true`  | 玩家只能 `set/reset` 自己；只有 OP 可以 `set/reset/info` 别人。`set <value> <player>` 的 tab 补全仅显示自己名字 |
+| `everyone` | 所有人都可以 `set/reset/info` 任意在线玩家；tab 补全显示所有在线玩家 |
 
-#### 功能描述
-
-为 `Player` 注册 `minecraft:scale` 属性，并通过 `/scale` 命令调节玩家体型大小。玩家可调节自身大小，管理员可调节任意在线玩家大小。
-
-> **版本要求**：`minecraft:scale` 属性从 Minecraft 1.21.5 起加入原版，1.21~1.21.4 版本上执行 `/scale` 会提示版本不支持。
+- 规则切换时通过 Carpet `RuleObserver` 立即刷新命令树，无需玩家重新登录
+- `info` 查询的可见性比 modify 宽松：`true` 模式下非 OP 也可以 `info` 别人（info 不改变状态）；`set/reset` 仍需权限
 
 #### 范围控制
 
-- `playerScaleMin`（默认 0.1）：玩家可设置的最小 scale 值
-- `playerScaleMax`（默认 10.0）：玩家可设置的最大 scale 值
-- 管理员路径不受此范围限制，可设置任意值（0.0~100.0）
+- `playerScaleMin`（默认 0.1）：允许设置的最小值
+- `playerScaleMax`（默认 10.0）：允许设置的最大值
+- 受限制的路径：自己调自己 + everyone 模式非 OP 调别人
+- **不受限制**：OP 调别人，可填任意值（硬上限 0.0~100.0）
+
+#### 功能描述
+
+为 `Player` 注册 `minecraft:scale` 属性，通过统一的三层子命令 `/scale set|reset|info` 管理。支持三种模式切换（false / true / everyone），管理员或 everyone 模式下其他玩家可以互相调节大小。范围与权限分离：tab 补全根据当前身份过滤可见的玩家，范围限制根据身份分级。
+
+> **版本要求**：`minecraft:scale` 属性从 Minecraft 1.21.5 起加入原版，1.21~1.21.4 版本上执行会提示不支持。
+
+#### Tab 补全行为
+
+| 命令位置 | `true` 模式非 OP | `true` 模式 OP | `everyone` |
+|----------|------------------|---------------|------------|
+| `set <value>` 之后补全 `<player>` | 只补全自己 | 所有在线玩家 | 所有在线玩家 |
+| `reset` 之后补全 `<player>` | 只补全自己 | 所有在线玩家 | 所有在线玩家 |
+| `info` 之后补全 `<player>` | 所有在线玩家 | 所有在线玩家 | 所有在线玩家 |
 
 #### 使用示例
 
 ```bash
-# 玩家变小到一半
-/scale 0.5
+# 启用规则（管理员）
+/carpet playerScaleModifiers true
 
-# 玩家恢复默认大小
+# 自己变半
+/scale set 0.5
+
+# 自己恢复默认
 /scale reset
 
-# 管理员把 Steve 变成 2 倍大小
-/scale Steve 2.0
+# 查看当前大小与允许范围
+/scale info
 
-# 管理员重置 Steve 的大小
-/scale Steve reset
+# 管理员/everyone 模式下调节他人
+/scale set 2.0 Steve
+/scale reset Steve
+
+# 查看别人当前大小
+/scale info Steve
 ```
 
-#### 提示消息
+#### 提示消息（节选）
 
-- 成功设置自己：`§a你的大小已设为 0.5`
-- 成功设置他人：`§aSteve 的大小已设为 2.0`
-- 超出范围：`§c值 0.05 超出允许范围（0.1 ~ 10.0）`
-- 被管理员调整：`§e管理员将你的大小调整为 2.0`
-- 玩家不在线：`§c玩家 Steve 不在线`
-- 版本不支持：`§c当前 Minecraft 版本不支持 minecraft:scale 属性（需 1.21.5+）`
+- 设置成功（自己）：`你的大小已设为 0.5x`
+- 设置成功（他人）：`已将 Steve 的大小设为 2.0x`
+- 超出范围：`值 0.05 超出允许范围（0.1 ~ 10.0）`
+- 权限不足：`你没有权限调整其他玩家的大小（需要管理员或 everyone 模式）`
+- 被修改的提示：`管理员 Brokey 将你的大小调整为 2.0x` 或 `玩家 Alice 将你的大小调整为 0.5x`
+- `/scale info` 输出示例：
+```
+你的当前大小：0.5x（默认 1.0x）
+允许设置范围：0.1 ~ 10.0
+当前模式：true（仅管理员可调他人）
+```
 
 ---
 

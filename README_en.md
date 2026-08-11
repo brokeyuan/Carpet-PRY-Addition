@@ -32,9 +32,9 @@ All features are Carpet-rule-driven, off by default, enabled on demand.
 | `fakePlayerSkinMode` | string | `default` | Fake player skin mode: `default` / `summon` / `same_skin` |
 | `fakePlayerSkinSet` | string | `Brokeyuan` | Player name used for the shared skin in `same_skin` mode |
 | `fakePlayerDropStackModifiers` | boolean | `false` | Adds an independent `/player <name> dropall [once\|continuous\|interval\|after\|perTick\|randomly\|stop]` sub-command, letting fake players drop all inventory items at a configured pace. The entire `dropall` command is hidden when the rule is disabled |
-| `playerScaleModifiers` | boolean | `false` | Registers `minecraft:scale` attribute for Player and adds `/scale [player] <value\|reset>` command. Players change their own size (limited by `playerScaleMin`/`Max`), admins change any player's size. Requires Minecraft 1.21.5+ |
-| `playerScaleMin` | double | `0.1` | Minimum scale value players can set via `/scale <value>`; admin path is not limited |
-| `playerScaleMax` | double | `10.0` | Maximum scale value players can set via `/scale <value>`; admin path is not limited |
+| `playerScaleModifiers` | string | `false` | Registers `minecraft:scale` attribute for Player and adds unified `/scale set\|reset\|info` command. `false`=hidden; `true`=self-only for players + admins anyone; `everyone`=any player can modify anyone. Requires Minecraft 1.21.5+ |
+| `playerScaleMin` | double | `0.1` | Minimum scale value that players (including non-ops in everyone mode) can set via `/scale set`; admin path is not limited |
+| `playerScaleMax` | double | `10.0` | Maximum scale value that players (including non-ops in everyone mode) can set via `/scale set`; admin path is not limited |
 
 ### Ported Features
 

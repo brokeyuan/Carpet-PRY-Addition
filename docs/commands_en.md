@@ -288,58 +288,100 @@ Reuses Carpet's own permission check on the `/player` command (controlled by Car
 
 ### /scale - Player Scale Adjustment
 
+#### Command structure (uniform 3-level subcommands: action first, then value/target)
+
+```
+scale
+  set
+    <value>                     # Set scale for self (bounded by playerScaleMin/Max)
+    <value> <player>            # Set scale for target player (OP or everyone mode)
+  reset
+    (no args)                   # Reset own scale to 1.0
+    <player>                    # Reset target player's scale (OP or everyone mode)
+  info
+    (no args)                   # View own current scale + allowed range
+    <player>                    # View target player's current scale
+```
+
 #### Syntax
 
 ```
-/scale <value>                 # Player adjusts own scale (limited by playerScaleMin/Max)
-/scale reset                   # Player resets own scale to default (1.0)
-/scale <player> <value>        # Admin adjusts target player's scale (not limited by range)
-/scale <player> reset          # Admin resets target player's scale
+/scale set <value>                 # Player adjusts own scale (range limited)
+/scale set <value> <player>        # Adjust target player (permission: OP / everyone)
+/scale reset                       # Reset own scale to 1.0
+/scale reset <player>              # Reset target player (permission: OP / everyone)
+/scale info                        # View own scale + allowed range + current mode
+/scale info <player>               # View target player's current scale
 ```
 
-#### Permissions
+#### Permissions (three-tier rule)
 
-- The entire `/scale` command visibility is controlled by the `playerScaleModifiers` rule; when disabled, the command is invisible
-- Player path (`/scale <value>`, `/scale reset`): limited by `playerScaleMin` and `playerScaleMax` range
-- Admin path (`/scale <player> ...`): requires OP level 4, not limited by range
+| Rule value | Behavior |
+|------------|----------|
+| `false`    | Entire `/scale` command is invisible |
+| `true`     | Players can only `set/reset` self; only OP can `set/reset/info` others. Tab-completion after `set <value>` shows only own name |
+| `everyone` | Any player can `set/reset/info` any online player; tab-completion shows all online players |
+
 - Rule changes take effect immediately via Carpet `RuleObserver` refreshing the command tree, no relogin required
-
-#### Description
-
-Registers the `minecraft:scale` attribute for `Player` and adjusts player size via the `/scale` command. Players can change their own size, admins can change any online player's size.
-
-> **Version requirement**: `minecraft:scale` attribute was added to vanilla in Minecraft 1.21.5; on 1.21~1.21.4, executing `/scale` shows an unsupported-version message.
+- `info` is more permissive than modify: non-OPs under `true` mode can still `info` others (read-only, non-destructive); `set/reset` still requires permission
 
 #### Range Control
 
-- `playerScaleMin` (default 0.1): minimum scale value players can set
-- `playerScaleMax` (default 10.0): maximum scale value players can set
-- The admin path is not limited by this range and can set any value (0.0~100.0)
+- `playerScaleMin` (default 0.1): minimum allowed value
+- `playerScaleMax` (default 10.0): maximum allowed value
+- Bounded paths: self → self, plus non-OP in everyone mode acting on others
+- **Unbounded**: OP acting on others, any value is allowed (hard cap 0.0~100.0)
+
+#### Description
+
+Registers the `minecraft:scale` attribute for `Player` and manages it through a unified three-tier subcommand `/scale set|reset|info`. Supports three modes (false / true / everyone). Admins or everyone mode let any player mutually adjust each other's sizes. Tab-completion filters players by current identity; range limits apply per-identity tier.
+
+> **Version requirement**: `minecraft:scale` attribute was added to vanilla in Minecraft 1.21.5; 1.21~1.21.4 servers show an unsupported-version message.
+
+#### Tab completion behavior
+
+| Command position | `true` non-OP | `true` OP | `everyone` |
+|------------------|---------------|-----------|------------|
+| `<player>` after `set <value>` | self only | all online | all online |
+| `<player>` after `reset`       | self only | all online | all online |
+| `<player>` after `info`        | all online | all online | all online |
 
 #### Examples
 
 ```bash
-# Shrink yourself to half size
-/scale 0.5
+# Enable the rule (admin)
+/carpet playerScaleModifiers true
 
-# Reset to default size
+# Shrink yourself to half size
+/scale set 0.5
+
+# Reset yourself to default
 /scale reset
 
-# Admin makes Steve 2x larger
-/scale Steve 2.0
+# View current scale and allowed range
+/scale info
 
-# Admin resets Steve's scale
-/scale Steve reset
+# Admin / everyone mode: adjust another player
+/scale set 2.0 Steve
+/scale reset Steve
+
+# View another player's scale
+/scale info Steve
 ```
 
-#### Messages
+#### Messages (excerpt)
 
-- Set self: `§aYour scale has been set to 0.5`
-- Set other: `§aSteve's scale has been set to 2.0`
+- Set self: `§aYour scale has been set to 0.5x`
+- Set other: `§aSteve's scale has been set to 2.0x`
 - Out of range: `§cValue 0.05 is out of allowed range (0.1 ~ 10.0)`
-- Adjusted by admin: `§eAn admin has adjusted your scale to 2.0`
-- Player offline: `§cPlayer Steve is not online`
-- Unsupported version: `§cCurrent Minecraft version does not support minecraft:scale attribute (requires 1.21.5+)`
+- Permission denied (modify): `§cYou don't have permission to modify other players' scale (need admin or everyone mode)`
+- Notified to modified player: `§eAdmin Brokey has adjusted your scale to 2.0x` or `§ePlayer Alice has adjusted your scale to 0.5x`
+- `/scale info` example output:
+```
+Your current scale: 0.5x (default 1.0x)
+Allowed range: 0.1 ~ 10.0
+Current mode: true (only admins can modify others)
+```
 
 ---
 
