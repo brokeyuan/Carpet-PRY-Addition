@@ -314,10 +314,15 @@ public final class ScaleCommand {
             source.sendSuccess(() -> ServerI18n.tr(source,
                     "carpetprimaryuan.command.scale." + otherKey, name, valueStr), true);
             // 被修改玩家收到消息：区分管理员 vs 普通玩家（everyone 模式）
+            // 用 source.getPlayerOrException().getName().getString() 替代 source.getTextName()，
+            // 兼容 1.21+ 全版本（getTextName 在部分版本签名不同）
+            String actorName = source.isPlayer()
+                    ? source.getPlayerOrException().getName().getString()
+                    : "Console";
             target.sendSystemMessage(ServerI18n.tr(target,
                     adminDoing ? "carpetprimaryuan.command.scale.adjusted_by_admin"
                                : "carpetprimaryuan.command.scale.adjusted_by_player",
-                    source.getTextName(), valueStr));
+                    actorName, valueStr));
         }
         return 1;
         //#else
