@@ -111,7 +111,7 @@ jobs:
           cat $GITHUB_OUTPUT
 
       - name: Upload to GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.release_info.outputs.tag_name || github.ref_name }}
           files: ${{ steps.file_info.outputs.path }}
