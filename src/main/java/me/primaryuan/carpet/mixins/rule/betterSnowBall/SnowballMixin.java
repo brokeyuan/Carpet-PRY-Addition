@@ -1,6 +1,7 @@
 package me.primaryuan.carpet.mixins.rule.betterSnowBall;
 
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
@@ -40,6 +41,13 @@ public abstract class SnowballMixin {
 
         // Damage: 2.0 = 1 heart
         Projectile projectile = (Projectile) (Object) this;
-        player.hurt(player.damageSources().thrown(self, projectile.getOwner()), 2.0F);
+        var damageSource = player.damageSources().thrown(self, projectile.getOwner());
+        //#if MC >= 12103
+        // 1.21.3+: hurt(DamageSource, float) 已弃用，迁移到 hurtServer
+        player.hurtServer((ServerLevel) self.level(), damageSource, 2.0F);
+        //#else
+        //$$ // 1.21 / 1.21.1: 旧 API 尚未弃用
+        //$$ player.hurt(damageSource, 2.0F);
+        //#endif
     }
 }
