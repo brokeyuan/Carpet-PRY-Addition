@@ -109,7 +109,7 @@ public class CarpetPrimaryuanSettings {
     public static boolean fakePlayerDropStackModifiers = false;
 
     @Rule(
-            options = {"false", "true", "everyone"},
+            options = {"false", "self", "true", "everyone"},
             strict = false,
             categories = {PRIMARYUAN, SURVIVAL, FEATURE, COMMAND}
     )

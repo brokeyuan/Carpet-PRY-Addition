@@ -36,7 +36,7 @@
   "carpet.rule.fakePlayerDropStackModifiers.desc": "Adds an independent dropall sub-command to /player <name>, letting fake players drop all inventory items at a configured pace. Command: /player <name> dropall [once|continuous|interval <ticks>|after <ticks>|perTick <times>|randomly <min> <max>|stop]",
 
   "carpet.rule.playerScaleModifiers.name": "Player Scale Modifiers",
-  "carpet.rule.playerScaleModifiers.desc": "Registers minecraft:scale attribute for Player and adds /scale set/reset/info command. false=disable; true=players adjust self only, admins adjust anyone; everyone=any player can adjust anyone. Only supported on 1.21.5+",
+  "carpet.rule.playerScaleModifiers.desc": "Registers minecraft:scale attribute for Player and adds /scale set/reset/info command. false=disable; self=everyone can only adjust themselves (even OPs); true=players adjust self only, admins adjust anyone; everyone=any player can adjust anyone. Only supported on 1.21.5+",
   "carpet.rule.playerScaleMin.name": "Player Scale Min",
   "carpet.rule.playerScaleMin.desc": "Minimum scale value that players (non-ops in everyone mode included) can set via /scale set; admin path is not limited by this",
   "carpet.rule.playerScaleMax.name": "Player Scale Max",
@@ -99,12 +99,13 @@
   "carpetprimaryuan.command.scale.reset_other_anyone": "§a%s's scale has been reset to 1.0x",
   "carpetprimaryuan.command.scale.out_of_range": "§cValue %s is out of allowed range (%s ~ %s)",
   "carpetprimaryuan.command.scale.player_offline": "§cPlayer %s is not online",
-  "carpetprimaryuan.command.scale.no_permission_modify": "§cYou don't have permission to modify other players' scale (need admin or everyone mode)",
+  "carpetprimaryuan.command.scale.no_permission_modify": "§cYou don't have permission to modify other players' scale (current mode only allows adjusting yourself)",
   "carpetprimaryuan.command.scale.no_permission_view": "§cYou don't have permission to view other players' scale",
   "carpetprimaryuan.command.scale.adjusted_by_admin": "§eAdmin %s has adjusted your scale to %sx",
   "carpetprimaryuan.command.scale.adjusted_by_player": "§ePlayer %s has adjusted your scale to %sx",
   "carpetprimaryuan.command.scale.info_self": "§eYour current scale: §a%sx§r (default %sx)\n§eAllowed range: §a%s ~ %s§r\n§eCurrent mode: %s",
   "carpetprimaryuan.command.scale.info_other": "§e%s's current scale: §a%sx§r (default %sx)",
+  "carpetprimaryuan.command.scale.mode_self": "§bself (everyone can only adjust themselves)",
   "carpetprimaryuan.command.scale.mode_true": "§etrue (only admins can modify others)",
   "carpetprimaryuan.command.scale.mode_everyone": "§aeveryone (anyone can modify others)",
   "carpetprimaryuan.command.scale.unsupported_version": "§cCurrent Minecraft version does not support minecraft:scale attribute (requires 1.21.5+)"

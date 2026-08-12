@@ -36,7 +36,7 @@
   "carpet.rule.fakePlayerDropStackModifiers.desc": "給 /player <name> 下追加獨立的 dropall 子命令，讓假人按設定節奏持續丟出背包所有物品。命令：/player <name> dropall [once|continuous|interval <ticks>|after <ticks>|perTick <times>|randomly <min> <max>|stop]",
 
   "carpet.rule.playerScaleModifiers.name": "玩家隨地大小變",
-  "carpet.rule.playerScaleModifiers.desc": "為 Player 註冊 minecraft:scale 屬性，並新增 /scale set/reset/info 指令。false=關閉；true=玩家僅可調自己，管理員可調任意玩家；everyone=所有人可調任意玩家。僅 1.21.5+ 版本支援",
+  "carpet.rule.playerScaleModifiers.desc": "為 Player 註冊 minecraft:scale 屬性，並新增 /scale set/reset/info 指令。false=關閉；self=所有人都只能調自己（無論 OP）；true=玩家僅可調自己，管理員可調任意玩家；everyone=所有人可調任意玩家。僅 1.21.5+ 版本支援",
   "carpet.rule.playerScaleMin.name": "玩家大小最小值",
   "carpet.rule.playerScaleMin.desc": "玩家（含 everyone 模式下的非 OP）執行 /scale set 時可設定的最小 scale 值，管理員路徑不受此限制",
   "carpet.rule.playerScaleMax.name": "玩家大小最大值",
@@ -99,12 +99,13 @@
   "carpetprimaryuan.command.scale.reset_other_anyone": "§a已將 %s 的大小恢復為 1.0x",
   "carpetprimaryuan.command.scale.out_of_range": "§c值 %s 超出允許範圍（%s ~ %s）",
   "carpetprimaryuan.command.scale.player_offline": "§c玩家 %s 不在線上",
-  "carpetprimaryuan.command.scale.no_permission_modify": "§c你沒有權限調整其他玩家的大小（需要管理員或 everyone 模式）",
+  "carpetprimaryuan.command.scale.no_permission_modify": "§c你沒有權限調整其他玩家的大小（目前模式僅允許調整自己）",
   "carpetprimaryuan.command.scale.no_permission_view": "§c你沒有權限查看其他玩家的大小",
   "carpetprimaryuan.command.scale.adjusted_by_admin": "§e管理員 %s 將你的大小調整為 %sx",
   "carpetprimaryuan.command.scale.adjusted_by_player": "§e玩家 %s 將你的大小調整為 %sx",
   "carpetprimaryuan.command.scale.info_self": "§e你的當前大小：§a%sx§r（預設 %sx）\n§e允許設定範圍：§a%s ~ %s§r\n§e當前模式：%s",
   "carpetprimaryuan.command.scale.info_other": "§e%s 的當前大小：§a%sx§r（預設 %sx）",
+  "carpetprimaryuan.command.scale.mode_self": "§bself（所有人都只能調自己）",
   "carpetprimaryuan.command.scale.mode_true": "§etrue（僅管理員可調他人）",
   "carpetprimaryuan.command.scale.mode_everyone": "§aeveryone（所有人可調他人）",
   "carpetprimaryuan.command.scale.unsupported_version": "§c目前 Minecraft 版本不支援 minecraft:scale 屬性（需 1.21.5+）"

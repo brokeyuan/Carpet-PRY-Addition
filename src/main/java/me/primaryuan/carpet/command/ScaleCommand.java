@@ -32,18 +32,19 @@ import java.util.concurrent.CompletableFuture;
  *       <player>             → 查看指定玩家当前大小（canModifyOther 权限）
  *
  * 权限规则（canModifyOther）：
- *   - OP：总是可以
+ *   - 规则=self：所有人都只能调自己（无论 OP）
+ *   - 规则=true：OP 可以；非 OP 不可
  *   - 规则=everyone：所有人都可以
- *   - 规则=true：非 OP 不可
  *   - 规则=false：整个命令不可见
  *
  * Tab 补全（玩家列表）：
+ *   - self 模式：所有人只补全自己名字
  *   - true 模式 + 非 OP：只补全自己名字
- *   - OP / everyone：补全所有在线玩家
+ *   - OP（非 self 模式） / everyone：补全所有在线玩家
  *
  * 范围限制：
- *   - 自己/everyone 调别人：受 playerScaleMin/Max 限制
- *   - OP 调别人：不受限制
+ *   - 自己操作 / everyone 模式非 OP / self 模式（含 OP）：受 playerScaleMin/Max 限制
+ *   - OP 调他人（非 self 模式）：不受限制
  */
 public final class ScaleCommand {
 
@@ -108,20 +109,25 @@ public final class ScaleCommand {
 
     /**
      * 是否允许"调节他人"（set / reset 他人）。
-     * 规则：OP 总是允许；规则=everyone 所有人允许；规则=true 非 OP 不允许。
+     * 规则=self：所有人都不可（无论 OP，只能调自己）；
+     * 规则=true：OP 允许、非 OP 不可；
+     * 规则=everyone：所有人允许。
      */
     private static boolean canModifyOther(CommandSourceStack source) {
-        if (isAdmin(source)) return true;
         String rule = CarpetPrimaryuanSettings.playerScaleModifiers;
+        if ("self".equalsIgnoreCase(rule)) return false;
+        if (isAdmin(source)) return true;
         return "everyone".equalsIgnoreCase(rule);
     }
 
     /**
      * 是否允许"查询他人 info"（比 modify 更宽松：true 模式下也允许，info 不危险）。
+     * 规则=self：所有人都不可（与 modify 一致，只能看自己）。
      */
     private static boolean canViewOther(CommandSourceStack source) {
-        if (isAdmin(source)) return true;
         String rule = CarpetPrimaryuanSettings.playerScaleModifiers;
+        if ("self".equalsIgnoreCase(rule)) return false;
+        if (isAdmin(source)) return true;
         return "everyone".equalsIgnoreCase(rule) || "true".equalsIgnoreCase(rule);
     }
 
@@ -262,7 +268,9 @@ public final class ScaleCommand {
             String maxStr = formatScale(CarpetPrimaryuanSettings.playerScaleMax);
             String mode = CarpetPrimaryuanSettings.playerScaleModifiers;
             String modeStr;
-            if ("true".equalsIgnoreCase(mode)) {
+            if ("self".equalsIgnoreCase(mode)) {
+                modeStr = ServerI18n.tr(source, "carpetprimaryuan.command.scale.mode_self").getString();
+            } else if ("true".equalsIgnoreCase(mode)) {
                 modeStr = ServerI18n.tr(source, "carpetprimaryuan.command.scale.mode_true").getString();
             } else if ("everyone".equalsIgnoreCase(mode)) {
                 modeStr = ServerI18n.tr(source, "carpetprimaryuan.command.scale.mode_everyone").getString();
@@ -360,17 +368,20 @@ public final class ScaleCommand {
 
     /**
      * 在线玩家名称补全（用于 set <value> <player> 和 reset <player>）。
+     * self 模式：所有人只补全自己名字（无论 OP）。
      * true 模式非 OP：只补全自己名字。
-     * OP / everyone：补全所有在线玩家。
+     * OP（非 self 模式） / everyone：补全所有在线玩家。
      */
     private static CompletableFuture<Suggestions> suggestPlayersForModification(
             CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
         try {
             var players = context.getSource().getServer().getPlayerList().getPlayers();
             String remaining = builder.getRemainingLowerCase();
-            boolean admin = isAdmin(context.getSource());
-            boolean everyone = "everyone".equalsIgnoreCase(CarpetPrimaryuanSettings.playerScaleModifiers);
-            boolean allowAll = admin || everyone;
+            String rule = CarpetPrimaryuanSettings.playerScaleModifiers;
+            boolean selfMode = "self".equalsIgnoreCase(rule);
+            boolean admin = !selfMode && isAdmin(context.getSource());
+            boolean everyone = "everyone".equalsIgnoreCase(rule);
+            boolean allowAll = !selfMode && (admin || everyone);
             String selfName = context.getSource().isPlayer()
                     ? playerName(context.getSource().getPlayerOrException()) : null;
             for (ServerPlayer p : players) {
@@ -388,16 +399,22 @@ public final class ScaleCommand {
 
     /**
      * 在线玩家名称补全（用于 info <player>）。
-     * 比 modify 稍宽：true 模式下非 OP 也能查别人 info（info 无破坏性）。
-     * 但如果规则=false 整个命令不可见，不会到这里。
+     * self 模式：只补全自己（与 canViewOther 一致）。
+     * 其他模式：补全所有在线玩家（执行时由 canViewOther 拦截，但补全显示更友好）。
      */
     private static CompletableFuture<Suggestions> suggestPlayersForInfo(
             CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
         try {
             var players = context.getSource().getServer().getPlayerList().getPlayers();
             String remaining = builder.getRemainingLowerCase();
+            boolean selfMode = "self".equalsIgnoreCase(CarpetPrimaryuanSettings.playerScaleModifiers);
+            String selfName = context.getSource().isPlayer()
+                    ? playerName(context.getSource().getPlayerOrException()) : null;
             for (ServerPlayer p : players) {
                 String name = playerName(p);
+                if (selfMode && !name.equalsIgnoreCase(selfName)) {
+                    continue;
+                }
                 if (name.toLowerCase().startsWith(remaining)) {
                     builder.suggest(name);
                 }
