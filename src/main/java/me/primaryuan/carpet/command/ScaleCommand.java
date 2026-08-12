@@ -263,9 +263,9 @@ public final class ScaleCommand {
             String mode = CarpetPrimaryuanSettings.playerScaleModifiers;
             String modeStr;
             if ("true".equalsIgnoreCase(mode)) {
-                modeStr = ServerI18n.tr(source, "carpetprimaryuan.command.scale.mode_true");
+                modeStr = ServerI18n.tr(source, "carpetprimaryuan.command.scale.mode_true").getString();
             } else if ("everyone".equalsIgnoreCase(mode)) {
-                modeStr = ServerI18n.tr(source, "carpetprimaryuan.command.scale.mode_everyone");
+                modeStr = ServerI18n.tr(source, "carpetprimaryuan.command.scale.mode_everyone").getString();
             } else {
                 modeStr = mode;
             }
