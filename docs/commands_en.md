@@ -1,7 +1,7 @@
 # Commands Documentation
 
 > **Mod ID**: carpet-pry-addition  
-> **Version**: 1.1.2
+> **Version**: 1.1.7
 
 ---
 

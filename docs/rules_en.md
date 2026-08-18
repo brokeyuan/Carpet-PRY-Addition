@@ -15,6 +15,7 @@
   - [fakePlayerNameSuggestions - Fake Player Name Suggestions](#fakeplayernamesuggestions---fake-player-name-suggestions)
   - [fakePlayerSkinMode - Fake Player Skin Setting](#fakeplayerskinmode---fake-player-skin-setting)
   - [fakePlayerSkinSet - Fake Player Unified Skin Setting](#fakeplayerskinset---fake-player-unified-skin-setting)
+  - [fakePlayerDropStackModifiers - Fake Player Continuous Drop](#fakeplayerdropstackmodifiers---fake-player-continuous-drop)
 - [Bug Fixes (BUGFIX)](#bug-fixes-bugfix)
   - [FixXaeroLib - XaeroLib Compatibility Patch](#fixxaerolib---xaerolib-compatibility-patch)
   - [FixBluemap - BlueMap Compatibility Patch](#fixbluemap---bluemap-compatibility-patch)
@@ -297,6 +298,75 @@ Automatically makes the player invisible when their head is located in tall gras
 |----------|-------|
 | **Rule Name** | `invisibleInTallGrass` |
 | **Description** | Automatically makes the player invisible when their head is located in tall grass |
+| **Type** | `boolean` |
+| **Default Value** | `false` |
+| **Suggested Options** | `false`, `true` |
+| **Categories** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
+
+---
+
+### playerScaleModifiers - Player Scale Modifiers
+
+Registers the `minecraft:scale` attribute for Player and manages player size through the `/scale set|reset|info` command. Only supported on 1.21.5+.
+
+| Property | Value |
+|----------|-------|
+| **Rule Name** | `playerScaleModifiers` |
+| **Description** | Registers minecraft:scale attribute for Player and adds /scale set/reset/info command. false=disable; self=everyone can only adjust themselves (even OPs); true=players adjust self only, admins adjust anyone; everyone=any player can adjust anyone. Only supported on 1.21.5+ |
+| **Type** | `string` |
+| **Default Value** | `false` |
+| **Suggested Options** | `false`, `self`, `true`, `everyone` |
+| **Categories** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE`, `COMMAND` |
+
+#### Mode Description
+
+| Mode | Behavior |
+|------|----------|
+| `false` | Disable the command (default) |
+| `self` | Everyone can only adjust themselves (even OPs) |
+| `true` | Players adjust themselves only; admins can adjust anyone |
+| `everyone` | Any player can adjust anyone |
+
+---
+
+### playerScaleMin - Player Scale Min
+
+Minimum scale value that players (non-ops in everyone mode included) can set via `/scale set`; the admin path is not limited by this.
+
+| Property | Value |
+|----------|-------|
+| **Rule Name** | `playerScaleMin` |
+| **Description** | Minimum scale value that players (non-ops in everyone mode included) can set via /scale set; admin path is not limited by this |
+| **Type** | `double` |
+| **Default Value** | `0.1` |
+| **Suggested Options** | `0.1`, `0.25`, `0.5` |
+| **Categories** | `PRIMARYUAN`, `SURVIVAL`, `COMMAND` |
+
+---
+
+### playerScaleMax - Player Scale Max
+
+Maximum scale value that players (non-ops in everyone mode included) can set via `/scale set`; the admin path is not limited by this.
+
+| Property | Value |
+|----------|-------|
+| **Rule Name** | `playerScaleMax` |
+| **Description** | Maximum scale value that players (non-ops in everyone mode included) can set via /scale set; admin path is not limited by this |
+| **Type** | `double` |
+| **Default Value** | `10.0` |
+| **Suggested Options** | `2.0`, `5.0`, `10.0` |
+| **Categories** | `PRIMARYUAN`, `SURVIVAL`, `COMMAND` |
+
+---
+
+### realisticPlayerScale - Realistic Player Scale
+
+When enabled, player speed scales with size: half the size means half the speed, enlarging makes you faster (affects walking and creative flying speed). Requires the playerScaleModifiers rule to adjust size. Only supported on 1.21.5+.
+
+| Property | Value |
+|----------|-------|
+| **Rule Name** | `realisticPlayerScale` |
+| **Description** | Player speed scales linearly with size (minecraft:scale attribute): half the size means half the speed, enlarging makes you faster (affects walking and creative flying speed). Requires the playerScaleModifiers rule to adjust size. Only supported on 1.21.5+ |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |

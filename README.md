@@ -11,7 +11,7 @@
 
 ## 简介
 
-**Carpet-Primaryuan-Addition** 是一个基于 [Fabric Carpet](https://github.com/gnembon/fabric-carpet) 的服务端扩展模组，主要为PRY服务器（Primaryuan Server）开发。新增了 **17 条**可配置 Carpet 规则和 **5 个**新命令，涵盖假人管理增强、模组兼容性修复、功能移植、玩家交互和生存特性扩展。
+**Carpet-Primaryuan-Addition** 是一个基于 [Fabric Carpet](https://github.com/gnembon/fabric-carpet) 的服务端扩展模组，主要为PRY服务器（Primaryuan Server）开发。新增了 **21 条**可配置 Carpet 规则和 **6 个**新命令，涵盖假人管理增强、模组兼容性修复、功能移植、玩家交互和生存特性扩展。
 
 所有功能均为 Carpet 规则驱动，默认关闭，按需启用。
 
@@ -23,6 +23,56 @@
 |------|------|--------|------|
 | `FixXaeroLib` | boolean | `false` | 修复 Xaero 地图 + LuckPerms 导致假人数据丢失的问题 |
 | `FixBluemap` | boolean | `false` | 修复假人不触发 Fabric API 连接事件导致 BlueMap 等模组追踪异常 |
+
+### 假人增强
+
+| 规则 | 类型 | 默认值 | 简介 |
+|------|------|--------|------|
+| `TppFakePlayer` | boolean | `false` | 假人珍珠站传送，启用 `/tpp` 与 `/tppset` 命令 |
+| `fakePlayerSkinMode` | string | `default` | 假人皮肤模式：`default` / `summon` / `same_skin` |
+| `fakePlayerSkinSet` | string | `Brokeyuan` | `same_skin` 模式下用于统一皮肤的玩家名 |
+| `fakePlayerDropStackModifiers` | boolean | `false` | 给假人追加独立 `/player <name> dropall [once\|continuous\|interval\|after\|perTick\|randomly\|stop]` 子命令，按设定节奏持续丢出背包所有物品，规则关闭时整个子命令隐藏 |
+| `playerScaleModifiers` | string | `false` | 为 Player 注册 `minecraft:scale` 属性并添加 `/scale set\|reset\|info` 命令。`false`=隐藏；`self`=所有人都只能调自己（无论 OP）；`true`=玩家仅可调自己、管理员可调任意玩家；`everyone`=所有人可调任意玩家。需 Minecraft 1.21.5+ |
+| `playerScaleMin` | double | `0.1` | 玩家（含 everyone 模式下的非 OP）执行 `/scale set` 可设置的最小值，管理员路径不受限 |
+| `playerScaleMax` | double | `10.0` | 玩家（含 everyone 模式下的非 OP）执行 `/scale set` 可设置的最大值，管理员路径不受限 |
+| `realisticPlayerScale` | boolean | `false` | 玩家速度随体型（`minecraft:scale` 属性）线性缩放：缩小一半速度减半，放大则变快（影响行走与创造飞行）。需配合 `playerScaleModifiers` 使用，仅 1.21.5+ |
+
+### 移植功能
+
+| 规则 | 类型 | 默认值 | 简介 |
+|------|------|--------|------|
+| `fakePlayerNameSuggestions` | string | `Steve,Alex` | 自定义 `/player` 命令的补全建议（移植自 Ivan-Carpet-Addition） |
+| `unicodeArgumentsSupport` | boolean | `false` | 允许命令参数使用非 ASCII 字符，可召唤中文名假人（移植自 YACA） |
+
+### 玩家交互
+
+| 规则 | 类型 | 默认值 | 简介 |
+|------|------|--------|------|
+| `ridingPlayers` | boolean | `false` | 主手持不死图腾时可骑上其他玩家 |
+| `pickupPlayers` | boolean | `false` | 主手持不死图腾 + 副手金胡萝卜时可捡起其他玩家 |
+| `ridingPlayersPickUpLimit` | int | `16` | 骑乘与捡起的最大堆叠人数（支持 16/32/自定义） |
+| `ridingPlayersDismountOnGameModeChange` | boolean | `false` | 游戏模式变更时乘客自动下车 |
+| `ridingPlayersClientAllowInteractions` | boolean | `true` | 头上有乘客时仍可交互方块/实体（需客户端安装） |
+
+### 生存功能
+
+| 规则 | 类型 | 默认值 | 简介 |
+|------|------|--------|------|
+| `sleepingDuringTheDay` | boolean | `false` | 白天睡觉，睡醒切换至夜晚（参考 PCA；完整功能需 1.21.11+） |
+| `playerhat` | boolean | `false` | `/hat` 命令将物品戴在头上；头部不死图腾可触发死亡保护 |
+| `betterSnowBall` | boolean | `false` | 雪球对玩家造成击退与伤害 |
+| `invisibleInTallGrass` | boolean | `false` | 头部位于高草丛时自动隐身 |
+
+### 命令
+
+| 命令 | 说明 |
+|------|------|
+| `/tpp <station>` | 经珍珠传送站传送 |
+| `/tppset` | 管理传送站 |
+| `/hat` | 将主手物品戴在头上 |
+| `/riding on\|off` | 开关他人骑乘自己的权限 |
+| `/picking on\|off` | 开关他人捡起自己的权限 |
+| `/scale set\|reset\|info` | 玩家大小调节（需 `playerScaleModifiers` 规则，仅 1.21.5+） |
 
 ## 文档
 

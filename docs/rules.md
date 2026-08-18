@@ -104,6 +104,21 @@
 
 ---
 
+### fakePlayerDropStackModifiers - 假人持续清空背包
+
+给 `/player <name>` 下追加独立的 dropall 子命令，让假人按设定节奏持续丢出背包所有物品。
+
+| 属性 | 值 |
+|------|-----|
+| **规则名** | `fakePlayerDropStackModifiers` |
+| **描述** | 给 /player <name> 下追加独立的 dropall 子命令，让假人按设定节奏持续丢出背包所有物品。命令：/player <name> dropall [once\|continuous\|interval <ticks>\|after <ticks>\|perTick <times>\|randomly <min> <max>\|stop] |
+| **类型** | `boolean` |
+| **默认值** | `false` |
+| **参考选项** | `false`, `true` |
+| **分类** | `PRIMARYUAN`, `BOT`, `COMMAND` |
+
+---
+
 ## 漏洞修复 (BUGFIX)
 
 ### FixXaeroLib - XaeroLib兼容性修复补丁
@@ -153,6 +168,8 @@
 ### sleepingDuringTheDay - 白日做梦
 
 允许玩家在白天睡觉，睡觉后切换至夜晚（参考 PCA）。
+
+> **版本要求**：完整功能（白天入睡）需 Minecraft 1.21.11+；1.21~1.21.10 上无法在白天开始睡觉。
 
 | 属性 | 值 |
 |------|-----|
@@ -297,6 +314,75 @@
 |------|-----|
 | **规则名** | `invisibleInTallGrass` |
 | **描述** | 玩家头部位于高草丛时自动隐形 |
+| **类型** | `boolean` |
+| **默认值** | `false` |
+| **参考选项** | `false`, `true` |
+| **分类** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
+
+---
+
+### playerScaleModifiers - 玩家随地大小变
+
+为 Player 注册 `minecraft:scale` 属性，并通过 `/scale set|reset|info` 命令调节玩家体型大小。仅 1.21.5+ 版本支持。
+
+| 属性 | 值 |
+|------|-----|
+| **规则名** | `playerScaleModifiers` |
+| **描述** | 为 Player 注册 minecraft:scale 属性，并添加 /scale set/reset/info 命令。false=关闭命令；self=所有人都只能调自己（无论 OP）；true=玩家仅可调自己，管理员可调任意玩家；everyone=所有人可调任意玩家。仅 1.21.5+ 版本支持 |
+| **类型** | `string` |
+| **默认值** | `false` |
+| **参考选项** | `false`, `self`, `true`, `everyone` |
+| **分类** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE`, `COMMAND` |
+
+#### 模式说明
+
+| 模式 | 行为 |
+|------|------|
+| `false` | 关闭命令（默认） |
+| `self` | 所有人都只能调自己（无论 OP） |
+| `true` | 玩家仅可调自己，管理员可调任意玩家 |
+| `everyone` | 所有人可调任意玩家 |
+
+---
+
+### playerScaleMin - 玩家大小最小值
+
+玩家（含 everyone 模式下的非 OP）执行 `/scale set` 时可设置的最小 scale 值，管理员路径不受此限制。
+
+| 属性 | 值 |
+|------|-----|
+| **规则名** | `playerScaleMin` |
+| **描述** | 玩家（含 everyone 模式下的非 OP）执行 /scale set 时可设置的最小 scale 值，管理员路径不受此限制 |
+| **类型** | `double` |
+| **默认值** | `0.1` |
+| **参考选项** | `0.1`, `0.25`, `0.5` |
+| **分类** | `PRIMARYUAN`, `SURVIVAL`, `COMMAND` |
+
+---
+
+### playerScaleMax - 玩家大小最大值
+
+玩家（含 everyone 模式下的非 OP）执行 `/scale set` 时可设置的最大 scale 值，管理员路径不受此限制。
+
+| 属性 | 值 |
+|------|-----|
+| **规则名** | `playerScaleMax` |
+| **描述** | 玩家（含 everyone 模式下的非 OP）执行 /scale set 时可设置的最大 scale 值，管理员路径不受此限制 |
+| **类型** | `double` |
+| **默认值** | `10.0` |
+| **参考选项** | `2.0`, `5.0`, `10.0` |
+| **分类** | `PRIMARYUAN`, `SURVIVAL`, `COMMAND` |
+
+---
+
+### realisticPlayerScale - 更真实的玩家大小变
+
+开启后玩家速度随体型缩放：缩小一倍速度变慢一倍，放大则变快（影响行走与飞行速度）。需配合玩家随地大小变规则使用，仅 1.21.5+ 版本支持。
+
+| 属性 | 值 |
+|------|-----|
+| **规则名** | `realisticPlayerScale` |
+| **描述** | 开启后玩家速度随体型缩放：缩小一倍速度变慢一倍，放大则变快（影响行走与飞行速度）。需配合玩家随地大小变规则使用，仅 1.21.5+ 版本支持 |
 | **类型** | `boolean` |
 | **默认值** | `false` |
 | **参考选项** | `false`, `true` |

@@ -72,6 +72,7 @@ All features are Carpet-rule-driven, off by default, enabled on demand.
 | `/hat` | Wear main-hand item on head |
 | `/riding on\|off` | Toggle permission for others to ride you |
 | `/picking on\|off` | Toggle permission for others to pick you up |
+| `/scale set\|reset\|info` | Player scale adjustment (requires `playerScaleModifiers` rule, 1.21.5+) |
 
 ## Installation
 
