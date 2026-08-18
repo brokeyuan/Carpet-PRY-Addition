@@ -338,6 +338,8 @@ scale
 Registers the `minecraft:scale` attribute for `Player` and manages it through a unified three-tier subcommand `/scale set|reset|info`. Supports four modes (false / self / true / everyone). In `self` mode everyone (even OPs) can only adjust themselves; in `true` mode admins can adjust anyone; in `everyone` mode anyone can adjust anyone. Tab-completion filters players by current identity; range limits apply per-identity tier.
 
 > **Version requirement**: `minecraft:scale` attribute was added to vanilla in Minecraft 1.21.5; 1.21~1.21.4 servers show an unsupported-version message.
+>
+> **Tip**: Combine with the `realisticPlayerScale` rule (`/carpet realisticPlayerScale true`) to make player speed scale with size for a more realistic experience.
 
 #### Tab completion behavior
 

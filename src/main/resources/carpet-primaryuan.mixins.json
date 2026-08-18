@@ -20,7 +20,8 @@
     "rule.betterSnowBall.SnowballMixin",
     "rule.fakePlayerDropStackModifiers.PlayerCommandMixin",
     "rule.fakePlayerDropStackModifiers.EntityPlayerActionPackMixin",
-    "rule.playerScaleModifiers.PlayerMixin"
+    "rule.playerScaleModifiers.PlayerMixin",
+    "rule.realisticPlayerScale.PlayerMixin"
   ],
   "client": [
     "rule.entitiesRidingPlayers.ProjectileUtilMixin"

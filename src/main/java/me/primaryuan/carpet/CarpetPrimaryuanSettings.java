@@ -129,6 +129,11 @@ public class CarpetPrimaryuanSettings {
     )
     public static double playerScaleMax = 10.0;
 
+    @Rule(
+            categories = {PRIMARYUAN, SURVIVAL, FEATURE}
+    )
+    public static boolean realisticPlayerScale = false;
+
     public static String fakePlayerTpStations = "";
 
     public static Map<String, String> tppPlayerAliases = new ConcurrentHashMap<>();

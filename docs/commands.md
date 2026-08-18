@@ -338,6 +338,8 @@ scale
 为 `Player` 注册 `minecraft:scale` 属性，通过统一的三层子命令 `/scale set|reset|info` 管理。支持四种模式切换（false / self / true / everyone）。self 模式下所有人（无论 OP）都只能调整自己；true 模式下管理员可调任意玩家；everyone 模式下所有人可互相调节。范围与权限分离：tab 补全根据当前身份过滤可见的玩家，范围限制根据身份分级。
 
 > **版本要求**：`minecraft:scale` 属性从 Minecraft 1.21.5 起加入原版，1.21~1.21.4 版本上执行会提示不支持。
+>
+> **搭配建议**：配合 `realisticPlayerScale` 规则（`/carpet realisticPlayerScale true`）可使玩家速度随体型缩放，更真实。
 
 #### Tab 补全行为
 

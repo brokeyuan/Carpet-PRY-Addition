@@ -35,6 +35,7 @@ All features are Carpet-rule-driven, off by default, enabled on demand.
 | `playerScaleModifiers` | string | `false` | Registers `minecraft:scale` attribute for Player and adds unified `/scale set\|reset\|info` command. `false`=hidden; `self`=everyone can only adjust themselves (even OPs); `true`=self-only for players + admins anyone; `everyone`=any player can modify anyone. Requires Minecraft 1.21.5+ |
 | `playerScaleMin` | double | `0.1` | Minimum scale value that players (including non-ops in everyone mode) can set via `/scale set`; admin path is not limited |
 | `playerScaleMax` | double | `10.0` | Maximum scale value that players (including non-ops in everyone mode) can set via `/scale set`; admin path is not limited |
+| `realisticPlayerScale` | boolean | `false` | Player speed scales with size (`minecraft:scale` attribute): half size = half speed, larger = faster (affects walking and creative flying). Requires `playerScaleModifiers` to adjust size. Minecraft 1.21.5+ only |
 
 ### Ported Features
 
