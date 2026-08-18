@@ -22,14 +22,15 @@ public abstract class PlayerMixin {
 
     /**
      * 每 tick 末尾幂等地将两个速度属性上的瞬态修改器同步为 scale 偏移量
-     * （MULTIPLY_TOTAL，amount = scale - 1）。数值无变化时不执行任何 add/remove，
+     * （ADD_MULTIPLIED_TOTAL，amount = scale - 1）。数值无变化时不执行任何 add/remove，
      * 避免属性被标记 dirty 而产生每 tick 属性同步包。
      */
     @Inject(method = "tick", at = @At("TAIL"))
     private void realisticPlayerScale$onTick(CallbackInfo callbackInfo) {
         //#if MC >= 12105
         Player self = (Player) (Object) this;
-        if (self.level().isClientSide) {
+        // 仅服务端维护（含假人）；instanceof 判断避免 Level.isClientSide 字段在 1.21.9+ 私有化的版本差异
+        if (!(self instanceof net.minecraft.server.level.ServerPlayer)) {
             return;
         }
         AttributeInstance scaleAttr = self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.SCALE);
@@ -57,10 +58,10 @@ public abstract class PlayerMixin {
                 moveSpeedAttr.removeModifier(speedModifierId);
             }
         } else if (moveModifier == null) {
-            moveSpeedAttr.addTransientModifier(new AttributeModifier(speedModifierId, amount, AttributeModifier.Operation.MULTIPLY_TOTAL));
+            moveSpeedAttr.addTransientModifier(new AttributeModifier(speedModifierId, amount, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
         } else if (moveModifier.amount() != amount) {
             moveSpeedAttr.removeModifier(speedModifierId);
-            moveSpeedAttr.addTransientModifier(new AttributeModifier(speedModifierId, amount, AttributeModifier.Operation.MULTIPLY_TOTAL));
+            moveSpeedAttr.addTransientModifier(new AttributeModifier(speedModifierId, amount, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
         }
         // FLYING_SPEED：幂等更新
         AttributeModifier flyModifier = flySpeedAttr.getModifier(speedModifierId);
@@ -69,10 +70,10 @@ public abstract class PlayerMixin {
                 flySpeedAttr.removeModifier(speedModifierId);
             }
         } else if (flyModifier == null) {
-            flySpeedAttr.addTransientModifier(new AttributeModifier(speedModifierId, amount, AttributeModifier.Operation.MULTIPLY_TOTAL));
+            flySpeedAttr.addTransientModifier(new AttributeModifier(speedModifierId, amount, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
         } else if (flyModifier.amount() != amount) {
             flySpeedAttr.removeModifier(speedModifierId);
-            flySpeedAttr.addTransientModifier(new AttributeModifier(speedModifierId, amount, AttributeModifier.Operation.MULTIPLY_TOTAL));
+            flySpeedAttr.addTransientModifier(new AttributeModifier(speedModifierId, amount, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
         }
         //#endif
     }
