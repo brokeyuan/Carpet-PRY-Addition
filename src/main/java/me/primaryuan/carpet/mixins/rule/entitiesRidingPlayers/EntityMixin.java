@@ -30,7 +30,8 @@ public abstract class EntityMixin {
 
     @WrapOperation(
             method = "startRiding(Lnet/minecraft/world/entity/Entity;ZZ)Z",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/EntityType;canSerialize()Z")
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/EntityType;canSerialize()Z"),
+            require = 0
     )
     private boolean ridingPlayers$allowRidingPlayers(EntityType instance, Operation<Boolean> original) {
         if (CarpetPrimaryuanSettings.ridingPlayers || CarpetPrimaryuanSettings.pickupPlayers) {
