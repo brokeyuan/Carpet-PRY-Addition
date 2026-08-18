@@ -2,6 +2,29 @@
 
 All notable changes to **Carpet-PRY-Addition** are documented in this file.
 
+## [1.1.7] - 2026-08-19
+
+### 新增规则
+
+- **`realisticPlayerScale`**：更真实的玩家大小变——玩家速度随体型（`minecraft:scale` 属性）线性缩放，缩小一倍速度变慢一倍，放大则变快（影响行走与创造飞行速度）；瞬态属性修改器实现，不写入存档，规则关闭立即恢复；需配合 `playerScaleModifiers` 使用，仅 1.21.5+ 支持
+
+### 修复
+
+- **`FixBluemap`**：为假人手动触发 Fabric `ServerPlayConnectionEvents.JOIN` 事件时改传 no-op `PacketSender`（动态代理）而非 `null`，修复 Kotlin 编写的监听器（如 penguin、Takeitout）因非空参数校验抛出 NullPointerException，导致假人创建失败（`createFake delayed task error`）的问题
+- **旧版本 mixin 注册缺失**：补齐 1.21~1.21.10 版本专属 `carpet-primaryuan.mixins.json` 遗漏的 10 条注册——骑乘玩家/捡起玩家（`entitiesRidingPlayers` 系列 4 条，含客户端 `ProjectileUtilMixin`）、隐身草、Unicode 参数支持、`FixXaeroLib`、`FixBluemap`、玩家帽子、更好的雪球此前在这些版本上静默失效；同时为 3 处对旧版本字节码敏感的注入点（`EntityMixin` 的 canSerialize 包装、`ServerPlayerMixin` 的 setGameMode 注入、客户端 `ProjectileUtilMixin`）添加 `require = 0` 防御，目标缺失时静默跳过而非崩溃
+- **清理死代码**：移除 26.2 目录中从未注册的孤儿 `RideCommandMixin`（v1.1.6 重命名 `/ride` → `/riding` 时遗留）
+
+### CI
+
+- 新增 Mixin Boot Check 工作流（`workflow_dispatch` 手动触发）：矩阵启动 1.21~1.21.10 各版本服务端，检测 mixin 应用错误与服务端启动状态
+
+### 文档
+
+- 规则文档（`docs/rules.md` / `docs/rules_en.md`）补录 5 条规则（`fakePlayerDropStackModifiers`、`playerScaleModifiers`、`playerScaleMin`、`playerScaleMax`、`realisticPlayerScale`）至 21 条，`playerScaleModifiers` 附模式说明表，`sleepingDuringTheDay` 补版本兼容说明
+- 中文 `README.md` 补全全部规则分组表与命令表（原仅有漏洞修复 2 条）；两语言 README 简介计数修正（21 条规则 / 6 个命令）；各文档版本号引用同步 1.1.7
+
+---
+
 ## [1.1.6] - 2026-08-12
 
 相较于 v1.1.5，本次更新包含 47 次提交，主要新增 3 个规则、2 个独立命令，并完成多版本兼容性重构与若干修复。
