@@ -1,0 +1,47 @@
+name: Mixin Boot Check
+
+on:
+  workflow_dispatch:
+
+jobs:
+  boot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ["1.21", "1.21.1", "1.21.3", "1.21.4", "1.21.5", "1.21.8", "1.21.10"]
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: 25
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6.2.0
+
+      - name: Boot server and check mixin application
+        run: |
+          mkdir -p ./run
+          echo eula=true > ./run/eula.txt
+          # 正常启动的服务端会一直运行直到被 timeout 终止（退出码 124 属预期）
+          set +e
+          timeout 420 ./gradlew ${{ matrix.version }}:runServer --console=plain > boot.log 2>&1
+          set -e
+          echo "--- boot.log tail ---"
+          tail -n 30 boot.log
+          if grep -qiE "MixinApplyError|Critical injection failure|InvalidMixinException|InjectionError|Error applying mixin" boot.log; then
+            echo "::error::Mixin application error detected on ${{ matrix.version }}"
+            grep -inE "mixin" boot.log | tail -n 40 || true
+            exit 1
+          fi
+          if ! grep -q "Done" boot.log; then
+            echo "::error::Server failed to boot on ${{ matrix.version }}"
+            exit 1
+          fi
+          echo "Mixin boot check passed for ${{ matrix.version }}"
