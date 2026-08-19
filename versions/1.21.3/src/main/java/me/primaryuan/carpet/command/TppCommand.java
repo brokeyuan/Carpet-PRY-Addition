@@ -241,7 +241,7 @@ public class TppCommand {
     }
 
     /**
-     * /tpp <station> setspawn - 延迟2秒后以玩家身份生成假人
+     * /tppset spawn <station> - 立即以玩家身份生成假人，3 秒后自动下线
      */
     private static int setSpawnFakePlayer(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         CommandSourceStack source = context.getSource();
@@ -266,7 +266,12 @@ public class TppCommand {
         String fakePlayerName = buildFakePlayerName(playerName, station);
         var server = source.getServer();
 
-        source.sendSuccess(() -> ServerI18n.tr(source, "carpetprimaryuan.command.tpp.fake_player_spawning", fakePlayerName), false);
+        // 步骤 1: 立即以玩家身份生成假人
+        server.getCommands().performPrefixedCommand(
+                player.createCommandSourceStack(),
+                "/player " + fakePlayerName + " spawn"
+        );
+        source.sendSuccess(() -> ServerI18n.tr(source, "carpetprimaryuan.command.tpp.fake_player_spawned", fakePlayerName), false);
 
         // 步骤 2: 3 秒后以控制台身份 kill 假人下线
         new Thread(() -> {
