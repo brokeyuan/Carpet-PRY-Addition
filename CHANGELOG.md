@@ -13,6 +13,8 @@ All notable changes to **Carpet-PRY-Addition** are documented in this file.
 - **`FixBluemap`**：为假人手动触发 Fabric `ServerPlayConnectionEvents.JOIN` 事件时改传 no-op `PacketSender`（动态代理）而非 `null`，修复 Kotlin 编写的监听器（如 penguin、Takeitout）因非空参数校验抛出 NullPointerException，导致假人创建失败（`createFake delayed task error`）的问题
 - **旧版本 mixin 注册缺失**：补齐 1.21~1.21.10 版本专属 `carpet-primaryuan.mixins.json` 遗漏的 10 条注册——骑乘玩家/捡起玩家（`entitiesRidingPlayers` 系列 4 条，含客户端 `ProjectileUtilMixin`）、隐身草、Unicode 参数支持、`FixXaeroLib`、`FixBluemap`、玩家帽子、更好的雪球此前在这些版本上静默失效；同时为 3 处对旧版本字节码敏感的注入点（`EntityMixin` 的 canSerialize 包装、`ServerPlayerMixin` 的 setGameMode 注入、客户端 `ProjectileUtilMixin`）添加 `require = 0` 防御，目标缺失时静默跳过而非崩溃
 - **清理死代码**：移除 26.2 目录中从未注册的孤儿 `RideCommandMixin`（v1.1.6 重命名 `/ride` → `/riding` 时遗留）
+- **`/tppset spawn` 在 1.21.3~1.21.5 无实际效果**：这三个版本的 `setSpawnFakePlayer` 覆盖缺失 `/player <name> spawn` 命令调用，只发送提示后 kill 一个从未生成的假人；已按 1.21.8 实现补回 spawn 调用
+- **移除冗余版本覆盖**：删除 26.1.2/26.2 中与根模板逐字相同的 `InvisibleInTallGrassHandler`（×2）与 `EntitiesRidingPlayersHandler` 覆盖文件，这些版本自动继承根模板，行为无变化
 
 ### CI
 
