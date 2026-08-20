@@ -339,7 +339,7 @@ scale
 
 > **版本要求**：`minecraft:scale` 属性从 Minecraft 1.21.5 起加入原版，1.21~1.21.4 版本上执行会提示不支持。
 >
-> **搭配建议**：配合 `realisticPlayerScale` 规则（`/carpet realisticPlayerScale true`）可使玩家速度随体型缩放，更真实。
+> **搭配建议**：配合 `realisticPlayerScale` 规则（`/carpet realisticPlayerScale true`）可使速度、跳跃、台阶高度、交互距离、摔落安全距离等物理特性随体型缩放，并补偿视野变化，更真实。
 
 #### Tab 补全行为
 

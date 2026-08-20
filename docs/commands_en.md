@@ -339,7 +339,7 @@ Registers the `minecraft:scale` attribute for `Player` and manages it through a 
 
 > **Version requirement**: `minecraft:scale` attribute was added to vanilla in Minecraft 1.21.5; 1.21~1.21.4 servers show an unsupported-version message.
 >
-> **Tip**: Combine with the `realisticPlayerScale` rule (`/carpet realisticPlayerScale true`) to make player speed scale with size for a more realistic experience.
+> **Tip**: Combine with the `realisticPlayerScale` rule (`/carpet realisticPlayerScale true`) to make speed, jump height, step height, interaction range, safe fall distance and more scale with size, with FOV compensation, for a more realistic experience.
 
 #### Tab completion behavior
 

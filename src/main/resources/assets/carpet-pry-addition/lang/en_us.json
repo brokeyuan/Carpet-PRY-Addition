@@ -42,7 +42,7 @@
   "carpet.rule.playerScaleMax.name": "Player Scale Max",
   "carpet.rule.playerScaleMax.desc": "Maximum scale value that players (non-ops in everyone mode included) can set via /scale set; admin path is not limited by this",
   "carpet.rule.realisticPlayerScale.name": "Realistic Player Scale",
-  "carpet.rule.realisticPlayerScale.desc": "Player speed scales linearly with size (minecraft:scale attribute): half the size means half the speed, enlarging makes you faster (affects walking and creative flying speed). Requires the playerScaleModifiers rule to adjust size. Only supported on 1.21.5+",
+  "carpet.rule.realisticPlayerScale.desc": "Physics scale with size (minecraft:scale): movement/flying speed, step height, block & entity interaction range and safe fall distance scale linearly; jump strength scales with the square root; FOV changes from shrinking are compensated (requires client-side install). Requires the playerScaleModifiers rule to adjust size. Only supported on 1.21.5+",
 
   "carpetprimaryuan.command.hat.disabled": "§cHat feature is not enabled. Please ask admin to run /carpet playerhat true",
   "carpetprimaryuan.command.hat.empty_hand": "§cPlease hold the item you want to wear",

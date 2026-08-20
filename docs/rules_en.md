@@ -361,12 +361,25 @@ Maximum scale value that players (non-ops in everyone mode included) can set via
 
 ### realisticPlayerScale - Realistic Player Scale
 
-When enabled, player speed scales with size: half the size means half the speed, enlarging makes you faster (affects walking and creative flying speed). Requires the playerScaleModifiers rule to adjust size. Only supported on 1.21.5+.
+When enabled, player physics scale with size in all dimensions. Requires the playerScaleModifiers rule to adjust size. Only supported on 1.21.5+.
+
+| Linked dimension | Scaling rule |
+|-------------------|--------------|
+| Movement speed (walking) | Linear (0.5x size = 0.5x speed) |
+| Flying speed (creative flight) | Linear |
+| Jump height | Square root (0.25x size = 0.5x jump height) |
+| Step height | Linear |
+| Block interaction/attack range | Linear |
+| Entity interaction/attack range | Linear |
+| Safe fall distance | Linear |
+| Field of view (FOV) | Compensates the FOV narrowing caused by shrinking, keeping a consistent view (requires the mod installed client-side) |
+
+All attribute modifications use transient modifiers (not persisted to save data) and are removed automatically when the rule is disabled or size returns to 1.0. Jump height uses a square-root curve, which matches vanilla creature-size physics more closely (jump energy grows slower than linear with volume).
 
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `realisticPlayerScale` |
-| **Description** | Player speed scales linearly with size (minecraft:scale attribute): half the size means half the speed, enlarging makes you faster (affects walking and creative flying speed). Requires the playerScaleModifiers rule to adjust size. Only supported on 1.21.5+ |
+| **Description** | Physics scale with size (minecraft:scale): movement/flying speed, step height, block & entity interaction range and safe fall distance scale linearly; jump strength scales with the square root; FOV changes from shrinking are compensated (requires client-side install). Requires the playerScaleModifiers rule to adjust size. Only supported on 1.21.5+ |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |

@@ -24,7 +24,8 @@
     "rule.realisticPlayerScale.PlayerMixin"
   ],
   "client": [
-    "rule.entitiesRidingPlayers.ProjectileUtilMixin"
+    "rule.entitiesRidingPlayers.ProjectileUtilMixin",
+    "rule.realisticPlayerScale.AbstractClientPlayerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

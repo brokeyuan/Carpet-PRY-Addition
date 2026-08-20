@@ -6,7 +6,7 @@ All notable changes to **Carpet-PRY-Addition** are documented in this file.
 
 ### 新增规则
 
-- **`realisticPlayerScale`**：更真实的玩家大小变——玩家速度随体型（`minecraft:scale` 属性）线性缩放，缩小一倍速度变慢一倍，放大则变快（影响行走与创造飞行速度）；瞬态属性修改器实现，不写入存档，规则关闭立即恢复；需配合 `playerScaleModifiers` 使用，仅 1.21.5+ 支持
+- **`realisticPlayerScale`**：更真实的玩家大小变——物理特性随体型（`minecraft:scale` 属性）全方位联动：移动/创造飞行速度、台阶高度、方块与实体交互/攻击距离、摔落安全距离随体型等比缩放；跳跃高度随体型平方根缩放（更贴近原版生物体型物理）；客户端补偿缩小带来的 FOV 视野变窄（需客户端安装本模组，纯服务端则跳过补偿）。瞬态属性修改器实现，不写入存档，规则关闭或体型恢复 1.0 后立即清理；需配合 `playerScaleModifiers` 使用，仅 1.21.5+ 支持
 
 ### 修复
 
