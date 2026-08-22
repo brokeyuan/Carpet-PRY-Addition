@@ -363,23 +363,23 @@ Maximum scale value that players (non-ops in everyone mode included) can set via
 
 When enabled, player physics scale with size in all dimensions. Requires the playerScaleModifiers rule to adjust size. Only supported on 1.21.5+.
 
-| Linked dimension | Scaling rule |
-|-------------------|--------------|
-| Movement speed (walking) | Linear (0.5x size = 0.5x speed) |
-| Flying speed (creative flight) | Linear |
-| Jump height | Square root (0.25x size = 0.5x jump height) |
-| Step height | Linear |
-| Block interaction/attack range | Linear |
-| Entity interaction/attack range | Linear |
-| Safe fall distance | Linear |
-| Field of view (FOV) | Compensates the FOV narrowing caused by shrinking, keeping a consistent view (requires the mod installed client-side) |
+| Linked dimension | Scaling rule | Floor |
+|-------------------|--------------|-------|
+| Movement speed (walking) | √scale (scale<1.0) / linear (scale≥1.0) | 0.3× |
+| Flying speed (creative flight) | √scale (scale<1.0) / linear (scale≥1.0) | 0.3× |
+| Jump height | √scale | 0.5× |
+| Step height | Linear | 0.5× |
+| Block interaction/attack range | Linear | 0.5× (≥2.25 blocks) |
+| Entity interaction/attack range | Linear | 0.5× (≥1.5 blocks) |
+| Safe fall distance | Linear | 0.5× (≥1.5 blocks) |
+| Field of view (FOV) | Compensates the FOV narrowing caused by shrinking, keeping a consistent view (requires the mod installed client-side) | — |
 
-All attribute modifications use transient modifiers (not persisted to save data) and are removed automatically when the rule is disabled or size returns to 1.0. Jump height uses a square-root curve, which matches vanilla creature-size physics more closely (jump energy grows slower than linear with volume).
+All attribute modifications use transient modifiers (not persisted to save data) and are removed automatically when the rule is disabled or size returns to 1.0. For scale<1.0, a hybrid strategy is used: movement/flying speed use a √scale curve for gentler degradation, while critical attributes (interaction range, safe fall distance, step height) and jump height have floor limits to ensure playability at tiny sizes (e.g., 0.1). For scale≥1.0, linear scaling is preserved.
 
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `realisticPlayerScale` |
-| **Description** | Physics scale with size (minecraft:scale): movement/flying speed, step height, block & entity interaction range and safe fall distance scale linearly; jump strength scales with the square root; FOV changes from shrinking are compensated (requires client-side install). Requires the playerScaleModifiers rule to adjust size. Only supported on 1.21.5+ |
+| **Description** | Physics scale with size (minecraft:scale): movement/flying speed scale with the square root of size (gentler when shrinking, with floor); step height, block & entity interaction range and safe fall distance scale linearly (with floors ensuring playability at tiny sizes); jump strength scales with the square root (with floor); FOV changes from shrinking are compensated (requires client-side install). Requires the playerScaleModifiers rule to adjust size. Only supported on 1.21.5+ |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
