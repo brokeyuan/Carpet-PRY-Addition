@@ -35,6 +35,9 @@
   "carpet.rule.fakePlayerDropStackModifiers.name": "Fake Player Continuous Drop",
   "carpet.rule.fakePlayerDropStackModifiers.desc": "Adds an independent dropall sub-command to /player <name>, letting fake players drop all inventory items at a configured pace. Command: /player <name> dropall [once|continuous|interval <ticks>|after <ticks>|perTick <times>|randomly <min> <max>|stop]",
 
+  "carpet.rule.fakePlayerSendto.name": "Fake Player Inventory Link",
+  "carpet.rule.fakePlayerSendto.desc": "Adds an independent sendto sub-command to /player <name>, creating one-way inventory item flow links between fake players (transfers one stack per trigger, default one stack per tick, round-robin across targets, source buffers when a target is full). Command: /player <name> sendto <target> (create link and start transferring), /player <name> sendto once|continuous|interval <ticks>|after <ticks>|perTick <times>|randomly <min> <max> (adjust pace), /player <name> sendto stop (stop and remove all links). Links are memory-only and lost on fake player logout or server restart",
+
   "carpet.rule.playerScaleModifiers.name": "Player Scale Modifiers",
   "carpet.rule.playerScaleModifiers.desc": "Registers minecraft:scale attribute for Player and adds /scale set/reset/info command. false=disable; self=everyone can only adjust themselves (even OPs); true=players adjust self only, admins adjust anyone; everyone=any player can adjust anyone. Only supported on 1.21.5+",
   "carpet.rule.playerScaleMin.name": "Player Scale Min",
@@ -92,6 +95,23 @@
   "carpetprimaryuan.command.dropall.stopped": "§aStopped the %s drop task, dropped %d stacks in total",
   "carpetprimaryuan.command.dropall.no_task": "§e%s has no ongoing drop task",
   "carpetprimaryuan.command.dropall.player_offline": "§cFake player %s went offline, %s drop task automatically stopped",
+
+  "carpetprimaryuan.command.sendto.linked": "§aFake player inventory link created: %s → %s, continuous transfer started (one stack per tick)",
+  "carpetprimaryuan.command.sendto.source_not_fake": "§c%s is not a fake player, sendto only supports carpet fake players as source",
+  "carpetprimaryuan.command.sendto.target_offline": "§cTarget %s is not online",
+  "carpetprimaryuan.command.sendto.target_not_fake": "§cTarget %s is not a fake player, sendto only supports carpet fake players as target",
+  "carpetprimaryuan.command.sendto.self_link": "§cCannot create a self link %s → %s",
+  "carpetprimaryuan.command.sendto.duplicate": "§cLink %s → %s already exists",
+  "carpetprimaryuan.command.sendto.stopped_all": "§aStopped and removed all inventory links of fake player %s, transferred %d stacks / %d items in total",
+  "carpetprimaryuan.command.sendto.no_links": "§e%s has no inventory links, create one first with /player %s sendto <target>",
+  "carpetprimaryuan.command.sendto.current_links": "§e%s current links: %s",
+  "carpetprimaryuan.command.sendto.transferred_once": "§aTransferred one stack of %d items",
+  "carpetprimaryuan.command.sendto.transferred_zero": "§e%s has an empty inventory, nothing to transfer",
+  "carpetprimaryuan.command.sendto.started_continuous": "§aFake player %s transfer mode set to continuous (one stack per tick)",
+  "carpetprimaryuan.command.sendto.started_interval": "§aFake player %s transfer mode set to one stack every %d ticks",
+  "carpetprimaryuan.command.sendto.started_after": "§aFake player %s will transfer one stack after %d ticks",
+  "carpetprimaryuan.command.sendto.started_perTick": "§aFake player %s transfer mode set to %d times per second",
+  "carpetprimaryuan.command.sendto.started_randomly": "§aFake player %s transfer mode set to random interval %d-%d ticks per stack",
 
   "carpetprimaryuan.command.scale.set_self": "§aYour scale has been set to %sx",
   "carpetprimaryuan.command.scale.set_other_admin": "§a%s's scale has been set to %sx",

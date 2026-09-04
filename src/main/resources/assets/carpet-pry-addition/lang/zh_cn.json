@@ -35,6 +35,9 @@
   "carpet.rule.fakePlayerDropStackModifiers.name": "假人持续清空背包",
   "carpet.rule.fakePlayerDropStackModifiers.desc": "给 /player <name> 下追加独立的 dropall 子命令，让假人按设定节奏持续丢出背包所有物品。命令：/player <name> dropall [once|continuous|interval <ticks>|after <ticks>|perTick <times>|randomly <min> <max>|stop]",
 
+  "carpet.rule.fakePlayerSendto.name": "假人背包链接",
+  "carpet.rule.fakePlayerSendto.desc": "给 /player <name> 下追加独立的 sendto 子命令，建立假人之间单向的背包物品流链接（每次转移一组，默认每 tick 一组，多目标逐组轮流分配，目标满时源背包缓冲）。命令：/player <name> sendto <target>（建立链接并立即开始转移）、/player <name> sendto once|continuous|interval <ticks>|after <ticks>|perTick <times>|randomly <min> <max>（调整转移频率）、/player <name> sendto stop（停止并移除全部链接）。链接仅存内存，假人下线或服务器重启后失效",
+
   "carpet.rule.playerScaleModifiers.name": "玩家随地大小变",
   "carpet.rule.playerScaleModifiers.desc": "为 Player 注册 minecraft:scale 属性，并添加 /scale set/reset/info 命令。false=关闭命令；self=所有人都只能调自己（无论 OP）；true=玩家仅可调自己，管理员可调任意玩家；everyone=所有人可调任意玩家。仅 1.21.5+ 版本支持",
   "carpet.rule.playerScaleMin.name": "玩家大小最小值",
@@ -92,6 +95,23 @@
   "carpetprimaryuan.command.dropall.stopped": "§a已停止 %s 丢出任务，共丢出 %d 组",
   "carpetprimaryuan.command.dropall.no_task": "§e%s 没有正在进行的丢出任务",
   "carpetprimaryuan.command.dropall.player_offline": "§c假人 %s 已下线，%s 丢出任务自动停止",
+
+  "carpetprimaryuan.command.sendto.linked": "§a已建立假人背包链接: %s → %s，并已开始持续转移（每 tick 一组）",
+  "carpetprimaryuan.command.sendto.source_not_fake": "§c%s 不是假人，sendto 仅支持 carpet 假人作为源",
+  "carpetprimaryuan.command.sendto.target_offline": "§c目标 %s 不在线",
+  "carpetprimaryuan.command.sendto.target_not_fake": "§c目标 %s 不是假人，sendto 仅支持 carpet 假人作为目标",
+  "carpetprimaryuan.command.sendto.self_link": "§c不能建立 %s → %s 的自链接",
+  "carpetprimaryuan.command.sendto.duplicate": "§c%s → %s 的链接已存在",
+  "carpetprimaryuan.command.sendto.stopped_all": "§a已停止并移除假人 %s 的全部背包链接，共转移 %d 组 / %d 个物品",
+  "carpetprimaryuan.command.sendto.no_links": "§e%s 没有任何背包链接，请先用 /player %s sendto <目标> 建立",
+  "carpetprimaryuan.command.sendto.current_links": "§e%s 当前链接: %s",
+  "carpetprimaryuan.command.sendto.transferred_once": "§a已转移一组共 %d 个物品",
+  "carpetprimaryuan.command.sendto.transferred_zero": "§e%s 背包为空，没有可转移的物品",
+  "carpetprimaryuan.command.sendto.started_continuous": "§a假人 %s 的物品转移已设为持续模式（每 tick 一组）",
+  "carpetprimaryuan.command.sendto.started_interval": "§a假人 %s 的物品转移已设为每 %d tick 一组",
+  "carpetprimaryuan.command.sendto.started_after": "§a假人 %s 将在 %d tick 后转移一组",
+  "carpetprimaryuan.command.sendto.started_perTick": "§a假人 %s 的物品转移已设为每秒 %d 次",
+  "carpetprimaryuan.command.sendto.started_randomly": "§a假人 %s 的物品转移已设为随机间隔 %d-%d tick 一组",
 
   "carpetprimaryuan.command.scale.set_self": "§a你的大小已设为 %sx",
   "carpetprimaryuan.command.scale.set_other_admin": "§a已将 %s 的大小设为 %sx",
