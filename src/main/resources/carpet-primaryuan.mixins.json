@@ -20,6 +20,7 @@
     "rule.betterSnowBall.SnowballMixin",
     "rule.fakePlayerDropStackModifiers.PlayerCommandMixin",
     "rule.fakePlayerDropStackModifiers.EntityPlayerActionPackMixin",
+    "rule.fakePlayerSendto.PlayerCommandMixin",
     "rule.playerScaleModifiers.PlayerMixin",
     "rule.realisticPlayerScale.PlayerMixin"
   ],
