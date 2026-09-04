@@ -12,6 +12,7 @@ import me.primaryuan.carpet.command.ScaleCommand;
 import me.primaryuan.carpet.command.TppCommand;
 import me.primaryuan.carpet.handler.entitiesRidingPlayers.EntitiesRidingPlayersHandler;
 import me.primaryuan.carpet.settings.CarpetRuleRegistrar;
+import me.primaryuan.carpet.util.SendtoLinkManager;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.world.InteractionResult;
@@ -62,6 +63,10 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         ScaleCommand.register();
         LOGGER.info("scale command registered");
 
+        // 假人背包链接（sendto）：初始化 tick 转移调度、假人下线清理与服务器停止清空监听
+        SendtoLinkManager.init();
+        LOGGER.info("sendto link manager initialized");
+
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             if (CarpetPrimaryuanSettings.ridingPlayers) {
                 EntitiesRidingPlayersHandler.onLogOut(handler.player);
@@ -85,15 +90,16 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         });
         LOGGER.info("ridingPlayers use entity listener registered");
 
-        // 规则变更时刷新命令树，使 dropall / scale 可见性立即随对应规则切换
+        // 规则变更时刷新命令树，使 dropall / scale / sendto 可见性立即随对应规则切换
         CarpetServer.settingsManager.registerRuleObserver((source, changedRule, userInput) -> {
             String ruleName = changedRule.name();
             if ("fakePlayerDropStackModifiers".equals(ruleName)
-                    || "playerScaleModifiers".equals(ruleName)) {
+                    || "playerScaleModifiers".equals(ruleName)
+                    || "fakePlayerSendto".equals(ruleName)) {
                 CommandHelper.notifyPlayersCommandsChanged(source.getServer());
             }
         });
-        LOGGER.info("fakePlayerDropStackModifiers & playerScaleModifiers rule observer registered");
+        LOGGER.info("fakePlayerDropStackModifiers & playerScaleModifiers & fakePlayerSendto rule observer registered");
     }
 
     @Override

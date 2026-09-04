@@ -108,6 +108,13 @@ public class CarpetPrimaryuanSettings {
     )
     public static boolean fakePlayerDropStackModifiers = false;
 
+    // 控制假人物品流链接功能（/player <name> sendto <target>）及其命令的可用性
+    @Rule(
+            options = {"true", "false"},
+            categories = {PRIMARYUAN, BOT, COMMAND}
+    )
+    public static boolean fakePlayerSendto = true;
+
     @Rule(
             options = {"false", "self", "true", "everyone"},
             strict = false,
