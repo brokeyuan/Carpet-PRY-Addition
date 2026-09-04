@@ -17,19 +17,18 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Set up JDK 25
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: 'temurin'
           java-version: 25
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6.2.0
+        uses: gradle/actions/setup-gradle@v6.3.0
 
       - name: Boot server and check mixin application
         run: |
           mkdir -p ./run
           echo eula=true > ./run/eula.txt
-          # 正常启动的服务端会一直运行直到被 timeout 终止（退出码 124 属预期）
           set +e
           timeout 420 ./gradlew ${{ matrix.version }}:runServer --console=plain > boot.log 2>&1
           set -e
