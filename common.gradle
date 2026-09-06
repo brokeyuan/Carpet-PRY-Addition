@@ -47,6 +47,13 @@ dependencies {
 	if (!project.skinrestorer_name.startsWith('_disabled_')) {
 		autoImplementation(name: project.skinrestorer_name)
 	}
+
+	// 单元测试：仅最新版本子项目启用（测试覆盖根模板共享逻辑，跑一次即可）
+	if (mcVersion == 26_02_00) {
+		testImplementation platform('org.junit:junit-bom:5.10.2')
+		testImplementation 'org.junit.jupiter:junit-jupiter'
+		testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	}
 }
 
 String MIXIN_CONFIG_PATH = 'carpet-primaryuan.mixins.json'
@@ -117,6 +124,17 @@ java {
 	sourceCompatibility = JAVA_COMPATIBILITY
 	targetCompatibility = JAVA_COMPATIBILITY
 	withSourcesJar()
+}
+
+// 单元测试随最新版本子项目的 build 一起执行（buildAndGather CI 会跑到）
+if (mcVersion == 26_02_00) {
+	test {
+		useJUnitPlatform()
+		testLogging {
+			events 'failed', 'skipped'
+			exceptionFormat 'full'
+		}
+	}
 }
 
 jar {

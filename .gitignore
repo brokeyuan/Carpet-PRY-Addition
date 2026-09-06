@@ -50,3 +50,6 @@ ServerPlayer_startSleepInBed.txt
 
 # local JAR libs
 libs/
+# local build/test artifacts (never commit)
+.gradle-user/
+versions/*/logs/
