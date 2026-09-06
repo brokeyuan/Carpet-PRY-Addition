@@ -16,38 +16,21 @@ public class HatCommand {
 
     public static void register() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+            // 规则关闭时整棵命令不可见（不显示、不可执行）
             dispatcher.register(Commands.literal("hat")
-                    .requires(source -> {
-                        if (!source.isPlayer()) return true;
-                        if (isAdmin(source)) return true;
-                        return CarpetPrimaryuanSettings.playerhat;
-                    })
+                    .requires(source -> CarpetPrimaryuanSettings.playerhat)
                     .executes(HatCommand::execute));
         });
-    }
-
-    private static boolean isAdmin(CommandSourceStack source) {
-        if (!source.isPlayer()) return true;
-        //#if MC <= 12110
-        //$$ return source.hasPermission(4);
-        //#else
-        return Commands.LEVEL_OWNERS.check(source.permissions());
-        //#endif
     }
 
     private static int execute(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
 
-        if (!CarpetPrimaryuanSettings.playerhat) {
-            player.sendSystemMessage(ServerI18n.tr(player, "carpetprimaryuan.command.hat.disabled"));
-            return 0;
-        }
-
         ItemStack mainHandItem = player.getMainHandItem();
         ItemStack headSlotItem = player.getItemBySlot(EquipmentSlot.HEAD);
 
         if (mainHandItem.isEmpty()) {
-            player.sendSystemMessage(ServerI18n.tr(player, "carpetprimaryuan.command.hat.empty_hand"));
+            player.sendSystemMessage(ServerI18n.tr("carpetprimaryuan.command.hat.empty_hand"));
             return 0;
         }
 
@@ -55,7 +38,7 @@ public class HatCommand {
         player.setItemInHand(InteractionHand.MAIN_HAND, headSlotItem);
 
         String itemName = mainHandItem.getDisplayName().getString();
-        player.sendSystemMessage(ServerI18n.tr(player, "carpetprimaryuan.command.hat.equipped", itemName));
+        player.sendSystemMessage(ServerI18n.tr("carpetprimaryuan.command.hat.equipped", itemName));
 
         return 1;
     }

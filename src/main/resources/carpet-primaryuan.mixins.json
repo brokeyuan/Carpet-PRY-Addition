@@ -18,9 +18,8 @@
     "rule.FixBluemap.PlayerListFakePlayerEventsMixin",
     "rule.playerhat.LivingEntityMixin",
     "rule.betterSnowBall.SnowballMixin",
-    "rule.fakePlayerDropStackModifiers.PlayerCommandMixin",
     "rule.fakePlayerDropStackModifiers.EntityPlayerActionPackMixin",
-    "rule.fakePlayerSendto.PlayerCommandMixin",
+    "rule.fakePlayerCommandExtensions.PlayerCommandExtensionsMixin",
     "rule.playerScaleModifiers.PlayerMixin",
     "rule.realisticPlayerScale.PlayerMixin"
   ],

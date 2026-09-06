@@ -2,9 +2,6 @@ package me.primaryuan.carpet;
 
 import me.primaryuan.carpet.settings.Rule;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import static carpet.api.settings.RuleCategory.*;
 
 public class CarpetPrimaryuanSettings {
@@ -20,6 +17,7 @@ public class CarpetPrimaryuanSettings {
     )
     public static boolean TppFakePlayer = false;
 
+    // 假人名补全建议列表（逗号分隔），空 = 关闭（保持 Carpet 原版建议）
     @Rule(
             options = {"Steve,Alex", "Pry,hsds", "Pry,hsds,Firework,Food", ""},
             strict = false,
@@ -108,12 +106,11 @@ public class CarpetPrimaryuanSettings {
     )
     public static boolean fakePlayerDropStackModifiers = false;
 
-    // 控制假人物品流链接功能（/player <name> sendto <target>）及其命令的可用性
+    // 控制假人物品流链接功能（/player <name> sendto <target>）及其命令的可用性，默认关闭
     @Rule(
-            options = {"true", "false"},
             categories = {PRIMARYUAN, BOT, COMMAND}
     )
-    public static boolean fakePlayerSendto = true;
+    public static boolean fakePlayerSendto = false;
 
     @Rule(
             options = {"false", "self", "true", "everyone"},
@@ -140,8 +137,4 @@ public class CarpetPrimaryuanSettings {
             categories = {PRIMARYUAN, SURVIVAL, FEATURE}
     )
     public static boolean realisticPlayerScale = false;
-
-    public static String fakePlayerTpStations = "";
-
-    public static Map<String, String> tppPlayerAliases = new ConcurrentHashMap<>();
 }

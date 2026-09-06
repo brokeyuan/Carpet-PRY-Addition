@@ -22,7 +22,12 @@ public class PlayerCommandMixin {
             cancellable = true
     )
     private static void overwriteSuggestsPlayerList(CommandSourceStack source, CallbackInfoReturnable<Collection<String>> cir) {
-        Set<String> players = Sets.newLinkedHashSet(Arrays.asList(CarpetPrimaryuanSettings.fakePlayerNameSuggestions.split(",")));
+        String suggestionList = CarpetPrimaryuanSettings.fakePlayerNameSuggestions;
+        // 规则关闭（空值）：不覆盖，保持 Carpet 原版建议
+        if (suggestionList == null || suggestionList.isBlank()) {
+            return;
+        }
+        Set<String> players = Sets.newLinkedHashSet(Arrays.asList(suggestionList.split(",")));
         players.addAll(source.getOnlinePlayerNames());
         cir.setReturnValue(players);
     }

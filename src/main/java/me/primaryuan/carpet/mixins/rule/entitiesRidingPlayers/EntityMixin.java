@@ -17,14 +17,14 @@ public abstract class EntityMixin {
     @Inject(method = "removePassenger", at = @At("TAIL"))
     private void ridingPlayers$removePassenger(Entity passenger, CallbackInfo ci) {
         if (CarpetPrimaryuanSettings.ridingPlayers || CarpetPrimaryuanSettings.pickupPlayers) {
-            EntitiesRidingPlayersHandler.onDismount((Entity) (Object) this);
+            EntitiesRidingPlayersHandler.syncPassengers((Entity) (Object) this);
         }
     }
 
     @Inject(method = "addPassenger", at = @At("TAIL"))
     private void ridingPlayers$onAddPassenger(Entity passenger, CallbackInfo ci) {
         if (CarpetPrimaryuanSettings.ridingPlayers || CarpetPrimaryuanSettings.pickupPlayers) {
-            EntitiesRidingPlayersHandler.onMount((Entity) (Object) this, passenger);
+            EntitiesRidingPlayersHandler.syncPassengers((Entity) (Object) this);
         }
     }
 

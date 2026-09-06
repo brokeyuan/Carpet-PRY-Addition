@@ -4,6 +4,7 @@ import carpet.CarpetExtension;
 import carpet.CarpetServer;
 import carpet.utils.CommandHelper;
 import com.google.common.collect.Maps;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import me.primaryuan.carpet.command.HatCommand;
@@ -19,11 +20,11 @@ import net.minecraft.world.InteractionResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.BufferedReader;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CarpetPrimaryuanServer implements CarpetExtension {
     private static final CarpetPrimaryuanServer INSTANCE = new CarpetPrimaryuanServer();
@@ -31,6 +32,20 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
     public static final String name = CarpetPrimaryuanMod.getModId();
     public static final String fancyName = "Carpet Primaryuan";
     public static final Logger LOGGER = LogManager.getLogger(fancyName);
+
+    /**
+     * 控制命令可见性的规则名集合（规则名 = Settings 字段名）。
+     * 这些规则变更时需要刷新玩家命令树，使命令"不开启则不显示"立即生效。
+     */
+    private static final Set<String> COMMAND_VISIBILITY_RULES = Set.of(
+            "TppFakePlayer",                  // /tpp /tppset
+            "playerhat",                      // /hat
+            "ridingPlayers",                  // /riding
+            "pickupPlayers",                  // /picking
+            "fakePlayerDropStackModifiers",   // /player <name> dropall
+            "playerScaleModifiers",           // /scale
+            "fakePlayerSendto"                // /player <name> sendto
+    );
 
     @Override
     public String version() {
@@ -49,30 +64,20 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
     public void onGameStarted() {
         LOGGER.info(fancyName + " " + CarpetPrimaryuanMod.getVersion() + " loaded");
         CarpetRuleRegistrar.register(CarpetPrimaryuanSettings.class);
-        LOGGER.info("fakePlayerNameSuggestions feature enabled");
         TppCommand.register();
-        LOGGER.info("tpp command registered");
         HatCommand.register();
-        LOGGER.info("hat command registered");
         TppConfigManager.load();
-        LOGGER.info("TPP config loaded");
-
         RidingCommand.register();
-        LOGGER.info("riding command registered");
-
         ScaleCommand.register();
-        LOGGER.info("scale command registered");
 
         // 假人背包链接（sendto）：初始化 tick 转移调度、假人下线清理与服务器停止清空监听
         SendtoLinkManager.init();
-        LOGGER.info("sendto link manager initialized");
 
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             if (CarpetPrimaryuanSettings.ridingPlayers) {
                 EntitiesRidingPlayersHandler.onLogOut(handler.player);
             }
         });
-        LOGGER.info("ridingPlayers disconnect listener registered");
 
         UseEntityCallback.EVENT.register((player, level, hand, entity, hitResult) -> {
             if (CarpetPrimaryuanSettings.ridingPlayers) {
@@ -88,37 +93,33 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
 
             return InteractionResult.PASS;
         });
-        LOGGER.info("ridingPlayers use entity listener registered");
 
-        // 规则变更时刷新命令树，使 dropall / scale / sendto 可见性立即随对应规则切换
+        // 规则变更时刷新命令树，使所有受控命令的可见性立即随对应规则切换
         CarpetServer.settingsManager.registerRuleObserver((source, changedRule, userInput) -> {
-            String ruleName = changedRule.name();
-            if ("fakePlayerDropStackModifiers".equals(ruleName)
-                    || "playerScaleModifiers".equals(ruleName)
-                    || "fakePlayerSendto".equals(ruleName)) {
+            if (COMMAND_VISIBILITY_RULES.contains(changedRule.name())) {
                 CommandHelper.notifyPlayersCommandsChanged(source.getServer());
             }
         });
-        LOGGER.info("fakePlayerDropStackModifiers & playerScaleModifiers & fakePlayerSendto rule observer registered");
     }
+
+    /** 语言翻译缓存：canHasTranslations 会被反复调用，按语言缓存解析结果 */
+    private static final Map<String, Map<String, String>> TRANSLATION_CACHE = new ConcurrentHashMap<>();
 
     @Override
     public Map<String, String> canHasTranslations(String lang) {
+        return TRANSLATION_CACHE.computeIfAbsent(lang.toLowerCase(), this::loadTranslations);
+    }
+
+    private Map<String, String> loadTranslations(String lang) {
         Map<String, String> translations = Maps.newHashMap();
         String langFile = "/assets/" + CarpetPrimaryuanMod.getModId() + "/lang/" + lang.toLowerCase() + ".json";
         try (InputStream is = CarpetPrimaryuanServer.class.getResourceAsStream(langFile)) {
             if (is == null) {
                 return translations;
             }
-            BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                sb.append(line);
-            }
-            String content = sb.toString();
+            String content = new String(is.readAllBytes(), StandardCharsets.UTF_8);
             JsonObject json = JsonParser.parseString(content).getAsJsonObject();
-            for (Map.Entry<String, com.google.gson.JsonElement> entry : json.entrySet()) {
+            for (Map.Entry<String, JsonElement> entry : json.entrySet()) {
                 translations.put(entry.getKey(), entry.getValue().getAsString());
             }
         } catch (Exception e) {

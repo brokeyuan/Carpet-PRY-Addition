@@ -14,77 +14,43 @@ public class RidingCommand {
 
     public static void register() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+            // 规则关闭时整棵命令不可见（不显示、不可执行）
             dispatcher.register(Commands.literal("riding")
-                    .requires(source -> {
-                        if (!source.isPlayer()) return true;
-                        if (isAdmin(source)) return true;
-                        return CarpetPrimaryuanSettings.ridingPlayers;
-                    })
-                    .then(Commands.literal("on")
-                            .executes(RidingCommand::rideOn))
-                    .then(Commands.literal("off")
-                            .executes(RidingCommand::rideOff)));
+                    .requires(source -> CarpetPrimaryuanSettings.ridingPlayers)
+                    .then(Commands.literal("on").executes(ctx ->
+                            toggle(ctx, true, EntitiesRidingPlayersHandler.Permission.RIDE,
+                                    "carpetprimaryuan.command.ride.allow_ride")))
+                    .then(Commands.literal("off").executes(ctx ->
+                            toggle(ctx, false, EntitiesRidingPlayersHandler.Permission.RIDE,
+                                    "carpetprimaryuan.command.ride.disallow_ride"))));
 
             dispatcher.register(Commands.literal("picking")
-                    .requires(source -> {
-                        if (!source.isPlayer()) return true;
-                        if (isAdmin(source)) return true;
-                        return CarpetPrimaryuanSettings.pickupPlayers;
-                    })
-                    .then(Commands.literal("on")
-                            .executes(RidingCommand::pickupOn))
-                    .then(Commands.literal("off")
-                            .executes(RidingCommand::pickupOff)));
+                    .requires(source -> CarpetPrimaryuanSettings.pickupPlayers)
+                    .then(Commands.literal("on").executes(ctx ->
+                            toggle(ctx, true, EntitiesRidingPlayersHandler.Permission.PICKUP,
+                                    "carpetprimaryuan.command.ride.allow_pickup")))
+                    .then(Commands.literal("off").executes(ctx ->
+                            toggle(ctx, false, EntitiesRidingPlayersHandler.Permission.PICKUP,
+                                    "carpetprimaryuan.command.ride.disallow_pickup"))));
         });
     }
 
-    private static boolean isAdmin(CommandSourceStack source) {
-        if (!source.isPlayer()) return true;
-        //#if MC <= 12110
-        //$$ return source.hasPermission(4);
-        //#else
-        return Commands.LEVEL_OWNERS.check(source.permissions());
-        //#endif
-    }
-
-    private static int rideOn(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    /** on/off 共用入口：设置本人对应类型的许可并广播 */
+    private static int toggle(CommandContext<CommandSourceStack> context, boolean allow,
+                              EntitiesRidingPlayersHandler.Permission type,
+                              String messageKey) throws CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
-
-        EntitiesRidingPlayersHandler.setRidePermission(player.getName().getString(), true);
-        broadcast(context.getSource(), "carpetprimaryuan.command.ride.allow_ride", player.getName().getString());
-        return 1;
-    }
-
-    private static int rideOff(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        ServerPlayer player = context.getSource().getPlayerOrException();
-
-        EntitiesRidingPlayersHandler.setRidePermission(player.getName().getString(), false);
-        broadcast(context.getSource(), "carpetprimaryuan.command.ride.disallow_ride", player.getName().getString());
-        return 1;
-    }
-
-    private static int pickupOn(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        ServerPlayer player = context.getSource().getPlayerOrException();
-
-        EntitiesRidingPlayersHandler.setPickupPermission(player.getName().getString(), true);
-        broadcast(context.getSource(), "carpetprimaryuan.command.ride.allow_pickup", player.getName().getString());
-        return 1;
-    }
-
-    private static int pickupOff(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        ServerPlayer player = context.getSource().getPlayerOrException();
-
-        EntitiesRidingPlayersHandler.setPickupPermission(player.getName().getString(), false);
-        broadcast(context.getSource(), "carpetprimaryuan.command.ride.disallow_pickup", player.getName().getString());
+        EntitiesRidingPlayersHandler.setPermission(type, player.getName().getString(), allow);
+        broadcast(context.getSource(), messageKey, player.getName().getString());
         return 1;
     }
 
     /**
-     * 向全服玩家广播消息，按每个玩家自身语言翻译
+     * 向全服玩家广播消息（按 /carpet language 设置的全局语言翻译，不区分玩家语言）
      */
     private static void broadcast(CommandSourceStack source, String key, Object... args) {
         for (ServerPlayer p : source.getServer().getPlayerList().getPlayers()) {
-            p.sendSystemMessage(ServerI18n.tr(p, key, args));
+            p.sendSystemMessage(ServerI18n.tr(key, args));
         }
     }
 }

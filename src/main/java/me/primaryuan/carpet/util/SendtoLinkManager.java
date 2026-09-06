@@ -3,19 +3,18 @@ package me.primaryuan.carpet.util;
 import carpet.patches.EntityPlayerMPFake;
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * 假人背包链接（sendto）核心管理器。
@@ -72,16 +71,13 @@ public final class SendtoLinkManager {
         DUPLICATE
     }
 
-    /** 转移调度模式；NONE = 有链接但暂停自动转移 */
-    public enum Mode {
-        NONE, CONTINUOUS, INTERVAL, AFTER, PERTICK, RANDOMLY
-    }
+    /** 转移调度模式由 {@link ScheduleMode} 统一定义；NONE = 有链接但暂停自动转移 */
 
     /** 单个源假人的链接集合：有序目标列表 + 轮询光标 + 调度状态 + 累计统计 */
     private static final class SourceLinks {
         final List<String> targets = new ArrayList<>();
         int cursor = 0;
-        Mode mode = Mode.CONTINUOUS;
+        ScheduleMode mode = ScheduleMode.CONTINUOUS;
         int interval = 1;   // INTERVAL / PERTICK：触发间隔（tick）
         int min = 1;        // RANDOMLY：最小间隔
         int max = 1;        // RANDOMLY：最大间隔
@@ -90,8 +86,8 @@ public final class SendtoLinkManager {
         int transferredItems = 0;
     }
 
-    /** 源假人名 → 链接集合（仅存内存，不做任何持久化） */
-    private static final Map<String, SourceLinks> LINKS = new ConcurrentHashMap<>();
+    /** 源假人名 → 链接集合（仅存内存，不做任何持久化；仅服务器主线程访问） */
+    private static final Map<String, SourceLinks> LINKS = new HashMap<>();
 
     private static boolean initialized = false;
 
@@ -103,29 +99,26 @@ public final class SendtoLinkManager {
      */
     public static void init() {
         if (initialized) return;
-        synchronized (SendtoLinkManager.class) {
-            if (initialized) return;
+        initialized = true;
 
-            // 每 tick 检查每个源的调度任务（模式与 DropSlotScheduler 一致）
-            ServerTickEvents.END_SERVER_TICK.register(server -> {
-                // 规则关闭：暂停转移（链接保留，重新开启后恢复）
-                if (!CarpetPrimaryuanSettings.fakePlayerSendto) return;
-                if (LINKS.isEmpty()) return;
-                for (Map.Entry<String, SourceLinks> entry : LINKS.entrySet()) {
-                    tickSource(server, entry.getKey(), entry.getValue());
-                }
-            });
+        // 每 tick 检查每个源的调度任务（模式与 DropSlotScheduler 一致）
+        ServerTickScheduler.register(server -> {
+            // 规则关闭：暂停转移（链接保留，重新开启后恢复）
+            if (!CarpetPrimaryuanSettings.fakePlayerSendto) return true;
+            if (LINKS.isEmpty()) return true;
+            for (Map.Entry<String, SourceLinks> entry : LINKS.entrySet()) {
+                tickSource(server, entry.getKey(), entry.getValue());
+            }
+            return true;
+        });
 
-            // 假人下线时移除所有涉及它的链接（作为源或作为目标）；
-            // 真实玩家触发本事件时不会命中任何链接，无副作用
-            ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
-                    removeAllLinksInvolving(handler.player));
+        // 假人下线时移除所有涉及它的链接（作为源或作为目标）；
+        // 真实玩家触发本事件时不会命中任何链接，无副作用
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
+                removeAllLinksInvolving(handler.player));
 
-            // 服务器停止时清空全部链接（链接不持久化）
-            ServerLifecycleEvents.SERVER_STOPPING.register(server -> LINKS.clear());
-
-            initialized = true;
-        }
+        // 服务器停止时清空全部链接（链接不持久化）
+        ServerLifecycleEvents.SERVER_STOPPING.register(server -> LINKS.clear());
     }
 
     /**
@@ -162,8 +155,8 @@ public final class SendtoLinkManager {
         }
         links.targets.add(canonicalTargetName);
         // 新条目默认 CONTINUOUS 启动；若此前处于 NONE（after 完成后暂停），追加目标时恢复调度
-        if (links.mode == Mode.NONE) {
-            links.mode = Mode.CONTINUOUS;
+        if (links.mode == ScheduleMode.NONE) {
+            links.mode = ScheduleMode.CONTINUOUS;
             links.ticksUntilNext = 1;
         }
         return LinkResult.SUCCESS;
@@ -178,7 +171,7 @@ public final class SendtoLinkManager {
      * @param max      RANDOMLY 最大间隔
      * @return 是否设置成功（无链接时 false）
      */
-    public static boolean setMode(ServerPlayer source, Mode mode, int interval, int min, int max) {
+    public static boolean setMode(ServerPlayer source, ScheduleMode mode, int interval, int min, int max) {
         SourceLinks links = LINKS.get(source.getName().getString());
         if (links == null || links.targets.isEmpty()) {
             return false;
@@ -188,7 +181,7 @@ public final class SendtoLinkManager {
         links.min = min;
         links.max = max;
         // 首次延迟：INTERVAL/PERTICK/AFTER 用 interval，RANDOMLY 用 min（保证最小延迟）
-        links.ticksUntilNext = mode == Mode.RANDOMLY ? min : Math.max(1, interval);
+        links.ticksUntilNext = mode == ScheduleMode.RANDOMLY ? min : Math.max(1, interval);
         return true;
     }
 
@@ -215,17 +208,20 @@ public final class SendtoLinkManager {
         return moved;
     }
 
+    /** 停止链接时的累计统计 */
+    public record LinkSummary(int stacks, int items) {}
+
     /**
      * 停止并移除该源的全部链接与调度任务。
      *
-     * @return [累计转移组数, 累计转移物品数]；null 表示该源没有任何链接
+     * @return 累计转移统计；null 表示该源没有任何链接
      */
-    public static int[] stopAndRemove(ServerPlayer source) {
+    public static LinkSummary stopAndRemove(ServerPlayer source) {
         SourceLinks links = LINKS.remove(source.getName().getString());
         if (links == null) {
             return null;
         }
-        return new int[]{links.transferredStacks, links.transferredItems};
+        return new LinkSummary(links.transferredStacks, links.transferredItems);
     }
 
     /**
@@ -246,7 +242,7 @@ public final class SendtoLinkManager {
      * 源无效（下线/移除）时懒清理其全部链接；到触发时机时转移一组。
      */
     private static void tickSource(MinecraftServer server, String sourceName, SourceLinks links) {
-        if (links.mode == Mode.NONE || links.targets.isEmpty()) {
+        if (links.mode == ScheduleMode.NONE || links.targets.isEmpty()) {
             return;
         }
         // 源已下线/无效：移除其全部链接（懒清理兜底——FixBluemap 规则关闭时
@@ -269,31 +265,12 @@ public final class SendtoLinkManager {
         }
 
         // 计算下一次触发时机（源背包空也保留任务，等待新物品）
-        switch (links.mode) {
-            case CONTINUOUS:
-                links.ticksUntilNext = 1;
-                break;
-            case INTERVAL:
-            case PERTICK:
-                links.ticksUntilNext = links.interval;
-                break;
-            case AFTER:
-                if (moved > 0) {
-                    // 一次性任务成功执行：暂停调度（链接保留，可再设频率重启）
-                    links.mode = Mode.NONE;
-                } else {
-                    // 背包空，每 tick 检查等待物品
-                    links.ticksUntilNext = 1;
-                }
-                break;
-            case RANDOMLY:
-                links.ticksUntilNext = links.max > links.min
-                        ? ThreadLocalRandom.current().nextInt(links.max - links.min + 1) + links.min
-                        : links.min;
-                break;
-            default:
-                links.mode = Mode.NONE;
-                break;
+        int next = links.mode.nextDelay(links.interval, links.min, links.max, moved > 0);
+        if (next < 0) {
+            // AFTER 一次性任务成功执行：暂停调度（链接保留，可再设频率重启）
+            links.mode = ScheduleMode.NONE;
+        } else {
+            links.ticksUntilNext = next;
         }
     }
 
@@ -381,10 +358,11 @@ public final class SendtoLinkManager {
     /**
      * 把源堆中最多 maxCount 个物品原子插入目标背包（仅槽位 0–35）。
      * 第一轮找目标中同类且未满的堆合并，第二轮放入空槽。
+     * 参数用 {@link Container} 而非 Inventory：单元测试可直接以 SimpleContainer 驱动本算法。
      *
      * @return 实际插入数量（0 表示目标背包本轮无法接收该物品）
      */
-    private static int insertIntoInventory(Inventory inv, ItemStack sourceStack, int maxCount) {
+    static int insertIntoInventory(Container inv, ItemStack sourceStack, int maxCount) {
         int moved = 0;
         int remaining = maxCount;
 

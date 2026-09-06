@@ -14,6 +14,8 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.server.level.ServerPlayer;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -51,9 +53,14 @@ public final class ScaleCommand {
     /** 默认 scale 值（reset 时使用） */
     private static final double DEFAULT_SCALE = 1.0;
 
-    /** value 参数的硬上下限（OP 路径），避免极端值导致崩溃 */
-    private static final double VALUE_MIN = 0.0;
-    private static final double VALUE_MAX = 100.0;
+    /**
+     * value 参数的硬上下限（OP 路径），对齐原版 Attributes.SCALE 的声明范围
+     * （RangedAttribute 构造参数 0.0625~16.0，1.21.5~26.2 一致）。
+     * 原版 setBaseValue 不做夹紧，但最终生效值经 calculateValue→sanitizeValue 夹到该范围，
+     * 此处不限制的话命令反馈值会与实际生效值不一致。
+     */
+    private static final double VALUE_MIN = 0.0625;
+    private static final double VALUE_MAX = 16.0;
 
     private ScaleCommand() {}
 
@@ -98,15 +105,6 @@ public final class ScaleCommand {
 
     // ==================== 权限检查 ====================
 
-    private static boolean isAdmin(CommandSourceStack source) {
-        if (!source.isPlayer()) return true;
-        //#if MC <= 12110
-        //$$ return source.hasPermission(4);
-        //#else
-        return Commands.LEVEL_OWNERS.check(source.permissions());
-        //#endif
-    }
-
     /**
      * 是否允许"调节他人"（set / reset 他人）。
      * 规则=self：所有人都不可（无论 OP，只能调自己）；
@@ -116,7 +114,7 @@ public final class ScaleCommand {
     private static boolean canModifyOther(CommandSourceStack source) {
         String rule = CarpetPrimaryuanSettings.playerScaleModifiers;
         if ("self".equalsIgnoreCase(rule)) return false;
-        if (isAdmin(source)) return true;
+        if (CommandSupport.isAdmin(source)) return true;
         return "everyone".equalsIgnoreCase(rule);
     }
 
@@ -127,96 +125,77 @@ public final class ScaleCommand {
     private static boolean canViewOther(CommandSourceStack source) {
         String rule = CarpetPrimaryuanSettings.playerScaleModifiers;
         if ("self".equalsIgnoreCase(rule)) return false;
-        if (isAdmin(source)) return true;
+        if (CommandSupport.isAdmin(source)) return true;
         return "everyone".equalsIgnoreCase(rule) || "true".equalsIgnoreCase(rule);
     }
 
     // ==================== set 自己 / 他人 ====================
 
     private static int setSelfScale(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
-        ServerPlayer self = ctx.getSource().getPlayerOrException();
+        CommandSourceStack source = ctx.getSource();
+        ServerPlayer self = source.getPlayerOrException();
         double value = DoubleArgumentType.getDouble(ctx, "value");
 
-        double min = CarpetPrimaryuanSettings.playerScaleMin;
-        double max = CarpetPrimaryuanSettings.playerScaleMax;
-        if (value < min || value > max) {
-            self.sendSystemMessage(ServerI18n.tr(self,
-                    "carpetprimaryuan.command.scale.out_of_range",
-                    formatScale(value), formatScale(min), formatScale(max)));
-            return 0;
-        }
-        return applyScale(self, value, ctx.getSource(), "set_self", null);
+        if (outOfRange(source, value)) return 0;
+        return applyScale(self, value, source, "set", true);
     }
 
     private static int setTargetScale(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSourceStack source = ctx.getSource();
-        String playerName = StringArgumentType.getString(ctx, "player");
-        ServerPlayer target = source.getServer().getPlayerList().getPlayerByName(playerName);
-        if (target == null) {
-            source.sendSuccess(() -> ServerI18n.tr(source,
-                    "carpetprimaryuan.command.scale.player_offline", playerName), false);
-            return 0;
-        }
+        ServerPlayer target = CommandSupport.resolvePlayer(ctx);
+        if (target == null) return 0;
 
-        // 权限检查
-        boolean selfOperation = source.isPlayer() && target.getUUID().equals(source.getPlayer().getUUID());
+        boolean selfOperation = isSelfOperation(source, target);
         if (!selfOperation && !canModifyOther(source)) {
-            source.sendSuccess(() -> ServerI18n.tr(source,
-                    "carpetprimaryuan.command.scale.no_permission_modify"), false);
+            source.sendFailure(ServerI18n.tr(
+                    "carpetprimaryuan.command.scale.no_permission_modify"));
             return 0;
         }
 
         double value = DoubleArgumentType.getDouble(ctx, "value");
 
         // 范围限制：自己操作 或 everyone 模式下的非 OP → 受范围限制；OP 调他人 → 不受限
-        boolean adminActingOnOther = isAdmin(source) && !selfOperation;
-        if (!adminActingOnOther) {
-            double min = CarpetPrimaryuanSettings.playerScaleMin;
-            double max = CarpetPrimaryuanSettings.playerScaleMax;
-            if (value < min || value > max) {
-                source.sendSuccess(() -> ServerI18n.tr(source,
-                        "carpetprimaryuan.command.scale.out_of_range",
-                        formatScale(value), formatScale(min), formatScale(max)), false);
-                return 0;
-            }
-        }
+        boolean adminActingOnOther = CommandSupport.isAdmin(source) && !selfOperation;
+        if (!adminActingOnOther && outOfRange(source, value)) return 0;
 
-        if (selfOperation) {
-            return applyScale(target, value, source, "set_self", null);
-        } else {
-            return applyScale(target, value, source, "set_other", playerName);
+        return applyScale(target, value, source, "set", selfOperation);
+    }
+
+    /**
+     * 范围校验：value 超出规则允许范围（playerScaleMin/Max）时向来源发送提示并返回 true。
+     */
+    private static boolean outOfRange(CommandSourceStack source, double value) {
+        double min = CarpetPrimaryuanSettings.playerScaleMin;
+        double max = CarpetPrimaryuanSettings.playerScaleMax;
+        if (value < min || value > max) {
+            source.sendFailure(ServerI18n.tr(
+                    "carpetprimaryuan.command.scale.out_of_range",
+                    formatScale(value), formatScale(min), formatScale(max)));
+            return true;
         }
+        return false;
     }
 
     // ==================== reset 自己 / 他人 ====================
 
     private static int resetSelfScale(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         ServerPlayer self = ctx.getSource().getPlayerOrException();
-        return applyScale(self, DEFAULT_SCALE, ctx.getSource(), "reset_self", null);
+        return applyScale(self, DEFAULT_SCALE, ctx.getSource(), "reset", true);
     }
 
     private static int resetTargetScale(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSourceStack source = ctx.getSource();
-        String playerName = StringArgumentType.getString(ctx, "player");
-        ServerPlayer target = source.getServer().getPlayerList().getPlayerByName(playerName);
-        if (target == null) {
-            source.sendSuccess(() -> ServerI18n.tr(source,
-                    "carpetprimaryuan.command.scale.player_offline", playerName), false);
-            return 0;
-        }
+        ServerPlayer target = CommandSupport.resolvePlayer(ctx);
+        if (target == null) return 0;
 
-        boolean selfOperation = source.isPlayer() && target.getUUID().equals(source.getPlayer().getUUID());
+        boolean selfOperation = isSelfOperation(source, target);
         if (!selfOperation && !canModifyOther(source)) {
-            source.sendSuccess(() -> ServerI18n.tr(source,
-                    "carpetprimaryuan.command.scale.no_permission_modify"), false);
+            source.sendFailure(ServerI18n.tr(
+                    "carpetprimaryuan.command.scale.no_permission_modify"));
             return 0;
         }
 
-        if (selfOperation) {
-            return applyScale(target, DEFAULT_SCALE, source, "reset_self", null);
-        } else {
-            return applyScale(target, DEFAULT_SCALE, source, "reset_other", playerName);
-        }
+        return applyScale(target, DEFAULT_SCALE, source, "reset", selfOperation);
     }
 
     // ==================== info 自己 / 他人 ====================
@@ -229,26 +208,17 @@ public final class ScaleCommand {
 
     private static int infoTargetScale(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSourceStack source = ctx.getSource();
-        String playerName = StringArgumentType.getString(ctx, "player");
-        ServerPlayer target = source.getServer().getPlayerList().getPlayerByName(playerName);
-        if (target == null) {
-            source.sendSuccess(() -> ServerI18n.tr(source,
-                    "carpetprimaryuan.command.scale.player_offline", playerName), false);
-            return 0;
-        }
+        ServerPlayer target = CommandSupport.resolvePlayer(ctx);
+        if (target == null) return 0;
 
-        boolean selfOperation = source.isPlayer() && target.getUUID().equals(source.getPlayer().getUUID());
+        boolean selfOperation = isSelfOperation(source, target);
         if (!selfOperation && !canViewOther(source)) {
-            source.sendSuccess(() -> ServerI18n.tr(source,
-                    "carpetprimaryuan.command.scale.no_permission_view"), false);
+            source.sendFailure(ServerI18n.tr(
+                    "carpetprimaryuan.command.scale.no_permission_view"));
             return 0;
         }
 
-        if (selfOperation) {
-            sendInfo(target, source, true);
-        } else {
-            sendInfo(target, source, false);
-        }
+        sendInfo(target, source, selfOperation);
         return 1;
     }
 
@@ -267,25 +237,21 @@ public final class ScaleCommand {
             String minStr = formatScale(CarpetPrimaryuanSettings.playerScaleMin);
             String maxStr = formatScale(CarpetPrimaryuanSettings.playerScaleMax);
             String mode = CarpetPrimaryuanSettings.playerScaleModifiers;
-            String modeStr;
-            if ("self".equalsIgnoreCase(mode)) {
-                modeStr = ServerI18n.tr(source, "carpetprimaryuan.command.scale.mode_self").getString();
-            } else if ("true".equalsIgnoreCase(mode)) {
-                modeStr = ServerI18n.tr(source, "carpetprimaryuan.command.scale.mode_true").getString();
-            } else if ("everyone".equalsIgnoreCase(mode)) {
-                modeStr = ServerI18n.tr(source, "carpetprimaryuan.command.scale.mode_everyone").getString();
-            } else {
-                modeStr = mode;
-            }
-            source.sendSuccess(() -> ServerI18n.tr(source,
+            String modeStr = switch (mode.toLowerCase()) {
+                case "self" -> ServerI18n.tr("carpetprimaryuan.command.scale.mode_self").getString();
+                case "true" -> ServerI18n.tr("carpetprimaryuan.command.scale.mode_true").getString();
+                case "everyone" -> ServerI18n.tr("carpetprimaryuan.command.scale.mode_everyone").getString();
+                default -> mode;
+            };
+            source.sendSuccess(() -> ServerI18n.tr(
                     "carpetprimaryuan.command.scale.info_self", currentStr, defaultStr, minStr, maxStr, modeStr), false);
         } else {
             String name = target.getName().getString();
-            source.sendSuccess(() -> ServerI18n.tr(source,
+            source.sendSuccess(() -> ServerI18n.tr(
                     "carpetprimaryuan.command.scale.info_other", name, currentStr, defaultStr), false);
         }
         //#else
-        //$$ source.sendSuccess(() -> ServerI18n.tr(source,
+        //$$ source.sendSuccess(() -> ServerI18n.tr(
         //$$         "carpetprimaryuan.command.scale.unsupported_version"), false);
         //#endif
     }
@@ -293,45 +259,33 @@ public final class ScaleCommand {
     // ==================== 核心：applyScale ====================
 
     /**
-     * @param target     被调整的玩家
-     * @param value      scale 值
-     * @param source     命令来源（用于反馈）
-     * @param selfKey    自己执行的反馈 i18n key（set_self / reset_self）
-     * @param targetName 被调整玩家名（他人执行路径传值；自己执行路径传 null）
+     * @param target  被调整的玩家
+     * @param value   scale 值
+     * @param source  命令来源（用于反馈）
+     * @param action  动作名（set / reset，用于拼反馈 i18n key）
+     * @param isSelf  是否为玩家本人执行
      */
     private static int applyScale(ServerPlayer target, double value,
-                                  CommandSourceStack source, String selfKey, String targetName) {
-        boolean isSelf = targetName == null;
+                                  CommandSourceStack source, String action, boolean isSelf) {
         String valueStr = formatScale(value);
 
         //#if MC >= 12105
         target.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.SCALE)
                 .setBaseValue(value);
         if (isSelf) {
-            target.sendSystemMessage(ServerI18n.tr(target,
-                    "carpetprimaryuan.command.scale." + selfKey, valueStr));
+            target.sendSystemMessage(ServerI18n.tr(
+                    "carpetprimaryuan.command.scale." + action + "_self", valueStr));
         } else {
             String name = target.getName().getString();
-            boolean adminDoing = isAdmin(source);
-            String otherKey;
-            if ("reset_other".equals(selfKey)) {
-                otherKey = adminDoing ? "reset_other_admin" : "reset_other_anyone";
-            } else {
-                otherKey = adminDoing ? "set_other_admin" : "set_other_anyone";
-            }
-            source.sendSuccess(() -> ServerI18n.tr(source,
-                    "carpetprimaryuan.command.scale." + otherKey, name, valueStr), true);
+            boolean adminDoing = CommandSupport.isAdmin(source);
+            source.sendSuccess(() -> ServerI18n.tr(
+                    "carpetprimaryuan.command.scale." + action + "_other_" + (adminDoing ? "admin" : "anyone"),
+                    name, valueStr), true);
             // 被修改玩家收到消息：区分管理员 vs 普通玩家（everyone 模式）
-            // 用 try-catch 包裹 getPlayerOrException() 避免 CommandSyntaxException 向上传播
-            String actorName;
-            try {
-                actorName = source.isPlayer()
-                        ? source.getPlayerOrException().getName().getString()
-                        : "Console";
-            } catch (Exception e) {
-                actorName = "Console";
-            }
-            target.sendSystemMessage(ServerI18n.tr(target,
+            String actorName = source.isPlayer()
+                    ? source.getPlayer().getName().getString()
+                    : "Console";
+            target.sendSystemMessage(ServerI18n.tr(
                     adminDoing ? "carpetprimaryuan.command.scale.adjusted_by_admin"
                                : "carpetprimaryuan.command.scale.adjusted_by_player",
                     actorName, valueStr));
@@ -339,10 +293,10 @@ public final class ScaleCommand {
         return 1;
         //#else
         //$$ if (isSelf) {
-        //$$     target.sendSystemMessage(ServerI18n.tr(target,
+        //$$     target.sendSystemMessage(ServerI18n.tr(
         //$$             "carpetprimaryuan.command.scale.unsupported_version"));
         //$$ } else {
-        //$$     source.sendSuccess(() -> ServerI18n.tr(source,
+        //$$     source.sendSuccess(() -> ServerI18n.tr(
         //$$             "carpetprimaryuan.command.scale.unsupported_version"), false);
         //$$ }
         //$$ return 0;
@@ -358,12 +312,28 @@ public final class ScaleCommand {
         return Double.toString(value);
     }
 
-    private static String playerName(ServerPlayer p) {
-        //#if MC >= 12110
-        return p.getGameProfile().name();
-        //#else
-        //$$ return p.getGameProfile().getName();
-        //#endif
+    /** 目标玩家是否为命令执行者本人 */
+    private static boolean isSelfOperation(CommandSourceStack source, ServerPlayer target) {
+        return source.isPlayer() && target.getUUID().equals(source.getPlayer().getUUID());
+    }
+
+    /**
+     * 在线玩家名称补全：includeAll 为 true 时补全所有在线玩家，否则只补全自己。
+     */
+    private static CompletableFuture<Suggestions> suggestPlayers(
+            CommandContext<CommandSourceStack> context, SuggestionsBuilder builder, boolean includeAll) {
+        ServerPlayer self = context.getSource().getPlayer();
+        String selfName = self != null ? CommandSupport.profileName(self) : null;
+        List<String> candidates = new ArrayList<>();
+        for (ServerPlayer p : context.getSource().getServer().getPlayerList().getPlayers()) {
+            String name = CommandSupport.profileName(p);
+            if (!includeAll && !name.equalsIgnoreCase(selfName)) {
+                continue;
+            }
+            candidates.add(name);
+        }
+        CommandSupport.suggestMatching(builder, candidates);
+        return builder.buildFuture();
     }
 
     /**
@@ -374,27 +344,11 @@ public final class ScaleCommand {
      */
     private static CompletableFuture<Suggestions> suggestPlayersForModification(
             CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
-        try {
-            var players = context.getSource().getServer().getPlayerList().getPlayers();
-            String remaining = builder.getRemainingLowerCase();
-            String rule = CarpetPrimaryuanSettings.playerScaleModifiers;
-            boolean selfMode = "self".equalsIgnoreCase(rule);
-            boolean admin = !selfMode && isAdmin(context.getSource());
-            boolean everyone = "everyone".equalsIgnoreCase(rule);
-            boolean allowAll = !selfMode && (admin || everyone);
-            String selfName = context.getSource().isPlayer()
-                    ? playerName(context.getSource().getPlayerOrException()) : null;
-            for (ServerPlayer p : players) {
-                String name = playerName(p);
-                if (!allowAll && !name.equalsIgnoreCase(selfName)) {
-                    continue;
-                }
-                if (name.toLowerCase().startsWith(remaining)) {
-                    builder.suggest(name);
-                }
-            }
-        } catch (Exception ignored) {}
-        return builder.buildFuture();
+        String rule = CarpetPrimaryuanSettings.playerScaleModifiers;
+        boolean selfMode = "self".equalsIgnoreCase(rule);
+        boolean admin = !selfMode && CommandSupport.isAdmin(context.getSource());
+        boolean everyone = "everyone".equalsIgnoreCase(rule);
+        return suggestPlayers(context, builder, !selfMode && (admin || everyone));
     }
 
     /**
@@ -404,22 +358,7 @@ public final class ScaleCommand {
      */
     private static CompletableFuture<Suggestions> suggestPlayersForInfo(
             CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
-        try {
-            var players = context.getSource().getServer().getPlayerList().getPlayers();
-            String remaining = builder.getRemainingLowerCase();
-            boolean selfMode = "self".equalsIgnoreCase(CarpetPrimaryuanSettings.playerScaleModifiers);
-            String selfName = context.getSource().isPlayer()
-                    ? playerName(context.getSource().getPlayerOrException()) : null;
-            for (ServerPlayer p : players) {
-                String name = playerName(p);
-                if (selfMode && !name.equalsIgnoreCase(selfName)) {
-                    continue;
-                }
-                if (name.toLowerCase().startsWith(remaining)) {
-                    builder.suggest(name);
-                }
-            }
-        } catch (Exception ignored) {}
-        return builder.buildFuture();
+        boolean selfMode = "self".equalsIgnoreCase(CarpetPrimaryuanSettings.playerScaleModifiers);
+        return suggestPlayers(context, builder, !selfMode);
     }
 }

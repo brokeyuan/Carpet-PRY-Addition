@@ -8,9 +8,14 @@ import org.apache.logging.log4j.Logger;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.function.Predicate;
 
 public class CarpetRuleRegistrar {
     private static final Logger LOGGER = LogManager.getLogger("CarpetPrimaryuan");
+
+    /** 反射解析出的 Carpet 内部构造器（按参数类型精确匹配后缓存，跨版本签名可能变化） */
+    private static Constructor<?> ruleAnnotationCtor;
+    private static Constructor<?> parsedRuleCtor;
 
     public static void register(Class<?> settingsClass) {
         SettingsManager settingsManager = CarpetServer.settingsManager;
@@ -28,32 +33,62 @@ public class CarpetRuleRegistrar {
 
     private static void registerRule(SettingsManager settingsManager, Field field, Rule rule) {
         String ruleName = field.getName();
-        
+
         try {
-            Class<?> ruleAnnotationClass = Class.forName("carpet.settings.ParsedRule$RuleAnnotation");
-            Constructor<?> ctr1 = ruleAnnotationClass.getDeclaredConstructors()[0];
-            ctr1.setAccessible(true);
-            Object ruleAnnotation = ctr1.newInstance(false, null, null, null, rule.categories(), rule.options(), rule.strict(), "", rule.validators());
-
-            Class<?> parsedRuleClass = Class.forName("carpet.settings.ParsedRule");
-            Constructor<?> ctr2 = Arrays.stream(parsedRuleClass.getDeclaredConstructors())
-                    .filter(ctr -> {
-                        Class<?>[] parameterTypes = ctr.getParameterTypes();
-                        if (parameterTypes.length != 3) return false;
-                        return parameterTypes[0] == Field.class 
-                                && parameterTypes[1] == ruleAnnotationClass 
-                                && parameterTypes[2].getName().contains("SettingsManager");
-                    })
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException("Failed to get matched ParsedRule constructor"));
-            ctr2.setAccessible(true);
-            Object carpetRule = ctr2.newInstance(field, ruleAnnotation, settingsManager);
-
+            Object ruleAnnotation = newRuleAnnotation(rule);
+            Object carpetRule = newParsedRule(field, ruleAnnotation, settingsManager);
             settingsManager.addCarpetRule((carpet.api.settings.CarpetRule<?>) carpetRule);
             LOGGER.info("Registered rule: " + ruleName);
         } catch (Exception e) {
             LOGGER.error("Failed to register rule " + ruleName, e);
             throw new RuntimeException("Failed to register rule " + ruleName, e);
         }
+    }
+
+    /**
+     * 构造 carpet.settings.ParsedRule$RuleAnnotation。
+     * 按参数类型精确匹配构造器（而非取 getDeclaredConstructors()[0]），
+     * 签名不匹配时携带实际签名快速失败。
+     * 期望签名: (boolean, ?, ?, ?, String[] categories, String[] options, boolean strict, String, Validator[])
+     */
+    private static Object newRuleAnnotation(Rule rule) throws ReflectiveOperationException {
+        Class<?> annoClass = Class.forName("carpet.settings.ParsedRule$RuleAnnotation");
+        if (ruleAnnotationCtor == null) {
+            ruleAnnotationCtor = findConstructor(annoClass, ctr ->
+                    ctr.getParameterCount() == 9
+                    && ctr.getParameterTypes()[0] == boolean.class
+                    && ctr.getParameterTypes()[4] == String[].class
+                    && ctr.getParameterTypes()[6] == boolean.class);
+            ruleAnnotationCtor.setAccessible(true);
+        }
+        return ruleAnnotationCtor.newInstance(
+                false, null, null, null, rule.categories(), rule.options(), rule.strict(), "", rule.validators());
+    }
+
+    /**
+     * 构造 carpet.settings.ParsedRule。
+     * 期望签名: (Field, RuleAnnotation, SettingsManager 或其父类)
+     */
+    private static Object newParsedRule(Field field, Object ruleAnnotation, SettingsManager settingsManager)
+            throws ReflectiveOperationException {
+        Class<?> parsedRuleClass = Class.forName("carpet.settings.ParsedRule");
+        if (parsedRuleCtor == null) {
+            parsedRuleCtor = findConstructor(parsedRuleClass, ctr ->
+                    ctr.getParameterCount() == 3
+                    && ctr.getParameterTypes()[0] == Field.class
+                    && ctr.getParameterTypes()[1] == ruleAnnotation.getClass()
+                    && ctr.getParameterTypes()[2].isAssignableFrom(settingsManager.getClass()));
+            parsedRuleCtor.setAccessible(true);
+        }
+        return parsedRuleCtor.newInstance(field, ruleAnnotation, settingsManager);
+    }
+
+    private static Constructor<?> findConstructor(Class<?> clazz, Predicate<Constructor<?>> filter) {
+        return Arrays.stream(clazz.getDeclaredConstructors())
+                .filter(filter)
+                .findFirst()
+                .orElseThrow(() -> new LinkageError(
+                        "Carpet 内部构造器签名已变化，需适配 " + clazz.getName()
+                        + "，实际签名: " + Arrays.toString(clazz.getDeclaredConstructors())));
     }
 }

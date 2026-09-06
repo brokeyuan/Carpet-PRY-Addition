@@ -5,54 +5,70 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class TppConfigManager {
+
+    private static final Logger LOGGER = LogManager.getLogger("CarpetPrimaryuan");
+
+    // 以下状态仅在服务器主线程访问（Carpet 命令与 tick 事件均在主线程），普通集合即可
 
     /**
      * 站点映射：key=内部名（用于假人命名），value=显示名称/备注（null 表示无备注，显示时等同内部名）
      * 使用 LinkedHashMap 保持添加顺序
      */
-    public static LinkedHashMap<String, String> stationMap = new LinkedHashMap<>();
+    private static final LinkedHashMap<String, String> stationMap = new LinkedHashMap<>();
 
-    public static Map<String, String> aliases = new ConcurrentHashMap<>();
+    private static final Map<String, String> aliases = new HashMap<>();
 
     /** 全局默认传送时假人右键使用珍珠的次数（默认 1），站点未单独设置时使用此值 */
-    public static int useCount = 1;
+    private static int useCount = 1;
 
     /** 站点级右键次数配置：key=站点内部名，value=右键次数 */
-    public static Map<String, Integer> stationUseCount = new ConcurrentHashMap<>();
+    private static final Map<String, Integer> stationUseCount = new HashMap<>();
 
-    private static final File CONFIG_FILE = new File("config/carpet-pry-tpp.json");
+    /** 配置文件路径（统一以 UTF-8 读写，避免 Windows 默认 GBK 编码导致中文站点名乱码） */
+    private static final Path CONFIG_FILE = Path.of("config/carpet-pry-tpp.json");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
     public static void load() {
-        if (!CONFIG_FILE.exists()) {
+        if (!Files.exists(CONFIG_FILE)) {
             // 创建默认空配置
             JsonObject defaultConfig = new JsonObject();
             defaultConfig.add("stations", new JsonObject());
             defaultConfig.add("aliases", new JsonObject());
 
-            CONFIG_FILE.getParentFile().mkdirs();
-            try (FileWriter writer = new FileWriter(CONFIG_FILE)) {
-                GSON.toJson(defaultConfig, writer);
+            try {
+                Files.createDirectories(CONFIG_FILE.getParent());
+                try (Writer writer = Files.newBufferedWriter(CONFIG_FILE, StandardCharsets.UTF_8)) {
+                    GSON.toJson(defaultConfig, writer);
+                }
             } catch (IOException e) {
                 System.err.println("[TPP] Failed to create default config file: " + e.getMessage());
             }
             return;
         }
 
-        try (FileReader reader = new FileReader(CONFIG_FILE)) {
+        try (Reader reader = Files.newBufferedReader(CONFIG_FILE, StandardCharsets.UTF_8)) {
             JsonObject json = GSON.fromJson(reader, JsonObject.class);
+            if (json == null) {
+                LOGGER.warn("[TPP] Config file is empty, using defaults");
+                return;
+            }
 
             stationMap.clear();
             JsonElement stationsElem = json.get("stations");
@@ -95,11 +111,12 @@ public class TppConfigManager {
                 }
             }
         } catch (Exception e) {
-            System.err.println("[TPP] Failed to load config: " + e.getMessage());
+            LOGGER.error("[TPP] Failed to load config", e);
         }
     }
 
-    public static void save() {
+    /** 持久化到配置文件（UTF-8）；由各领域变更方法在变更后自动调用 */
+    private static void save() {
         JsonObject config = new JsonObject();
 
         JsonObject stationsObj = new JsonObject();
@@ -126,13 +143,102 @@ public class TppConfigManager {
         }
         config.add("stationUseCount", stationUseCountObj);
 
-        CONFIG_FILE.getParentFile().mkdirs();
-        try (FileWriter writer = new FileWriter(CONFIG_FILE)) {
-            GSON.toJson(config, writer);
-            writer.flush();
+        try {
+            // 原子写：先写临时文件再原子替换，避免写一半崩溃/断电留下损坏的 JSON
+            Path tmp = CONFIG_FILE.resolveSibling(CONFIG_FILE.getFileName() + ".tmp");
+            Files.createDirectories(CONFIG_FILE.getParent());
+            try (Writer writer = Files.newBufferedWriter(tmp, StandardCharsets.UTF_8)) {
+                GSON.toJson(config, writer);
+            }
+            Files.move(tmp, CONFIG_FILE, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) {
-            System.err.println("[TPP] Failed to save config: " + e.getMessage());
+            LOGGER.error("[TPP] Failed to save config", e);
         }
+    }
+
+    // ===== 领域方法：所有状态变更经由此处，并自动持久化 =====
+
+    /**
+     * 添加站点。
+     *
+     * @param name        站点内部名
+     * @param displayName 显示名称/备注（null 表示无备注）
+     * @return false 表示站点已存在（不覆盖）
+     */
+    public static boolean addStation(String name, String displayName) {
+        if (stationMap.containsKey(name)) {
+            return false;
+        }
+        stationMap.put(name, displayName);
+        save();
+        return true;
+    }
+
+    /**
+     * 删除站点，同时清理其站点级右键次数配置（避免残留孤儿配置）。
+     */
+    public static void removeStation(String internalName) {
+        stationMap.remove(internalName);
+        stationUseCount.remove(internalName);
+        save();
+    }
+
+    /**
+     * 获取玩家别名；未设置返回 null。
+     */
+    public static String getAlias(String playerName) {
+        return aliases.get(playerName);
+    }
+
+    /**
+     * 设置玩家别名。
+     */
+    public static void setAlias(String playerName, String alias) {
+        aliases.put(playerName, alias);
+        save();
+    }
+
+    /**
+     * 移除玩家别名。
+     *
+     * @return false 表示该玩家未设置别名
+     */
+    public static boolean removeAlias(String playerName) {
+        if (aliases.remove(playerName) == null) {
+            return false;
+        }
+        save();
+        return true;
+    }
+
+    /**
+     * 设置全局默认右键次数。
+     */
+    public static void setGlobalUseCount(int count) {
+        useCount = count;
+        save();
+    }
+
+    /**
+     * 设置站点级右键次数。
+     */
+    public static void setStationUseCount(String station, int count) {
+        stationUseCount.put(station, count);
+        save();
+    }
+
+    /**
+     * 获取全局默认右键次数。
+     */
+    public static int getGlobalUseCount() {
+        return useCount;
+    }
+
+    /**
+     * 获取站点级右键次数配置快照（用于 /tppset rule 展示）。
+     */
+    public static Map<String, Integer> getStationUseCountSnapshot() {
+        return Map.copyOf(stationUseCount);
     }
 
     /**
