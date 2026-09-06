@@ -72,6 +72,7 @@ class InventoryTransferTest {
         };
     }
 
+    @SuppressWarnings("deprecation") // 原版自用（RegistrySetBuilder$EmptyTagLookup）且无替代工厂，仅测试引导使用
     private static <T> HolderLookup.RegistryLookup<T> wrap(HolderLookup.RegistryLookup<T> real) {
         return new HolderLookup.RegistryLookup<>() {
             @Override
@@ -121,6 +122,7 @@ class InventoryTransferTest {
         };
     }
 
+    @SuppressWarnings("deprecation") // 同上：emptyNamed 无替代，原版 EmptyTagLookup 亦自用
     private static <T> HolderLookup.RegistryLookup<T> emptyLookup(ResourceKey<? extends net.minecraft.core.Registry<? extends T>> key) {
         return new HolderLookup.RegistryLookup<>() {
             @Override
