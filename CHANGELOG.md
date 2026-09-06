@@ -2,6 +2,40 @@
 
 All notable changes to **Carpet-PRY-Addition** are documented in this file.
 
+## [未发布]
+
+### 行为变更
+
+- **`/scale` 硬边界对齐原版属性范围**：value 参数上下限从 0.0–100.0 收敛为 **0.0625–16.0**（原版 `Attributes.SCALE` 声明范围，经字节码验证 1.21.5–26.2 一致）。此前设置范围外的值会被原版静默夹紧，导致命令反馈值与实际生效值不一致；现从命令入口拦截
+- **假人名构建规则**（`TppFakePlayer`）：站点内部名上限从 5 字符放宽至 **16 字符**；总长超限时按新优先级取舍——站点完整保留（必须）→ `_` 分隔符（可省略）→ 玩家名尽可能多。站点占满 16 字符时假人名即站点名本身，该站点所有玩家共用同一假人名
+- **`/tppset set` 新增站点名长度校验**（≤16 字符），`/tppset rename` 别名上限统一为 10 字符；旧配置中的超长站点名在执行 `/tpp` 时会被明确拦截并提示
+- **规则默认值**：`fakePlayerSendto` 默认改为关闭（`false`）；`fakePlayerNameSuggestions` 默认保持 `Steve,Alex`
+- 错误反馈通道修正：站点已存在/别名空/无权限/玩家离线等约 12 处失败提示从 `sendSuccess` 改为 `sendFailure`（红色文本、命令返回 0）；dropall 的 `already_running` 同步改为失败语义
+- dropall/sendto 解析目标假人失败时的提示接入三语言 i18n（原为硬编码英文）
+
+### 修复
+
+- **TPP 配置原子写**：`config/carpet-pry-tpp.json` 改为先写临时文件再原子替换，避免写一半崩溃导致配置损坏；空配置文件不再抛 NPE；日志统一到 log4j
+- **sendto `once` 无链接时的崩溃**：反馈文案含两个 `%s` 但只传了一个参数，会抛 `MissingFormatArgumentException`（随命令树重构一并修复）
+
+### 重构（内部，行为不变）
+
+- **`ServerTickScheduler`**：TppCommand / DropSlotScheduler / SendtoLinkManager 三处各自的 `END_SERVER_TICK` 惰性注册与双检锁样板收敛为中央调度器；服务器停止时统一放弃任务
+- **`FrequencyCommandTree`**：dropall 与 sendto 的频率子命令树（once/continuous/interval/after/perTick/randomly/stop）与 `startMode` 参数拼装去重，新增第三个 `/player` 扩展命令的成本大幅降低
+- **`FakePlayerSessionManager`**：/tpp 的假人操作 tick 状态机从 TppCommand 拆出独立管理（TppCommand 565 → 412 行）
+- **`CommandSupport` / `ScheduleMode`**：命令层共享工具（目标解析、Tab 补全、管理员判定）与 tick 调度语义统一提取
+- 两个 `PlayerCommandMixin`（dropall/sendto 注入）合并为单个 `PlayerCommandExtensionsMixin`，减少对 Carpet 字节码的注入面；同步 7 个版本专属 `mixins.json`
+- 线程安全叙事统一：明确"所有状态仅服务器主线程访问"契约，移除无效的 `ConcurrentHashMap` 与防御性拷贝
+- `ServerI18n` 删除忽略首参的误导重载（74 处调用点统一）；Tab 补全三处重复收敛为 `suggestMatching`（零分配前缀匹配）；`canHasTranslations` 按语言缓存；`CarpetRuleRegistrar` 反射按参数类型精确匹配并缓存，Carpet 签名变化时快速失败
+- 删除 9 个版本专属 `TppCommand` 覆盖（约 4600 行），统一由根模板预处理提供
+
+### 测试与 CI
+
+- 新增 JUnit 单元测试源集（随最新版本子项目构建执行）：覆盖 `ScheduleMode` 调度语义、假人名取舍优先级（含 14/15/16 字符边界与中文）、sendto 原子转移算法（合并/限流/防刷）
+- 版本专属 `mixins.json` 由单行紧凑格式统一为与根模板一致的多行格式（内容等价）
+
+---
+
 ## [1.1.7] - 2026-08-19
 
 ### 新增规则
