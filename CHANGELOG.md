@@ -15,6 +15,7 @@ All notable changes to **Carpet-PRY-Addition** are documented in this file.
 
 ### 修复
 
+- **隐身草离开草地后隐身永久残留**：归属标记误用 `Integer.MAX_VALUE` 作时长，而原版对有限时长每 tick 递减，标记在添加后第一 tick 即失效，移除分支永远无法命中。改用原版无限时长表示（`INFINITE_DURATION = -1`，不递减）作归属标记，并叠加"无粒子"位区分药水来源；规则中途关闭时的残留清理一并修复
 - **TPP 配置原子写**：`config/carpet-pry-tpp.json` 改为先写临时文件再原子替换，避免写一半崩溃导致配置损坏；空配置文件不再抛 NPE；日志统一到 log4j
 - **sendto `once` 无链接时的崩溃**：反馈文案含两个 `%s` 但只传了一个参数，会抛 `MissingFormatArgumentException`（随命令树重构一并修复）
 
