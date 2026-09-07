@@ -12,10 +12,13 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(targets = {
-        "net.minecraft.world.entity.projectile.Snowball",
-        "net.minecraft.world.entity.projectile.throwableitemprojectile.Snowball"
-})
+// Snowball 类在 1.21.11 起移入 throwableitemprojectile 子包；
+// 按版本选取唯一存在的 target，避免多 targets 下必然出现的 "@Mixin target was not found" 警告
+//#if MC >= 12111
+@Mixin(targets = "net.minecraft.world.entity.projectile.throwableitemprojectile.Snowball")
+//#else
+//$$ @Mixin(targets = "net.minecraft.world.entity.projectile.Snowball")
+//#endif
 public abstract class SnowballMixin {
 
     @Inject(
