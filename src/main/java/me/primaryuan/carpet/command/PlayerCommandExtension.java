@@ -30,11 +30,14 @@ public final class PlayerCommandExtension {
 
     /**
      * 构建独立的 dropall 命令 builder。
+     * 根节点 requires 绑定 {@link CarpetPrimaryuanSettings#fakePlayerDropStackModifiers}：
+     * 规则关闭时整棵子树不可见、不可执行（Brigadier 按节点谓词过滤下发）。
      *
      * @return dropall 命令的 LiteralArgumentBuilder
      */
     public static LiteralArgumentBuilder<CommandSourceStack> buildDropAllNode() {
-        return FrequencyCommandTree.build("dropall", new DropAllHandler());
+        return FrequencyCommandTree.build("dropall", new DropAllHandler())
+                .requires(source -> CarpetPrimaryuanSettings.fakePlayerDropStackModifiers);
     }
 
     /** dropall 的频率命令业务处理：把模式落到 {@link DropSlotScheduler} 并发送反馈 */

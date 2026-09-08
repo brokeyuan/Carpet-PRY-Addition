@@ -12,7 +12,6 @@ public class CarpetPrimaryuanSettings {
     public static final String BUGFIX = "BUGFIX";
 
     @Rule(
-            options = {"false", "true"},
             categories = {PRIMARYUAN, BOT, COMMAND}
     )
     public static boolean TppFakePlayer = false;
@@ -113,7 +112,7 @@ public class CarpetPrimaryuanSettings {
     public static boolean fakePlayerSendto = false;
 
     @Rule(
-            options = {"false", "self", "true", "everyone"},
+            options = {"false", "true", "self", "everyone"},
             strict = false,
             categories = {PRIMARYUAN, SURVIVAL, FEATURE, COMMAND}
     )

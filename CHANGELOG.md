@@ -12,6 +12,8 @@ All notable changes to **Carpet-PRY-Addition** are documented in this file.
 - **规则默认值**：`fakePlayerSendto` 默认改为关闭（`false`）；`fakePlayerNameSuggestions` 默认保持 `Steve,Alex`
 - 错误反馈通道修正：站点已存在/别名空/无权限/玩家离线等约 12 处失败提示从 `sendSuccess` 改为 `sendFailure`（红色文本、命令返回 0）；dropall 的 `already_running` 同步改为失败语义
 - dropall/sendto 解析目标假人失败时的提示接入三语言 i18n（原为硬编码英文）
+- **`TppFakePlayer` 选项顺序统一**：options 从 `false, true` 调整为 `true, false`，与其余布尔规则一致
+- **dropall / sendto 在规则关闭时隐藏命令**：`/player <name> dropall` 与 `/player <name> sendto` 此前未挂 requires 谓词——规则关闭时命令仍可见（dropall 甚至实际生效、sendto 可输入但转移被暂停）。现与其他命令一致：规则关闭时整棵子树不可见、不可执行，规则切换时经 RuleObserver 立即刷新命令树
 
 ### 修复
 

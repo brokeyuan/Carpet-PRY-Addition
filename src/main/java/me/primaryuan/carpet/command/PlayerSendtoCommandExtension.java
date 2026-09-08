@@ -30,11 +30,14 @@ public final class PlayerSendtoCommandExtension {
 
     /**
      * 构建独立的 sendto 命令 builder。
+     * 根节点 requires 绑定 {@link CarpetPrimaryuanSettings#fakePlayerSendto}：
+     * 规则关闭时整棵子树不可见、不可执行（Brigadier 按节点谓词过滤下发）。
      *
      * @return sendto 命令的 LiteralArgumentBuilder
      */
     public static LiteralArgumentBuilder<CommandSourceStack> buildSendtoNode() {
-        LiteralArgumentBuilder<CommandSourceStack> root = FrequencyCommandTree.build("sendto", new SendtoHandler());
+        LiteralArgumentBuilder<CommandSourceStack> root = FrequencyCommandTree.build("sendto", new SendtoHandler())
+                .requires(source -> CarpetPrimaryuanSettings.fakePlayerSendto);
         // <target>：建立 源假人 → 目标假人 的链接并立即开始转移（默认 continuous）
         root.then(Commands.argument("target", StringArgumentType.word())
                 .suggests(CommandSupport::suggestOnlinePlayers)
