@@ -328,10 +328,11 @@ scale
 
 #### Range Control
 
-- `playerScaleMin` (default 0.1): minimum allowed value
-- `playerScaleMax` (default 10.0): maximum allowed value
-- Bounded paths: self → self, plus non-OP in everyone mode acting on others, plus self mode (including OP on self)
-- **Unbounded**: OP acting on others (non-self mode), any value is allowed (hard cap 0.0~100.0)
+- Hard bound: value only needs to be greater than 0 (no fixed bounds), applied uniformly to all paths
+- `playerScaleMin` (default 0.01): minimum allowed value for non-admin players
+- `playerScaleMax` (default 16.0): maximum allowed value for non-admin players
+- Bounded paths: all operations by non-admin players (self → self, plus non-OP in everyone mode acting on others, plus self-op in self mode)
+- **Unbounded**: admins (OPs) in any mode (including self-op in self mode) on any target, any value greater than 0
 
 #### Description
 
@@ -353,9 +354,9 @@ Registers the `minecraft:scale` attribute for `Player` and manages it through a 
 
 ```bash
 # Enable the rule (admin)
-/carpet playerScaleModifiers self     # Everyone can only adjust themselves (even OPs)
-/carpet playerScaleModifiers true     # Players adjust self, OPs adjust anyone
-/carpet playerScaleModifiers everyone # Anyone can adjust anyone
+/carpet playerScale self     # Everyone can only adjust themselves (even OPs)
+/carpet playerScale true     # Players adjust self, OPs adjust anyone
+/carpet playerScale everyone # Anyone can adjust anyone
 
 # Shrink yourself to half size
 /scale set 0.5

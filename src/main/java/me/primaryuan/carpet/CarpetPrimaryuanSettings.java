@@ -116,21 +116,21 @@ public class CarpetPrimaryuanSettings {
             strict = false,
             categories = {PRIMARYUAN, SURVIVAL, FEATURE, COMMAND}
     )
-    public static String playerScaleModifiers = "false";
+    public static String playerScale = "false";
 
     @Rule(
-            options = {"0.1", "0.25", "0.5"},
+            options = {"0.01", "0.1", "0.25", "0.5"},
             strict = false,
             categories = {PRIMARYUAN, SURVIVAL, COMMAND}
     )
-    public static double playerScaleMin = 0.1;
+    public static double playerScaleMin = 0.01;
 
     @Rule(
-            options = {"2.0", "5.0", "10.0"},
+            options = {"2.0", "5.0", "10.0", "16.0"},
             strict = false,
             categories = {PRIMARYUAN, SURVIVAL, COMMAND}
     )
-    public static double playerScaleMax = 10.0;
+    public static double playerScaleMax = 16.0;
 
     @Rule(
             categories = {PRIMARYUAN, SURVIVAL, FEATURE}

@@ -19,12 +19,13 @@
     "rule.betterSnowBall.SnowballMixin",
     "rule.fakePlayerDropStackModifiers.EntityPlayerActionPackMixin",
     "rule.fakePlayerCommandExtensions.PlayerCommandExtensionsMixin",
-    "rule.playerScaleModifiers.PlayerMixin",
+    "rule.playerScale.PlayerMixin",
+    "rule.playerScale.RangedAttributeMixin",
     "rule.realisticPlayerScale.PlayerMixin"
   ],
   "client": [
     "rule.entitiesRidingPlayers.ProjectileUtilMixin",
-    "rule.realisticPlayerScale.AbstractClientPlayerMixin"
+    "rule.playerScale.AbstractClientPlayerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

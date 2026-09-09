@@ -6,7 +6,9 @@ All notable changes to **Carpet-PRY-Addition** are documented in this file.
 
 ### 行为变更
 
-- **`/scale` 硬边界对齐原版属性范围**：value 参数上下限从 0.0–100.0 收敛为 **0.0625–16.0**（原版 `Attributes.SCALE` 声明范围，经字节码验证 1.21.5–26.2 一致）。此前设置范围外的值会被原版静默夹紧，导致命令反馈值与实际生效值不一致；现从命令入口拦截
+- **`/scale` 硬边界改为仅要求大于 0**：value 参数不再设固定上下限（原对齐原版属性的 0.0625–16.0），任何大于 0 的有限值均可直接设置生效，管理员实际可设 0–∞；`RangedAttributeMixin` 相应放行 SCALE 属性的任意有限正值，非正值/非有限值（NaN/Infinity）回落原版夹紧兜底，服务端命令反馈值与实际生效值一致。注意：纯原版客户端（未安装本模组）在超出原版范围（<0.0625 或 >16.0）时显示仍会被客户端侧夹紧，需客户端安装本模组；极端缩放值可能引发生物碰撞箱与渲染异常，请自行斟酌
+- **`/scale` 软边界调整**：管理员（OP）不再受 `playerScaleMin/Max` 限制（原仅"调别人"不受限，现扩展到所有模式含调整自己）；非管理员玩家软边界默认值由 0.1–10.0 调整为 **0.01–16.0**（下限与硬边界对齐，上限对齐原版属性声明范围）
+- **规则改名 `playerScaleModifiers` → `playerScale`**：命令门控与权限模式（false/self/true/everyone）不变；旧配置文件中的规则值失效，需以新名称重新设置
 - **假人名构建规则**（`TppFakePlayer`）：站点内部名上限从 5 字符放宽至 **16 字符**；总长超限时按新优先级取舍——站点完整保留（必须）→ `_` 分隔符（可省略）→ 玩家名尽可能多。站点占满 16 字符时假人名即站点名本身，该站点所有玩家共用同一假人名
 - **`/tppset set` 新增站点名长度校验**（≤16 字符），`/tppset rename` 别名上限统一为 10 字符；旧配置中的超长站点名在执行 `/tpp` 时会被明确拦截并提示
 - **规则默认值**：`fakePlayerSendto` 默认改为关闭（`false`）；`fakePlayerNameSuggestions` 默认保持 `Steve,Alex`
@@ -23,6 +25,7 @@ All notable changes to **Carpet-PRY-Addition** are documented in this file.
 
 ### 重构（内部，行为不变）
 
+- **FOV 补偿 mixin 归属调整**：客户端 FOV 补偿（`AbstractClientPlayerMixin`）从 `realisticPlayerScale` 规则包移至 `playerScale` 规则包，属性注册 mixin 同步迁移（`rule.playerScaleModifiers` → `rule.playerScale`）。触发逻辑不变——仍以 `realisticPlayerScale` 添加的 `scale_speed` 修改器存在性判定（该修改器不存在时原版 FOV 本就不受 scale 影响）；规则描述相应调整，FOV 补偿说明移至 `playerScale` 规则
 - **`ServerTickScheduler`**：TppCommand / DropSlotScheduler / SendtoLinkManager 三处各自的 `END_SERVER_TICK` 惰性注册与双检锁样板收敛为中央调度器；服务器停止时统一放弃任务
 - **`FrequencyCommandTree`**：dropall 与 sendto 的频率子命令树（once/continuous/interval/after/perTick/randomly/stop）与 `startMode` 参数拼装去重，新增第三个 `/player` 扩展命令的成本大幅降低
 - **`FakePlayerSessionManager`**：/tpp 的假人操作 tick 状态机从 TppCommand 拆出独立管理（TppCommand 565 → 412 行）

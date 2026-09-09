@@ -328,10 +328,11 @@ scale
 
 #### 范围控制
 
-- `playerScaleMin`（默认 0.1）：允许设置的最小值
-- `playerScaleMax`（默认 10.0）：允许设置的最大值
-- 受限制的路径：自己调自己 + everyone 模式非 OP 调别人 + self 模式（含 OP 调自己）
-- **不受限制**：OP 调别人（非 self 模式），可填任意值（硬上限 0.0~100.0）
+- 硬边界：value 仅要求大于 0（不设上下限），对所有路径统一生效
+- `playerScaleMin`（默认 0.01）：非管理员玩家允许设置的最小值
+- `playerScaleMax`（默认 16.0）：非管理员玩家允许设置的最大值
+- 受限制的路径：非管理员玩家的所有操作（自己调自己 + everyone 模式非 OP 调别人 + self 模式调自己）
+- **不受限制**：管理员（OP）任意模式（含 self 模式调自己）、任意目标，可填任何大于 0 的值
 
 #### 功能描述
 
@@ -353,9 +354,9 @@ scale
 
 ```bash
 # 启用规则（管理员）
-/carpet playerScaleModifiers self     # 所有人只能调自己（无论 OP）
-/carpet playerScaleModifiers true     # 玩家调自己，OP 调任意玩家
-/carpet playerScaleModifiers everyone # 所有人可调任意玩家
+/carpet playerScale self     # 所有人只能调自己（无论 OP）
+/carpet playerScale true     # 玩家调自己，OP 调任意玩家
+/carpet playerScale everyone # 所有人可调任意玩家
 
 # 自己变半
 /scale set 0.5

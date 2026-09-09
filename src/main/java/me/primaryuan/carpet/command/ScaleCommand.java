@@ -53,15 +53,6 @@ public final class ScaleCommand {
     /** 默认 scale 值（reset 时使用） */
     private static final double DEFAULT_SCALE = 1.0;
 
-    /**
-     * value 参数的硬上下限（OP 路径），对齐原版 Attributes.SCALE 的声明范围
-     * （RangedAttribute 构造参数 0.0625~16.0，1.21.5~26.2 一致）。
-     * 原版 setBaseValue 不做夹紧，但最终生效值经 calculateValue→sanitizeValue 夹到该范围，
-     * 此处不限制的话命令反馈值会与实际生效值不一致。
-     */
-    private static final double VALUE_MIN = 0.0625;
-    private static final double VALUE_MAX = 16.0;
-
     private ScaleCommand() {}
 
     // ==================== 注册 ====================
@@ -73,12 +64,12 @@ public final class ScaleCommand {
             SuggestionProvider<CommandSourceStack> infoSuggestions = ScaleCommand::suggestPlayersForInfo;
 
             dispatcher.register(Commands.literal("scale")
-                    .requires(source -> !"false".equalsIgnoreCase(CarpetPrimaryuanSettings.playerScaleModifiers))
+                    .requires(source -> !"false".equalsIgnoreCase(CarpetPrimaryuanSettings.playerScale))
 
                     // ===== set =====
                     .then(Commands.literal("set")
                             // /scale set <value>
-                            .then(Commands.argument("value", DoubleArgumentType.doubleArg(VALUE_MIN, VALUE_MAX))
+                            .then(Commands.argument("value", DoubleArgumentType.doubleArg())
                                     .executes(ScaleCommand::setSelfScale)
                                     // /scale set <value> <player>
                                     .then(Commands.argument("player", StringArgumentType.word())
@@ -112,7 +103,7 @@ public final class ScaleCommand {
      * 规则=everyone：所有人允许。
      */
     private static boolean canModifyOther(CommandSourceStack source) {
-        String rule = CarpetPrimaryuanSettings.playerScaleModifiers;
+        String rule = CarpetPrimaryuanSettings.playerScale;
         if ("self".equalsIgnoreCase(rule)) return false;
         if (CommandSupport.isAdmin(source)) return true;
         return "everyone".equalsIgnoreCase(rule);
@@ -123,7 +114,7 @@ public final class ScaleCommand {
      * 规则=self：所有人都不可（与 modify 一致，只能看自己）。
      */
     private static boolean canViewOther(CommandSourceStack source) {
-        String rule = CarpetPrimaryuanSettings.playerScaleModifiers;
+        String rule = CarpetPrimaryuanSettings.playerScale;
         if ("self".equalsIgnoreCase(rule)) return false;
         if (CommandSupport.isAdmin(source)) return true;
         return "everyone".equalsIgnoreCase(rule) || "true".equalsIgnoreCase(rule);
@@ -136,6 +127,7 @@ public final class ScaleCommand {
         ServerPlayer self = source.getPlayerOrException();
         double value = DoubleArgumentType.getDouble(ctx, "value");
 
+        if (requirePositive(source, value)) return 0;
         if (outOfRange(source, value)) return 0;
         return applyScale(self, value, source, "set", true);
     }
@@ -154,23 +146,38 @@ public final class ScaleCommand {
 
         double value = DoubleArgumentType.getDouble(ctx, "value");
 
-        // 范围限制：自己操作 或 everyone 模式下的非 OP → 受范围限制；OP 调他人 → 不受限
-        boolean adminActingOnOther = CommandSupport.isAdmin(source) && !selfOperation;
-        if (!adminActingOnOther && outOfRange(source, value)) return 0;
+        if (requirePositive(source, value)) return 0;
+        if (outOfRange(source, value)) return 0;
 
         return applyScale(target, value, source, "set", selfOperation);
     }
 
     /**
-     * 范围校验：value 超出规则允许范围（playerScaleMin/Max）时向来源发送提示并返回 true。
+     * 软边界校验：value 超出 playerScaleMin/Max 时向来源发送提示并返回 true。
+     * 软边界仅约束非管理员玩家；管理员（OP）任意模式下不受限，实际可设范围
+     * 仅受硬边界（value > 0）约束。
      */
     private static boolean outOfRange(CommandSourceStack source, double value) {
+        if (CommandSupport.isAdmin(source)) return false;
         double min = CarpetPrimaryuanSettings.playerScaleMin;
         double max = CarpetPrimaryuanSettings.playerScaleMax;
         if (value < min || value > max) {
             source.sendFailure(ServerI18n.tr(
                     "carpetprimaryuan.command.scale.out_of_range",
                     formatScale(value), formatScale(min), formatScale(max)));
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 硬边界校验：scale 仅要求为大于 0 的有限数值（上不封顶），非法时向来源发送提示并返回 true。
+     * RangedAttributeMixin 放行 SCALE 属性的任意有限正值，保证命令反馈值与实际生效值一致。
+     */
+    private static boolean requirePositive(CommandSourceStack source, double value) {
+        if (!Double.isFinite(value) || value <= 0) {
+            source.sendFailure(ServerI18n.tr(
+                    "carpetprimaryuan.command.scale.must_be_positive", formatScale(value)));
             return true;
         }
         return false;
@@ -234,17 +241,23 @@ public final class ScaleCommand {
         String currentStr = formatScale(current);
         String defaultStr = formatScale(DEFAULT_SCALE);
         if (self) {
-            String minStr = formatScale(CarpetPrimaryuanSettings.playerScaleMin);
-            String maxStr = formatScale(CarpetPrimaryuanSettings.playerScaleMax);
-            String mode = CarpetPrimaryuanSettings.playerScaleModifiers;
+            String mode = CarpetPrimaryuanSettings.playerScale;
             String modeStr = switch (mode.toLowerCase()) {
                 case "self" -> ServerI18n.tr("carpetprimaryuan.command.scale.mode_self").getString();
                 case "true" -> ServerI18n.tr("carpetprimaryuan.command.scale.mode_true").getString();
                 case "everyone" -> ServerI18n.tr("carpetprimaryuan.command.scale.mode_everyone").getString();
                 default -> mode;
             };
-            source.sendSuccess(() -> ServerI18n.tr(
-                    "carpetprimaryuan.command.scale.info_self", currentStr, defaultStr, minStr, maxStr, modeStr), false);
+            if (CommandSupport.isAdmin(source)) {
+                // 管理员不受软边界限制，实际可设范围仅要求 >0（上不封顶）
+                source.sendSuccess(() -> ServerI18n.tr(
+                        "carpetprimaryuan.command.scale.info_self_admin", currentStr, defaultStr, modeStr), false);
+            } else {
+                String minStr = formatScale(CarpetPrimaryuanSettings.playerScaleMin);
+                String maxStr = formatScale(CarpetPrimaryuanSettings.playerScaleMax);
+                source.sendSuccess(() -> ServerI18n.tr(
+                        "carpetprimaryuan.command.scale.info_self", currentStr, defaultStr, minStr, maxStr, modeStr), false);
+            }
         } else {
             String name = target.getName().getString();
             source.sendSuccess(() -> ServerI18n.tr(
@@ -344,7 +357,7 @@ public final class ScaleCommand {
      */
     private static CompletableFuture<Suggestions> suggestPlayersForModification(
             CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
-        String rule = CarpetPrimaryuanSettings.playerScaleModifiers;
+        String rule = CarpetPrimaryuanSettings.playerScale;
         boolean selfMode = "self".equalsIgnoreCase(rule);
         boolean admin = !selfMode && CommandSupport.isAdmin(context.getSource());
         boolean everyone = "everyone".equalsIgnoreCase(rule);
@@ -358,7 +371,7 @@ public final class ScaleCommand {
      */
     private static CompletableFuture<Suggestions> suggestPlayersForInfo(
             CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
-        boolean selfMode = "self".equalsIgnoreCase(CarpetPrimaryuanSettings.playerScaleModifiers);
+        boolean selfMode = "self".equalsIgnoreCase(CarpetPrimaryuanSettings.playerScale);
         return suggestPlayers(context, builder, !selfMode);
     }
 }

@@ -1,4 +1,4 @@
-package me.primaryuan.carpet.mixins.rule.playerScaleModifiers;
+package me.primaryuan.carpet.mixins.rule.playerScale;
 
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.player.Player;

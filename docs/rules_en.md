@@ -305,14 +305,14 @@ Automatically makes the player invisible when their head is located in tall gras
 
 ---
 
-### playerScaleModifiers - Player Scale Modifiers
+### playerScale - Player Scale
 
-Registers the `minecraft:scale` attribute for Player and manages player size through the `/scale set|reset|info` command. Only supported on 1.21.5+.
+Registers the `minecraft:scale` attribute for Player and manages player size through the `/scale set|reset|info` command (value only needs to be greater than 0, with no fixed bounds; this mod lets any finite positive value through the SCALE attribute, keeping the command feedback consistent with the effective value). Only supported on 1.21.5+.
 
 | Property | Value |
 |----------|-------|
-| **Rule Name** | `playerScaleModifiers` |
-| **Description** | Registers minecraft:scale attribute for Player and adds /scale set/reset/info command. false=disable; self=everyone can only adjust themselves (even OPs); true=players adjust self only, admins adjust anyone; everyone=any player can adjust anyone. Only supported on 1.21.5+ |
+| **Rule Name** | `playerScale` |
+| **Description** | Registers minecraft:scale attribute for Player and adds /scale set/reset/info command (value only needs to be greater than 0, with no fixed bounds; display on vanilla clients is still clamped beyond the vanilla attribute range 0.0625–16). false=disable; self=everyone can only adjust themselves (even OPs); true=players adjust self only, admins adjust anyone; everyone=any player can adjust anyone. Includes client-side FOV compensation: compensates the narrowed FOV when shrinking together with the realisticPlayerScale rule (requires client-side install). Only supported on 1.21.5+ |
 | **Type** | `string` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `self`, `true`, `everyone` |
@@ -331,37 +331,37 @@ Registers the `minecraft:scale` attribute for Player and manages player size thr
 
 ### playerScaleMin - Player Scale Min
 
-Minimum scale value that players (non-ops in everyone mode included) can set via `/scale set`; the admin path is not limited by this.
+Minimum scale value that non-admin players can set via `/scale set`; admins are not limited by this (the actual range for admins only requires value > 0).
 
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `playerScaleMin` |
-| **Description** | Minimum scale value that players (non-ops in everyone mode included) can set via /scale set; admin path is not limited by this |
+| **Description** | Minimum scale value that non-admin players can set via /scale set; admins are not limited by this |
 | **Type** | `double` |
-| **Default Value** | `0.1` |
-| **Suggested Options** | `0.1`, `0.25`, `0.5` |
+| **Default Value** | `0.01` |
+| **Suggested Options** | `0.01`, `0.1`, `0.25`, `0.5` |
 | **Categories** | `PRIMARYUAN`, `SURVIVAL`, `COMMAND` |
 
 ---
 
 ### playerScaleMax - Player Scale Max
 
-Maximum scale value that players (non-ops in everyone mode included) can set via `/scale set`; the admin path is not limited by this.
+Maximum scale value that non-admin players can set via `/scale set`; admins are not limited by this (the actual range for admins only requires value > 0).
 
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `playerScaleMax` |
-| **Description** | Maximum scale value that players (non-ops in everyone mode included) can set via /scale set; admin path is not limited by this |
+| **Description** | Maximum scale value that non-admin players can set via /scale set; admins are not limited by this |
 | **Type** | `double` |
-| **Default Value** | `10.0` |
-| **Suggested Options** | `2.0`, `5.0`, `10.0` |
+| **Default Value** | `16.0` |
+| **Suggested Options** | `2.0`, `5.0`, `10.0`, `16.0` |
 | **Categories** | `PRIMARYUAN`, `SURVIVAL`, `COMMAND` |
 
 ---
 
 ### realisticPlayerScale - Realistic Player Scale
 
-When enabled, player physics scale with size in all dimensions. Requires the playerScaleModifiers rule to adjust size. Only supported on 1.21.5+.
+When enabled, player physics scale with size in all dimensions. Requires the playerScale rule to adjust size. Only supported on 1.21.5+.
 
 | Linked dimension | Scaling rule | Floor |
 |-------------------|--------------|-------|
@@ -372,14 +372,14 @@ When enabled, player physics scale with size in all dimensions. Requires the pla
 | Block interaction/attack range | Linear | 0.5× (≥2.25 blocks) |
 | Entity interaction/attack range | Linear | 0.5× (≥1.5 blocks) |
 | Safe fall distance | Linear | 0.5× (≥1.5 blocks) |
-| Field of view (FOV) | Compensates the FOV narrowing caused by shrinking, keeping a consistent view (requires the mod installed client-side) | — |
+| Field of view (FOV) | Compensates the FOV narrowing caused by shrinking, keeping a consistent view (implemented by the client side of the `playerScale` rule; requires the mod installed client-side) | — |
 
 All attribute modifications use transient modifiers (not persisted to save data) and are removed automatically when the rule is disabled or size returns to 1.0. For scale<1.0, a hybrid strategy is used: movement/flying speed use a √scale curve for gentler degradation, while critical attributes (interaction range, safe fall distance, step height) and jump height have floor limits to ensure playability at tiny sizes (e.g., 0.1). For scale≥1.0, linear scaling is preserved.
 
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `realisticPlayerScale` |
-| **Description** | Physics scale with size (minecraft:scale): movement/flying speed scale with the square root of size (gentler when shrinking, with floor); step height, block & entity interaction range and safe fall distance scale linearly (with floors ensuring playability at tiny sizes); jump strength scales with the square root (with floor); FOV changes from shrinking are compensated (requires client-side install). Requires the playerScaleModifiers rule to adjust size. Only supported on 1.21.5+ |
+| **Description** | Physics scale with size (minecraft:scale): movement/flying speed scale with the square root of size (gentler when shrinking, with floor); step height, block & entity interaction range and safe fall distance scale linearly (with floors ensuring playability at tiny sizes); jump strength scales with the square root (with floor). Requires the playerScale rule to adjust size. Only supported on 1.21.5+ |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |

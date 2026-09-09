@@ -43,7 +43,7 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
             "ridingPlayers",                  // /riding
             "pickupPlayers",                  // /picking
             "fakePlayerDropStackModifiers",   // /player <name> dropall
-            "playerScaleModifiers",           // /scale
+            "playerScale",                    // /scale
             "fakePlayerSendto"                // /player <name> sendto
     );
 

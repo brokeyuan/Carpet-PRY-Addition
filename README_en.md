@@ -32,10 +32,10 @@ All features are Carpet-rule-driven, off by default, enabled on demand.
 | `fakePlayerSkinMode` | string | `default` | Fake player skin mode: `default` / `summon` / `same_skin` |
 | `fakePlayerSkinSet` | string | `Brokeyuan` | Player name used for the shared skin in `same_skin` mode |
 | `fakePlayerDropStackModifiers` | boolean | `false` | Adds an independent `/player <name> dropall [once\|continuous\|interval\|after\|perTick\|randomly\|stop]` sub-command, letting fake players drop all inventory items at a configured pace. The entire `dropall` command is hidden when the rule is disabled |
-| `playerScaleModifiers` | string | `false` | Registers `minecraft:scale` attribute for Player and adds unified `/scale set\|reset\|info` command. `false`=hidden; `self`=everyone can only adjust themselves (even OPs); `true`=self-only for players + admins anyone; `everyone`=any player can modify anyone. Requires Minecraft 1.21.5+ |
-| `playerScaleMin` | double | `0.1` | Minimum scale value that players (including non-ops in everyone mode) can set via `/scale set`; admin path is not limited |
-| `playerScaleMax` | double | `10.0` | Maximum scale value that players (including non-ops in everyone mode) can set via `/scale set`; admin path is not limited |
-| `realisticPlayerScale` | boolean | `false` | Player speed scales with size (`minecraft:scale` attribute): half size = half speed, larger = faster (affects walking and creative flying). Requires `playerScaleModifiers` to adjust size. Minecraft 1.21.5+ only |
+| `playerScale` | string | `false` | Registers `minecraft:scale` attribute for Player and adds unified `/scale set\|reset\|info` command (value only needs to be greater than 0, with no fixed bounds; display on vanilla clients is still clamped beyond the vanilla attribute range 0.0625–16). `false`=hidden; `self`=everyone can only adjust themselves (even OPs); `true`=self-only for players + admins anyone; `everyone`=any player can modify anyone. Includes client-side FOV compensation: compensates the narrowed FOV when shrinking together with `realisticPlayerScale` (requires client install). Requires Minecraft 1.21.5+ |
+| `playerScaleMin` | double | `0.01` | Minimum scale value that non-admin players can set via `/scale set`; admins are not limited |
+| `playerScaleMax` | double | `16.0` | Maximum scale value that non-admin players can set via `/scale set`; admins are not limited |
+| `realisticPlayerScale` | boolean | `false` | Player speed scales with size (`minecraft:scale` attribute): half size = half speed, larger = faster (affects walking and creative flying). Requires `playerScale` to adjust size. Minecraft 1.21.5+ only |
 
 ### Ported Features
 
@@ -72,7 +72,7 @@ All features are Carpet-rule-driven, off by default, enabled on demand.
 | `/hat` | Wear main-hand item on head |
 | `/riding on\|off` | Toggle permission for others to ride you |
 | `/picking on\|off` | Toggle permission for others to pick you up |
-| `/scale set\|reset\|info` | Player scale adjustment (requires `playerScaleModifiers` rule, 1.21.5+) |
+| `/scale set\|reset\|info` | Player scale adjustment (requires `playerScale` rule, 1.21.5+) |
 
 ## Installation
 

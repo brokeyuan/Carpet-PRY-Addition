@@ -32,10 +32,10 @@
 | `fakePlayerSkinMode` | string | `default` | 假人皮肤模式：`default` / `summon` / `same_skin` |
 | `fakePlayerSkinSet` | string | `Brokeyuan` | `same_skin` 模式下用于统一皮肤的玩家名 |
 | `fakePlayerDropStackModifiers` | boolean | `false` | 给假人追加独立 `/player <name> dropall [once\|continuous\|interval\|after\|perTick\|randomly\|stop]` 子命令，按设定节奏持续丢出背包所有物品，规则关闭时整个子命令隐藏 |
-| `playerScaleModifiers` | string | `false` | 为 Player 注册 `minecraft:scale` 属性并添加 `/scale set\|reset\|info` 命令。`false`=隐藏；`self`=所有人都只能调自己（无论 OP）；`true`=玩家仅可调自己、管理员可调任意玩家；`everyone`=所有人可调任意玩家。需 Minecraft 1.21.5+ |
-| `playerScaleMin` | double | `0.1` | 玩家（含 everyone 模式下的非 OP）执行 `/scale set` 可设置的最小值，管理员路径不受限 |
-| `playerScaleMax` | double | `10.0` | 玩家（含 everyone 模式下的非 OP）执行 `/scale set` 可设置的最大值，管理员路径不受限 |
-| `realisticPlayerScale` | boolean | `false` | 玩家速度随体型（`minecraft:scale` 属性）线性缩放：缩小一半速度减半，放大则变快（影响行走与创造飞行）。需配合 `playerScaleModifiers` 使用，仅 1.21.5+ |
+| `playerScale` | string | `false` | 为 Player 注册 `minecraft:scale` 属性并添加 `/scale set\|reset\|info` 命令（value 仅要求大于 0，不设上下限；超出原版属性范围 0.0625–16 时纯原版客户端的显示仍会被夹紧）。`false`=隐藏；`self`=所有人都只能调自己（无论 OP）；`true`=玩家仅可调自己、管理员可调任意玩家；`everyone`=所有人可调任意玩家。含客户端 FOV 补偿：配合 `realisticPlayerScale` 时补偿缩小带来的视野变窄（需客户端安装）。需 Minecraft 1.21.5+ |
+| `playerScaleMin` | double | `0.01` | 非管理员玩家执行 `/scale set` 可设置的最小值，管理员不受此限制 |
+| `playerScaleMax` | double | `16.0` | 非管理员玩家执行 `/scale set` 可设置的最大值，管理员不受此限制 |
+| `realisticPlayerScale` | boolean | `false` | 玩家速度随体型（`minecraft:scale` 属性）线性缩放：缩小一半速度减半，放大则变快（影响行走与创造飞行）。需配合 `playerScale` 使用，仅 1.21.5+ |
 
 ### 移植功能
 
@@ -72,7 +72,7 @@
 | `/hat` | 将主手物品戴在头上 |
 | `/riding on\|off` | 开关他人骑乘自己的权限 |
 | `/picking on\|off` | 开关他人捡起自己的权限 |
-| `/scale set\|reset\|info` | 玩家大小调节（需 `playerScaleModifiers` 规则，仅 1.21.5+） |
+| `/scale set\|reset\|info` | 玩家大小调节（需 `playerScale` 规则，仅 1.21.5+） |
 
 ## 文档
 
