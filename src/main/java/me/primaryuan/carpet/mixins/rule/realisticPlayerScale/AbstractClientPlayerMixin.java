@@ -1,4 +1,4 @@
-package me.primaryuan.carpet.mixins.rule.playerScale;
+package me.primaryuan.carpet.mixins.rule.realisticPlayerScale;
 
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * playerScale 规则的客户端部分：补偿体型缩放对动态 FOV 的影响。
+ * realisticPlayerScale 规则的客户端部分：补偿体型缩放对动态 FOV 的影响。
  *
  * 原版 AbstractClientPlayer#getFieldOfViewModifier 以移速属性当前值计算
  * FOV 倍率：f *= (移速值 / walkingSpeed + 1) / 2（疾跑/速度效果拉宽视野的来源）。
@@ -19,17 +19,16 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * 这里在返回值上除回 scale 因子，使 FOV 表现与未缩放时一致，
  * 疾跑/速度药水的 FOV 拉宽效果保留。
  *
- * 是否生效以"客户端收到的属性同步数据里存在 realisticPlayerScale 的 scale_speed
- * 修改器"判定，而非读取本类的 Carpet 规则字段（规则值不保证同步到未安装本模组
- * 的原版客户端），因此对纯原版客户端同样有效。无该修改器时原版 FOV 本就不受
- * scale 影响，无需补偿。签名 getFieldOfViewModifier(boolean, float)
+ * 是否生效以"客户端收到的属性同步数据里存在我们的 scale_speed 修改器"判定，
+ * 而非读取本类的 Carpet 规则字段（规则值不保证同步到未安装本模组的原版客户端），
+ * 因此对纯原版客户端同样有效。签名 getFieldOfViewModifier(boolean, float)
  * 在 1.21.5~26.2 各版本一致（已逐一验证）。
  */
 @Mixin(AbstractClientPlayer.class)
 public abstract class AbstractClientPlayerMixin {
 
     @Inject(method = "getFieldOfViewModifier", at = @At("RETURN"), cancellable = true)
-    private void playerScale$compensateFov(boolean firstPerson, float partialTick, CallbackInfoReturnable<Float> cir) {
+    private void realisticPlayerScale$compensateFov(boolean firstPerson, float partialTick, CallbackInfoReturnable<Float> cir) {
         //#if MC >= 12105
         AbstractClientPlayer self = (AbstractClientPlayer) (Object) this;
         AttributeInstance speedAttr = self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED);

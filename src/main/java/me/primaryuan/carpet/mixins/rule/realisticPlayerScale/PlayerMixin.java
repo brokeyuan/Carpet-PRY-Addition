@@ -20,6 +20,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * - 台阶高度 STEP_HEIGHT：×scale（+0.5 保底）
  * - 方块交互距离 BLOCK_INTERACTION_RANGE / 攻击距离 ENTITY_INTERACTION_RANGE：×scale（+0.5 保底）
  * - 摔落安全距离 SAFE_FALL_DISTANCE：×scale（+0.5 保底，巨人抗摔、小人脆弱但不致死）
+ * - 重力 GRAVITY：×√scale（+0.3 保底）——下落加速度随体型变化，与跳跃 √ 曲线配套使
+ *   大体型相对起跳高度与原版一致、缩小更飘逸；创造飞行/鞘翅滑翔时原版不施加重力，无影响
  * - 飞行速度：玩家属性表无 flying_speed，由 Abilities.flyingSpeed（默认 0.05）控制，
  *   scale<1.0 用 √scale 曲线（+0.3 软保底），scale≥1.0 线性
  * 所有修改器均为瞬态（transient）、不写入 NBT，规则关闭或 scale 回到 1.0 后自动移除。
@@ -63,6 +65,8 @@ public abstract class PlayerMixin {
                     self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE), "scale_reach", 0.0D);
             realisticPlayerScale$updateModifier(
                     self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.SAFE_FALL_DISTANCE), "scale_fall", 0.0D);
+            realisticPlayerScale$updateModifier(
+                    self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.GRAVITY), "scale_gravity", 0.0D);
             if (abilities.getFlyingSpeed() != realisticPlayerScale$DEFAULT_FLYING_SPEED) {
                 abilities.setFlyingSpeed(realisticPlayerScale$DEFAULT_FLYING_SPEED);
                 self.onUpdateAbilities();
@@ -94,6 +98,12 @@ public abstract class PlayerMixin {
         double fallMul = Math.max(scale, 0.5D);
         realisticPlayerScale$updateModifier(
                 self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.SAFE_FALL_DISTANCE), "scale_fall", fallMul - 1.0D);
+        // 重力（下落加速度）：×√scale + 0.3 保底。√ 全程与跳跃 √ 曲线配套后，
+        // 大体型相对起跳高度（jump²/gravity）与原版一致；若 ≥1 用线性，16 倍体型
+        // 终端速度约 62 格/tick 会失控。创造飞行/鞘翅滑翔时原版不施加重力，无影响
+        double gravityMul = Math.max(Math.sqrt(scale), 0.3D);
+        realisticPlayerScale$updateModifier(
+                self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.GRAVITY), "scale_gravity", gravityMul - 1.0D);
 
         // 飞行速度：scale<1.0 用 √scale 曲线 + 0.3 软保底；scale≥1.0 线性
         double flyMul = scale >= 1.0D ? scale : Math.max(Math.sqrt(scale), 0.3D);

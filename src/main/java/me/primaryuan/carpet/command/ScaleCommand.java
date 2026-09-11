@@ -154,11 +154,11 @@ public final class ScaleCommand {
 
     /**
      * 软边界校验：value 超出 playerScaleMin/Max 时向来源发送提示并返回 true。
-     * 软边界仅约束非管理员玩家；管理员（OP）任意模式下不受限，实际可设范围
-     * 仅受硬边界（value > 0）约束。
+     * 软边界约束所有玩家（含管理员调自己与调他人）——管理员需要更大范围时，
+     * 通过 /carpet playerScaleMin / playerScaleMax 调整边界本身。
+     * 硬边界仅要求 value > 0（见 requirePositive）。
      */
     private static boolean outOfRange(CommandSourceStack source, double value) {
-        if (CommandSupport.isAdmin(source)) return false;
         double min = CarpetPrimaryuanSettings.playerScaleMin;
         double max = CarpetPrimaryuanSettings.playerScaleMax;
         if (value < min || value > max) {
@@ -241,6 +241,8 @@ public final class ScaleCommand {
         String currentStr = formatScale(current);
         String defaultStr = formatScale(DEFAULT_SCALE);
         if (self) {
+            String minStr = formatScale(CarpetPrimaryuanSettings.playerScaleMin);
+            String maxStr = formatScale(CarpetPrimaryuanSettings.playerScaleMax);
             String mode = CarpetPrimaryuanSettings.playerScale;
             String modeStr = switch (mode.toLowerCase()) {
                 case "self" -> ServerI18n.tr("carpetprimaryuan.command.scale.mode_self").getString();
@@ -248,16 +250,8 @@ public final class ScaleCommand {
                 case "everyone" -> ServerI18n.tr("carpetprimaryuan.command.scale.mode_everyone").getString();
                 default -> mode;
             };
-            if (CommandSupport.isAdmin(source)) {
-                // 管理员不受软边界限制，实际可设范围仅要求 >0（上不封顶）
-                source.sendSuccess(() -> ServerI18n.tr(
-                        "carpetprimaryuan.command.scale.info_self_admin", currentStr, defaultStr, modeStr), false);
-            } else {
-                String minStr = formatScale(CarpetPrimaryuanSettings.playerScaleMin);
-                String maxStr = formatScale(CarpetPrimaryuanSettings.playerScaleMax);
-                source.sendSuccess(() -> ServerI18n.tr(
-                        "carpetprimaryuan.command.scale.info_self", currentStr, defaultStr, minStr, maxStr, modeStr), false);
-            }
+            source.sendSuccess(() -> ServerI18n.tr(
+                    "carpetprimaryuan.command.scale.info_self", currentStr, defaultStr, minStr, maxStr, modeStr), false);
         } else {
             String name = target.getName().getString();
             source.sendSuccess(() -> ServerI18n.tr(

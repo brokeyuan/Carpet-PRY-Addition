@@ -329,10 +329,9 @@ scale
 #### Range Control
 
 - Hard bound: value only needs to be greater than 0 (no fixed bounds), applied uniformly to all paths
-- `playerScaleMin` (default 0.01): minimum allowed value for non-admin players
-- `playerScaleMax` (default 16.0): maximum allowed value for non-admin players
-- Bounded paths: all operations by non-admin players (self → self, plus non-OP in everyone mode acting on others, plus self-op in self mode)
-- **Unbounded**: admins (OPs) in any mode (including self-op in self mode) on any target, any value greater than 0
+- `playerScaleMin` (default 0.01): minimum allowed value for all players
+- `playerScaleMax` (default 16.0): maximum allowed value for all players
+- The soft bounds apply to everyone (including admins, on self and on others); admins who need a wider range can adjust the bounds themselves via `/carpet playerScaleMin` / `/carpet playerScaleMax`
 
 #### Description
 
