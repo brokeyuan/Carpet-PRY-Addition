@@ -45,7 +45,9 @@
   "carpet.rule.playerScaleMax.name": "玩家大小最大值",
   "carpet.rule.playerScaleMax.desc": "所有玩家执行 /scale set 时可设置的最大 scale 值，管理员可通过修改本规则调整边界",
   "carpet.rule.realisticPlayerScale.name": "更真实的玩家大小变",
-  "carpet.rule.realisticPlayerScale.desc": "体型全方位联动：移动/飞行速度随体型平方根缩放（缩小更平缓，有保底），台阶高度、方块与实体交互距离、摔落安全距离随体型等比缩放（缩小有保底下限确保可玩性），跳跃高度与重力随体型平方根缩放（含保底，大体型下落更快、缩小更飘逸）。FOV 补偿归属 playerScale 规则（v1.1.8 起）。需配合玩家随地大小变规则使用，仅 1.21.5+ 版本支持",
+  "carpet.rule.realisticPlayerScale.desc": "体型全方位联动，四种模式：false=关闭；true=平缓，移动/飞行/鞘翅烟花速度、跳跃、台阶、交互距离、摔落安全距离均按 √scale 平缓缩放，无保底；safety=平缓+保底（推荐），在 true 基础上为小体型保底（速度/重力 0.3×，跳跃/台阶/交互/摔落 0.5×），极端缩小仍可玩；strict=严格等比，所有速度、台阶、交互、摔落严格 ×scale，跳跃高度与体型等比放大（跳跃初速 ×scale^0.75），无任何保底。重力均为 √scale（大体型下落更快）。FOV 补偿归属 playerScale 规则（v1.1.8 起）。需配合玩家随地大小变规则使用，仅 1.21.5+ 版本支持",
+  "carpet.rule.playerScaleLinkedEntities.name": "玩家大小变联动实体",
+  "carpet.rule.playerScaleLinkedEntities.desc": "玩家使用物品直接生成的生物实体继承玩家当前体型（写入 minecraft:scale 基础值快照）：0.5 的玩家放出的盔甲架也是 0.5 大小，刷怪蛋生物、摆出的铁傀儡/雪傀儡/铜傀儡同理（幼崽等原有修饰符在此基础上叠加比例）。仅覆盖有 scale 属性的生物实体；投掷物、掉落物、物品展示框、船、矿车、TNT 等非生物实体不联动；发射器、刷怪笼等非玩家来源不联动；玩家体型为 1.0 时不做任何改动。仅 1.21.5+ 版本支持",
 
   "carpetprimaryuan.command.support.player_not_found": "§c玩家不在线: %s",
   "carpetprimaryuan.command.support.missing_player": "§c缺少玩家参数",

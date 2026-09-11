@@ -133,7 +133,14 @@ public class CarpetPrimaryuanSettings {
     public static double playerScaleMax = 16.0;
 
     @Rule(
+            options = {"false", "true", "safety", "strict"},
+            strict = false,
             categories = {PRIMARYUAN, SURVIVAL, FEATURE}
     )
-    public static boolean realisticPlayerScale = false;
+    public static String realisticPlayerScale = "false";
+
+    @Rule(
+            categories = {PRIMARYUAN, SURVIVAL, FEATURE}
+    )
+    public static boolean playerScaleLinkedEntities = false;
 }

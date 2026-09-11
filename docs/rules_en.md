@@ -361,26 +361,60 @@ Maximum scale value all players can set via `/scale set`; admins are limited too
 
 ### realisticPlayerScale - Realistic Player Scale
 
-When enabled, player physics scale with size in all dimensions. Requires the playerScale rule to adjust size. Only supported on 1.21.5+.
+Player physics scale with size in one of four modes. Requires the playerScale rule to adjust size. Only supported on 1.21.5+.
 
-| Linked dimension | Scaling rule | Floor |
-|-------------------|--------------|-------|
-| Movement speed (walking) | √scale (scale<1.0) / linear (scale≥1.0) | 0.3× |
-| Flying speed (creative flight) | √scale (scale<1.0) / linear (scale≥1.0) | 0.3× |
-| Jump height | √scale | 0.5× |
-| Step height | Linear | 0.5× |
-| Block interaction/attack range | Linear | 0.5× (≥2.25 blocks) |
-| Entity interaction/attack range | Linear | 0.5× (≥1.5 blocks) |
-| Safe fall distance | Linear | 0.5× (≥1.5 blocks) |
-| Fall speed (gravity) | √scale (larger players fall faster, smaller ones more floaty) | 0.3× |
+| Mode | Behavior |
+|------|----------|
+| `false` | Disabled (default) |
+| `true` | Gentle: every linked quantity scales with the √scale curve, no floors |
+| `safety` | Gentle+floors (recommended): same curve as true, with small-size (scale<1.0) floors so tiny sizes stay playable |
+| `strict` | Strictly proportional: every linked quantity scales exactly with size, no floors at all |
 
-All attribute modifications use transient modifiers (not persisted to save data) and are removed automatically when the rule is disabled or size returns to 1.0. For scale<1.0, a hybrid strategy is used: movement/flying/gravity use a √scale curve for gentler degradation, while critical attributes (interaction range, safe fall distance, step height) and jump height have floor limits to ensure playability at tiny sizes (e.g., 0.1). For scale≥1.0, speed keeps linear scaling while gravity grows with √scale (paired with the √ jump curve, the relative jump height of large players matches vanilla; a 16× player reaches a terminal velocity of about 4× instead of an uncontrollable 16×). Creative flight and elytra gliding are unaffected (vanilla applies no gravity while flying).
+| Linked dimension | true / safety (gentle) | strict (proportional) | safety floor (scale<1.0 only) |
+|-------------------|------------------------|------------------------|-------------------------------|
+| Movement speed (walking) | √scale | ×scale | 0.3× |
+| Flying speed (creative flight) | √scale | ×scale | 0.3× |
+| Elytra gliding / firework boost movement | √scale | ×scale | 0.3× |
+| Jump height (jump strength) | √scale (jump height ∝ √scale) | scale^0.75 (jump height ∝ scale) | 0.5× |
+| Step height | √scale | ×scale | 0.5× |
+| Block interaction/attack range | √scale | ×scale | 0.5× |
+| Entity interaction/attack range | √scale | ×scale | 0.5× |
+| Safe fall distance | √scale | ×scale | 0.5× |
+| Fall speed (gravity) | √scale | √scale | 0.3× |
+
+All attribute modifications use transient modifiers (not persisted to save data) and are removed automatically when the rule is disabled or size returns to 1.0. Design intent of the three modes:
+
+- **true / safety (gentle)**: the √scale curve keeps large players restrained (a 16× player moves 4× faster instead of 16×) and small players floaty; `safety` adds scale<1.0 floors on top (speed/flying/gravity 0.3×, jump/step/interaction/fall 0.5×), keeping extreme sizes (e.g., 0.1) playable — recommended for most servers.
+- **strict (proportional)**: movement speed, step height, interaction ranges and safe fall distance scale exactly ×scale; jump strength scales ×scale^0.75 which, paired with gravity ×√scale, keeps jump height proportional to size (a 2× player jumps 2× as high); no floors at all — tiny players may be too weak to interact with blocks. For geometry-focused play.
+- **Gravity**: ×√scale in every mode — gravity is an acceleration rather than a size quantity; the square-root curve pairs with the jump curve and keeps terminal velocity under control (linear scaling would give a 16× player a terminal velocity of about 62 blocks/tick, tunneling through the world).
+
+During creative flight vanilla overrides the vertical velocity, so gravity has no effect; during elytra gliding the gravity term does follow the gravity attribute, and gliding/firework movement distance is scaled by the elytra mixin using the same factor as movement speed (mode-dependent, see table above) — larger players glide and boost faster with wider turning radii (geometric similarity), smaller ones slower and floatier. Known trade-off: elytra wall-crash damage is computed from stored velocity (vanilla magnitude) and does not scale with the displacement.
+
+| **Rule Name** | `realisticPlayerScale` |
+| **Description** | Physics scale with size (minecraft:scale), four modes: false=off; true=gentle, movement/flying/elytra-firework speed, jump, step height, interaction ranges and safe fall distance all scale with the square root of size (no floors); safety=gentle+floors (recommended), adds small-size floors on top of true (speed/gravity 0.3x, jump/step/interaction/fall 0.5x) so tiny sizes stay playable; strict=strictly proportional, all speeds, step height, interaction ranges and safe fall distance scale exactly with size and jump height stays proportional to size (jump strength x scale^0.75), no floors. Gravity always scales with the square root (larger players fall faster). FOV compensation belongs to the playerScale rule (since v1.1.8). Requires the playerScale rule to adjust size. Only supported on 1.21.5+ |
+| **Type** | `string` |
+| **Default Value** | `false` |
+| **Suggested Options** | `false`, `true`, `safety`, `strict` |
+| **Categories** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
+
+### playerScaleLinkedEntities - Player Scale Linked Entities
+
+Living entities spawned directly by a player using an item inherit the player's current size. Pairs with the playerScale rule (the size may also come from a minecraft:scale set via /attribute). Only supported on 1.21.5+.
 
 | Property | Value |
 |----------|-------|
-| **Rule Name** | `realisticPlayerScale` |
-| **Description** | Physics scale with size (minecraft:scale): movement/flying speed scale with the square root of size (gentler when shrinking, with floor); step height, block & entity interaction range and safe fall distance scale linearly (with floors ensuring playability at tiny sizes); jump strength and gravity scale with the square root (with floors; larger players fall faster, smaller ones more floaty). FOV compensation belongs to the playerScale rule (since v1.1.8). Requires the playerScale rule to adjust size. Only supported on 1.21.5+ |
+| **Rule Name** | `playerScaleLinkedEntities` |
+| **Description** | Living entities spawned directly by a player using an item inherit the player's current size (stored as a minecraft:scale base-value snapshot): a 0.5x player places 0.5x armor stands; spawn-egg mobs and built iron/snow/copper golems are sized the same way (existing modifiers such as babies stack on top proportionally). Only covers living entities that have the scale attribute; projectiles, dropped items, item frames, boats, minecarts, TNT and other non-living entities are not linked; dispenser/spawner sources are not linked; players at size 1.0 are never modified. Only supported on 1.21.5+ |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
 | **Categories** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
+
+**How it works**: every server-side "player uses item" goes through the ServerPlayerGameMode funnels useItem / useItemOn, and spawned entities are added via ServerLevel.addFreshEntity (addFreshEntityWithPassengers delegates to it per passenger). While the funnel is active the acting player is recorded; on entity add, the player's current `minecraft:scale` value is written into the spawned living entity's scale base value.
+
+**Coverage**:
+
+- ✅ Living entities (minecraft:scale base value written; model + hitbox follow the vanilla attribute and sync to clients): armor stands, spawn-egg mobs (baby modifiers stack proportionally), built iron/snow/copper golems (pumpkin-place construction happens synchronously inside the use funnel)
+- ❌ Projectiles, dropped items, item frames, boats, minecarts, TNT, end crystals, paintings: not linked (rendering and hitboxes untouched)
+- ❌ Entities produced by dispensers, spawners and other block devices — not a player-use path, not linked
+- The written value is a snapshot at spawn time and does not follow later size changes; players at size 1.0 never modify anything (mod-defined entity sizes are untouched)

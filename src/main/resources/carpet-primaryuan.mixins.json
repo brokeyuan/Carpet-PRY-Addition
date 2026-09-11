@@ -22,7 +22,10 @@
     "rule.fakePlayerCommandExtensions.PlayerCommandExtensionsMixin",
     "rule.playerScale.PlayerMixin",
     "rule.playerScale.RangedAttributeMixin",
-    "rule.realisticPlayerScale.PlayerMixin"
+    "rule.realisticPlayerScale.PlayerMixin",
+    "rule.realisticPlayerScale.LivingEntityMixin",
+    "rule.playerScaleLinkedEntities.ServerPlayerGameModeMixin",
+    "rule.playerScaleLinkedEntities.ServerLevelMixin"
   ],
   "client": [
     "rule.entitiesRidingPlayers.ProjectileUtilMixin",
@@ -32,3 +35,9 @@
     "defaultRequire": 1
   }
 }
+
+
+
+
+
+

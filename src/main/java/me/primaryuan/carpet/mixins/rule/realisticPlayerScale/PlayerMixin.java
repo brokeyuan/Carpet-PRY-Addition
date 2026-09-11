@@ -14,18 +14,23 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * realisticPlayerScale 规则：更真实的玩家大小。
  *
  * 玩家 scale 属性偏离 1.0 时，同步调整多项物理量（1.20.5+ 原版均已做成属性，
- * 且全部 syncable，瞬态修改器会同步客户端，本地预测无 desync）：
- * - 行走速度 MOVEMENT_SPEED：scale<1.0 用 √scale 曲线（+0.3 软保底），scale≥1.0 线性
- * - 跳跃高度 JUMP_STRENGTH：×√scale（+0.5 保底，确保小人可跳上地毯）
- * - 台阶高度 STEP_HEIGHT：×scale（+0.5 保底）
- * - 方块交互距离 BLOCK_INTERACTION_RANGE / 攻击距离 ENTITY_INTERACTION_RANGE：×scale（+0.5 保底）
- * - 摔落安全距离 SAFE_FALL_DISTANCE：×scale（+0.5 保底，巨人抗摔、小人脆弱但不致死）
- * - 重力 GRAVITY：×√scale（+0.3 保底）——下落加速度随体型变化，与跳跃 √ 曲线配套使
- *   大体型相对起跳高度与原版一致、缩小更飘逸；创造飞行/鞘翅滑翔时原版不施加重力，无影响
- * - 飞行速度：玩家属性表无 flying_speed，由 Abilities.flyingSpeed（默认 0.05）控制，
- *   scale<1.0 用 √scale 曲线（+0.3 软保底），scale≥1.0 线性
+ * 且全部 syncable，瞬态修改器会同步客户端，本地预测无 desync）。四种模式：
+ * - false：关闭
+ * - true（平缓）：所有联动量按 √scale 曲线缩放（大体型增速更平缓、小体型更飘逸），无保底
+ * - safety（平缓+保底）：曲线同 true，另为小体型（scale<1.0）提供保底——
+ *   速度/飞行/重力 0.3×，跳跃/台阶/交互/摔落 0.5×，极端缩小（如 0.1）仍可玩
+ * - strict（严格等比）：速度/台阶/交互/摔落严格 ×scale，跳跃初速 ×scale^0.75
+ *   （与重力 √scale 配套，跳高 ∝ scale），无任何保底，完全按几何比例行动
+ * 联动项：
+ * - 行走速度 MOVEMENT_SPEED / 飞行速度 Abilities.flyingSpeed（默认 0.05，玩家属性表无 flying_speed）
+ * - 跳跃初速 JUMP_STRENGTH
+ * - 台阶高度 STEP_HEIGHT
+ * - 方块交互距离 BLOCK_INTERACTION_RANGE / 攻击距离 ENTITY_INTERACTION_RANGE
+ * - 摔落安全距离 SAFE_FALL_DISTANCE
+ * - 重力 GRAVITY：三种模式均 ×√scale（加速度量按平方根联动；线性缩放会使
+ *   16 倍体型终端速度约 62 格/tick 失控）
+ * 鞘翅滑翔/烟花的位移缩放由 LivingEntityMixin 按移动速度联动因子实现（因子随模式变化）。
  * 所有修改器均为瞬态（transient）、不写入 NBT，规则关闭或 scale 回到 1.0 后自动移除。
- * scale<1.0 的保底机制确保极端缩小（如 0.1）时仍保留基本可玩性。
  * 仅在 Minecraft 1.21.5+ 生效：1.21~1.21.4 无 Attributes.SCALE，
  * 方法体被预处理清空，且 mixins.json 不注册本 mixin。
  */
@@ -51,7 +56,8 @@ public abstract class PlayerMixin {
             return;
         }
         Abilities abilities = self.getAbilities();
-        if (!CarpetPrimaryuanSettings.realisticPlayerScale) {
+        String mode = CarpetPrimaryuanSettings.realisticPlayerScale;
+        if ("false".equalsIgnoreCase(mode)) {
             // 规则关闭：移除残留的速度修改器并恢复默认飞行速度
             realisticPlayerScale$updateModifier(
                     self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED), "scale_speed", 0.0D);
@@ -74,39 +80,52 @@ public abstract class PlayerMixin {
             return;
         }
 
+        // true=平缓（√scale 曲线，无保底）；safety=平缓+小体型保底；strict=严格等比（无保底）。
+        // 未知取值回落平缓模式（与 options 顺序中的 true 一致）
+        boolean strict = "strict".equalsIgnoreCase(mode);
+        boolean safety = "safety".equalsIgnoreCase(mode);
         double scale = scaleAttr.getValue();
+        double sqrtScale = Math.sqrt(scale);
 
-        // 移动速度：scale<1.0 用 √scale 曲线（更平缓）+ 0.3 软保底；scale≥1.0 线性
-        double speedMul = scale >= 1.0D ? scale : Math.max(Math.sqrt(scale), 0.3D);
+        // 移动速度：true/safety 用 √scale 平缓曲线，strict 严格等比 ×scale；safety 对小体型保底 0.3
+        double speedMul = strict ? scale : sqrtScale;
+        if (safety) {
+            speedMul = Math.max(speedMul, 0.3D);
+        }
         realisticPlayerScale$updateModifier(
                 self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED), "scale_speed", speedMul - 1.0D);
-        // 跳跃初速：×√scale（跳高 ∝ 体型）+ 0.5 保底（确保小人可跳上地毯）
-        double jumpMul = Math.max(Math.sqrt(scale), 0.5D);
+        // 跳跃初速：true/safety 用 √scale（跳高 ∝ √scale）；strict 用 scale^0.75
+        // （与重力 √scale 配套，jump²/gravity ∝ scale，跳高随体型等比放大）；safety 对小体型保底 0.5
+        double jumpMul = strict ? Math.pow(scale, 0.75D) : sqrtScale;
+        if (safety) {
+            jumpMul = Math.max(jumpMul, 0.5D);
+        }
         realisticPlayerScale$updateModifier(
                 self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.JUMP_STRENGTH), "scale_jump", jumpMul - 1.0D);
-        // 台阶高度：×scale + 0.5 保底（确保小人可跨地毯）
-        double stepMul = Math.max(scale, 0.5D);
+        // 台阶高度：true/safety 用 √scale，strict 严格等比 ×scale；safety 对小体型保底 0.5（确保小人可跨地毯）
+        double sizeMul = strict ? scale : sqrtScale;
+        if (safety) {
+            sizeMul = Math.max(sizeMul, 0.5D);
+        }
         realisticPlayerScale$updateModifier(
-                self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.STEP_HEIGHT), "scale_step", stepMul - 1.0D);
-        // 方块交互 / 攻击距离：×scale + 0.5 保底（确保小人可交互）
-        double reachMul = Math.max(scale, 0.5D);
+                self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.STEP_HEIGHT), "scale_step", sizeMul - 1.0D);
+        // 方块交互 / 攻击距离：与台阶同曲线；safety 对小体型保底 0.5（确保小人可交互）
         realisticPlayerScale$updateModifier(
-                self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.BLOCK_INTERACTION_RANGE), "scale_reach", reachMul - 1.0D);
+                self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.BLOCK_INTERACTION_RANGE), "scale_reach", sizeMul - 1.0D);
         realisticPlayerScale$updateModifier(
-                self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE), "scale_reach", reachMul - 1.0D);
-        // 摔落安全距离：×scale + 0.5 保底（确保小人不被秒杀）
-        double fallMul = Math.max(scale, 0.5D);
+                self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE), "scale_reach", sizeMul - 1.0D);
+        // 摔落安全距离：与台阶同曲线；safety 对小体型保底 0.5（确保小人不被秒杀）
         realisticPlayerScale$updateModifier(
-                self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.SAFE_FALL_DISTANCE), "scale_fall", fallMul - 1.0D);
-        // 重力（下落加速度）：×√scale + 0.3 保底。√ 全程与跳跃 √ 曲线配套后，
-        // 大体型相对起跳高度（jump²/gravity）与原版一致；若 ≥1 用线性，16 倍体型
-        // 终端速度约 62 格/tick 会失控。创造飞行/鞘翅滑翔时原版不施加重力，无影响
-        double gravityMul = Math.max(Math.sqrt(scale), 0.3D);
+                self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.SAFE_FALL_DISTANCE), "scale_fall", sizeMul - 1.0D);
+        // 重力（下落加速度）：三种模式均 ×√scale（加速度量按平方根联动，线性缩放会使
+        // 16 倍体型终端速度约 62 格/tick 失控）；仅 safety 对小体型保底 0.3。
+        // 创造飞行时原版会覆盖竖直速度使重力无效；鞘翅滑翔的重力项则走本属性
+        double gravityMul = safety ? Math.max(sqrtScale, 0.3D) : sqrtScale;
         realisticPlayerScale$updateModifier(
                 self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.GRAVITY), "scale_gravity", gravityMul - 1.0D);
 
-        // 飞行速度：scale<1.0 用 √scale 曲线 + 0.3 软保底；scale≥1.0 线性
-        double flyMul = scale >= 1.0D ? scale : Math.max(Math.sqrt(scale), 0.3D);
+        // 飞行速度：与移动速度同曲线（true/safety √scale、strict 线性，safety 有保底）
+        double flyMul = speedMul;
         float targetFlyingSpeed = (float) (realisticPlayerScale$DEFAULT_FLYING_SPEED * flyMul);
         if (abilities.getFlyingSpeed() != targetFlyingSpeed) {
             abilities.setFlyingSpeed(targetFlyingSpeed);
