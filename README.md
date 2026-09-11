@@ -32,7 +32,7 @@
 | `fakePlayerSkinMode` | string | `default` | 假人皮肤模式：`default` / `summon` / `same_skin` |
 | `fakePlayerSkinSet` | string | `Brokeyuan` | `same_skin` 模式下用于统一皮肤的玩家名 |
 | `fakePlayerDropStackModifiers` | boolean | `false` | 给假人追加独立 `/player <name> dropall [once\|continuous\|interval\|after\|perTick\|randomly\|stop]` 子命令，按设定节奏持续丢出背包所有物品，规则关闭时整个子命令隐藏 |
-| `playerScale` | string | `false` | 为 Player 注册 `minecraft:scale` 属性并添加 `/scale set\|reset\|info` 命令（value 仅要求大于 0，不设上下限；超出原版属性范围 0.0625–16 时纯原版客户端的显示仍会被夹紧）。`false`=隐藏；`self`=所有人都只能调自己（无论 OP）；`true`=玩家仅可调自己、管理员可调任意玩家；`everyone`=所有人可调任意玩家。需 Minecraft 1.21.5+ |
+| `playerScale` | string | `false` | 为 Player 注册 `minecraft:scale` 属性并添加 `/scale set\|reset\|info` 命令（补偿缩放带来的 FOV 变化，需客户端安装；value 仅要求大于 0，不设上下限；超出原版属性范围 0.0625–16 时纯原版客户端的显示仍会被夹紧）。`false`=隐藏；`self`=所有人都只能调自己（无论 OP）；`true`=玩家仅可调自己、管理员可调任意玩家；`everyone`=所有人可调任意玩家。需 Minecraft 1.21.5+ |
 | `playerScaleMin` | double | `0.01` | 所有玩家执行 `/scale set` 可设置的最小值，管理员可通过修改本规则调整边界 |
 | `playerScaleMax` | double | `16.0` | 所有玩家执行 `/scale set` 可设置的最大值，管理员可通过修改本规则调整边界 |
 | `realisticPlayerScale` | boolean | `false` | 玩家物理随体型（`minecraft:scale` 属性）联动：移动/飞行速度随体型缩放（缩小用 √ 曲线更平缓、有保底），台阶高度、交互距离、摔落安全距离等比缩放（有保底），跳跃与重力随体型平方根缩放（大体型下落更快、缩小更飘逸），并补偿缩小后的视野变化（需客户端安装）。需配合 `playerScale` 使用，仅 1.21.5+ |

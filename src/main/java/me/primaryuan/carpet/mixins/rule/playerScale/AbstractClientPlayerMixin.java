@@ -1,4 +1,4 @@
-package me.primaryuan.carpet.mixins.rule.realisticPlayerScale;
+package me.primaryuan.carpet.mixins.rule.playerScale;
 
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -9,11 +9,14 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * realisticPlayerScale 规则的客户端部分：补偿体型缩放对动态 FOV 的影响。
+ * playerScale 规则的客户端部分：补偿体型缩放对动态 FOV 的影响。
+ * （v1.1.8 起归属 playerScale；触发仍以属性同步中的 scale_speed 修改器为准——
+ * 该修改器由 realisticPlayerScale 的移速联动施加，故实际补偿仅在
+ * realisticPlayerScale 生效时产生 FOV 变化的场景下起作用。）
  *
  * 原版 AbstractClientPlayer#getFieldOfViewModifier 以移速属性当前值计算
  * FOV 倍率：f *= (移速值 / walkingSpeed + 1) / 2（疾跑/速度效果拉宽视野的来源）。
- * realisticPlayerScale 的移速瞬态修改器会同步到客户端，于是缩小时客户端认为
+ * 体型缩放的移速瞬态修改器会同步到客户端，于是缩小时客户端认为
  * "变慢了"而收窄 FOV（scale=0.5 时 FOV×0.75），放大时反向拉宽。
  *
  * 这里在返回值上除回 scale 因子，使 FOV 表现与未缩放时一致，
@@ -28,7 +31,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class AbstractClientPlayerMixin {
 
     @Inject(method = "getFieldOfViewModifier", at = @At("RETURN"), cancellable = true)
-    private void realisticPlayerScale$compensateFov(boolean firstPerson, float partialTick, CallbackInfoReturnable<Float> cir) {
+    private void playerScale$compensateFov(boolean firstPerson, float partialTick, CallbackInfoReturnable<Float> cir) {
         //#if MC >= 12105
         AbstractClientPlayer self = (AbstractClientPlayer) (Object) this;
         AttributeInstance speedAttr = self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED);

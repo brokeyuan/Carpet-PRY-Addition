@@ -13,6 +13,7 @@ All notable changes to **Carpet-PRY-Addition** are documented in this file.
 - **`/scale` 硬边界改为仅要求大于 0**：value 参数不再设固定上下限（原对齐原版属性的 0.0625–16.0），任何大于 0 的有限值均可直接设置生效；`RangedAttributeMixin` 相应放行 SCALE 属性的任意有限正值，非正值/非有限值（NaN/Infinity）回落原版夹紧兜底，服务端命令反馈值与实际生效值一致。注意：纯原版客户端（未安装本模组）在超出原版范围（<0.0625 或 >16.0）时显示仍会被客户端侧夹紧，需客户端安装本模组；极端缩放值可能引发生物碰撞箱与渲染异常，请自行斟酌
 - **`/scale` 软边界调整**：`playerScaleMin/Max` 软边界统一约束所有玩家（原管理员"调他人"不受限，现含管理员在内均受限；管理员可通过 `/carpet` 修改这两条规则调整边界本身）；软边界默认值由 0.1–10.0 调整为 **0.01–16.0**（下限与硬边界对齐，上限对齐原版属性声明范围）
 - **规则改名 `playerScaleModifiers` → `playerScale`**：命令门控与权限模式（false/self/true/everyone）不变；旧配置文件中的规则值失效，需以新名称重新设置
+- **FOV 补偿归属调整**：视野（FOV）补偿自 `realisticPlayerScale` 移至 `playerScale` 规则（客户端 mixin 注册随之迁移；触发仍以属性同步中的 scale_speed 修改器为准——该修改器由 realisticPlayerScale 的移速联动施加，故实际补偿行为不变，仅归属与文档描述调整）
 - **假人名构建规则**（`TppFakePlayer`）：站点内部名上限从 5 字符放宽至 **16 字符**；总长超限时按新优先级取舍——站点完整保留（必须）→ `_` 分隔符（可省略）→ 玩家名尽可能多。站点占满 16 字符时假人名即站点名本身，该站点所有玩家共用同一假人名
 - **`/tppset set` 新增站点名长度校验**（≤16 字符），`/tppset rename` 别名上限统一为 10 字符；旧配置中的超长站点名在执行 `/tpp` 时会被明确拦截并提示
 - **规则默认值**：`fakePlayerSendto` 默认改为关闭（`false`）；`fakePlayerNameSuggestions` 默认保持 `Steve,Alex`

@@ -307,12 +307,12 @@ Automatically makes the player invisible when their head is located in tall gras
 
 ### playerScale - Player Scale
 
-Registers the `minecraft:scale` attribute for Player and manages player size through the `/scale set|reset|info` command (value only needs to be greater than 0, with no fixed bounds; this mod lets any finite positive value through the SCALE attribute, keeping the command feedback consistent with the effective value). Only supported on 1.21.5+.
+Registers the `minecraft:scale` attribute for Player and manages player size through the `/scale set|reset|info` command (value only needs to be greater than 0, with no fixed bounds; this mod lets any finite positive value through the SCALE attribute, keeping the command feedback consistent with the effective value); also compensates the scaling-induced FOV change (requires the mod installed client-side). Only supported on 1.21.5+.
 
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `playerScale` |
-| **Description** | Registers minecraft:scale attribute for Player and adds /scale set/reset/info command (value only needs to be greater than 0, with no fixed bounds; display on vanilla clients is still clamped beyond the vanilla attribute range 0.0625–16). false=disable; self=everyone can only adjust themselves (even OPs); true=players adjust self only, admins adjust anyone; everyone=any player can adjust anyone. Only supported on 1.21.5+ |
+| **Description** | Registers minecraft:scale attribute for Player and adds /scale set/reset/info command (value only needs to be greater than 0, with no fixed bounds; display on vanilla clients is still clamped beyond the vanilla attribute range 0.0625–16), and compensates the scaling-induced FOV change (client-side install required). false=disable; self=everyone can only adjust themselves (even OPs); true=players adjust self only, admins adjust anyone; everyone=any player can adjust anyone. Only supported on 1.21.5+ |
 | **Type** | `string` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `self`, `true`, `everyone` |
@@ -373,14 +373,13 @@ When enabled, player physics scale with size in all dimensions. Requires the pla
 | Entity interaction/attack range | Linear | 0.5× (≥1.5 blocks) |
 | Safe fall distance | Linear | 0.5× (≥1.5 blocks) |
 | Fall speed (gravity) | √scale (larger players fall faster, smaller ones more floaty) | 0.3× |
-| Field of view (FOV) | Compensates the FOV narrowing caused by shrinking, keeping a consistent view (requires the mod installed client-side) | — |
 
 All attribute modifications use transient modifiers (not persisted to save data) and are removed automatically when the rule is disabled or size returns to 1.0. For scale<1.0, a hybrid strategy is used: movement/flying/gravity use a √scale curve for gentler degradation, while critical attributes (interaction range, safe fall distance, step height) and jump height have floor limits to ensure playability at tiny sizes (e.g., 0.1). For scale≥1.0, speed keeps linear scaling while gravity grows with √scale (paired with the √ jump curve, the relative jump height of large players matches vanilla; a 16× player reaches a terminal velocity of about 4× instead of an uncontrollable 16×). Creative flight and elytra gliding are unaffected (vanilla applies no gravity while flying).
 
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `realisticPlayerScale` |
-| **Description** | Physics scale with size (minecraft:scale): movement/flying speed scale with the square root of size (gentler when shrinking, with floor); step height, block & entity interaction range and safe fall distance scale linearly (with floors ensuring playability at tiny sizes); jump strength and gravity scale with the square root (with floors; larger players fall faster, smaller ones more floaty), and the narrowed FOV from shrinking is compensated (requires client-side install). Requires the playerScale rule to adjust size. Only supported on 1.21.5+ |
+| **Description** | Physics scale with size (minecraft:scale): movement/flying speed scale with the square root of size (gentler when shrinking, with floor); step height, block & entity interaction range and safe fall distance scale linearly (with floors ensuring playability at tiny sizes); jump strength and gravity scale with the square root (with floors; larger players fall faster, smaller ones more floaty). FOV compensation belongs to the playerScale rule (since v1.1.8). Requires the playerScale rule to adjust size. Only supported on 1.21.5+ |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
