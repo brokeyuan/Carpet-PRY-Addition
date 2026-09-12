@@ -34,8 +34,10 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
  *
  * 仅在 Minecraft 1.21.5+ 生效：低于该版本无 scale 属性与 travelFallFlying
  * 拆分，方法体被预处理清空，且 mixins.json 不注册本类。
- * 注意 @At target 的 owner 是 Entity（move 声明于 Entity，LivingEntity 未
- * 覆写，调用点的字节码 owner 为声明类）——写成 LivingEntity 会匹配 0 目标。
+ * 注意 @At target 的 owner 是 LivingEntity：编译器对继承方法调用点
+ * （this.move(...)）按接收者静态类型编译 owner，1.21.5~26.2 六个版本的
+ * 运行时字节码均为 LivingEntity（1.21.x intermediary 为 class_1309;
+ * method_5784(class_1313;class_243)）——写成声明类 Entity 反而匹配 0 目标。
  */
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityMixin {
@@ -44,7 +46,7 @@ public abstract class LivingEntityMixin {
             method = "travelFallFlying",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/world/entity/Entity;move(Lnet/minecraft/world/entity/MoverType;Lnet/minecraft/world/phys/Vec3;)V"
+                    target = "Lnet/minecraft/world/entity/LivingEntity;move(Lnet/minecraft/world/entity/MoverType;Lnet/minecraft/world/phys/Vec3;)V"
             )
     )
     private Vec3 realisticPlayerScale$scaleElytraMovement(Vec3 movement) {
