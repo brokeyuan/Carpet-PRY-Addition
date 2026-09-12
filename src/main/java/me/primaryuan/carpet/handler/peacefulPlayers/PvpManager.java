@@ -30,10 +30,13 @@ import java.util.Map;
 /**
  * 和平的玩家（peacefulPlayers）核心管理器。
  *
- * 规则本身不改变任何原版行为，仅启用 /pvp 指令；PVP 的关闭完全由指令按玩家驱动：
+ * 规则本身不改变任何原版行为，仅启用 /pvp 指令；PVP 的关闭完全由指令按玩家驱动（类似群聊禁言模型）：
  * - 全服默认状态（default）+ 每玩家覆盖状态（playerStates），未单独设置的玩家跟随默认；
- * - /pvp set &lt;玩家&gt; on|off：单独设置某个玩家（仅在线玩家）；
- * - /pvp set @a on|off：全服总开关——更新默认状态并覆盖所有已登记玩家；
+ * - /pvp on|off：开关自己的 PVP（全局禁言期间非管理员不可自行开启）；
+ * - /pvp on|off &lt;玩家&gt;：开关指定在线玩家（权限随规则模式）；
+ * - /pvp on|off @a：全服总开关（仅管理员、self 模式除外）——off 类似全员禁言
+ *   （清除所有显式 on 覆盖，禁言期间仅管理员可个别解禁），on 解除禁言（保留自选的 off），
+ *   之后新加入的玩家跟随全局默认状态；
  * - /pvp list：列出所有 PVP 为 off 的玩家（含离线已登记玩家）。
  *
  * 拦截方式：Fabric ServerLivingEntityEvents.ALLOW_DAMAGE（LivingEntity.hurt/hurtServer
@@ -167,14 +170,25 @@ public final class PvpManager {
     }
 
     /**
-     * 全服总开关：更新默认状态，并把所有已登记玩家（含离线）覆盖为同一状态。
+     * 全服总开关（@a，类似群聊全员禁言，强制覆盖语义）。
+     * off：全员禁言——默认状态设为 off 并清空所有个人覆盖；
+     *      禁言期间所有个人开关操作（on/off，含管理员）均被锁定，仅再次 @a 可解除；
+     * on：解除禁言——默认状态设为 on 并清空所有个人覆盖，所有玩家强制恢复 PVP 开启，
+     *      之后玩家才可重新调整自己的 PVP。
+     * 新加入的玩家始终跟随默认状态。
      */
-    public static void setAllStates(String state) {
+    public static void setGlobalState(String state) {
         defaultState = state;
-        for (Map.Entry<String, String> entry : playerStates.entrySet()) {
-            entry.setValue(state);
-        }
+        playerStates.clear();
         save();
+    }
+
+    /**
+     * 全服 PVP 是否处于全局关闭（禁言）状态。
+     * 禁言期间所有个人开关操作均被锁定（含管理员），仅 /pvp on @a 可解除全局。
+     */
+    public static boolean isGlobalOff() {
+        return STATE_OFF.equals(defaultState);
     }
 
     // ===== 持久化 =====

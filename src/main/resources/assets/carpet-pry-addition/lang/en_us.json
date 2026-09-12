@@ -50,7 +50,7 @@
   "carpet.rule.playerScaleLinkedEntities.desc": "Living entities spawned directly by a player using an item inherit the player's current size (stored as a minecraft:scale base-value snapshot): a 0.5x player places 0.5x armor stands; spawn-egg mobs and built iron/snow/copper golems are sized the same way (existing modifiers such as babies stack on top proportionally). Only covers living entities that have the scale attribute; projectiles, dropped items, item frames, boats, minecarts, TNT and other non-living entities are not linked; dispenser/spawner sources are not linked; players at size 1.0 are never modified. Only supported on 1.21.5+",
 
   "carpet.rule.peacefulPlayers.name": "Peaceful Players",
-  "carpet.rule.peacefulPlayers.desc": "Enables the /pvp command to toggle PVP per player: players with PVP disabled cannot attack players and take no damage from players (self-inflicted damage is unaffected). Each blocked attack plays a notice sound at the victim's position (heard by both sides), keeping the poke-to-get-attention signal. Commands: /pvp (view your own status), /pvp list (list all players with PVP disabled), /pvp set <player|@a> <on|off>. false=hide; self=everyone can only adjust themselves (even OPs); true=players adjust self only, admins adjust anyone; everyone=any player can adjust anyone. Player states persist across restarts",
+  "carpet.rule.peacefulPlayers.desc": "Enables the /pvp command to toggle PVP per player: players with PVP disabled cannot attack players and take no damage from players (self-inflicted damage is unaffected). Each blocked attack plays a notice sound at the victim's position (heard by both sides), keeping the poke-to-get-attention signal. Commands: /pvp (view status), /pvp on|off (toggle yourself), /pvp on|off <player> (toggle a player), /pvp on|off @a (server-wide switch, new joiners follow it). false=hide; self=everyone can only adjust themselves (even OPs); true=players adjust self only, admins adjust anyone; everyone=any player can adjust anyone; the @a global switch is admin-only (except in self mode). While the server-wide switch is off, all per-player toggles are locked (admins included); lift it with /pvp on @a; lifting force-overrides and restores PVP for all players. Player states persist across restarts",
 
   "carpetprimaryuan.command.support.player_not_found": "§cPlayer not found: %s",
   "carpetprimaryuan.command.support.missing_player": "§cMissing player argument",
@@ -151,10 +151,16 @@
   "carpetprimaryuan.command.pvp.list_empty": "§eNo players have PVP disabled",
   "carpetprimaryuan.command.pvp.set_target_on": "§aSet PVP of player %s to ON",
   "carpetprimaryuan.command.pvp.set_target_off": "§aSet PVP of player %s to OFF",
-  "carpetprimaryuan.command.pvp.set_all_on": "§aSet PVP of all players to ON",
-  "carpetprimaryuan.command.pvp.set_all_off": "§aSet PVP of all players to OFF",
+  "carpetprimaryuan.command.pvp.set_all_on": "§aServer-wide PVP mode set to ON",
+  "carpetprimaryuan.command.pvp.set_all_off": "§aServer-wide PVP mode set to OFF (global mute)",
   "carpetprimaryuan.command.pvp.notify_on": "§eAn admin has set your PVP to ON",
   "carpetprimaryuan.command.pvp.notify_off": "§eAn admin has set your PVP to OFF",
   "carpetprimaryuan.command.pvp.no_permission": "§cYou don't have permission to modify other players' PVP (current mode only allows adjusting yourself)",
-  "carpetprimaryuan.command.pvp.console_hint": "§eOnly players can query their own status. Subcommands: /pvp list, /pvp set <player|@a> <on|off>"
+  "carpetprimaryuan.command.pvp.no_permission_global": "§cOnly admins can switch the server-wide PVP mode",
+  "carpetprimaryuan.command.pvp.global_lock": "§cServer-wide PVP is currently locked by an admin; lift it with /pvp on @a",
+  "carpetprimaryuan.command.pvp.player_only": "§cOnly players can use this command",
+  "carpetprimaryuan.command.pvp.status_global": "§7Server-wide PVP mode: §f%s",
+  "carpetprimaryuan.command.pvp.global_state_on": "ON",
+  "carpetprimaryuan.command.pvp.global_state_off": "OFF",
+  "carpetprimaryuan.command.pvp.console_hint": "§eOnly players can view/switch their own status. Subcommands: /pvp list, /pvp on|off [player|@a]"
 }
