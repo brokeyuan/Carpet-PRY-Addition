@@ -2,7 +2,7 @@
 
 All notable changes to **Carpet-PRY-Addition** are documented in this file.
 
-## [未发布]
+## [1.2.0] - 2026-09-12
 
 ### 新增
 
