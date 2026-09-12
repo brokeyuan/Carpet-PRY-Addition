@@ -1,4 +1,4 @@
-package me.primaryuan.carpet.mixins.rule.FixBluemap;
+package me.primaryuan.carpet.mixins.rule.fixBluemap;
 
 import java.lang.reflect.Proxy;
 

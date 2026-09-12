@@ -1,4 +1,4 @@
-package me.primaryuan.carpet.mixins.rule.FixXaeroLib;
+package me.primaryuan.carpet.mixins.rule.fixXaeroLib;
 
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import org.spongepowered.asm.mixin.Mixin;

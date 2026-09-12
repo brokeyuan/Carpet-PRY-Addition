@@ -74,7 +74,7 @@ public class CarpetPrimaryuanSettings {
     public static boolean betterSnowBall = false;
 
     @Rule(
-            options = {"16", "32", ""},
+            options = {"16", "32"},
             strict = false,
             categories = {PRIMARYUAN, SURVIVAL, FEATURE}
     )

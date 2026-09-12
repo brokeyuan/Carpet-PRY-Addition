@@ -3,6 +3,7 @@ package me.primaryuan.carpet.mixins.rule.fakePlayerSkin;
 import carpet.commands.PlayerCommand;
 import carpet.patches.EntityPlayerMPFake;
 import com.mojang.authlib.GameProfile;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import net.minecraft.commands.CommandSourceStack;
@@ -42,17 +43,11 @@ public class PlayerCommandSkinMixin {
                 // 命令可能由非玩家执行（如命令方块）
             }
 
-            // 从服务器玩家列表中找到刚生成的假人（EntityPlayerMPFake）
+            // 按命令参数定位本次生成的假人；spawn 失败（名字被占用）时查到的不是假人，直接跳过
             var server = context.getSource().getServer();
-            EntityPlayerMPFake fakePlayer = null;
-            for (ServerPlayer p : server.getPlayerList().getPlayers()) {
-                if (p instanceof EntityPlayerMPFake fp) {
-                    fakePlayer = fp;
-                    break;
-                }
-            }
-
-            if (fakePlayer == null) {
+            String fakeName = StringArgumentType.getString(context, "player");
+            ServerPlayer spawned = server.getPlayerList().getPlayerByName(fakeName);
+            if (!(spawned instanceof EntityPlayerMPFake fakePlayer)) {
                 return;
             }
 
