@@ -50,7 +50,7 @@
   "carpet.rule.playerScaleLinkedEntities.desc": "玩家使用物品直接生成的生物實體繼承玩家當前體型（寫入 minecraft:scale 基礎值快照）：0.5 的玩家放出的盔甲架也是 0.5 大小，生怪蛋生物、擺出的鐵傀儡/雪傀儡/銅傀儡同理（幼崽等原有修飾符在此基礎上疊加比例）。僅覆蓋有 scale 屬性的生物實體；投擲物、掉落物、物品展示框、船、礦車、TNT 等非生物實體不聯動；發射器、生怪籠等非玩家來源不聯動；玩家體型為 1.0 時不做任何改動。僅 1.21.5+ 版本支援",
 
   "carpet.rule.peacefulPlayers.name": "和平的玩家",
-  "carpet.rule.peacefulPlayers.desc": "啟用 /pvp 指令，按玩家開關 PVP：被關閉的玩家不能攻擊玩家，也不會受到任何玩家造成的傷害（自傷不受限制）。指令：/pvp（查看自己的狀態）、/pvp list（列出所有 PVP 關閉的玩家）、/pvp set <玩家|@a> <on|off>。false=隱藏；self=所有人都只能調自己（無論 OP）；true=玩家僅可調自己、管理員可調任意玩家；everyone=所有人可調任意玩家。玩家狀態跨重啟保留",
+  "carpet.rule.peacefulPlayers.desc": "啟用 /pvp 指令，按玩家開關 PVP：被關閉的玩家不能攻擊玩家，也不會受到任何玩家造成的傷害（自傷不受限制）。被攔截的攻擊會在受擊方位置播放提示音（雙方均可聽到），保留以攻擊提醒對方的訊號作用。指令：/pvp（查看自己的狀態）、/pvp list（列出所有 PVP 關閉的玩家）、/pvp set <玩家|@a> <on|off>。false=隱藏；self=所有人都只能調自己（無論 OP）；true=玩家僅可調自己、管理員可調任意玩家；everyone=所有人可調任意玩家。玩家狀態跨重啟保留",
 
   "carpetprimaryuan.command.support.player_not_found": "§c玩家不在線: %s",
   "carpetprimaryuan.command.support.missing_player": "§c缺少玩家參數",

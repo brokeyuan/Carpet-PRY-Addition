@@ -10,6 +10,8 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -77,13 +79,17 @@ public final class PvpManager {
         initialized = true;
         load();
 
-        // 玩家间伤害拦截：规则开启（非 false 模式）时，双方任一玩家 PVP 为 off 即取消（双向保护，自伤除外）
+        // 玩家间伤害拦截：规则开启（非 false 模式）时，双方任一玩家 PVP 为 off 即取消（双向保护，自伤除外）。
+        // 拦截时播放提示音——玩家常以攻击作为"有事找你"的提醒信号，伤害被取消后信号会丢失，
+        // 因此每次被拦截的攻击都在受击方位置播放一次提示音（攻击者与被攻击者都能听到）
         ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
             if ("false".equalsIgnoreCase(CarpetPrimaryuanSettings.peacefulPlayers)) return true;
             if (!(entity instanceof ServerPlayer victim)) return true;
             if (!(source.getEntity() instanceof ServerPlayer attacker)) return true;
             if (attacker == victim) return true;
-            return isPvpOn(victim) && isPvpOn(attacker);
+            if (isPvpOn(victim) && isPvpOn(attacker)) return true;
+            playBlockedAttackSound(victim);
+            return false;
         });
 
         // 玩家加入时按当前默认状态登记，保证 /pvp list 能列出所有 PVP 关闭的玩家（含之后离线的）
@@ -95,6 +101,15 @@ public final class PvpManager {
     }
 
     // ===== 状态查询 =====
+
+    /**
+     * 在受击方位置播放被拦截攻击的提示音（音符盒 pling）。
+     * 使用世界级广播（except=null），攻击者与被攻击者及附近玩家均可听到。
+     */
+    private static void playBlockedAttackSound(ServerPlayer victim) {
+        victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(),
+                SoundEvents.NOTE_BLOCK_PLING, SoundSource.PLAYERS, 1.0F, 1.0F);
+    }
 
     /**
      * 玩家当前是否允许 PVP（未单独设置时跟随全服默认状态）。
