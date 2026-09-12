@@ -11,9 +11,9 @@
 
 ## 简介
 
-**Carpet-Primaryuan-Addition** 是一个基于 [Fabric Carpet](https://github.com/gnembon/fabric-carpet) 的服务端扩展模组，主要为PRY服务器（Primaryuan Server）开发。新增了 **21 条**可配置 Carpet 规则和 **6 个**新命令，涵盖假人管理增强、模组兼容性修复、功能移植、玩家交互和生存特性扩展。
+**Carpet-Primaryuan-Addition** 是一个基于 [Fabric Carpet](https://github.com/gnembon/fabric-carpet) 的服务端扩展模组，主要为 PRY 服务器（Primaryuan Server）开发。新增 **24 条**可配置 Carpet 规则和 **7 个**命令（另有 `/player <name> dropall`、`/player <name> sendto` 两个假人子命令扩展），涵盖假人管理增强、玩家缩放、服务器管理、模组兼容性修复、功能移植、玩家交互和生存特性扩展。
 
-所有功能均为 Carpet 规则驱动，默认关闭，按需启用。
+除 `ridingPlayersClientAllowInteractions` 默认开启外，其余规则默认关闭，按需启用。
 
 ## 功能特性
 
@@ -31,12 +31,17 @@
 | `TppFakePlayer` | boolean | `false` | 假人珍珠站传送，启用 `/tpp` 与 `/tppset` 命令 |
 | `fakePlayerSkinMode` | string | `default` | 假人皮肤模式：`default` / `summon` / `same_skin` |
 | `fakePlayerSkinSet` | string | `Brokeyuan` | `same_skin` 模式下用于统一皮肤的玩家名 |
-| `fakePlayerDropStackModifiers` | boolean | `false` | 给假人追加独立 `/player <name> dropall [once\|continuous\|interval\|after\|perTick\|randomly\|stop]` 子命令，按设定节奏持续丢出背包所有物品，规则关闭时整个子命令隐藏 |
-| `playerScale` | string | `false` | 为 Player 注册 `minecraft:scale` 属性并添加 `/scale set\|reset\|info` 命令（补偿缩放带来的 FOV 变化，需客户端安装；value 仅要求大于 0，不设上下限；超出原版属性范围 0.0625–16 时纯原版客户端的显示仍会被夹紧）。`false`=隐藏；`self`=所有人都只能调自己（无论 OP）；`true`=玩家仅可调自己、管理员可调任意玩家；`everyone`=所有人可调任意玩家。需 Minecraft 1.21.5+ |
-| `playerScaleMin` | double | `0.01` | 所有玩家执行 `/scale set` 可设置的最小值，管理员可通过修改本规则调整边界 |
-| `playerScaleMax` | double | `16.0` | 所有玩家执行 `/scale set` 可设置的最大值，管理员可通过修改本规则调整边界 |
-| `realisticPlayerScale` | string | `false` | 玩家物理随体型（`minecraft:scale` 属性）联动，四模式：`true`=平缓（全部按 √scale，无保底）、`safety`=平缓+小体型保底（推荐）、`strict`=严格等比（速度/台阶/交互/摔落 ×scale、跳高与体型等比放大，无保底）；重力均 √scale；鞘翅滑翔/烟花加速随体型缩放；并补偿缩小后的视野变化（需客户端安装）。需配合 `playerScale` 使用，仅 1.21.5+ |
-| `playerScaleLinkedEntities` | boolean | `false` | 玩家使用物品直接生成的生物实体继承玩家当前体型（原版 scale 属性快照）：盔甲架、刷怪蛋生物、摆出的铁/雪/铜傀儡全尺寸联动；投掷物、掉落物、展示框等非生物实体不联动；发射器等不联动；体型 1.0 时不改动。仅 1.21.5+ |
+| `fakePlayerDropStackModifiers` | boolean | `false` | 给假人追加 `/player <name> dropall` 子命令，按设定节奏持续丢出背包物品（频率参数见命令表） |
+| `fakePlayerSendto` | boolean | `false` | 给假人追加 `/player <name> sendto <目标>` 子命令，建立假人间单向背包物品流：多目标逐组轮流分配，目标放不下时物品留在源背包 |
+
+### 玩家缩放（仅 1.21.5+）
+
+| 规则 | 类型 | 默认值 | 简介 |
+|------|------|--------|------|
+| `playerScale` | string | `false` | 为 Player 注册 `minecraft:scale` 属性并启用 `/scale set\|reset\|info` 命令，含 FOV 补偿（需客户端安装），详见[规则文档](docs/rules.md) |
+| `playerScaleMin` / `playerScaleMax` | double | `0.1` / `1.5` | `/scale set` 的软边界，管理员可修改本规则调整范围 |
+| `realisticPlayerScale` | string | `false` | 玩家物理随体型联动：`true`=√scale 平缓、`safety`=平缓+小体型保底（推荐）、`strict`=严格等比、`false`=关闭；重力均 √scale。需配合 `playerScale` 使用 |
+| `playerScaleLinkedEntities` | boolean | `false` | 玩家用物品直接生成的生物实体继承玩家当前体型（scale 基础值快照）；非生物实体与发射器等非玩家来源不联动 |
 
 ### 移植功能
 
@@ -45,13 +50,19 @@
 | `fakePlayerNameSuggestions` | string | `Steve,Alex` | 自定义 `/player` 命令的补全建议（移植自 Ivan-Carpet-Addition） |
 | `unicodeArgumentsSupport` | boolean | `false` | 允许命令参数使用非 ASCII 字符，可召唤中文名假人（移植自 YACA） |
 
+### 服务器管理
+
+| 规则 | 类型 | 默认值 | 简介 |
+|------|------|--------|------|
+| `peacefulPlayers` | string | `false` | 启用 `/pvp` 按玩家开关 PVP（双向保护，自伤不限，拦截时播放提示音）；`/pvp on\|off @a` 为全服总开关，仅管理员可用 |
+
 ### 玩家交互
 
 | 规则 | 类型 | 默认值 | 简介 |
 |------|------|--------|------|
 | `ridingPlayers` | boolean | `false` | 主手持不死图腾时可骑上其他玩家 |
 | `pickupPlayers` | boolean | `false` | 主手持不死图腾 + 副手金胡萝卜时可捡起其他玩家 |
-| `ridingPlayersPickUpLimit` | int | `16` | 骑乘与捡起的最大堆叠人数（支持 16/32/自定义） |
+| `ridingPlayersPickUpLimit` | int | `16` | 骑乘与捡起共用的最大堆叠人数，`/carpet` 可设任意值 |
 | `ridingPlayersDismountOnGameModeChange` | boolean | `false` | 游戏模式变更时乘客自动下车 |
 | `ridingPlayersClientAllowInteractions` | boolean | `true` | 头上有乘客时仍可交互方块/实体（需客户端安装） |
 
@@ -69,11 +80,14 @@
 | 命令 | 说明 |
 |------|------|
 | `/tpp <station>` | 经珍珠传送站传送 |
-| `/tppset` | 管理传送站 |
+| `/tppset` | 管理传送站（站点 / 玩家别名 / 触发次数） |
 | `/hat` | 将主手物品戴在头上 |
 | `/riding on\|off` | 开关他人骑乘自己的权限 |
 | `/picking on\|off` | 开关他人捡起自己的权限 |
 | `/scale set\|reset\|info` | 玩家大小调节（需 `playerScale` 规则，仅 1.21.5+） |
+| `/pvp [list\|on\|off [玩家\|@a]]` | 按玩家开关 PVP，`@a` 为全服总开关（需 `peacefulPlayers`） |
+| `/player <name> dropall [once\|continuous\|interval <ticks>\|after <ticks>\|perTick <times>\|randomly <min> <max>\|stop]` | 假人按节奏持续丢出背包物品（需 `fakePlayerDropStackModifiers`） |
+| `/player <name> sendto <目标>` | 假人间背包物品流，同款频率参数可调速（需 `fakePlayerSendto`） |
 
 ## 文档
 
@@ -93,7 +107,7 @@
 3. 可选前置：[skinrestorer](https://modrinth.com/mod/skinrestorer)（仅假人皮肤功能需要）
 4. 将 mod JAR 文件放入服务器的 `mods/` 文件夹
 5. 本模组为**服务端模组**，玩家无需安装（仅 `ridingPlayersClientAllowInteractions` 规则需要客户端安装）
-6. 所有规则**默认关闭**，使用 `/carpet` 命令或配置文件按需启用
+6. 规则默认关闭（`ridingPlayersClientAllowInteractions` 除外），使用 `/carpet` 命令或配置文件按需启用
 
 ## 依赖
 
@@ -105,19 +119,18 @@
 
 ## 版本支持
 
-| 游戏版本 | 开发状态 |
-|----------|----------|
-| 1.21 | 维护中 |
-| 1.21.1 | 维护中 |
-| 1.21.3 | 维护中 |
-| 1.21.4 | 维护中 |
-| 1.21.5 | 维护中 |
-| 1.21.8 | 维护中 |
-| 1.21.10 | 维护中 |
-| 1.21.11（主版本） | 维护中 |
-| 26.1.2 | 维护中 |
-| 26.2 | 维护中 |
-
+| 游戏版本 | 开发状态 | 功能差异 |
+|----------|----------|----------|
+| 1.21 | 维护中 | 除玩家缩放 5 条外全部可用；白日做梦不能在白天上床 |
+| 1.21.1 | 维护中 | 同 1.21 |
+| 1.21.3 | 维护中 | 同 1.21 |
+| 1.21.4 | 维护中 | 同 1.21 |
+| 1.21.5 | 维护中 | 增加玩家缩放全部规则；白日做梦不能在白天上床 |
+| 1.21.8 | 维护中 | 同 1.21.5 |
+| 1.21.10 | 维护中 | 同 1.21.5 |
+| 1.21.11（主版本） | 维护中 | 全部功能可用 |
+| 26.1.2 | 维护中 | 同 1.21.11 |
+| 26.2 | 维护中 | 同 1.21.11 |
 
 ## 致谢
 

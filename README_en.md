@@ -11,9 +11,9 @@
 
 ## Introduction
 
-**Carpet-Primaryuan-Addition** is a server-side Fabric extension for [Fabric Carpet](https://github.com/gnembon/fabric-carpet), developed for the **Primaryuan Server**. It adds **17** configurable Carpet rules and **5** new commands covering fake player enhancements, mod compatibility fixes, ported features, player interactions, and survival gameplay expansion.
+**Carpet-Primaryuan-Addition** is a server-side Fabric extension for [Fabric Carpet](https://github.com/gnembon/fabric-carpet), developed for the **Primaryuan Server**. It adds **24** configurable Carpet rules and **7** commands (plus two fake-player sub-command extensions: `/player <name> dropall` and `/player <name> sendto`), covering fake player enhancements, player scaling, server management, mod compatibility fixes, ported features, player interactions, and survival gameplay expansion.
 
-All features are Carpet-rule-driven, off by default, enabled on demand.
+All rules are off by default except `ridingPlayersClientAllowInteractions` (on by default); enable what you need.
 
 ## Features
 
@@ -31,12 +31,17 @@ All features are Carpet-rule-driven, off by default, enabled on demand.
 | `TppFakePlayer` | boolean | `false` | Fake player pearl teleport stations, enables `/tpp` and `/tppset` commands |
 | `fakePlayerSkinMode` | string | `default` | Fake player skin mode: `default` / `summon` / `same_skin` |
 | `fakePlayerSkinSet` | string | `Brokeyuan` | Player name used for the shared skin in `same_skin` mode |
-| `fakePlayerDropStackModifiers` | boolean | `false` | Adds an independent `/player <name> dropall [once\|continuous\|interval\|after\|perTick\|randomly\|stop]` sub-command, letting fake players drop all inventory items at a configured pace. The entire `dropall` command is hidden when the rule is disabled |
-| `playerScale` | string | `false` | Registers `minecraft:scale` attribute for Player and adds unified `/scale set\|reset\|info` compensates scaling-induced FOV change (client install required); command (value only needs to be greater than 0, with no fixed bounds; display on vanilla clients is still clamped beyond the vanilla attribute range 0.0625–16). `false`=hidden; `self`=everyone can only adjust themselves (even OPs); `true`=self-only for players + admins anyone; `everyone`=any player can modify anyone. Requires Minecraft 1.21.5+ |
-| `playerScaleMin` | double | `0.01` | Minimum scale value all players can set via `/scale set`; admins can adjust the bound by changing this rule |
-| `playerScaleMax` | double | `16.0` | Maximum scale value all players can set via `/scale set`; admins can adjust the bound by changing this rule |
-| `realisticPlayerScale` | string | `false` | Player physics scale with size (`minecraft:scale` attribute), four modes: `true`=gentle (everything √scale, no floors), `safety`=gentle+small-size floors (recommended), `strict`=strictly proportional (speeds/step/interaction/fall ×scale, jump height proportional to size, no floors); gravity always √scale; elytra gliding / firework boost scales with size; FOV compensation for shrinking (client-side). Requires `playerScale`, Minecraft 1.21.5+ only |
-| `playerScaleLinkedEntities` | boolean | `false` | Living entities spawned by a player using an item inherit the player's size (vanilla scale attribute snapshot): armor stands, spawn-egg mobs and built iron/snow/copper golems fully scale; projectiles, dropped items, item frames and other non-living entities not linked; dispenser sources not linked; size 1.0 players never modify. Minecraft 1.21.5+ only |
+| `fakePlayerDropStackModifiers` | boolean | `false` | Adds a `/player <name> dropall` sub-command that drops the fake player's inventory at a configured pace (frequencies: see Commands) |
+| `fakePlayerSendto` | boolean | `false` | Adds a `/player <name> sendto <target>` sub-command that creates one-way inventory item flow links between fake players: round-robin across targets, items buffer in the source inventory when a target is full |
+
+### Player Scaling (1.21.5+ only)
+
+| Rule | Type | Default | Description |
+|------|------|---------|-------------|
+| `playerScale` | string | `false` | Registers the `minecraft:scale` attribute for Player and enables the `/scale set\|reset\|info` command, with FOV compensation (client install required). See the [rule docs](docs/rules_en.md) |
+| `playerScaleMin` / `playerScaleMax` | double | `0.1` / `1.5` | Soft bounds for `/scale set`; admins can adjust them by changing these rules |
+| `realisticPlayerScale` | string | `false` | Player physics scale with body size: `true`=gentle (√scale), `safety`=gentle + small-size floors (recommended), `strict`=strictly proportional, `false`=off; gravity always √scale. Requires `playerScale` |
+| `playerScaleLinkedEntities` | boolean | `false` | Living entities spawned directly by a player using an item inherit the player's current size (scale base-value snapshot); non-living entities and non-player sources (dispensers etc.) are not linked |
 
 ### Ported Features
 
@@ -45,13 +50,19 @@ All features are Carpet-rule-driven, off by default, enabled on demand.
 | `fakePlayerNameSuggestions` | string | `Steve,Alex` | Customize autocomplete suggestions for the `/player` command (ported from Ivan-Carpet-Addition) |
 | `unicodeArgumentsSupport` | boolean | `false` | Allow non-ASCII characters in command arguments, enabling fake players with CJK names (ported from YACA) |
 
+### Server Management
+
+| Rule | Type | Default | Description |
+|------|------|---------|-------------|
+| `peacefulPlayers` | string | `false` | Enables `/pvp` to toggle PVP per player (two-way protection, self-damage unaffected, blocked attacks play a notice sound); `/pvp on\|off @a` is a server-wide switch, admin-only |
+
 ### Player Interaction
 
 | Rule | Type | Default | Description |
 |------|------|---------|-------------|
 | `ridingPlayers` | boolean | `false` | Ride other players by holding a Totem of Undying in main hand |
 | `pickupPlayers` | boolean | `false` | Pick up other players by holding a Totem of Undying + Golden Carrot in off-hand |
-| `ridingPlayersPickUpLimit` | int | `16` | Maximum player stack size for riding and pickup (supports 16/32/custom) |
+| `ridingPlayersPickUpLimit` | int | `16` | Maximum player stack size shared by riding and pickup; any value settable via `/carpet` |
 | `ridingPlayersDismountOnGameModeChange` | boolean | `false` | Passengers automatically dismount when game mode changes |
 | `ridingPlayersClientAllowInteractions` | boolean | `true` | Allow block/entity interaction while carrying a passenger (requires client install) |
 
@@ -59,7 +70,7 @@ All features are Carpet-rule-driven, off by default, enabled on demand.
 
 | Rule | Type | Default | Description |
 |------|------|---------|-------------|
-| `sleepingDuringTheDay` | boolean | `false` | Sleep during daytime to skip to night (referenced from PCA) |
+| `sleepingDuringTheDay` | boolean | `false` | Sleep during daytime to skip to night (referenced from PCA; full functionality requires 1.21.11+) |
 | `playerhat` | boolean | `false` | `/hat` command to wear items on head; Totem of Undying in head slot triggers death protection |
 | `betterSnowBall` | boolean | `false` | Snowballs deal knockback and damage to players |
 | `invisibleInTallGrass` | boolean | `false` | Auto-invisibility when head is inside tall grass |
@@ -69,11 +80,14 @@ All features are Carpet-rule-driven, off by default, enabled on demand.
 | Command | Description |
 |---------|-------------|
 | `/tpp <station>` | Teleport via pearl stations |
-| `/tppset` | Manage teleport stations |
+| `/tppset` | Manage teleport stations (stations / player aliases / use counts) |
 | `/hat` | Wear main-hand item on head |
 | `/riding on\|off` | Toggle permission for others to ride you |
 | `/picking on\|off` | Toggle permission for others to pick you up |
 | `/scale set\|reset\|info` | Player scale adjustment (requires `playerScale` rule, 1.21.5+) |
+| `/pvp [list\|on\|off [player\|@a]]` | Toggle PVP per player; `@a` is a server-wide switch (requires `peacefulPlayers`) |
+| `/player <name> dropall [once\|continuous\|interval <ticks>\|after <ticks>\|perTick <times>\|randomly <min> <max>\|stop]` | Drop the fake player's inventory at a configured pace (requires `fakePlayerDropStackModifiers`) |
+| `/player <name> sendto <target>` | One-way inventory item flow between fake players, same frequency parameters (requires `fakePlayerSendto`) |
 
 ## Installation
 
@@ -82,7 +96,7 @@ All features are Carpet-rule-driven, off by default, enabled on demand.
 3. Optional: [skinrestorer](https://modrinth.com/mod/skinrestorer) (only needed for fake player skin features)
 4. Place the mod JAR in the server's `mods/` folder
 5. This is a **server-side** mod — players do not need it installed (only `ridingPlayersClientAllowInteractions` requires client installation)
-6. All rules are **off by default** — use `/carpet` or config files to enable what you need
+6. Rules are **off by default** (except `ridingPlayersClientAllowInteractions`) — use `/carpet` or config files to enable what you need
 
 ## Dependencies
 
@@ -94,18 +108,18 @@ All features are Carpet-rule-driven, off by default, enabled on demand.
 
 ## Version Support
 
-| Game Version | Development Status |
-|--------------|-------------------|
-| 1.21 | Maintained |
-| 1.21.1 | Maintained |
-| 1.21.3 | Maintained |
-| 1.21.4 | Maintained |
-| 1.21.5 | Maintained |
-| 1.21.8 | Maintained |
-| 1.21.10 | Maintained |
-| 1.21.11 (Main) | Maintained |
-| 26.1.2 | Maintained |
-| 26.2 | Maintained |
+| Game Version | Development Status | Feature Differences |
+|--------------|--------------------|---------------------|
+| 1.21 | Maintained | Everything except the 5 scale rules; `sleepingDuringTheDay` cannot start sleeping in daytime |
+| 1.21.1 | Maintained | Same as 1.21 |
+| 1.21.3 | Maintained | Same as 1.21 |
+| 1.21.4 | Maintained | Same as 1.21 |
+| 1.21.5 | Maintained | Adds all scale rules; `sleepingDuringTheDay` cannot start sleeping in daytime |
+| 1.21.8 | Maintained | Same as 1.21.5 |
+| 1.21.10 | Maintained | Same as 1.21.5 |
+| 1.21.11 (Main) | Maintained | Full feature set |
+| 26.1.2 | Maintained | Same as 1.21.11 |
+| 26.2 | Maintained | Same as 1.21.11 |
 
 ## Documentation
 
