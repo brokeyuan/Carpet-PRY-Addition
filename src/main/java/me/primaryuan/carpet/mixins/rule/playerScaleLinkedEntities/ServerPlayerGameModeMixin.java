@@ -1,5 +1,6 @@
 package me.primaryuan.carpet.mixins.rule.playerScaleLinkedEntities;
 
+import me.primaryuan.carpet.handler.playerScaleLinkedEntities.SpawnContext;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ServerPlayerGameMode;
 import net.minecraft.world.InteractionHand;

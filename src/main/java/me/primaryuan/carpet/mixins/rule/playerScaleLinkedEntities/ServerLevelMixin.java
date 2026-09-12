@@ -1,6 +1,7 @@
 package me.primaryuan.carpet.mixins.rule.playerScaleLinkedEntities;
 
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
+import me.primaryuan.carpet.handler.playerScaleLinkedEntities.SpawnContext;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
