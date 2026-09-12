@@ -143,4 +143,12 @@ public class CarpetPrimaryuanSettings {
             categories = {PRIMARYUAN, SURVIVAL, FEATURE}
     )
     public static boolean playerScaleLinkedEntities = false;
+
+    // 和平的玩家：启用 /pvp 指令，按玩家开关 PVP
+    @Rule(
+            options = {"false", "true", "self", "everyone"},
+            strict = false,
+            categories = {PRIMARYUAN, SURVIVAL, COMMAND}
+    )
+    public static String peacefulPlayers = "false";
 }

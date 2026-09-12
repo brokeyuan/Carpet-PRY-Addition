@@ -49,6 +49,9 @@
   "carpet.rule.playerScaleLinkedEntities.name": "Player Scale Linked Entities",
   "carpet.rule.playerScaleLinkedEntities.desc": "Living entities spawned directly by a player using an item inherit the player's current size (stored as a minecraft:scale base-value snapshot): a 0.5x player places 0.5x armor stands; spawn-egg mobs and built iron/snow/copper golems are sized the same way (existing modifiers such as babies stack on top proportionally). Only covers living entities that have the scale attribute; projectiles, dropped items, item frames, boats, minecarts, TNT and other non-living entities are not linked; dispenser/spawner sources are not linked; players at size 1.0 are never modified. Only supported on 1.21.5+",
 
+  "carpet.rule.peacefulPlayers.name": "Peaceful Players",
+  "carpet.rule.peacefulPlayers.desc": "Enables the /pvp command to toggle PVP per player: players with PVP disabled cannot attack players and take no damage from players (self-inflicted damage is unaffected). Commands: /pvp (view your own status), /pvp list (list all players with PVP disabled), /pvp set <player|@a> <on|off>. false=hide; self=everyone can only adjust themselves (even OPs); true=players adjust self only, admins adjust anyone; everyone=any player can adjust anyone. Player states persist across restarts",
+
   "carpetprimaryuan.command.support.player_not_found": "§cPlayer not found: %s",
   "carpetprimaryuan.command.support.missing_player": "§cMissing player argument",
 
@@ -138,5 +141,20 @@
   "carpetprimaryuan.command.scale.mode_self": "§bself (everyone can only adjust themselves)",
   "carpetprimaryuan.command.scale.mode_true": "§etrue (only admins can modify others)",
   "carpetprimaryuan.command.scale.mode_everyone": "§aeveryone (anyone can modify others)",
-  "carpetprimaryuan.command.scale.unsupported_version": "§cCurrent Minecraft version does not support minecraft:scale attribute (requires 1.21.5+)"
+  "carpetprimaryuan.command.scale.unsupported_version": "§cCurrent Minecraft version does not support minecraft:scale attribute (requires 1.21.5+)",
+
+  "carpetprimaryuan.command.pvp.state_on": "ON",
+  "carpetprimaryuan.command.pvp.state_off": "OFF",
+  "carpetprimaryuan.command.pvp.status_self_on": "§aYour PVP is currently ON (you can attack and be attacked by other players)",
+  "carpetprimaryuan.command.pvp.status_self_off": "§cYour PVP is currently OFF (peaceful: you cannot attack players and take no damage from players)",
+  "carpetprimaryuan.command.pvp.list_header": "§ePlayers with PVP disabled (%d): §f%s",
+  "carpetprimaryuan.command.pvp.list_empty": "§eNo players have PVP disabled",
+  "carpetprimaryuan.command.pvp.set_target_on": "§aSet PVP of player %s to ON",
+  "carpetprimaryuan.command.pvp.set_target_off": "§aSet PVP of player %s to OFF",
+  "carpetprimaryuan.command.pvp.set_all_on": "§aSet PVP of all players to ON",
+  "carpetprimaryuan.command.pvp.set_all_off": "§aSet PVP of all players to OFF",
+  "carpetprimaryuan.command.pvp.notify_on": "§eAn admin has set your PVP to ON",
+  "carpetprimaryuan.command.pvp.notify_off": "§eAn admin has set your PVP to OFF",
+  "carpetprimaryuan.command.pvp.no_permission": "§cYou don't have permission to modify other players' PVP (current mode only allows adjusting yourself)",
+  "carpetprimaryuan.command.pvp.console_hint": "§eOnly players can query their own status. Subcommands: /pvp list, /pvp set <player|@a> <on|off>"
 }

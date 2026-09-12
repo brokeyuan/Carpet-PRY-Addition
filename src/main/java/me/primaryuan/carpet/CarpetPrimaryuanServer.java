@@ -8,10 +8,12 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import me.primaryuan.carpet.command.HatCommand;
+import me.primaryuan.carpet.command.PvpCommand;
 import me.primaryuan.carpet.command.RidingCommand;
 import me.primaryuan.carpet.command.ScaleCommand;
 import me.primaryuan.carpet.command.TppCommand;
 import me.primaryuan.carpet.handler.entitiesRidingPlayers.EntitiesRidingPlayersHandler;
+import me.primaryuan.carpet.handler.peacefulPlayers.PvpManager;
 import me.primaryuan.carpet.settings.CarpetRuleRegistrar;
 import me.primaryuan.carpet.util.SendtoLinkManager;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
@@ -44,7 +46,8 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
             "pickupPlayers",                  // /picking
             "fakePlayerDropStackModifiers",   // /player <name> dropall
             "playerScale",                    // /scale
-            "fakePlayerSendto"                // /player <name> sendto
+            "fakePlayerSendto",               // /player <name> sendto
+            "peacefulPlayers"                 // /pvp
     );
 
     @Override
@@ -69,6 +72,10 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         TppConfigManager.load();
         RidingCommand.register();
         ScaleCommand.register();
+        PvpCommand.register();
+
+        // 和平的玩家（pvp）：加载持久化状态、注册 PVP 伤害拦截与玩家加入登记
+        PvpManager.init();
 
         // 假人背包链接（sendto）：初始化 tick 转移调度、假人下线清理与服务器停止清空监听
         SendtoLinkManager.init();
