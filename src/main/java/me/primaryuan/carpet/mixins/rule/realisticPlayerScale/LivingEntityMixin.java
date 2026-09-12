@@ -44,7 +44,7 @@ public abstract class LivingEntityMixin {
             method = "travelFallFlying",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/world/entity/Entity;move(Lnet/minecraft/world/phys/MoverType;Lnet/minecraft/world/phys/Vec3;)V"
+                    target = "Lnet/minecraft/world/entity/Entity;move(Lnet/minecraft/world/entity/MoverType;Lnet/minecraft/world/phys/Vec3;)V"
             )
     )
     private Vec3 realisticPlayerScale$scaleElytraMovement(Vec3 movement) {
