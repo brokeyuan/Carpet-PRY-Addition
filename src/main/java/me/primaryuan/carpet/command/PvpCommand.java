@@ -64,8 +64,13 @@ public final class PvpCommand {
                             .executes(PvpCommand::listPvpOff))
 
                     // /pvp on [player|@a]
+                    // 注意：@a 必须用字面量节点而非 word() 参数——StringArgumentType.word()
+                    // 不允许 '@' 字符，作为参数值会直接解析失败（"参数后应有空格分隔"）
                     .then(Commands.literal("on")
                             .executes(ctx -> setSelf(ctx, PvpManager.STATE_ON))
+                            .then(Commands.literal(SELECTOR_ALL)
+                                    .requires(PvpCommand::canModifyGlobal)
+                                    .executes(ctx -> setGlobal(ctx, PvpManager.STATE_ON)))
                             .then(Commands.argument("player", StringArgumentType.word())
                                     .suggests(PvpCommand::suggestTargets)
                                     .executes(ctx -> setTarget(ctx, PvpManager.STATE_ON))))
@@ -73,6 +78,9 @@ public final class PvpCommand {
                     // /pvp off [player|@a]
                     .then(Commands.literal("off")
                             .executes(ctx -> setSelf(ctx, PvpManager.STATE_OFF))
+                            .then(Commands.literal(SELECTOR_ALL)
+                                    .requires(PvpCommand::canModifyGlobal)
+                                    .executes(ctx -> setGlobal(ctx, PvpManager.STATE_OFF)))
                             .then(Commands.argument("player", StringArgumentType.word())
                                     .suggests(PvpCommand::suggestTargets)
                                     .executes(ctx -> setTarget(ctx, PvpManager.STATE_OFF)))));
@@ -106,7 +114,9 @@ public final class PvpCommand {
     // ==================== Tab 补全 ====================
 
     /**
-     * /pvp on|off 目标补全：自己始终可见；@a 与其他玩家按权限过滤。
+     * /pvp on|off 目标补全：自己始终可见；其他玩家按权限过滤。
+     * @a 无需在此补全——它是字面量节点（literal），Brigadier 自动按前缀补全，
+     * 且其 requires 已按权限过滤。
      */
     private static CompletableFuture<Suggestions> suggestTargets(
             CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
@@ -114,9 +124,6 @@ public final class PvpCommand {
         List<String> candidates = new ArrayList<>();
         if (source.isPlayer()) {
             candidates.add(CommandSupport.profileName(source.getPlayer()));
-        }
-        if (canModifyGlobal(source)) {
-            candidates.add(SELECTOR_ALL);
         }
         if (canModifyOther(source)) {
             for (ServerPlayer player : source.getServer().getPlayerList().getPlayers()) {
@@ -150,34 +157,38 @@ public final class PvpCommand {
         return 1;
     }
 
-    // ==================== 开关目标（玩家 / 全服） ====================
+    // ==================== 开关全服 ====================
+
+    /**
+     * /pvp on|off @a：切换全服 PVP 模式（强制覆盖：清空所有个人设置，
+     * 新加入玩家跟随默认状态）。权限由字面量节点的 requires 保证（仅管理员、self 模式除外）。
+     */
+    private static int setGlobal(CommandContext<CommandSourceStack> ctx, String state) {
+        CommandSourceStack source = ctx.getSource();
+        boolean on = PvpManager.STATE_ON.equals(state);
+        PvpManager.setGlobalState(state);
+        for (ServerPlayer player : source.getServer().getPlayerList().getPlayers()) {
+            player.sendSystemMessage(ServerI18n.tr(on
+                    ? "carpetprimaryuan.command.pvp.notify_on"
+                    : "carpetprimaryuan.command.pvp.notify_off"));
+        }
+        source.sendSuccess(() -> ServerI18n.tr(on
+                ? "carpetprimaryuan.command.pvp.set_all_on"
+                : "carpetprimaryuan.command.pvp.set_all_off"), false);
+        return 1;
+    }
+
+    // ==================== 开关目标玩家 ====================
 
     private static int setTarget(CommandContext<CommandSourceStack> ctx, String state) {
         CommandSourceStack source = ctx.getSource();
-        String target = StringArgumentType.getString(ctx, "player");
         boolean on = PvpManager.STATE_ON.equals(state);
         String setKey = on
                 ? "carpetprimaryuan.command.pvp.set_target_on"
                 : "carpetprimaryuan.command.pvp.set_target_off";
-        String setAllKey = on
-                ? "carpetprimaryuan.command.pvp.set_all_on"
-                : "carpetprimaryuan.command.pvp.set_all_off";
         String notifyKey = on
                 ? "carpetprimaryuan.command.pvp.notify_on"
                 : "carpetprimaryuan.command.pvp.notify_off";
-
-        if (SELECTOR_ALL.equals(target)) {
-            if (!canModifyGlobal(source)) {
-                source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.pvp.no_permission_global"));
-                return 0;
-            }
-            PvpManager.setGlobalState(state);
-            for (ServerPlayer player : source.getServer().getPlayerList().getPlayers()) {
-                player.sendSystemMessage(ServerI18n.tr(notifyKey));
-            }
-            source.sendSuccess(() -> ServerI18n.tr(setAllKey), false);
-            return 1;
-        }
 
         // 全局禁言期间，所有个人开关操作（on/off）均被锁定，仅 @a 可解除全局
         if (requireNotGlobalLocked(source)) return 0;

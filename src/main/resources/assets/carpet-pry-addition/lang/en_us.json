@@ -156,7 +156,6 @@
   "carpetprimaryuan.command.pvp.notify_on": "§eAn admin has set your PVP to ON",
   "carpetprimaryuan.command.pvp.notify_off": "§eAn admin has set your PVP to OFF",
   "carpetprimaryuan.command.pvp.no_permission": "§cYou don't have permission to modify other players' PVP (current mode only allows adjusting yourself)",
-  "carpetprimaryuan.command.pvp.no_permission_global": "§cOnly admins can switch the server-wide PVP mode",
   "carpetprimaryuan.command.pvp.global_lock": "§cServer-wide PVP is currently locked by an admin; lift it with /pvp on @a",
   "carpetprimaryuan.command.pvp.player_only": "§cOnly players can use this command",
   "carpetprimaryuan.command.pvp.status_global": "§7Server-wide PVP mode: §f%s",

@@ -154,7 +154,6 @@
   "carpetprimaryuan.command.pvp.notify_on": "§e管理员已将你的 PVP 设为开启",
   "carpetprimaryuan.command.pvp.notify_off": "§e管理员已将你的 PVP 设为关闭",
   "carpetprimaryuan.command.pvp.no_permission": "§c你没有权限调整其他玩家的 PVP（当前模式仅允许调整自己）",
-  "carpetprimaryuan.command.pvp.no_permission_global": "§c只有管理员可以切换全服 PVP 模式",
   "carpetprimaryuan.command.pvp.global_lock": "§c全服 PVP 当前已由管理员全局锁定，需通过 /pvp on @a 解除",
   "carpetprimaryuan.command.pvp.player_only": "§c仅玩家可以使用此命令",
   "carpetprimaryuan.command.pvp.status_global": "§7全服 PVP 模式：§f%s",
