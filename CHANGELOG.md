@@ -2,6 +2,14 @@
 
 All notable changes to **Carpet-PRY-Addition** are documented in this file.
 
+## [1.2.1] - 2026-09-14
+
+**与 1.2.0 代码完全相同，无功能性变更**，为补齐 GitHub Release 资产重新走发布流水线。
+
+### CI
+
+- release 矩阵关闭 fail-fast，单版本发布失败不再拖垮其余版本
+
 ## [1.2.0] - 2026-09-14
 
 ### 新增
