@@ -11,8 +11,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 /**
  * playerScale 规则的客户端部分：补偿体型缩放对动态 FOV 的影响。
  * （v1.1.8 起归属 playerScale；触发仍以属性同步中的 scale_speed 修改器为准——
- * 该修改器由 realisticPlayerScale 的移速联动施加，故实际补偿仅在
- * realisticPlayerScale 生效时产生 FOV 变化的场景下起作用。）
+ * 该修改器由 playerScalePhysics 的移速联动施加，故实际补偿仅在
+ * playerScalePhysics 生效时产生 FOV 变化的场景下起作用。）
  *
  * 原版 AbstractClientPlayer#getFieldOfViewModifier 以移速属性当前值计算
  * FOV 倍率：f *= (移速值 / walkingSpeed + 1) / 2（疾跑/速度效果拉宽视野的来源）。

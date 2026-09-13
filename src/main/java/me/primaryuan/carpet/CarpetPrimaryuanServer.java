@@ -43,11 +43,11 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
      * 这些规则变更时需要刷新玩家命令树，使命令"不开启则不显示"立即生效。
      */
     private static final Set<String> COMMAND_VISIBILITY_RULES = Set.of(
-            "TppFakePlayer",                  // /tpp /tppset
-            "playerhat",                      // /hat
+            "fakePlayerTpp",                  // /tpp /tppset
+            "playerHat",                      // /hat
             "ridingPlayers",                  // /riding
             "pickupPlayers",                  // /picking
-            "fakePlayerDropStackModifiers",   // /player <name> dropall
+            "fakePlayerDropAll",   // /player <name> dropall
             "playerScale",                    // /scale
             "fakePlayerSendto",               // /player <name> sendto
             "peacefulPlayers"                 // /pvp

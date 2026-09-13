@@ -41,7 +41,7 @@ public class TppCommand {
 
             // === /tpp <station> — 玩家传送命令（规则关闭时整棵命令不可见）===
             LiteralArgumentBuilder<CommandSourceStack> tppRoot = Commands.literal("tpp")
-                    .requires(source -> CarpetPrimaryuanSettings.TppFakePlayer);
+                    .requires(source -> CarpetPrimaryuanSettings.fakePlayerTpp);
             // /tpp <station> — 传送（支持中文显示名或英文内部名）
             tppRoot.then(Commands.argument(STATION_ARG, StringArgumentType.greedyString())
                     .suggests(TppCommand::suggestStations)
@@ -50,9 +50,9 @@ public class TppCommand {
 
             // === /tppset — 站点管理与规则配置命令（规则关闭时整棵命令不可见）===
             LiteralArgumentBuilder<CommandSourceStack> setRoot = Commands.literal("tppset")
-                    .requires(source -> CarpetPrimaryuanSettings.TppFakePlayer);
+                    .requires(source -> CarpetPrimaryuanSettings.fakePlayerTpp);
 
-            // /tppset spawn <station> — 设置假人生成点（继承父级 TppFakePlayer 可见性）
+            // /tppset spawn <station> — 设置假人生成点（继承父级 fakePlayerTpp 可见性）
             setRoot.then(Commands.literal("spawn")
                     .then(Commands.argument(STATION_ARG, StringArgumentType.greedyString())
                             .suggests(TppCommand::suggestStations)
@@ -173,7 +173,7 @@ public class TppCommand {
     }
 
     /**
-     * /tpp <station> - 玩家传送到指定站点（requires 已保证 TppFakePlayer=true）
+     * /tpp <station> - 玩家传送到指定站点（requires 已保证 fakePlayerTpp=true）
      * 流程（tick 状态机，见 {@link FakePlayerSessionManager}）: rejoin → 等待上线 → use×N → 3秒 → kill
      */
     private static int teleportToStation(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
@@ -195,7 +195,7 @@ public class TppCommand {
 
     /**
      * /tppset spawn <station> - 立即以玩家身份生成假人，3 秒后自动下线（tick 状态机）
-     * requires 已保证 TppFakePlayer=true
+     * requires 已保证 fakePlayerTpp=true
      */
     private static int setSpawnFakePlayer(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         CommandSourceStack source = context.getSource();

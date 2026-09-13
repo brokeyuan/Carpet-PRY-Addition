@@ -13,7 +13,7 @@
 
 **Carpet-PRY-Addition** is a server-side Fabric extension for [Fabric Carpet](https://github.com/gnembon/fabric-carpet), developed for the **Primaryuan Server**; it also enhances the experience when installed client-side. It adds **24** configurable Carpet rules and **7** commands, covering fake player enhancements, player scaling, server management, mod compatibility fixes, ported features, player interactions, and survival gameplay expansion.
 
-All rules are off by default except the client-side rule `ridingPlayersClientAllowInteractions`; enable what you need.
+All rules are off by default except the client-side rule `ridingPlayersClientInteract`; enable what you need.
 
 ## Documentation
 
@@ -32,8 +32,8 @@ All rules are off by default except the client-side rule `ridingPlayersClientAll
 2. Install required dependencies: **[Fabric Carpet](https://modrinth.com/mod/carpet)** + **[Fabric API](https://fabricmc.net/)**
 3. Optional: [skinrestorer](https://modrinth.com/mod/skinrestorer) (only needed for fake player skin features)
 4. Place the mod JAR in the server's `mods/` folder
-5. This is a **server-side** mod — players do not need it installed. Optional client install provides two client-side features: `ridingPlayersClientAllowInteractions` (keep interacting while carrying a passenger) and the player-scaling FOV compensation
-6. Rules are **off by default** (except `ridingPlayersClientAllowInteractions`) — use `/carpet` or config files to enable what you need
+5. This is a **server-side** mod — players do not need it installed. Optional client install provides two client-side features: `ridingPlayersClientInteract` (keep interacting while carrying a passenger) and the player-scaling FOV compensation
+6. Rules are **off by default** (except `ridingPlayersClientInteract`) — use `/carpet` or config files to enable what you need
 
 ## Dependencies
 
@@ -62,8 +62,8 @@ All rules are off by default except the client-side rule `ridingPlayersClientAll
 
 ### Bugfixes
 
-- `FixXaeroLib`: fixes fake player data loss when Xaero's maps are used with LuckPerms
-- `FixBluemap`: fixes fake players not triggering Fabric API connection events, allowing BlueMap and similar mods to track bots properly
+- `fixXaeroLib`: fixes fake player data loss when Xaero's maps are used with LuckPerms
+- `fixBlueMap`: fixes fake players not triggering Fabric API connection events, allowing BlueMap and similar mods to track bots properly
 
 ### Ported Rules
 
@@ -72,31 +72,31 @@ All rules are off by default except the client-side rule `ridingPlayersClientAll
 
 ### Fake Player Enhancements
 
-- `TppFakePlayer`: fake player pearl teleport stations with `/tpp` / `/tppset`
+- `fakePlayerTpp`: fake player pearl teleport stations with `/tpp` / `/tppset`
 - `fakePlayerSkinMode` / `fakePlayerSkinSet`: fake player skin mode (default / summon / same skin) and the shared skin player name
-- `fakePlayerDropStackModifiers`: paced `/player dropall` dropping of the fake player's inventory
+- `fakePlayerDropAll`: paced `/player dropall` dropping of the fake player's inventory
 - `fakePlayerSendto`: `/player sendto` one-way inventory item flow between fake players
 
 ### Player Scaling
 
 - `playerScale`: registers `minecraft:scale` for players, adjusts size via `/scale set|reset|info`, FOV compensation included (requires client install)
 - `playerScaleMin` / `playerScaleMax`: soft bounds for `/scale set`
-- `realisticPlayerScale`: physics scale with size (gentle / gentle + small-size floors / strictly proportional), gravity √scale
+- `playerScalePhysics`: physics scale with size (gentle / gentle + small-size floors / strictly proportional), gravity √scale
 - `playerScaleLinkedEntities`: entities spawned by a player using an item inherit the player's size
 
 ### Player Interaction
 
 - `ridingPlayers` / `pickupPlayers`: ride / pick up other players (Totem of Undying triggered)
-- `ridingPlayersPickUpLimit`: shared player stack size limit for riding and pickup
-- `ridingPlayersDismountOnGameModeChange`: passengers auto-dismount on game mode change
-- `ridingPlayersClientAllowInteractions`: keep interacting while carrying a passenger (requires client install)
+- `ridingPlayersStackLimit`: shared player stack size limit for riding and pickup
+- `ridingPlayersAutoDismount`: passengers auto-dismount on game mode change
+- `ridingPlayersClientInteract`: keep interacting while carrying a passenger (requires client install)
 - `peacefulPlayers`: per-player `/pvp` toggles, `@a` as a server-wide switch
 
 ### Survival Features
 
 - `sleepingDuringTheDay`: sleep during daytime, wake to night
-- `playerhat`: `/hat` to wear items on head, Totem of Undying in head slot triggers death protection
-- `betterSnowBall`: snowballs deal knockback and damage to players
+- `playerHat`: `/hat` to wear items on head, Totem of Undying in head slot triggers death protection
+- `betterSnowball`: snowballs deal knockback and damage to players
 - `invisibleInTallGrass`: auto-invisibility when head is inside tall grass
 
 

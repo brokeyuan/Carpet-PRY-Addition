@@ -18,7 +18,7 @@ public class HatCommand {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             // 规则关闭时整棵命令不可见（不显示、不可执行）
             dispatcher.register(Commands.literal("hat")
-                    .requires(source -> CarpetPrimaryuanSettings.playerhat)
+                    .requires(source -> CarpetPrimaryuanSettings.playerHat)
                     .executes(HatCommand::execute));
         });
     }

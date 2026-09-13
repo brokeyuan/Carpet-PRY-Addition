@@ -14,7 +14,7 @@ public class CarpetPrimaryuanSettings {
     @Rule(
             categories = {PRIMARYUAN, BOT, COMMAND}
     )
-    public static boolean TppFakePlayer = false;
+    public static boolean fakePlayerTpp = false;
 
     // 假人名补全建议列表（逗号分隔），空 = 关闭（保持 Carpet 原版建议）
     @Rule(
@@ -41,12 +41,12 @@ public class CarpetPrimaryuanSettings {
     @Rule(
             categories = {PRIMARYUAN, BUGFIX}
     )
-    public static boolean FixXaeroLib = false;
+    public static boolean fixXaeroLib = false;
 
     @Rule(
             categories = {PRIMARYUAN, BUGFIX}
     )
-    public static boolean FixBluemap = false;
+    public static boolean fixBlueMap = false;
 
     @Rule(
             categories = {PRIMARYUAN, SURVIVAL, FEATURE}
@@ -56,7 +56,7 @@ public class CarpetPrimaryuanSettings {
     @Rule(
             categories = {PRIMARYUAN, SURVIVAL, COMMAND}
     )
-    public static boolean playerhat = false;
+    public static boolean playerHat = false;
 
     @Rule(
             categories = {PRIMARYUAN, SURVIVAL, FEATURE}
@@ -71,24 +71,24 @@ public class CarpetPrimaryuanSettings {
     @Rule(
             categories = {PRIMARYUAN, SURVIVAL, FEATURE}
     )
-    public static boolean betterSnowBall = false;
+    public static boolean betterSnowball = false;
 
     @Rule(
             options = {"16", "32"},
             strict = false,
             categories = {PRIMARYUAN, SURVIVAL, FEATURE}
     )
-    public static int ridingPlayersPickUpLimit = 16;
+    public static int ridingPlayersStackLimit = 16;
 
     @Rule(
             categories = {PRIMARYUAN, SURVIVAL, FEATURE}
     )
-    public static boolean ridingPlayersDismountOnGameModeChange = false;
+    public static boolean ridingPlayersAutoDismount = false;
 
     @Rule(
             categories = {PRIMARYUAN, SURVIVAL, FEATURE, CLIENT}
     )
-    public static boolean ridingPlayersClientAllowInteractions = true;
+    public static boolean ridingPlayersClientInteract = true;
 
     @Rule(
             categories = {PRIMARYUAN, PORTING, SURVIVAL}
@@ -103,7 +103,7 @@ public class CarpetPrimaryuanSettings {
     @Rule(
             categories = {PRIMARYUAN, BOT, COMMAND}
     )
-    public static boolean fakePlayerDropStackModifiers = false;
+    public static boolean fakePlayerDropAll = false;
 
     // 控制假人物品流链接功能（/player <name> sendto <target>）及其命令的可用性，默认关闭
     @Rule(
@@ -137,7 +137,7 @@ public class CarpetPrimaryuanSettings {
             strict = false,
             categories = {PRIMARYUAN, SURVIVAL, FEATURE}
     )
-    public static String realisticPlayerScale = "false";
+    public static String playerScalePhysics = "false";
 
     @Rule(
             categories = {PRIMARYUAN, SURVIVAL, FEATURE}

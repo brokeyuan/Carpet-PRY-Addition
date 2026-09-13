@@ -52,7 +52,7 @@ public class PlayerListFakePlayerEventsMixin {
 
     @Inject(method = "placeNewPlayer", at = @At("RETURN"))
     private void fixBluemap$onPlaceNewPlayer(Connection connection, ServerPlayer player, CommonListenerCookie cookie, CallbackInfo ci) {
-        if (!CarpetPrimaryuanSettings.FixBluemap) return;
+        if (!CarpetPrimaryuanSettings.fixBlueMap) return;
         if (player instanceof EntityPlayerMPFake && player.connection instanceof NetHandlerPlayServerFake) {
             MinecraftServer server = ((PlayerList) (Object) this).getServer();
             ServerPlayConnectionEvents.JOIN.invoker().onPlayReady(player.connection, NO_OP_PACKET_SENDER, server);
@@ -61,7 +61,7 @@ public class PlayerListFakePlayerEventsMixin {
 
     @Inject(method = "remove", at = @At("HEAD"))
     private void fixBluemap$onRemovePlayer(ServerPlayer player, CallbackInfo ci) {
-        if (!CarpetPrimaryuanSettings.FixBluemap) return;
+        if (!CarpetPrimaryuanSettings.fixBlueMap) return;
         if (player instanceof EntityPlayerMPFake && player.connection instanceof NetHandlerPlayServerFake) {
             MinecraftServer server = ((PlayerList) (Object) this).getServer();
             ServerPlayConnectionEvents.DISCONNECT.invoker().onPlayDisconnect(player.connection, server);

@@ -15,7 +15,7 @@ import net.minecraft.server.level.ServerPlayer;
  *
  * 命令树形状（once/continuous/interval/after/perTick/randomly/stop）由
  * {@link FrequencyCommandTree} 统一构建；整棵树通过根节点 requires 谓词受
- * {@link CarpetPrimaryuanSettings#fakePlayerDropStackModifiers} 控制可见性，
+ * {@link CarpetPrimaryuanSettings#fakePlayerDropAll} 控制可见性，
  * 规则变更时由 RuleObserver 触发命令树重新下发，可见性立即生效。
  *
  * 调度统一委托 {@link DropSlotScheduler}，slotKey 固定为 "dropall"。
@@ -30,14 +30,14 @@ public final class PlayerCommandExtension {
 
     /**
      * 构建独立的 dropall 命令 builder。
-     * 根节点 requires 绑定 {@link CarpetPrimaryuanSettings#fakePlayerDropStackModifiers}：
+     * 根节点 requires 绑定 {@link CarpetPrimaryuanSettings#fakePlayerDropAll}：
      * 规则关闭时整棵子树不可见、不可执行（Brigadier 按节点谓词过滤下发）。
      *
      * @return dropall 命令的 LiteralArgumentBuilder
      */
     public static LiteralArgumentBuilder<CommandSourceStack> buildDropAllNode() {
         return FrequencyCommandTree.build("dropall", new DropAllHandler())
-                .requires(source -> CarpetPrimaryuanSettings.fakePlayerDropStackModifiers);
+                .requires(source -> CarpetPrimaryuanSettings.fakePlayerDropAll);
     }
 
     /** dropall 的频率命令业务处理：把模式落到 {@link DropSlotScheduler} 并发送反馈 */

@@ -11,47 +11,47 @@
 ## Quick Navigation
 
 - [Fake Player (BOT)](#fake-player-bot)
-  - [TppFakePlayer - Fake Player Pearl Station Teleport](#tppfakeplayer---fake-player-pearl-station-teleport)
+  - [fakePlayerTpp - Fake Player Pearl Station Teleport](#fakeplayertpp---fake-player-pearl-station-teleport)
   - [fakePlayerNameSuggestions - Fake Player Name Suggestions](#fakeplayernamesuggestions---fake-player-name-suggestions)
   - [fakePlayerSkinMode - Fake Player Skin Setting](#fakeplayerskinmode---fake-player-skin-setting)
   - [fakePlayerSkinSet - Fake Player Unified Skin Setting](#fakeplayerskinset---fake-player-unified-skin-setting)
 - [Bug Fixes (BUGFIX)](#bug-fixes-bugfix)
-  - [fakePlayerDropStackModifiers - Fake Player Continuous Drop](#fakeplayerdropstackmodifiers---fake-player-continuous-drop)
+  - [fakePlayerDropAll - Fake Player Continuous Drop](#fakeplayerdropall---fake-player-continuous-drop)
   - [fakePlayerSendto - Fake Player Inventory Link](#fakeplayersendto---fake-player-inventory-link)
-  - [FixXaeroLib - XaeroLib Compatibility Patch](#fixxaerolib---xaerolib-compatibility-patch)
-  - [FixBluemap - BlueMap Compatibility Patch](#fixbluemap---bluemap-compatibility-patch)
+  - [fixXaeroLib - XaeroLib Compatibility Patch](#fixxaerolib---xaerolib-compatibility-patch)
+  - [fixBlueMap - BlueMap Compatibility Patch](#fixbluemap---bluemap-compatibility-patch)
 - [Ported Features (PORTING)](#ported-features-porting)
   - [sleepingDuringTheDay - Daydreaming](#sleepingduringtheday---daydreaming)
   - [unicodeArgumentsSupport - Unicode Argument Support](#unicodeargumentssupport---unicode-argument-support)
 - [Player Interaction](#player-interaction)
   - [ridingPlayers - Riding Players](#ridingplayers---riding-players)
   - [pickupPlayers - Picking Up Players](#pickupplayers---picking-up-players)
-  - [ridingPlayersPickUpLimit - Player Riding Stack Limit](#ridingplayerspickuplimit---player-riding-stack-limit)
-  - [ridingPlayersDismountOnGameModeChange - Dismount on Game Mode Change](#ridingplayersdismountongamemodechange---dismount-on-game-mode-change)
-  - [ridingPlayersClientAllowInteractions - Allow Interaction While Riding (Client)](#ridingplayersclientallowinteractions---allow-interaction-while-riding-client)
+  - [ridingPlayersStackLimit - Player Riding Stack Limit](#ridingplayersstacklimit---player-riding-stack-limit)
+  - [ridingPlayersAutoDismount - Dismount on Game Mode Change](#ridingplayersautodismount---dismount-on-game-mode-change)
+  - [ridingPlayersClientInteract - Allow Interaction While Riding (Client)](#ridingplayersclientinteract---allow-interaction-while-riding-client)
   - [peacefulPlayers - Peaceful Players](#peacefulplayers---peaceful-players)
 - [Survival Features](#survival-features)
-  - [playerhat - Player Hat](#playerhat---player-hat)
-  - [betterSnowBall - Better Snowball](#bettersnowball---better-snowball)
+  - [playerHat - Player Hat](#playerhat---player-hat)
+  - [betterSnowball - Better Snowball](#bettersnowball---better-snowball)
   - [invisibleInTallGrass - Invisibility Grass](#invisibleintallgrass---invisibility-grass)
 - [Player Scaling](#player-scaling)
   - [playerScale - Player Scale](#playerscale---player-scale)
   - [playerScaleMin - Player Scale Min](#playerscalemin---player-scale-min)
   - [playerScaleMax - Player Scale Max](#playerscalemax---player-scale-max)
-  - [realisticPlayerScale - Realistic Player Scale](#realisticplayerscale---realistic-player-scale)
+  - [playerScalePhysics - Realistic Player Scale](#playerscalephysics---realistic-player-scale)
   - [playerScaleLinkedEntities - Player Scale Linked Entities](#playerscalelinkedentities---player-scale-linked-entities)
 
 ---
 
 ## Fake Player (BOT)
 
-### TppFakePlayer - Fake Player Pearl Station Teleport
+### fakePlayerTpp - Fake Player Pearl Station Teleport
 
 Use fake players to quickly use pearl teleport stations. When set to true, enables the /tppset setup command and the /tpp player command.
 
 | Property | Value |
 |----------|-------|
-| **Rule Name** | `TppFakePlayer` |
+| **Rule Name** | `fakePlayerTpp` |
 | **Description** | Use fake players to trigger pearl teleport stations; enables the /tppset station manager and the /tpp teleport command |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
@@ -115,13 +115,13 @@ When FakeplayersSkinMode is same_skin, sets the player name used for the fake pl
 
 ## Bug Fixes (BUGFIX)
 
-### fakePlayerDropStackModifiers - Fake Player Continuous Drop
+### fakePlayerDropAll - Fake Player Continuous Drop
 
 Adds a dropall sub-command to /player <name> that drops the fake player's whole inventory at a configured pace.
 
 | Property | Value |
 |----------|-------|
-| **Rule Name** | `fakePlayerDropStackModifiers` |
+| **Rule Name** | `fakePlayerDropAll` |
 | **Description** | Adds a dropall sub-command to /player <name> that drops the fake player's whole inventory at a configured pace. Pace: once \| continuous \| interval <ticks> \| after <ticks> \| perTick <times> \| randomly <min> <max>; see the commands doc |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
@@ -149,13 +149,13 @@ Adds a sendto sub-command to /player <name> creating one-way inventory item flow
 
 ---
 
-### FixXaeroLib - XaeroLib Compatibility Patch
+### fixXaeroLib - XaeroLib Compatibility Patch
 
 Fixes the issue where higher versions of Xaero combined with LuckPerms cause fake player data loss.
 
 | Property | Value |
 |----------|-------|
-| **Rule Name** | `FixXaeroLib` |
+| **Rule Name** | `fixXaeroLib` |
 | **Description** | Fixes the issue where higher versions of Xaero combined with LuckPerms cause fake player data loss |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
@@ -170,13 +170,13 @@ Fixes the issue where higher versions of Xaero combined with LuckPerms cause fak
 
 ---
 
-### FixBluemap - BlueMap Compatibility Patch
+### fixBlueMap - BlueMap Compatibility Patch
 
 Fixes fake players not triggering Fabric API connection events, causing mods like BlueMap to fail tracking fake player join/leave.
 
 | Property | Value |
 |----------|-------|
-| **Rule Name** | `FixBluemap` |
+| **Rule Name** | `fixBlueMap` |
 | **Description** | Fixes fake players not triggering Fabric API connection events, causing mods like BlueMap to fail tracking fake player join/leave |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
@@ -255,13 +255,13 @@ When holding a Totem of Undying in the main hand and a Golden Carrot in the off-
 
 ---
 
-### ridingPlayersPickUpLimit - Player Riding Stack Limit
+### ridingPlayersStackLimit - Player Riding Stack Limit
 
 The maximum number of players that can be stacked when riding and picking up. This limit is shared between riding and picking up.
 
 | Property | Value |
 |----------|-------|
-| **Rule Name** | `ridingPlayersPickUpLimit` |
+| **Rule Name** | `ridingPlayersStackLimit` |
 | **Description** | The maximum number of players that can be stacked when riding and picking up. This limit is shared between riding and picking up |
 | **Type** | `int` |
 | **Default Value** | `16` |
@@ -270,13 +270,13 @@ The maximum number of players that can be stacked when riding and picking up. Th
 
 ---
 
-### ridingPlayersDismountOnGameModeChange - Dismount on Game Mode Change
+### ridingPlayersAutoDismount - Dismount on Game Mode Change
 
 When a player's game mode changes, players on top will dismount.
 
 | Property | Value |
 |----------|-------|
-| **Rule Name** | `ridingPlayersDismountOnGameModeChange` |
+| **Rule Name** | `ridingPlayersAutoDismount` |
 | **Description** | When a player's game mode changes, players on top will dismount |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
@@ -285,13 +285,13 @@ When a player's game mode changes, players on top will dismount.
 
 ---
 
-### ridingPlayersClientAllowInteractions - Allow Interaction While Riding (Client)
+### ridingPlayersClientInteract - Allow Interaction While Riding (Client)
 
 Requires client installation. When there are passengers on top, you can still interact with blocks/entities.
 
 | Property | Value |
 |----------|-------|
-| **Rule Name** | `ridingPlayersClientAllowInteractions` |
+| **Rule Name** | `ridingPlayersClientInteract` |
 | **Description** | Requires client installation. When there are passengers on top, you can still interact with blocks/entities |
 | **Type** | `boolean` |
 | **Default Value** | `true` |
@@ -319,13 +319,13 @@ Enables /pvp to toggle PVP per player: two-way protection, self-damage unaffecte
 
 ## Survival Features
 
-### playerhat - Player Hat
+### playerHat - Player Hat
 
 Allows players to wear items on their head and adds the /hat command. When a Totem of Undying is placed in the head slot, the death protection effect is triggered.
 
 | Property | Value |
 |----------|-------|
-| **Rule Name** | `playerhat` |
+| **Rule Name** | `playerHat` |
 | **Description** | Allows players to wear items on their head and adds the /hat command. When a Totem of Undying is placed in the head slot, the death protection effect is triggered |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
@@ -334,13 +334,13 @@ Allows players to wear items on their head and adds the /hat command. When a Tot
 
 ---
 
-### betterSnowBall - Better Snowball
+### betterSnowball - Better Snowball
 
 Stones in snow. Allows snowballs to deal knockback and damage to players.
 
 | Property | Value |
 |----------|-------|
-| **Rule Name** | `betterSnowBall` |
+| **Rule Name** | `betterSnowball` |
 | **Description** | Stones in snow. Allows snowballs to deal knockback and damage to players |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
@@ -421,7 +421,7 @@ Maximum scale value all players can set via `/scale set`; admins are limited too
 
 ---
 
-### realisticPlayerScale - Realistic Player Scale
+### playerScalePhysics - Realistic Player Scale
 
 Player physics scale with size in one of four modes. Requires the playerScale rule to adjust size.
 
@@ -452,7 +452,7 @@ All attribute modifications use transient modifiers (not persisted to save data)
 
 During creative flight vanilla overrides the vertical velocity, so gravity has no effect; during elytra gliding the gravity term does follow the gravity attribute, and gliding/firework movement distance is scaled by the elytra mixin using the same factor as movement speed (mode-dependent, see table above) — larger players glide and boost faster with wider turning radii (geometric similarity), smaller ones slower and floatier. Known trade-off: elytra wall-crash damage is computed from stored velocity (vanilla magnitude) and does not scale with the displacement.
 
-| **Rule Name** | `realisticPlayerScale` |
+| **Rule Name** | `playerScalePhysics` |
 | **Description** | Player physics scale with size (requires playerScale): true=gentle, key attributes scale with sqrt(scale); safety=gentle + small-size floors (speed/gravity 0.3x, jump/step/interaction/fall 0.5x, recommended); strict=strictly proportional, jump height proportional to size. Details in the rules doc |
 | **Type** | `string` |
 | **Default Value** | `false` |

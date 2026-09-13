@@ -1,4 +1,4 @@
-package me.primaryuan.carpet.mixins.rule.realisticPlayerScale;
+package me.primaryuan.carpet.mixins.rule.playerScalePhysics;
 
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 
 /**
- * realisticPlayerScale 规则的鞘翅滑翔联动。
+ * playerScalePhysics 规则的鞘翅滑翔联动。
  *
  * 原版鞘翅滑翔的移动距离不随 minecraft:scale 缩放：travelFallFlying 内的
  * 转向/升力/阻力项全是硬编码常量，烟花推进（FireworkRocketEntity）也只是把
@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
  *
  * 这里对 travelFallFlying 中 move() 的位移参数按移动速度联动因子缩放
  * （因子 = 1 + scale_speed 修改器 amount，与行走/创造飞行速度同曲线，随
- * realisticPlayerScale 模式变化：true/safety 为 √scale 平缓曲线，strict 为
+ * playerScalePhysics 模式变化：true/safety 为 √scale 平缓曲线，strict 为
  * 线性 scale；safety 模式因子含小体型 0.3 保底）。只缩放传给 move 的
  * 位移、不改写实体存储的速度，物理无正反馈、任意体型下都稳定收敛；
  * 滑翔极速、烟花极速与转向半径随之随体型等比变化（大体型转向半径更大，
@@ -57,7 +57,7 @@ public abstract class LivingEntityMixin {
                     target = "Lnet/minecraft/world/entity/LivingEntity;move(Lnet/minecraft/world/entity/MoverType;Lnet/minecraft/world/phys/Vec3;)V"
             )
     )
-    private Vec3 realisticPlayerScale$scaleElytraMovement(Vec3 movement) {
+    private Vec3 playerScalePhysics$scaleElytraMovement(Vec3 movement) {
         LivingEntity self = (LivingEntity) (Object) this;
         if (!(self instanceof net.minecraft.world.entity.player.Player)) {
             return movement;

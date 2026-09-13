@@ -11,47 +11,47 @@
 ## 快速导航
 
 - [假人相关 (BOT)](#假人相关-bot)
-  - [TppFakePlayer - 假人珍珠站传送](#tppfakeplayer---假人珍珠站传送)
+  - [fakePlayerTpp - 假人珍珠站传送](#fakeplayertpp---假人珍珠站传送)
   - [fakePlayerNameSuggestions - 假人名称建议](#fakeplayernamesuggestions---假人名称建议)
   - [fakePlayerSkinMode - 假人皮肤设置](#fakeplayerskinmode---假人皮肤设置)
   - [fakePlayerSkinSet - 假人统一皮肤设置](#fakeplayerskinset---假人统一皮肤设置)
-  - [fakePlayerDropStackModifiers - 假人持续清空背包](#fakeplayerdropstackmodifiers---假人持续清空背包)
+  - [fakePlayerDropAll - 假人持续清空背包](#fakeplayerdropall---假人持续清空背包)
   - [fakePlayerSendto - 假人背包链接](#fakeplayersendto---假人背包链接)
 - [漏洞修复 (BUGFIX)](#漏洞修复-bugfix)
-  - [FixXaeroLib - XaeroLib兼容性修复补丁](#fixxaerolib---xaerolib兼容性修复补丁)
-  - [FixBluemap - BlueMap兼容性修复补丁](#fixbluemap---bluemap兼容性修复补丁)
+  - [fixXaeroLib - XaeroLib兼容性修复补丁](#fixxaerolib---xaerolib兼容性修复补丁)
+  - [fixBlueMap - BlueMap兼容性修复补丁](#fixbluemap---bluemap兼容性修复补丁)
 - [移植功能 (PORTING)](#移植功能-porting)
   - [sleepingDuringTheDay - 白日做梦](#sleepingduringtheday---白日做梦)
   - [unicodeArgumentsSupport - Unicode 参数支持](#unicodeargumentssupport---unicode-参数支持)
 - [玩家交互](#玩家交互)
   - [ridingPlayers - 骑乘玩家](#ridingplayers---骑乘玩家)
   - [pickupPlayers - 捡起玩家](#pickupplayers---捡起玩家)
-  - [ridingPlayersPickUpLimit - 玩家骑乘堆叠上限](#ridingplayerspickuplimit---玩家骑乘堆叠上限)
-  - [ridingPlayersDismountOnGameModeChange - 玩家骑乘更改模式下车](#ridingplayersdismountongamemodechange---玩家骑乘更改模式下车)
-  - [ridingPlayersClientAllowInteractions - 玩家骑乘时可交互（客户端）](#ridingplayersclientallowinteractions---玩家骑乘时可交互客户端)
+  - [ridingPlayersStackLimit - 玩家骑乘堆叠上限](#ridingplayersstacklimit---玩家骑乘堆叠上限)
+  - [ridingPlayersAutoDismount - 玩家骑乘更改模式下车](#ridingplayersautodismount---玩家骑乘更改模式下车)
+  - [ridingPlayersClientInteract - 玩家骑乘时可交互（客户端）](#ridingplayersclientinteract---玩家骑乘时可交互客户端)
   - [peacefulPlayers - 和平的玩家](#peacefulplayers---和平的玩家)
 - [生存功能](#生存功能)
-  - [playerhat - 玩家帽子](#playerhat---玩家帽子)
-  - [betterSnowBall - 更好的雪球](#bettersnowball---更好的雪球)
+  - [playerHat - 玩家帽子](#playerhat---玩家帽子)
+  - [betterSnowball - 更好的雪球](#bettersnowball---更好的雪球)
   - [invisibleInTallGrass - 隐身草](#invisibleintallgrass---隐身草)
 - [玩家缩放](#玩家缩放)
   - [playerScale - 玩家随地大小变](#playerscale---玩家随地大小变)
   - [playerScaleMin - 玩家大小最小值](#playerscalemin---玩家大小最小值)
   - [playerScaleMax - 玩家大小最大值](#playerscalemax---玩家大小最大值)
-  - [realisticPlayerScale - 更真实的玩家大小变](#realisticplayerscale---更真实的玩家大小变)
+  - [playerScalePhysics - 更真实的玩家大小变](#playerscalephysics---更真实的玩家大小变)
   - [playerScaleLinkedEntities - 玩家大小变联动实体](#playerscalelinkedentities---玩家大小变联动实体)
 
 ---
 
 ## 假人相关 (BOT)
 
-### TppFakePlayer - 假人珍珠站传送
+### fakePlayerTpp - 假人珍珠站传送
 
 使用假人快速使用珍珠传送站。当为true时启用/tppset设置指令和/tpp 玩家指令。
 
 | 属性 | 值 |
 |------|-----|
-| **规则名** | `TppFakePlayer` |
+| **规则名** | `fakePlayerTpp` |
 | **描述** | 使用假人快速使用珍珠传送站；开启后启用 /tppset 站点管理与 /tpp 传送命令 |
 | **类型** | `boolean` |
 | **默认值** | `false` |
@@ -113,13 +113,13 @@
 
 ---
 
-### fakePlayerDropStackModifiers - 假人持续清空背包
+### fakePlayerDropAll - 假人持续清空背包
 
 给 `/player <name>` 下追加独立的 dropall 子命令，让假人按设定节奏持续丢出背包所有物品。
 
 | 属性 | 值 |
 |------|-----|
-| **规则名** | `fakePlayerDropStackModifiers` |
+| **规则名** | `fakePlayerDropAll` |
 | **描述** | 给 /player <name> 追加 dropall 子命令，让假人按设定节奏持续丢出背包所有物品。频率：once \| continuous \| interval <ticks> \| after <ticks> \| perTick <times> \| randomly <min> <max>，详见命令文档 |
 | **类型** | `boolean` |
 | **默认值** | `false` |
@@ -147,13 +147,13 @@
 
 ## 漏洞修复 (BUGFIX)
 
-### FixXaeroLib - XaeroLib兼容性修复补丁
+### fixXaeroLib - XaeroLib兼容性修复补丁
 
 修复高版本Xaero 搭配LuckPerms 会导致假人数据丢失的问题。
 
 | 属性 | 值 |
 |------|-----|
-| **规则名** | `FixXaeroLib` |
+| **规则名** | `fixXaeroLib` |
 | **描述** | 修复高版本Xaero 搭配LuckPerms 会导致假人数据丢失的问题 |
 | **类型** | `boolean` |
 | **默认值** | `false` |
@@ -168,13 +168,13 @@
 
 ---
 
-### FixBluemap - BlueMap兼容性修复补丁
+### fixBlueMap - BlueMap兼容性修复补丁
 
 修复假人不触发Fabric API连接事件导致BlueMap等模组无法正确追踪假人上下线的问题。
 
 | 属性 | 值 |
 |------|-----|
-| **规则名** | `FixBluemap` |
+| **规则名** | `fixBlueMap` |
 | **描述** | 修复假人不触发Fabric API连接事件导致BlueMap等模组无法正确追踪假人上下线的问题 |
 | **类型** | `boolean` |
 | **默认值** | `false` |
@@ -253,13 +253,13 @@
 
 ---
 
-### ridingPlayersPickUpLimit - 玩家骑乘堆叠上限
+### ridingPlayersStackLimit - 玩家骑乘堆叠上限
 
 骑乘和捡起时最多可堆叠的玩家数量，骑乘和捡起共用此上限。
 
 | 属性 | 值 |
 |------|-----|
-| **规则名** | `ridingPlayersPickUpLimit` |
+| **规则名** | `ridingPlayersStackLimit` |
 | **描述** | 骑乘和捡起时最多可堆叠的玩家数量，骑乘和捡起共用此上限 |
 | **类型** | `int` |
 | **默认值** | `16` |
@@ -268,13 +268,13 @@
 
 ---
 
-### ridingPlayersDismountOnGameModeChange - 玩家骑乘更改模式下车
+### ridingPlayersAutoDismount - 玩家骑乘更改模式下车
 
 当玩家游戏模式变更的时候，让头上的玩家下车。
 
 | 属性 | 值 |
 |------|-----|
-| **规则名** | `ridingPlayersDismountOnGameModeChange` |
+| **规则名** | `ridingPlayersAutoDismount` |
 | **描述** | 当玩家游戏模式变更的时候，让头上的玩家下车 |
 | **类型** | `boolean` |
 | **默认值** | `false` |
@@ -283,13 +283,13 @@
 
 ---
 
-### ridingPlayersClientAllowInteractions - 玩家骑乘时可交互（客户端）
+### ridingPlayersClientInteract - 玩家骑乘时可交互（客户端）
 
 需客户端安装，当头上有乘客的时候，仍可与方块/实体交互。
 
 | 属性 | 值 |
 |------|-----|
-| **规则名** | `ridingPlayersClientAllowInteractions` |
+| **规则名** | `ridingPlayersClientInteract` |
 | **描述** | 需客户端安装，当头上有乘客的时候，仍可与方块/实体交互 |
 | **类型** | `boolean` |
 | **默认值** | `true` |
@@ -317,13 +317,13 @@
 
 ## 生存功能
 
-### playerhat - 玩家帽子
+### playerHat - 玩家帽子
 
 允许玩家将物品戴在头上，并添加/hat指令。头部放置不死图腾时可触发死亡保护效果。
 
 | 属性 | 值 |
 |------|-----|
-| **规则名** | `playerhat` |
+| **规则名** | `playerHat` |
 | **描述** | 允许玩家将物品戴在头上，并添加/hat指令。头部放置不死图腾时可触发死亡保护效果 |
 | **类型** | `boolean` |
 | **默认值** | `false` |
@@ -332,13 +332,13 @@
 
 ---
 
-### betterSnowBall - 更好的雪球
+### betterSnowball - 更好的雪球
 
 雪中塞石。允许雪球给玩家造成击退和伤害。
 
 | 属性 | 值 |
 |------|-----|
-| **规则名** | `betterSnowBall` |
+| **规则名** | `betterSnowball` |
 | **描述** | 雪中塞石。允许雪球给玩家造成击退和伤害 |
 | **类型** | `boolean` |
 | **默认值** | `false` |
@@ -420,7 +420,7 @@
 
 ---
 
-### realisticPlayerScale - 更真实的玩家大小变
+### playerScalePhysics - 更真实的玩家大小变
 
 开启后玩家物理特性随体型联动，提供四种模式。需配合玩家随地大小变规则使用。
 
@@ -451,7 +451,7 @@
 
 创造飞行时原版会以飞行前的竖直速度覆盖重力，重力属性无效；鞘翅滑翔的重力项随重力属性生效，滑翔与烟花的移动距离由鞘翅联动 mixin 按移动速度联动因子缩放（因子随模式变化，见上表）——大体型滑翔极速与烟花极速随体型放大、转向半径更大（几何相似），小体型更慢更飘。已知取舍：鞘翅撞墙伤害按存储速度（原版量级）计算，不随位移缩放。
 
-| **规则名** | `realisticPlayerScale` |
+| **规则名** | `playerScalePhysics` |
 | **描述** | 玩家物理随体型联动（需 playerScale）：true=平缓，关键属性按 √scale 缩放；safety=平缓+小体型保底（速度/重力 0.3×，跳跃/台阶/交互/摔落 0.5×，推荐）；strict=严格等比 ×scale，跳高与体型成正比。数值细节见规则文档 |
 | **类型** | `string` |
 | **默认值** | `false` |

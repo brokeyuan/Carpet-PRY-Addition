@@ -1,4 +1,4 @@
-package me.primaryuan.carpet.mixins.rule.playerhat;
+package me.primaryuan.carpet.mixins.rule.playerHat;
 
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import net.minecraft.world.damagesource.DamageSource;
@@ -18,8 +18,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class LivingEntityMixin {
 
     @Inject(method = "isEquippableInSlot", at = @At("HEAD"), cancellable = true, require = 0)
-    private void playerhat$allowPlaceAnyItemInHeadEquipmentSlot(ItemStack itemStack, EquipmentSlot equipmentSlot, CallbackInfoReturnable<Boolean> cir) {
-        if (!CarpetPrimaryuanSettings.playerhat) {
+    private void playerHat$allowPlaceAnyItemInHeadEquipmentSlot(ItemStack itemStack, EquipmentSlot equipmentSlot, CallbackInfoReturnable<Boolean> cir) {
+        if (!CarpetPrimaryuanSettings.playerHat) {
             return;
         }
 
@@ -32,12 +32,12 @@ public abstract class LivingEntityMixin {
     }
 
     @Inject(method = "checkTotemDeathProtection", at = @At("RETURN"), cancellable = true)
-    private void playerhat$useHeadTotem(DamageSource source, CallbackInfoReturnable<Boolean> cir) {
+    private void playerHat$useHeadTotem(DamageSource source, CallbackInfoReturnable<Boolean> cir) {
         if (cir.getReturnValue()) {
             return;
         }
 
-        if (!CarpetPrimaryuanSettings.playerhat) {
+        if (!CarpetPrimaryuanSettings.playerHat) {
             return;
         }
 

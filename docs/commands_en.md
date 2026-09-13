@@ -43,7 +43,7 @@
 
 ### /tpp - Fake Player Pearl Teleport
 
-> **Rule**: `TppFakePlayer`
+> **Rule**: `fakePlayerTpp`
 
 #### Syntax
 
@@ -53,7 +53,7 @@
 
 #### Permission
 
-Requires the `TppFakePlayer` rule to be enabled.
+Requires the `fakePlayerTpp` rule to be enabled.
 
 #### Description
 
@@ -88,7 +88,7 @@ Teleport to the specified station (relayed via a fake player).
 
 ### /tppset - Station Management
 
-> **Rule**: `TppFakePlayer`
+> **Rule**: `fakePlayerTpp`
 
 #### Permission
 
@@ -104,7 +104,7 @@ Manage TPP teleport stations, player aliases, and rule configurations.
 
 Sets the fake player spawn point for this station at the current location. The fake player is spawned immediately and automatically goes offline after 3 seconds.
 
-- **Permission**: Requires the `TppFakePlayer` rule to be enabled
+- **Permission**: Requires the `fakePlayerTpp` rule to be enabled
 - **Parameters**:
   - `station` - Station name
 
@@ -199,7 +199,7 @@ Result: VIP_station (shorter and safe)
 
 ## /hat - Player Hat
 
-> **Rule**: `playerhat`
+> **Rule**: `playerHat`
 
 ### Syntax
 
@@ -210,7 +210,7 @@ Result: VIP_station (shorter and safe)
 ### Permission
 
 - Administrators can always use it
-- Regular players need the `playerhat` rule enabled
+- Regular players need the `playerHat` rule enabled
 
 ### Description
 
@@ -218,7 +218,7 @@ Wears the main-hand item on the head, swapping it with the item currently on the
 
 ### Related Rules
 
-**playerhat** - When enabled, placing a Totem of Undying in the head slot first triggers the normal Totem of Undying revive effect upon fatal damage, then additionally grants:
+**playerHat** - When enabled, placing a Totem of Undying in the head slot first triggers the normal Totem of Undying revive effect upon fatal damage, then additionally grants:
 - Regeneration II
 - Absorption II
 - Fire Resistance I
@@ -234,7 +234,7 @@ Wears the main-hand item on the head, swapping it with the item currently on the
 
 ## Fake Player Continuous Inventory Drop
 
-> **Rule**: `fakePlayerDropStackModifiers`
+> **Rule**: `fakePlayerDropAll`
 
 ### Command Syntax
 
@@ -263,7 +263,7 @@ Reuses Carpet's own permission check on the `/player` command (controlled by Car
 
 ### Related Rule
 
-- **fakePlayerDropStackModifiers** — controls the visibility of the entire `dropall` command.
+- **fakePlayerDropAll** — controls the visibility of the entire `dropall` command.
   - When the rule is `false`: the entire `dropall` command is invisible (not tab-completable, not executable); use vanilla `/player <name> dropStack all` for one-shot drops.
   - When the rule is `true`: all modifiers work normally.
   - Rule changes take effect immediately: a Carpet `RuleObserver` re-dispatches the command tree on rule change, so players see visibility changes without relogging.
@@ -403,7 +403,7 @@ Registers the `minecraft:scale` attribute for `Player` and manages it through a 
 
 > **Version note**: the `minecraft:scale` attribute has been provided by vanilla since Minecraft 1.20.5 (snapshot 23w51a); every version this mod supports (1.21~1.21.4, 1.21.5+) can use it, with no version restriction.
 >
-> **Tip**: Combine with the `realisticPlayerScale` rule (`/carpet realisticPlayerScale true`) to make speed, jump height, step height, interaction range, safe fall distance and more scale with size, with FOV compensation, for a more realistic experience.
+> **Tip**: Combine with the `playerScalePhysics` rule (`/carpet playerScalePhysics true`) to make speed, jump height, step height, interaction range, safe fall distance and more scale with size, with FOV compensation, for a more realistic experience.
 
 #### Tab completion behavior
 
@@ -480,9 +480,9 @@ Set whether other players are allowed to ride you. When you set it to `on`, othe
 
 - Rider (the person on top): must hold a **Totem of Undying** in main hand
 - Mount (the person below): must execute `/riding on` to allow it
-- Stack limit is controlled by the `ridingPlayersPickUpLimit` rule (default: 16)
-- When `ridingPlayersDismountOnGameModeChange` is enabled, game mode changes force passengers to dismount
-- When `ridingPlayersClientAllowInteractions` is enabled (default), you can still interact with blocks/entities while carrying passengers (requires client-side install)
+- Stack limit is controlled by the `ridingPlayersStackLimit` rule (default: 16)
+- When `ridingPlayersAutoDismount` is enabled, game mode changes force passengers to dismount
+- When `ridingPlayersClientInteract` is enabled (default), you can still interact with blocks/entities while carrying passengers (requires client-side install)
 
 #### Usage Examples
 
@@ -520,7 +520,7 @@ Set whether other players are allowed to pick you up (make you ride on their hea
 
 - Picker (the person below): must hold a **Totem of Undying** in main hand + **Golden Carrot** in off-hand
 - Pickee (the person on top): must execute `/picking on` to allow it
-- Stack limit is controlled by the `ridingPlayersPickUpLimit` rule (default: 16), shared with riding
+- Stack limit is controlled by the `ridingPlayersStackLimit` rule (default: 16), shared with riding
 
 #### Usage Examples
 

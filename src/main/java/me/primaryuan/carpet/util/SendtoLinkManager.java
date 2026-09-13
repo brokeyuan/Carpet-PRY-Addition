@@ -41,10 +41,10 @@ import java.util.Map;
  * 生命周期（双路径清理，保证假人下线后链接无残留）：
  * - 链接只存内存，不写任何文件，服务器重启后全部失效；
  * - 事件路径：监听 Fabric ServerPlayConnectionEvents.DISCONNECT（假人的该事件由
- *   PlayerListFakePlayerEventsMixin 触发，但受 FixBluemap 规则控制，默认关闭），
+ *   PlayerListFakePlayerEventsMixin 触发，但受 fixBlueMap 规则控制，默认关闭），
  *   假人下线时移除所有涉及它（作为源或作为目标）的链接；
  * - 懒清理兜底：每轮转移时检测源/目标有效性，源无效则移除其全部链接，
- *   目标无效则剔除对应链接——即使 FixBluemap 关闭也能在最多一个调度周期内清掉；
+ *   目标无效则剔除对应链接——即使 fixBlueMap 关闭也能在最多一个调度周期内清掉；
  * - 监听 ServerLifecycleEvents.SERVER_STOPPING，服务器停止时清空全部链接；
  * - CarpetPrimaryuanSettings.fakePlayerSendto 为 false 时暂停转移（链接保留）。
  */
@@ -245,7 +245,7 @@ public final class SendtoLinkManager {
         if (links.mode == ScheduleMode.NONE || links.targets.isEmpty()) {
             return;
         }
-        // 源已下线/无效：移除其全部链接（懒清理兜底——FixBluemap 规则关闭时
+        // 源已下线/无效：移除其全部链接（懒清理兜底——fixBlueMap 规则关闭时
         // 假人不触发 Fabric DISCONNECT 事件，靠这里清掉残留）
         ServerPlayer source = server.getPlayerList().getPlayerByName(sourceName);
         if (!isValidFake(source)) {

@@ -42,7 +42,7 @@ public class EntitiesRidingPlayersHandler {
             return InteractionResult.PASS;
         }
 
-        Entity vehicle = getHighestOrSelf(targetEntity, player, CarpetPrimaryuanSettings.ridingPlayersPickUpLimit);
+        Entity vehicle = getHighestOrSelf(targetEntity, player, CarpetPrimaryuanSettings.ridingPlayersStackLimit);
 
         if (vehicle == null) return InteractionResult.FAIL;
         player.startRiding(vehicle);
@@ -64,7 +64,7 @@ public class EntitiesRidingPlayersHandler {
             return InteractionResult.PASS;
         }
 
-        Entity vehicle = getHighestOrSelf(player, targetEntity, CarpetPrimaryuanSettings.ridingPlayersPickUpLimit);
+        Entity vehicle = getHighestOrSelf(player, targetEntity, CarpetPrimaryuanSettings.ridingPlayersStackLimit);
 
         if (vehicle == null) return InteractionResult.FAIL;
         targetEntity.startRiding(vehicle);
@@ -136,7 +136,7 @@ public class EntitiesRidingPlayersHandler {
     }
 
     public static void onGameModeChange(Player player, GameType gameMode) {
-        if (player.isVehicle() && (CarpetPrimaryuanSettings.ridingPlayersDismountOnGameModeChange || gameMode == GameType.SPECTATOR))
+        if (player.isVehicle() && (CarpetPrimaryuanSettings.ridingPlayersAutoDismount || gameMode == GameType.SPECTATOR))
             player.getFirstPassenger().stopRiding();
     }
 }

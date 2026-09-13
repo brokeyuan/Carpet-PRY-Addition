@@ -1,4 +1,4 @@
-package me.primaryuan.carpet.mixins.rule.betterSnowBall;
+package me.primaryuan.carpet.mixins.rule.betterSnowball;
 
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import net.minecraft.server.level.ServerLevel;
@@ -26,7 +26,7 @@ public abstract class SnowballMixin {
             at = @At("HEAD")
     )
     private void onBetterSnowBallHit(EntityHitResult result, CallbackInfo ci) {
-        if (!CarpetPrimaryuanSettings.betterSnowBall) {
+        if (!CarpetPrimaryuanSettings.betterSnowball) {
             return;
         }
 

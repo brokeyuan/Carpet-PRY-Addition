@@ -1,4 +1,4 @@
-package me.primaryuan.carpet.mixins.rule.realisticPlayerScale;
+package me.primaryuan.carpet.mixins.rule.playerScalePhysics;
 
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * realisticPlayerScale 规则：更真实的玩家大小。
+ * playerScalePhysics 规则：更真实的玩家大小。
  *
  * 玩家 scale 属性偏离 1.0 时，同步调整多项物理量（1.20.5+ 原版均已做成属性，
  * 且全部 syncable，瞬态修改器会同步客户端，本地预测无 desync）。四种模式：
@@ -36,14 +36,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(Player.class)
 public abstract class PlayerMixin {
 
-    private static final float realisticPlayerScale$DEFAULT_FLYING_SPEED = 0.05F;
+    private static final float playerScalePhysics$DEFAULT_FLYING_SPEED = 0.05F;
 
     /**
      * 每 tick 末尾幂等地同步各项物理量与 scale。数值无变化时不执行任何 add/remove/发包，
      * 避免属性被标记 dirty 而产生每 tick 属性同步包。
      */
     @Inject(method = "tick", at = @At("TAIL"))
-    private void realisticPlayerScale$onTick(CallbackInfo callbackInfo) {
+    private void playerScalePhysics$onTick(CallbackInfo callbackInfo) {
         Player self = (Player) (Object) this;
         // 仅服务端维护（含假人）；instanceof 判断避免 Level.isClientSide 字段在 1.21.9+ 私有化的版本差异
         if (!(self instanceof net.minecraft.server.level.ServerPlayer)) {
@@ -54,25 +54,25 @@ public abstract class PlayerMixin {
             return;
         }
         Abilities abilities = self.getAbilities();
-        String mode = CarpetPrimaryuanSettings.realisticPlayerScale;
+        String mode = CarpetPrimaryuanSettings.playerScalePhysics;
         if ("false".equalsIgnoreCase(mode)) {
             // 规则关闭：移除残留的速度修改器并恢复默认飞行速度
-            realisticPlayerScale$updateModifier(
+            playerScalePhysics$updateModifier(
                     self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED), "scale_speed", 0.0D);
-            realisticPlayerScale$updateModifier(
+            playerScalePhysics$updateModifier(
                     self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.JUMP_STRENGTH), "scale_jump", 0.0D);
-            realisticPlayerScale$updateModifier(
+            playerScalePhysics$updateModifier(
                     self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.STEP_HEIGHT), "scale_step", 0.0D);
-            realisticPlayerScale$updateModifier(
+            playerScalePhysics$updateModifier(
                     self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.BLOCK_INTERACTION_RANGE), "scale_reach", 0.0D);
-            realisticPlayerScale$updateModifier(
+            playerScalePhysics$updateModifier(
                     self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE), "scale_reach", 0.0D);
-            realisticPlayerScale$updateModifier(
+            playerScalePhysics$updateModifier(
                     self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.SAFE_FALL_DISTANCE), "scale_fall", 0.0D);
-            realisticPlayerScale$updateModifier(
+            playerScalePhysics$updateModifier(
                     self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.GRAVITY), "scale_gravity", 0.0D);
-            if (abilities.getFlyingSpeed() != realisticPlayerScale$DEFAULT_FLYING_SPEED) {
-                abilities.setFlyingSpeed(realisticPlayerScale$DEFAULT_FLYING_SPEED);
+            if (abilities.getFlyingSpeed() != playerScalePhysics$DEFAULT_FLYING_SPEED) {
+                abilities.setFlyingSpeed(playerScalePhysics$DEFAULT_FLYING_SPEED);
                 self.onUpdateAbilities();
             }
             return;
@@ -90,7 +90,7 @@ public abstract class PlayerMixin {
         if (safety) {
             speedMul = Math.max(speedMul, 0.3D);
         }
-        realisticPlayerScale$updateModifier(
+        playerScalePhysics$updateModifier(
                 self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED), "scale_speed", speedMul - 1.0D);
         // 跳跃初速：true/safety 用 √scale（跳高 ∝ √scale）；strict 用 scale^0.75
         // （与重力 √scale 配套，jump²/gravity ∝ scale，跳高随体型等比放大）；safety 对小体型保底 0.5
@@ -98,33 +98,33 @@ public abstract class PlayerMixin {
         if (safety) {
             jumpMul = Math.max(jumpMul, 0.5D);
         }
-        realisticPlayerScale$updateModifier(
+        playerScalePhysics$updateModifier(
                 self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.JUMP_STRENGTH), "scale_jump", jumpMul - 1.0D);
         // 台阶高度：true/safety 用 √scale，strict 严格等比 ×scale；safety 对小体型保底 0.5（确保小人可跨地毯）
         double sizeMul = strict ? scale : sqrtScale;
         if (safety) {
             sizeMul = Math.max(sizeMul, 0.5D);
         }
-        realisticPlayerScale$updateModifier(
+        playerScalePhysics$updateModifier(
                 self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.STEP_HEIGHT), "scale_step", sizeMul - 1.0D);
         // 方块交互 / 攻击距离：与台阶同曲线；safety 对小体型保底 0.5（确保小人可交互）
-        realisticPlayerScale$updateModifier(
+        playerScalePhysics$updateModifier(
                 self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.BLOCK_INTERACTION_RANGE), "scale_reach", sizeMul - 1.0D);
-        realisticPlayerScale$updateModifier(
+        playerScalePhysics$updateModifier(
                 self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE), "scale_reach", sizeMul - 1.0D);
         // 摔落安全距离：与台阶同曲线；safety 对小体型保底 0.5（确保小人不被秒杀）
-        realisticPlayerScale$updateModifier(
+        playerScalePhysics$updateModifier(
                 self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.SAFE_FALL_DISTANCE), "scale_fall", sizeMul - 1.0D);
         // 重力（下落加速度）：三种模式均 ×√scale（加速度量按平方根联动，线性缩放会使
         // 16 倍体型终端速度约 62 格/tick 失控）；仅 safety 对小体型保底 0.3。
         // 创造飞行时原版会覆盖竖直速度使重力无效；鞘翅滑翔的重力项则走本属性
         double gravityMul = safety ? Math.max(sqrtScale, 0.3D) : sqrtScale;
-        realisticPlayerScale$updateModifier(
+        playerScalePhysics$updateModifier(
                 self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.GRAVITY), "scale_gravity", gravityMul - 1.0D);
 
         // 飞行速度：与移动速度同曲线（true/safety √scale、strict 线性，safety 有保底）
         double flyMul = speedMul;
-        float targetFlyingSpeed = (float) (realisticPlayerScale$DEFAULT_FLYING_SPEED * flyMul);
+        float targetFlyingSpeed = (float) (playerScalePhysics$DEFAULT_FLYING_SPEED * flyMul);
         if (abilities.getFlyingSpeed() != targetFlyingSpeed) {
             abilities.setFlyingSpeed(targetFlyingSpeed);
             self.onUpdateAbilities();
@@ -136,7 +136,7 @@ public abstract class PlayerMixin {
      * amount == 0 时移除（不存在则为空操作）；不存在则添加；数值变化则替换。
      * 属性实例为 null 时（理论不会发生，属性均在默认属性表中）静默跳过。
      */
-    private static void realisticPlayerScale$updateModifier(AttributeInstance attr, String idPath, double amount) {
+    private static void playerScalePhysics$updateModifier(AttributeInstance attr, String idPath, double amount) {
         if (attr == null) {
             return;
         }

@@ -43,7 +43,7 @@
 
 ### /tpp - 假人珍珠传送
 
-> **所属规则**：`TppFakePlayer`
+> **所属规则**：`fakePlayerTpp`
 
 #### 语法
 
@@ -53,7 +53,7 @@
 
 #### 权限
 
-需要启用 `TppFakePlayer` 规则。
+需要启用 `fakePlayerTpp` 规则。
 
 #### 功能描述
 
@@ -88,7 +88,7 @@
 
 ### /tppset - 站点管理
 
-> **所属规则**：`TppFakePlayer`
+> **所属规则**：`fakePlayerTpp`
 
 #### 权限
 
@@ -104,7 +104,7 @@
 
 在当前位置设置该站点的假人生成点，立即生成假人并在 3 秒后自动下线。
 
-- **权限**: 需要启用 `TppFakePlayer` 规则
+- **权限**: 需要启用 `fakePlayerTpp` 规则
 - **参数**:
   - `station` - 站点名称
 
@@ -199,7 +199,7 @@
 
 ## /hat - 玩家帽子
 
-> **所属规则**：`playerhat`
+> **所属规则**：`playerHat`
 
 ### 语法
 
@@ -210,7 +210,7 @@
 ### 权限
 
 - 管理员总是可用
-- 普通玩家需要启用 `playerhat` 规则
+- 普通玩家需要启用 `playerHat` 规则
 
 ### 功能描述
 
@@ -218,7 +218,7 @@
 
 ### 相关规则
 
-**playerhat** - 启用时，头部槽位放置不死图腾后，玩家受到致命伤害时先触发不死图腾的正常复活效果，再额外附加以下状态：
+**playerHat** - 启用时，头部槽位放置不死图腾后，玩家受到致命伤害时先触发不死图腾的正常复活效果，再额外附加以下状态：
 - 再生 II
 - 伤害吸收 II
 - 抗火 I
@@ -234,7 +234,7 @@
 
 ## 假人持续清空背包
 
-> **所属规则**：`fakePlayerDropStackModifiers`
+> **所属规则**：`fakePlayerDropAll`
 
 ### 命令语法
 
@@ -263,7 +263,7 @@
 
 ### 相关规则
 
-- **fakePlayerDropStackModifiers** — 控制整个 `dropall` 命令的可见性。
+- **fakePlayerDropAll** — 控制整个 `dropall` 命令的可见性。
   - 规则关闭时：整个 `dropall` 命令不可见（tab 补全不到、无法执行），请使用原版 `/player <name> dropStack all` 实现一次性丢出。
   - 规则开启时：所有修饰参数正常工作。
   - 规则切换立即生效：通过 Carpet `RuleObserver` 在规则变更时重新下发命令树，玩家无需重新登录即可看到可见性变化。
@@ -403,7 +403,7 @@ scale
 
 > **版本说明**：`minecraft:scale` 属性自 Minecraft 1.20.5（快照 23w51a）起由原版提供，本模组支持的全部版本（1.21~1.21.4、1.21.5+）均可使用，无版本限制。
 >
-> **搭配建议**：配合 `realisticPlayerScale` 规则（`/carpet realisticPlayerScale true`）可使速度、跳跃、台阶高度、交互距离、摔落安全距离等物理特性随体型缩放，并补偿视野变化，更真实。
+> **搭配建议**：配合 `playerScalePhysics` 规则（`/carpet playerScalePhysics true`）可使速度、跳跃、台阶高度、交互距离、摔落安全距离等物理特性随体型缩放，并补偿视野变化，更真实。
 
 #### Tab 补全行为
 
@@ -480,9 +480,9 @@ scale
 
 - 骑乘者（上面的人）：主手持**不死图腾**
 - 被骑乘者（下面的人）：需执行 `/riding on` 允许
-- 堆叠上限由 `ridingPlayersPickUpLimit` 规则控制（默认 16）
-- 当 `ridingPlayersDismountOnGameModeChange` 启用时，游戏模式变更会自动让乘客下车
-- 当 `ridingPlayersClientAllowInteractions` 启用时（默认），骑乘状态下仍可与方块/实体交互（需客户端安装）
+- 堆叠上限由 `ridingPlayersStackLimit` 规则控制（默认 16）
+- 当 `ridingPlayersAutoDismount` 启用时，游戏模式变更会自动让乘客下车
+- 当 `ridingPlayersClientInteract` 启用时（默认），骑乘状态下仍可与方块/实体交互（需客户端安装）
 
 #### 使用示例
 
@@ -520,7 +520,7 @@ scale
 
 - 捡起者（下面的人）：主手持**不死图腾** + 副手持**金胡萝卜**
 - 被捡起者（上面的人）：需执行 `/picking on` 允许
-- 堆叠上限由 `ridingPlayersPickUpLimit` 规则控制（默认 16），与骑乘共用
+- 堆叠上限由 `ridingPlayersStackLimit` 规则控制（默认 16），与骑乘共用
 
 #### 使用示例
 

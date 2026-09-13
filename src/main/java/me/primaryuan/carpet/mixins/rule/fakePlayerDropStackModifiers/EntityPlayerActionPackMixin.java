@@ -1,4 +1,4 @@
-package me.primaryuan.carpet.mixins.rule.fakePlayerDropStackModifiers;
+package me.primaryuan.carpet.mixins.rule.fakePlayerDropAll;
 
 import carpet.helpers.EntityPlayerActionPack;
 import me.primaryuan.carpet.util.DropSlotScheduler;

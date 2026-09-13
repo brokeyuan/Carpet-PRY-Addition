@@ -13,7 +13,7 @@
 
 **Carpet-PRY-Addition** 是一个基于 [Fabric Carpet](https://github.com/gnembon/fabric-carpet) 的服务端扩展模组，主要为 PRY 服务器（Primaryuan Server）开发，在客户端安装时能增加使用体验。新增 **24 条**可配置 Carpet 规则和 **7 个**命令，涵盖假人管理增强、玩家缩放、服务器管理、模组兼容性修复、功能移植、玩家交互和生存特性扩展。
 
-除 `ridingPlayersClientAllowInteractions` 客户端规则默认开启外，其余规则默认关闭，按需启用。
+除 `ridingPlayersClientInteract` 客户端规则默认开启外，其余规则默认关闭，按需启用。
 
 ## 文档
 
@@ -32,8 +32,8 @@
 2. 安装必需前置：**[Fabric Carpet](https://modrinth.com/mod/carpet)** + **[Fabric API](https://fabricmc.net/)**
 3. 可选前置：[skinrestorer](https://modrinth.com/mod/skinrestorer)（仅假人皮肤功能需要）
 4. 将 mod JAR 文件放入服务器的 `mods/` 文件夹
-5. 本模组为**服务端模组**，玩家无需安装；客户端可选安装，提供两项客户端功能——`ridingPlayersClientAllowInteractions`（头上有乘客时仍可交互）与玩家缩放的视野（FOV）补偿
-6. 规则默认关闭（`ridingPlayersClientAllowInteractions` 除外），使用 `/carpet` 命令或配置文件按需启用
+5. 本模组为**服务端模组**，玩家无需安装；客户端可选安装，提供两项客户端功能——`ridingPlayersClientInteract`（头上有乘客时仍可交互）与玩家缩放的视野（FOV）补偿
+6. 规则默认关闭（`ridingPlayersClientInteract` 除外），使用 `/carpet` 命令或配置文件按需启用
 
 ## 依赖
 
@@ -63,8 +63,8 @@
 
 ### 漏洞修复
 
-- `FixXaeroLib`：修复 Xaero 地图 + LuckPerms 导致假人数据丢失的问题
-- `FixBluemap`：修复假人不触发 Fabric API 连接事件导致 BlueMap 等模组追踪异常
+- `fixXaeroLib`：修复 Xaero 地图 + LuckPerms 导致假人数据丢失的问题
+- `fixBlueMap`：修复假人不触发 Fabric API 连接事件导致 BlueMap 等模组追踪异常
 
 ### 移植规则
 
@@ -73,31 +73,31 @@
 
 ### 假人增强
 
-- `TppFakePlayer`：假人珍珠传送站，附 `/tpp` / `/tppset` 命令
+- `fakePlayerTpp`：假人珍珠传送站，附 `/tpp` / `/tppset` 命令
 - `fakePlayerSkinMode` / `fakePlayerSkinSet`：假人皮肤模式（默认 / 召唤时 / 统一皮肤）与统一皮肤玩家名
-- `fakePlayerDropStackModifiers`：`/player dropall` 按设定节奏持续丢出假人背包物品
+- `fakePlayerDropAll`：`/player dropall` 按设定节奏持续丢出假人背包物品
 - `fakePlayerSendto`：`/player sendto` 建立假人间单向背包物品流
 
 ### 玩家缩放
 
 - `playerScale`：为玩家注册 `minecraft:scale` 属性，`/scale set|reset|info` 调整体型，含 FOV 补偿（需客户端安装）
 - `playerScaleMin` / `playerScaleMax`：`/scale set` 的软边界
-- `realisticPlayerScale`：物理随体型联动（平缓 / 平缓+小体型保底 / 严格等比），重力 √scale
+- `playerScalePhysics`：物理随体型联动（平缓 / 平缓+小体型保底 / 严格等比），重力 √scale
 - `playerScaleLinkedEntities`：玩家用物品直接生成的生物实体继承玩家体型
 
 ### 玩家交互
 
 - `ridingPlayers` / `pickupPlayers`：骑乘 / 捡起其他玩家（主手持不死图腾触发）
-- `ridingPlayersPickUpLimit`：骑乘与捡起共用的堆叠人数上限
-- `ridingPlayersDismountOnGameModeChange`：游戏模式变更时乘客自动下车
-- `ridingPlayersClientAllowInteractions`：头上有乘客时仍可交互方块/实体（需客户端安装）
+- `ridingPlayersStackLimit`：骑乘与捡起共用的堆叠人数上限
+- `ridingPlayersAutoDismount`：游戏模式变更时乘客自动下车
+- `ridingPlayersClientInteract`：头上有乘客时仍可交互方块/实体（需客户端安装）
 - `peacefulPlayers`：`/pvp` 按玩家开关 PVP，`@a` 为全服总开关
 
 ### 生存功能
 
 - `sleepingDuringTheDay`：白天睡觉，睡醒切换至夜晚
-- `playerhat`：`/hat` 将物品戴在头上，头部不死图腾可触发死亡保护
-- `betterSnowBall`：雪球对玩家造成击退与伤害
+- `playerHat`：`/hat` 将物品戴在头上，头部不死图腾可触发死亡保护
+- `betterSnowball`：雪球对玩家造成击退与伤害
 - `invisibleInTallGrass`：头部位于高草丛时自动隐身
 
 

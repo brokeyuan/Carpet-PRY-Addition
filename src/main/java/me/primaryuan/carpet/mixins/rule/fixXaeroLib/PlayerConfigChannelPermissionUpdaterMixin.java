@@ -20,7 +20,7 @@ public class PlayerConfigChannelPermissionUpdaterMixin {
         remap = false
     )
     private static void onHandleHead(@Coerce Object player, boolean isOp, CallbackInfo ci) {
-        if (CarpetPrimaryuanSettings.FixXaeroLib) {
+        if (CarpetPrimaryuanSettings.fixXaeroLib) {
             String className = player.getClass().getName();
             if (className.contains("EntityPlayerMPFake") || className.contains("FakePlayer")) {
                 ci.cancel();
