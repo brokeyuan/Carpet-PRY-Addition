@@ -30,6 +30,7 @@ All notable changes to **Carpet-PRY-Addition** are documented in this file.
 - `/scale` 在低版本上的"版本不支持"降级分支与 `carpetprimaryuan.command.scale.unsupported_version` 文案键（三语言），`/scale set|reset|info` 全版本行为一致
 - 删除无引用的死类 `SleepUtil`；清理 en_us/zh_tw 中代码未引用的死键 `carpetprimaryuan.command.pvp.state_on/off`（三语言 key 集合对齐至 148 个）
 - CI：移除 build.yml 中调用不存在任务 `runServerMixinAudit` 的死 step 与 `mixin_audit` 输入（启动级 mixin 验证由 mixin-boot-check.yml 承担），其版本矩阵补齐 1.21.11 / 26.1.2 / 26.2 三个最新节点
+- 开发/CI 环境 fabric-loader 0.18.4 → 0.19.3：carpet 26.2 要求 loader >= 0.19.3，旧 loader 下 26.2 runServer 启动即被 FabricLoader 解析拒绝
 
 ### 修复
 
