@@ -33,10 +33,10 @@
   "carpet.rule.betterSnowball.desc": "Stone hidden in snow. Allows snowballs to deal knockback and damage to players",
 
   "carpet.rule.fakePlayerDropAll.name": "Fake Player Continuous Drop",
-  "carpet.rule.fakePlayerDropAll.desc": "Adds a dropall sub-command to /player <name> that drops the fake player's whole inventory at a configured pace. Pace: once | continuous | interval <ticks> | after <ticks> | perTick <times> | randomly <min> <max>; see the commands doc",
+  "carpet.rule.fakePlayerDropAll.desc": "Adds a dropall sub-command to /player <name> that drops the fake player's whole inventory at a configured pace; see the commands doc",
 
   "carpet.rule.fakePlayerSendto.name": "Fake Player Inventory Link",
-  "carpet.rule.fakePlayerSendto.desc": "Adds a sendto sub-command to /player <name> creating one-way inventory item flow between fake players (one stack per trigger, default every tick, round-robin across targets, source buffers when a target is full). Pace: once | continuous | interval <ticks> | after <ticks> | perTick <times> | randomly <min> <max>; sendto stop removes all links, links do not survive restarts; see the commands doc",
+  "carpet.rule.fakePlayerSendto.desc": "Adds a sendto sub-command to /player <name> creating one-way inventory item flow between fake players (one stack per trigger, default every tick, round-robin across targets, source buffers when a target is full) with adjustable pace; sendto stop removes all links, links do not survive restarts; see the commands doc",
 
   "carpet.rule.playerScale.name": "Player Scale",
   "carpet.rule.playerScale.desc": "Registers the minecraft:scale attribute for Player and enables /scale set|reset|info; value only needs to be greater than 0, bounded by playerScaleMin/Max. false=hide command; self=adjust self only; true=adjust self, admins adjust anyone; everyone=anyone adjusts anyone. FOV compensation requires client install",

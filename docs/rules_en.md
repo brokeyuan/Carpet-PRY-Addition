@@ -122,7 +122,7 @@ Adds a dropall sub-command to /player <name> that drops the fake player's whole 
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `fakePlayerDropAll` |
-| **Description** | Adds a dropall sub-command to /player <name> that drops the fake player's whole inventory at a configured pace. Pace: once \| continuous \| interval <ticks> \| after <ticks> \| perTick <times> \| randomly <min> <max>; see the commands doc |
+| **Description** | Adds a dropall sub-command to /player <name> that drops the fake player's whole inventory at a configured pace; see the commands doc |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
@@ -139,7 +139,7 @@ Adds a sendto sub-command to /player <name> creating one-way inventory item flow
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `fakePlayerSendto` |
-| **Description** | Adds a sendto sub-command to /player <name> creating one-way inventory item flow between fake players (one stack per trigger, default every tick, round-robin across targets, source buffers when a target is full). Pace: once \| continuous \| interval <ticks> \| after <ticks> \| perTick <times> \| randomly <min> <max>; sendto stop removes all links, links do not survive restarts; see the commands doc |
+| **Description** | Adds a sendto sub-command to /player <name> creating one-way inventory item flow between fake players (one stack per trigger, default every tick, round-robin across targets, source buffers when a target is full) with adjustable pace; sendto stop removes all links, links do not survive restarts; see the commands doc |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |

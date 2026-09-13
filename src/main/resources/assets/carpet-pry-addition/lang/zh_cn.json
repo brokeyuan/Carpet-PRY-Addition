@@ -33,10 +33,10 @@
   "carpet.rule.betterSnowball.desc": "雪中塞石。允许雪球给玩家造成击退和伤害",
 
   "carpet.rule.fakePlayerDropAll.name": "假人持续清空背包",
-  "carpet.rule.fakePlayerDropAll.desc": "给 /player <name> 追加 dropall 子命令，让假人按设定节奏持续丢出背包所有物品。频率：once | continuous | interval <ticks> | after <ticks> | perTick <times> | randomly <min> <max>，详见命令文档",
+  "carpet.rule.fakePlayerDropAll.desc": "给 /player <name> 追加 dropall 子命令，让假人按设定节奏持续丢出背包所有物品，详见命令文档",
 
   "carpet.rule.fakePlayerSendto.name": "假人背包链接",
-  "carpet.rule.fakePlayerSendto.desc": "给 /player <name> 追加 sendto 子命令，建立假人间单向背包物品流（默认每 tick 一组，多目标轮流分配，目标满时源背包缓冲）。频率：once | continuous | interval <ticks> | after <ticks> | perTick <times> | randomly <min> <max>；sendto stop 停止并移除链接，链接不跨重启，详见命令文档",
+  "carpet.rule.fakePlayerSendto.desc": "给 /player <name> 追加 sendto 子命令，建立假人间单向背包物品流（默认每 tick 一组，多目标轮流分配，目标满时源背包缓冲），转移频率可调；sendto stop 停止并移除链接，链接不跨重启，详见命令文档",
 
   "carpet.rule.playerScale.name": "玩家随地大小变",
   "carpet.rule.playerScale.desc": "为 Player 注册 minecraft:scale 属性并启用 /scale set|reset|info；value 仅需大于 0，受 playerScaleMin/Max 约束。false=隐藏命令；self=仅能调自己；true=可调自己且管理员可调任意玩家；everyone=人人可互调。FOV 补偿需客户端安装",

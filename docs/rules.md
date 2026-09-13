@@ -120,7 +120,7 @@
 | 属性 | 值 |
 |------|-----|
 | **规则名** | `fakePlayerDropAll` |
-| **描述** | 给 /player <name> 追加 dropall 子命令，让假人按设定节奏持续丢出背包所有物品。频率：once \| continuous \| interval <ticks> \| after <ticks> \| perTick <times> \| randomly <min> <max>，详见命令文档 |
+| **描述** | 给 /player <name> 追加 dropall 子命令，让假人按设定节奏持续丢出背包所有物品，详见命令文档 |
 | **类型** | `boolean` |
 | **默认值** | `false` |
 | **参考选项** | `false`, `true` |
@@ -135,7 +135,7 @@
 | 属性 | 值 |
 |------|-----|
 | **规则名** | `fakePlayerSendto` |
-| **描述** | 给 /player <name> 追加 sendto 子命令，建立假人间单向背包物品流（默认每 tick 一组，多目标轮流分配，目标满时源背包缓冲）。频率：once \| continuous \| interval <ticks> \| after <ticks> \| perTick <times> \| randomly <min> <max>；sendto stop 停止并移除链接，链接不跨重启，详见命令文档 |
+| **描述** | 给 /player <name> 追加 sendto 子命令，建立假人间单向背包物品流（默认每 tick 一组，多目标轮流分配，目标满时源背包缓冲），转移频率可调；sendto stop 停止并移除链接，链接不跨重启，详见命令文档 |
 | **类型** | `boolean` |
 | **默认值** | `false` |
 | **参考选项** | `false`, `true` |
