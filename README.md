@@ -63,17 +63,13 @@
 
 ### 漏洞修复
 
-| 规则 | 类型 | 默认值 | 简介 |
-|------|------|--------|------|
-| `FixXaeroLib` | boolean | `false` | 修复 Xaero 地图 + LuckPerms 导致假人数据丢失的问题 |
-| `FixBluemap` | boolean | `false` | 修复假人不触发 Fabric API 连接事件导致 BlueMap 等模组追踪异常 |
+- `FixXaeroLib`：修复 Xaero 地图 + LuckPerms 导致假人数据丢失的问题
+- `FixBluemap`：修复假人不触发 Fabric API 连接事件导致 BlueMap 等模组追踪异常
 
 ### 移植规则
 
-| 规则 | 类型 | 默认值 | 简介 |
-|------|------|--------|------|
-| `fakePlayerNameSuggestions` | string | `Steve,Alex` | 自定义 `/player` 命令的补全建议（移植自 Ivan-Carpet-Addition） |
-| `unicodeArgumentsSupport` | boolean | `false` | 允许命令参数使用非 ASCII 字符，可召唤中文名假人（移植自 YACA） |
+- `fakePlayerNameSuggestions`：自定义 `/player` 命令的补全建议（移植自 Ivan-Carpet-Addition）
+- `unicodeArgumentsSupport`：允许命令参数使用非 ASCII 字符，可召唤中文名假人（移植自 YACA）
 
 ### 假人增强
 

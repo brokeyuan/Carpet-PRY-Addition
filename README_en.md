@@ -62,17 +62,13 @@ All rules are off by default except the client-side rule `ridingPlayersClientAll
 
 ### Bugfixes
 
-| Rule | Type | Default | Description |
-|------|------|---------|-------------|
-| `FixXaeroLib` | boolean | `false` | Fixes fake player data loss when Xaero's maps are used with LuckPerms |
-| `FixBluemap` | boolean | `false` | Fixes fake players not triggering Fabric API connection events, allowing BlueMap and similar mods to track bots properly |
+- `FixXaeroLib`: fixes fake player data loss when Xaero's maps are used with LuckPerms
+- `FixBluemap`: fixes fake players not triggering Fabric API connection events, allowing BlueMap and similar mods to track bots properly
 
 ### Ported Rules
 
-| Rule | Type | Default | Description |
-|------|------|---------|-------------|
-| `fakePlayerNameSuggestions` | string | `Steve,Alex` | Customize autocomplete suggestions for the `/player` command (ported from Ivan-Carpet-Addition) |
-| `unicodeArgumentsSupport` | boolean | `false` | Allow non-ASCII characters in command arguments, enabling fake players with CJK names (ported from YACA) |
+- `fakePlayerNameSuggestions`: customize autocomplete suggestions for the `/player` command (ported from Ivan-Carpet-Addition)
+- `unicodeArgumentsSupport`: allow non-ASCII characters in command arguments, enabling fake players with CJK names (ported from YACA)
 
 ### Fake Player Enhancements
 
