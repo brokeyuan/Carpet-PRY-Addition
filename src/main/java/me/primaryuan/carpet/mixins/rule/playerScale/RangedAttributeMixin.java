@@ -1,5 +1,6 @@
 package me.primaryuan.carpet.mixins.rule.playerScale;
 
+import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import net.minecraft.world.entity.ai.attributes.RangedAttribute;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -12,6 +13,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * 会把超范围值静默夹紧；放行正值后命令反馈值与实际生效值一致。
  * 非正值与非有限值（NaN/Infinity）不拦截，回落原版夹紧逻辑，兜底数据包/模组
  * 设置的非法值（原版自身不会设置超范围值）。
+ * 规则门控：仅在玩家缩放功能开启（playerScale / playerScalePhysics 非 false）时放行，
+ * 全部关闭时维持原版 0.0625–16.0 夹紧，避免规则未用时的全局副作用。
  * 身份比较仅命中 SCALE 属性；全局生效（含其他实体）。
  * 所有受支持的 Minecraft 版本均注册本类（SCALE 属性与 sanitizeValue(double)
  * 自 1.20.5 起存在，1.21~1.21.4 与 1.21.5+ 签名一致，已逐一核实）。
@@ -21,6 +24,12 @@ public abstract class RangedAttributeMixin {
 
     @Inject(method = "sanitizeValue", at = @At("HEAD"), cancellable = true)
     private void playerScale$widenScaleRange(double value, CallbackInfoReturnable<Double> cir) {
+        // 规则门控：任一玩家缩放规则开启时才放行，全部关闭时回落原版夹紧
+        boolean scaleEnabled = !"false".equalsIgnoreCase(CarpetPrimaryuanSettings.playerScale)
+                || !"false".equalsIgnoreCase(CarpetPrimaryuanSettings.playerScalePhysics);
+        if (!scaleEnabled) {
+            return;
+        }
         if (value > 0 && Double.isFinite(value)
                 && (Object) this == net.minecraft.world.entity.ai.attributes.Attributes.SCALE.value()) {
             cir.setReturnValue(value);

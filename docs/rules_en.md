@@ -15,9 +15,9 @@
   - [fakePlayerNameSuggestions - Fake Player Name Suggestions](#fakeplayernamesuggestions---fake-player-name-suggestions)
   - [fakePlayerSkinMode - Fake Player Skin Setting](#fakeplayerskinmode---fake-player-skin-setting)
   - [fakePlayerSkinSet - Fake Player Unified Skin Setting](#fakeplayerskinset---fake-player-unified-skin-setting)
-- [Bug Fixes (BUGFIX)](#bug-fixes-bugfix)
   - [fakePlayerDropAll - Fake Player Continuous Drop](#fakeplayerdropall---fake-player-continuous-drop)
   - [fakePlayerSendto - Fake Player Inventory Link](#fakeplayersendto---fake-player-inventory-link)
+- [Bug Fixes (BUGFIX)](#bug-fixes-bugfix)
   - [fixXaeroLib - XaeroLib Compatibility Patch](#fixxaerolib---xaerolib-compatibility-patch)
   - [fixBlueMap - BlueMap Compatibility Patch](#fixbluemap---bluemap-compatibility-patch)
 - [Ported Features (PORTING)](#ported-features-porting)
@@ -100,7 +100,7 @@ After installing the [skinrestorer](https://modrinth.com/mod/skinrestorer) depen
 
 ### fakePlayerSkinSet - Fake Player Unified Skin Setting
 
-When FakeplayersSkinMode is same_skin, sets the player name used for the fake player skin.
+When fakePlayerSkinMode is same_skin, sets the player name used for the fake player skin.
 
 | Property | Value |
 |----------|-------|
@@ -112,8 +112,6 @@ When FakeplayersSkinMode is same_skin, sets the player name used for the fake pl
 | **Categories** | `PRIMARYUAN`, `BOT` |
 
 ---
-
-## Bug Fixes (BUGFIX)
 
 ### fakePlayerDropAll - Fake Player Continuous Drop
 
@@ -144,6 +142,8 @@ Adds a sendto sub-command to /player <name> creating one-way inventory item flow
 | **Categories** | `PRIMARYUAN`, `BOT`, `COMMAND` |
 
 ---
+
+## Bug Fixes (BUGFIX)
 
 ### fixXaeroLib - XaeroLib Compatibility Patch
 
@@ -253,7 +253,7 @@ When holding a Totem of Undying in the main hand and a Golden Carrot in the off-
 
 ### ridingPlayersStackLimit - Player Riding Stack Limit
 
-The maximum number of players that can be stacked when riding and picking up. This limit is shared between riding and picking up.
+The maximum number of players that can be stacked when riding and picking up. This limit is shared between riding and picking up. Counted per whole tower: once the total number of players in the tower (including the base player and the one initiating the ride/pickup) reaches the limit, further riding and picking up are rejected.
 
 | Property | Value |
 |----------|-------|
@@ -261,7 +261,7 @@ The maximum number of players that can be stacked when riding and picking up. Th
 | **Description** | The maximum number of players that can be stacked when riding and picking up. This limit is shared between riding and picking up |
 | **Type** | `int` |
 | **Default Value** | `16` |
-| **Suggested Options** | `16`, `32`, `` |
+| **Suggested Options** | `16`, `32` |
 | **Categories** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
 
 ---
@@ -369,8 +369,8 @@ Registers the `minecraft:scale` attribute for Player and manages player size thr
 | **Rule Name** | `playerScale` |
 | **Description** | Registers the minecraft:scale attribute for Player and enables /scale set\|reset\|info; value only needs to be greater than 0, bounded by playerScaleMin/Max. false=hide command; self=adjust self only; true=adjust self, admins adjust anyone; everyone=anyone adjusts anyone. FOV compensation requires client install |
 | **Type** | `string` |
-| **Default Value** | `false` |
-| **Suggested Options** | `false`, `self`, `true`, `everyone` |
+| **Default Value** | `"false"` |
+| **Suggested Options** | `false`, `true`, `self`, `everyone` |
 | **Categories** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE`, `COMMAND` |
 
 #### Mode Description
@@ -393,8 +393,8 @@ Minimum scale value all players can set via `/scale set`; admins are limited too
 | **Rule Name** | `playerScaleMin` |
 | **Description** | Minimum scale value all players can set via /scale set; admins can adjust the bound by changing this rule |
 | **Type** | `double` |
-| **Default Value** | `0.01` |
-| **Suggested Options** | `0.01`, `0.1`, `0.25`, `0.5` |
+| **Default Value** | `0.1` |
+| **Suggested Options** | `0.1`, `0.01`, `0.25`, `0.5` |
 | **Categories** | `PRIMARYUAN`, `SURVIVAL`, `COMMAND` |
 
 ---
@@ -408,8 +408,8 @@ Maximum scale value all players can set via `/scale set`; admins are limited too
 | **Rule Name** | `playerScaleMax` |
 | **Description** | Maximum scale value all players can set via /scale set; admins can adjust the bound by changing this rule |
 | **Type** | `double` |
-| **Default Value** | `16.0` |
-| **Suggested Options** | `2.0`, `5.0`, `10.0`, `16.0` |
+| **Default Value** | `1.5` |
+| **Suggested Options** | `1.5`, `2.0`, `5.0`, `10.0`, `16.0` |
 | **Categories** | `PRIMARYUAN`, `SURVIVAL`, `COMMAND` |
 
 ---
@@ -417,6 +417,13 @@ Maximum scale value all players can set via `/scale set`; admins are limited too
 ### playerScalePhysics - Realistic Player Scale
 
 Player physics scale with size in one of four modes. Requires the playerScale rule to adjust size.
+
+| **Rule Name** | `playerScalePhysics` |
+| **Description** | Player physics scale with size (requires playerScale): true=gentle, key attributes scale with sqrt(scale); safety=gentle + small-size floors (speed/gravity 0.3x, jump/step/interaction/fall 0.5x, recommended); strict=strictly proportional, jump height proportional to size. Details in the rules doc |
+| **Type** | `string` |
+| **Default Value** | `false` |
+| **Suggested Options** | `false`, `true`, `safety`, `strict` |
+| **Categories** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
 
 | Mode | Behavior |
 |------|----------|
@@ -444,13 +451,6 @@ All attribute modifications use transient modifiers (not persisted to save data)
 - **Gravity**: ×√scale in every mode — gravity is an acceleration rather than a size quantity; the square-root curve pairs with the jump curve and keeps terminal velocity under control (linear scaling would give a 16× player a terminal velocity of about 62 blocks/tick, tunneling through the world).
 
 During creative flight vanilla overrides the vertical velocity, so gravity has no effect; during elytra gliding the gravity term does follow the gravity attribute, and gliding/firework movement distance is scaled by the elytra mixin using the same factor as movement speed (mode-dependent, see table above) — larger players glide and boost faster with wider turning radii (geometric similarity), smaller ones slower and floatier. Known trade-off: elytra wall-crash damage is computed from stored velocity (vanilla magnitude) and does not scale with the displacement.
-
-| **Rule Name** | `playerScalePhysics` |
-| **Description** | Player physics scale with size (requires playerScale): true=gentle, key attributes scale with sqrt(scale); safety=gentle + small-size floors (speed/gravity 0.3x, jump/step/interaction/fall 0.5x, recommended); strict=strictly proportional, jump height proportional to size. Details in the rules doc |
-| **Type** | `string` |
-| **Default Value** | `false` |
-| **Suggested Options** | `false`, `true`, `safety`, `strict` |
-| **Categories** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
 
 ### playerScaleLinkedEntities - Player Scale Linked Entities
 

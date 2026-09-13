@@ -14,9 +14,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * MixinPlayerBase - 醒来时修正时间（生产版本，无日志）- 26.1.2 版本
+ * MixinPlayerBase - 醒来时修正时间（生产版本，无日志）- 26.2 版本
  *
- * 使用 getOverworldClockTime() 替代 getDayTime()（26.x API 变更）。
+ * 与 26.1.2 版本一致：使用 getOverworldClockTime() 替代 getDayTime()（26.x API 变更）。
  * 判据与根版本一致：以"入睡时刻是否为白天"为准（startSleepInBed HEAD 记录），
  * 夜间开始的睡眠完全放行原版，仅白天入睡的唤醒由本 mixin 接管。
  */

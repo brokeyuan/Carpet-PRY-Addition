@@ -106,8 +106,14 @@ public final class SendtoLinkManager {
             // 规则关闭：暂停转移（链接保留，重新开启后恢复）
             if (!CarpetPrimaryuanSettings.fakePlayerSendto) return true;
             if (LINKS.isEmpty()) return true;
-            for (Map.Entry<String, SourceLinks> entry : LINKS.entrySet()) {
-                tickSource(server, entry.getKey(), entry.getValue());
+            // 快照遍历：tickSource/transferOneStack 在源或全部目标失效时会
+            // LINKS.remove 结构性修改本 Map，直接遍历 entrySet 会抛
+            // ConcurrentModificationException（源假人下线的懒清理路径，默认配置可达）
+            for (String sourceName : List.copyOf(LINKS.keySet())) {
+                SourceLinks links = LINKS.get(sourceName);
+                if (links != null) {
+                    tickSource(server, sourceName, links);
+                }
             }
             return true;
         });

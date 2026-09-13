@@ -45,8 +45,9 @@ import java.util.concurrent.CompletableFuture;
  *   - OP（非 self 模式） / everyone：补全所有在线玩家
  *
  * 范围限制：
- *   - 自己操作 / everyone 模式非 OP / self 模式（含 OP）：受 playerScaleMin/Max 限制
- *   - OP 调他人（非 self 模式）：不受限制
+ *   - 所有 set / reset 操作（含管理员调自己与调他人）均受 playerScaleMin/Max
+ *     软边界限制；管理员需要更大范围时通过 /carpet playerScaleMin/Max 调整边界
+ *   - 硬边界仅要求 value > 0 且为有限值
  */
 public final class ScaleCommand {
 

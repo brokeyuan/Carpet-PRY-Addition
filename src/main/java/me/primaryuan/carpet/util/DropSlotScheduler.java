@@ -1,6 +1,7 @@
 package me.primaryuan.carpet.util;
 
 import me.primaryuan.carpet.i18n.ServerI18n;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
@@ -135,6 +136,9 @@ public final class DropSlotScheduler {
             }
             return true;
         });
+        // 服务器停止时放弃全部任务：DropTask 强引用 ServerPlayer，
+        // 不清理会把旧世界玩家对象钉在静态 Map 上（同 JVM 重启场景泄漏）
+        ServerLifecycleEvents.SERVER_STOPPING.register(server -> tasks.clear());
     }
 
     /**

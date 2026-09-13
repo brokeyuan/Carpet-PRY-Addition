@@ -28,6 +28,30 @@ All notable changes to **Carpet-PRY-Addition** are documented in this file.
 ### 移除
 
 - `/scale` 在低版本上的"版本不支持"降级分支与 `carpetprimaryuan.command.scale.unsupported_version` 文案键（三语言），`/scale set|reset|info` 全版本行为一致
+- 删除无引用的死类 `SleepUtil`；清理 en_us/zh_tw 中代码未引用的死键 `carpetprimaryuan.command.pvp.state_on/off`（三语言 key 集合对齐至 148 个）
+- CI：移除 build.yml 中调用不存在任务 `runServerMixinAudit` 的死 step 与 `mixin_audit` 输入（启动级 mixin 验证由 mixin-boot-check.yml 承担），其版本矩阵补齐 1.21.11 / 26.1.2 / 26.2 三个最新节点
+
+### 修复
+
+- **sendto 多源链接时的服务器崩溃**：tick 任务遍历 `LINKS` 期间，懒清理路径（源假人下线/全部目标失效）会结构性删除条目，抛 `ConcurrentModificationException` 致服务器崩溃——默认配置（`fixBlueMap` 关闭，假人下线不走事件路径）下，≥2 个源假人有链接且其一离线即可触发。改为快照遍历
+- **betterSnowBall 单人游戏客户端崩溃**：`onHitEntity` 注入点在单人游戏中客户端线程同样执行，`hurtServer` 的 `(ServerLevel)` 强转遇 `ClientLevel` 直接 ClassCastException。客户端逻辑侧现提前返回，击退与伤害仅由服务端施加
+- **白日做梦（sleepingDuringTheDay）昼夜循环破坏**：唤醒分支原以"醒来时是白天 + sleepTimer≥100"判定，而夜间入睡的玩家在黎明被原版唤醒时同样满足这两个条件——时间被错误拨回 13000，白天几乎无法自然到来。现改为在 `startSleepInBed`（`ServerPlayer` 校验通过后调用 super 的路径，全版本核实）记录"入睡时刻是否为白天"，仅白天开始的睡眠由规则接管；夜间开始的睡眠完全放行原版
+- **26.2 子项目无法编译**：`MixinPlayerBase` 使用的 `Level.getDayTime()` 在 26.x 已更名为 `getOverworldClockTime()`，26.1.2 有版本覆盖文件而 26.2 遗漏，补齐
+- **单 JVM 内服务器重启后调度体系静默停摆**：`ServerTickScheduler` 在 SERVER_STOPPING 清空任务集，但 `DropSlotScheduler`/`SendtoLinkManager`/`FakePlayerSessionManager` 的一次性注册标志仍在，第二次启动后 tick 任务不再注册（dropall/sendto/tpp 全部失效）。现任务集跨服务器实例存活（各任务自校验状态有效性），由各管理器在 SERVER_STOPPING 清理自身业务状态；`DropSlotScheduler.tasks`（强引用 ServerPlayer）的停服泄漏一并修复
+- **只开 pickupPlayers 的服务器骑乘/捡起许可不清理**：下线清理被 `ridingPlayers` 规则门控，而许可表（RIDE+PICKUP）是共用的——只开捡起的服务器玩家下线后许可永久残留、同名重进继承旧状态。现下线时无条件清理
+- **隐身草联机视觉状态冲突**：`Player.tick` 注入双端执行而规则值不同步到客户端，装了本 mod 的客户端会把服务端施加的隐身药水误判为"规则关闭清理残留"而本地移除。handler 现仅服务端处理
+- **骑乘堆叠上限 off-by-one**：原实现实际允许"基座 + 上限+1 名乘客"。现与文档语义对齐：塔内玩家总数（含基座与新乘客）不得超过上限；`startRiding` 因竞争失败时命令如实返回失败而非成功
+- **`RangedAttributeMixin` 无规则门控**：放行 SCALE 属性范围的注入原先全局生效，现仅在玩家缩放功能开启（`playerScale`/`playerScalePhysics` 非 false）时放行，全部关闭时回落原版 0.0625–16.0 夹紧
+- **1.21.11 的 `carpet_dependency` 笔误**：`>=1.4.100` 修正为 `>=1.4.193`（实际构建绑定版本）
+- 4 个 mixin 源码目录名与 package 声明统一（`betterSnowBall`→`betterSnowball`、`playerhat`→`playerHat`、`fakePlayerDropStackModifiers`→`fakePlayerDropAll`、`realisticPlayerScale`→`playerScalePhysics`；更名规则时漏改目录），删除更名残留的空目录 `playerScaleModifiers`
+- 类注释与实现对齐：`ScaleCommand` 类头"OP 调他人不受范围限制"（实际软边界约束所有人）、`PvpManager` 类头"禁言期间仅管理员可个别解禁"（实际锁定所有人，仅 @a 可解除）
+
+### 文档
+
+- **规则文档与命令文档对齐代码现状**：`playerScaleMin`/`playerScaleMax` 默认值 0.01/16.0 → **0.1/1.5**（补列默认选项 1.5）；/hat、/riding、/picking 权限说明修正为"规则开启时所有人可用，关闭时对所有人隐藏"（原"管理员总是可用"与 requires 实现不符）；/pvp 语法清单补漏 `/pvp list`；/tppset rename 别名上限 12 → 10 字符；/tpp 假人名构建说明改为按站点长度动态截断（原固定 10 字符为旧行为）；rules_en.md 的 fakePlayerDropAll/fakePlayerSendto 从 Bug Fixes 组移回 BOT 组（与代码分类及中文版一致）；`FakeplayersSkinMode` 旧名残留清理（表格外正文）；骑乘堆叠上限语义澄清；若干标点/转义/排版修正
+- **Description.MD 全面重写**：规则数 16 → 24，清除全部已废弃规则名/命令名（FixXaeroLib、TppFakePlayer、/ride、/pickup 等），补齐 1.2.0 全部新功能（玩家缩放系列、dropall/sendto、/scale、/pvp），修正"所有规则默认关闭"与 `ridingPlayersClientInteract` 默认开启的矛盾
+- **CHANGELOG 补记**：[1.2.0] 补记遗漏的 peacefulPlayers + /pvp；[未发布] 补记 /scale 默认边界调整、/pvp 层级重构、拦截提示音等已提交未记录的变更
+- **README Modrinth 链接统一**为 `carpet-pry-addition`（原同文档内两个 slug 混用）
 
 ### 文档
 
@@ -40,6 +64,7 @@ All notable changes to **Carpet-PRY-Addition** are documented in this file.
 
 ### 新增
 
+- **`peacefulPlayers` 和平的玩家 + `/pvp` 指令**：按玩家开关 PVP（类似群聊禁言模型）——关闭 PVP 的玩家不能攻击玩家、也不会受到玩家伤害（自伤不限），被拦截的攻击播放提示音；`/pvp on|off` 开关自己，`/pvp on|off <玩家>`（权限随模式：self/true/everyone），`/pvp on|off @a` 全服总开关（仅管理员、self 模式除外；全局关闭期间个人操作锁定，解除时强制全员恢复开启），`/pvp list` 列出所有 PVP 关闭的玩家；状态跨重启持久化于 `config/carpet-pry-pvp.json`，新加入玩家跟随全服默认状态
 - **`playerScaleLinkedEntities` 玩家大小变联动实体**：玩家使用物品直接生成的生物实体继承玩家当前体型（写入 minecraft:scale 基础值快照）——0.5 的玩家放出的盔甲架也是 0.5 大小，刷怪蛋生物、摆出的铁/雪/铜傀儡同理（放南瓜的构造生成同步发生在使用漏斗内；幼崽等原有修饰符在此基础上叠加比例）。实现上经 `ServerPlayerGameMode` 的 useItem/useItemOn 漏斗记录操作玩家，在 `ServerLevel.addFreshEntity` 收口处写入体型（仅 1.21.5+ 注册）。仅覆盖有 scale 属性的生物实体，不触碰渲染与碰撞箱；投掷物、掉落物、物品展示框、船、矿车、TNT 等非生物实体不联动；发射器、刷怪笼等非玩家来源不联动；写入为快照不随玩家后续变化，玩家体型为 1.0 时不做任何改动
 - **`realisticPlayerScale` 物理联动模式化**：规则由布尔改为 `false / true / safety / strict` 四模式，覆盖三种真实化取向：
   - `true`（平缓）：移动/飞行/鞘翅烟花速度、跳跃、台阶、交互距离、摔落安全距离均按 √scale 曲线缩放（16 倍体型移速 4 倍而非 16 倍），无保底

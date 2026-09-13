@@ -23,7 +23,7 @@
 ## 下载
 
 - [GitHub Release](https://github.com/brokeyuan/Carpet-Primaryuan-Addition/releases/latest)
-- [Modrinth](https://modrinth.com/mod/carpet-primaryuan-addition)
+- [Modrinth](https://modrinth.com/mod/carpet-pry-addition)
 - [CurseForge](https://www.curseforge.com/minecraft/mc-mods/carpet-primaryuan-addition)
 
 ## 安装

@@ -37,6 +37,13 @@ public abstract class SnowballMixin {
 
         Entity self = (Entity) (Object) this;
 
+        // 客户端逻辑侧不做任何处理：单人游戏中客户端线程同样会执行本注入点，
+        // 而 hurtServer 需要 ServerLevel，ClientLevel 强转会直接崩溃；
+        // 击退/伤害只允许服务端施加，客户端本地预测也会造成抖动
+        if (self.level().isClientSide()) {
+            return;
+        }
+
         // Knockback: push player in the snowball's travel direction
         Vec3 motion = self.getDeltaMovement().normalize().scale(0.5);
         player.push(motion.x, 0.2, motion.z);

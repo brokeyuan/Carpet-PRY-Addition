@@ -67,7 +67,7 @@
 
 #### 工作流程
 
-1. 构建假人名：别名（如有）或玩家名（截断至 10 字符） + `_` + 站点名
+1. 构建假人名：别名（如有）或玩家名 + `_` + 站点名，总长不超过 16 字符——玩家名按剩余空间动态截断（别名最多 10 字符，站点名必须完整保留；站点过长时玩家名部分为空）
 2. 执行 `/player <假人名> rejoin`（让已有假人重新加入）
 3. 轮询等待假人上线（最多 10 秒）
 4. 按站点级右键次数（未设置则使用全局默认值）循环执行 `/player <假人名> use`（传送者操控假人右键末影珍珠），每次间隔 0.5 秒
@@ -132,7 +132,7 @@
 - **权限**: 管理员专属
 - **参数**:
   - `player` - 玩家真实名称
-  - `alias` - 别名（最多 12 字符）
+  - `alias` - 别名（最多 10 字符）
 
 ##### `/tppset rename <player> remove`
 
@@ -209,8 +209,8 @@
 
 ### 权限
 
-- 管理员总是可用
-- 普通玩家需要启用 `playerHat` 规则
+- 规则 `playerHat` 开启时所有人可用（含管理员）
+- 规则关闭时对所有人隐藏（无管理员豁免）
 
 ### 功能描述
 
@@ -244,7 +244,7 @@
 /player <name> dropall [once|continuous|interval <ticks>|after <ticks>|perTick <times>|randomly <min> <max>|stop]
 ```
 
-`<modifier>` 可选以下七种：
+`<modifier>` 共 7 个修饰词（表中首行为无修饰词的顶层形式）：
 
 | 修饰参数 | 语法 | 行为 |
 |---------|------|------|
@@ -321,7 +321,7 @@
 ### 命令语法
 
 - `/player <src> sendto <target>`：建立链接并立即开始转移
-- `/player <src> sendto once\|continuous\|interval <ticks>\|after <ticks>\|perTick <times>\|randomly <min> <max>`：调整转移频率
+- `/player <src> sendto once|continuous|interval <ticks>|after <ticks>|perTick <times>|randomly <min> <max>`：调整转移频率
 - `/player <src> sendto stop`：停止并移除全部链接
 
 ### 转移行为
@@ -350,7 +350,7 @@
 
 ### /scale - 玩家大小调节
 
-> **所属规则**：`playerScale`（范围边界：`playerScaleMin` / `playerScaleMax`
+> **所属规则**：`playerScale`（范围边界：`playerScaleMin` / `playerScaleMax`）
 
 #### 命令结构（统一三层子命令：先操作，后数值/玩家）
 
@@ -393,8 +393,8 @@ scale
 #### 范围控制
 
 - 硬边界：value 仅要求大于 0（不设上下限），对所有路径统一生效
-- `playerScaleMin`（默认 0.01）：所有玩家允许设置的最小值
-- `playerScaleMax`（默认 16.0）：所有玩家允许设置的最大值
+- `playerScaleMin`（默认 0.1）：所有玩家允许设置的最小值
+- `playerScaleMax`（默认 1.5）：所有玩家允许设置的最大值
 - 软边界约束所有玩家（含管理员调自己与调他人）；管理员需要更大范围时，通过 `/carpet playerScaleMin` / `/carpet playerScaleMax` 调整边界本身
 
 #### 功能描述
@@ -442,13 +442,13 @@ scale
 
 - 设置成功（自己）：`你的大小已设为 0.5x`
 - 设置成功（他人）：`已将 Steve 的大小设为 2.0x`
-- 超出范围：`值 0.05 超出允许范围（0.1 ~ 10.0）`
+- 超出范围：`值 0.05 超出允许范围（0.1 ~ 1.5）`
 - 权限不足：`你没有权限调整其他玩家的大小（当前模式仅允许调整自己）`
 - 被修改的提示：`管理员 Brokey 将你的大小调整为 2.0x` 或 `玩家 Alice 将你的大小调整为 0.5x`
 - `/scale info` 输出示例（self 模式）：
 ```
 你的当前大小：0.5x（默认 1.0x）
-允许设置范围：0.1 ~ 10.0
+允许设置范围：0.1 ~ 1.5
 当前模式：self（所有人都只能调自己）
 ```
 
@@ -469,8 +469,8 @@ scale
 
 #### 权限
 
-- 管理员总是可用
-- 普通玩家需要启用 `ridingPlayers` 规则
+- 规则 `ridingPlayers` 开启时所有人可用（含管理员）
+- 规则关闭时对所有人隐藏（无管理员豁免）
 
 #### 功能描述
 
@@ -509,8 +509,8 @@ scale
 
 #### 权限
 
-- 管理员总是可用
-- 普通玩家需要启用 `pickupPlayers` 规则
+- 规则 `pickupPlayers` 开启时所有人可用（含管理员）
+- 规则关闭时对所有人隐藏（无管理员豁免）
 
 #### 功能描述
 
@@ -531,6 +531,7 @@ scale
 # 禁止其他玩家捡起你
 /picking off
 ```
+
 ---
 
 ## /pvp - 和平的玩家
@@ -542,9 +543,10 @@ scale
 ### 命令语法
 
 - `/pvp`：查看自己的 PVP 状态
-- `/pvp on\|off`：开关自己的 PVP
-- `/pvp on\|off <玩家>`：开关指定玩家
-- `/pvp on\|off @a`：全服总开关（新加入玩家跟随全局）
+- `/pvp list`：列出所有 PVP 关闭的玩家（含离线已登记玩家）
+- `/pvp on|off`：开关自己的 PVP
+- `/pvp on|off <玩家>`：开关指定玩家
+- `/pvp on|off @a`：全服总开关（新加入玩家跟随全局）
 
 ### 权限模式（peacefulPlayers 规则取值）
 

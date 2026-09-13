@@ -45,9 +45,7 @@ public class EntitiesRidingPlayersHandler {
         Entity vehicle = getHighestOrSelf(targetEntity, player, CarpetPrimaryuanSettings.ridingPlayersStackLimit);
 
         if (vehicle == null) return InteractionResult.FAIL;
-        player.startRiding(vehicle);
-
-        return InteractionResult.SUCCESS;
+        return player.startRiding(vehicle) ? InteractionResult.SUCCESS : InteractionResult.FAIL;
     }
 
     public static InteractionResult pickUpEntity(Player player, Entity targetEntity, Level level, InteractionHand hand) {
@@ -67,9 +65,7 @@ public class EntitiesRidingPlayersHandler {
         Entity vehicle = getHighestOrSelf(player, targetEntity, CarpetPrimaryuanSettings.ridingPlayersStackLimit);
 
         if (vehicle == null) return InteractionResult.FAIL;
-        targetEntity.startRiding(vehicle);
-
-        return InteractionResult.SUCCESS;
+        return targetEntity.startRiding(vehicle) ? InteractionResult.SUCCESS : InteractionResult.FAIL;
     }
 
     /** 公共前置校验：服务端 + 主手 + 目标为玩家 + 主手持不死图腾 */
@@ -93,14 +89,19 @@ public class EntitiesRidingPlayersHandler {
         return true;
     }
 
+    /**
+     * 取得骑乘塔的顶端（新乘客的落点）。
+     * 语义与规则描述一致：塔内玩家总数（含基座与新乘客）不得超过 limit；
+     * 检测到 newPassenger 已在塔内（防自环/重复骑乘）或加入后超限时返回 null。
+     */
     public static Entity getHighestOrSelf(Entity vehicle, Entity newPassenger, int limit) {
-        int count = -1;
+        int towerCount = 1; // 基座
         while (vehicle.isVehicle()) {
-            count++;
             vehicle = vehicle.getFirstPassenger();
-            if (vehicle == newPassenger || count >= limit) return null;
+            if (vehicle == newPassenger) return null;
+            towerCount++;
         }
-        return vehicle;
+        return towerCount + 1 > limit ? null : vehicle;
     }
 
     public static void setPermission(Permission type, String playerName, boolean allow) {

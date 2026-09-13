@@ -83,10 +83,10 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         // 假人背包链接（sendto）：初始化 tick 转移调度、假人下线清理与服务器停止清空监听
         SendtoLinkManager.init();
 
+        // 不按规则门控：onLogOut 除骑乘下车外还清理骑乘/捡起两张许可表，
+        // 只开 pickupPlayers 的服务器同样需要下线清理，否则同名重进继承旧许可
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
-            if (CarpetPrimaryuanSettings.ridingPlayers) {
-                EntitiesRidingPlayersHandler.onLogOut(handler.player);
-            }
+            EntitiesRidingPlayersHandler.onLogOut(handler.player);
         });
 
         UseEntityCallback.EVENT.register((player, level, hand, entity, hitResult) -> {

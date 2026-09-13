@@ -2,22 +2,44 @@ package me.primaryuan.carpet.mixins.rule.sleepingDuringTheDay;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.mojang.datafixers.util.Either;
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * MixinPlayerBase - v20 (醒来时修正时间) - 生产版本（无日志）
+ * MixinPlayerBase - 醒来时修正时间（生产版本，无日志）。
  *
- * 核心逻辑：
- *   - sleepTimer=100 + 白天(dayTime < 13000) → 允许唤醒 + 设置时间为夜晚(13000)
- *   - sleepTimer<100  + 白天(dayTime < 13000) → 阻止唤醒（继续睡觉）
- *   - 规则关闭 → 完全放行原版逻辑
+ * 判据（关键）：以"入睡时刻是否为白天"为准，而非"醒来时刻是否为白天"。
+ * {@code startSleepInBed} 的 HEAD 注入在入睡真正发生的时刻记录当前是否白天
+ * （ServerPlayer.startSleepInBed 在全部原版校验通过后于末尾调用 super，本注入
+ * 全版本命中；校验失败不会调用 super，不会留下脏标记）。夜间开始的睡眠完全
+ * 放行原版——旧版按"醒来时是白天 + sleepTimer≥100"判定，会把夜间睡过夜、
+ * 黎明被原版唤醒的玩家也拨回夜晚，昼夜循环被破坏。
+ *
+ * 白天入睡的唤醒分支（原版 Player.tick 检测到不可入睡时段会逐 tick 尝试唤醒）：
+ *   - 醒来时是白天 + sleepTimer&lt;100  → 阻止唤醒（保持睡觉状态，睡满为止）
+ *   - 醒来时是白天 + sleepTimer≥100 → 设置时间为夜晚并允许唤醒
+ *   - 醒来时已是夜晚 → 放行原版（无需跳变）
  */
 @Mixin(net.minecraft.world.entity.player.Player.class)
 public abstract class MixinPlayerBase {
+
+    /** 本次入睡开始时是否为白天；下一次 startSleepInBed 时覆盖，睡眠结束时复位 */
+    @Unique
+    private boolean pry$startedDuringDay;
+
+    @Inject(method = "startSleepInBed", at = @At("HEAD"))
+    private void pry$recordSleepStartDaytime(BlockPos pos,
+            CallbackInfoReturnable<Either<net.minecraft.world.entity.player.Player.BedSleepingProblem, ?>> cir) {
+        this.pry$startedDuringDay = pry$isDaytime();
+    }
 
     @WrapOperation(
             method = "tick",
@@ -33,32 +55,30 @@ public abstract class MixinPlayerBase {
             return;
         }
 
-        // 获取当前时间和睡眠计时器
-        long dayTime = 0;
-        if (player.level() instanceof Level level) {
-            dayTime = level.getDayTime() % 24000L;
+        // 夜间开始的睡眠：完全走原版（黎明唤醒 / 全员睡眠跳夜均由原版处理）
+        if (!this.pry$startedDuringDay) {
+            original.call(player, wakeImmediately, updateLevel);
+            return;
         }
-        int sleepTimer = player.getSleepTimer();
 
-        // 判断是否是自然醒来（sleepTimer=100）
-        boolean isNaturalWakeUp = (sleepTimer >= 100);
-        
-        // 判断是否是白天
-        boolean isDaytime = (dayTime >= 0L && dayTime < 13000L);
-
-        if (isNaturalWakeUp && isDaytime) {
-            // ✅ 白天自然醒来 → 设置时间为夜晚，然后允许唤醒
+        if (!pry$isDaytime()) {
+            // 白天入睡，醒来时已是夜晚：无需跳变，放行并结束本标记
+            this.pry$startedDuringDay = false;
+            original.call(player, wakeImmediately, updateLevel);
+        } else if (player.getSleepTimer() >= 100) {
+            // 白天入睡且睡满 100 tick：跳到夜晚并唤醒
+            this.pry$startedDuringDay = false;
             setTimeToNight(player);
             original.call(player, wakeImmediately, updateLevel);
-            
-        } else if (!isNaturalWakeUp && isDaytime) {
-            // ⛔ 白天非自然唤醒 → 阻止（保持睡觉状态）
-            // 不调用 original，阻止唤醒
-            
-        } else {
-            // ℹ️ 夜间或其他情况 → 放行原版逻辑
-            original.call(player, wakeImmediately, updateLevel);
         }
+        // 白天入睡未满 100 tick：阻止唤醒（标记保留，下一 tick 原版会再次尝试）
+    }
+
+    /** 当前世界时间是否处于白天（与旧版判据一致：dayTime mod 24000 < 13000） */
+    @Unique
+    private boolean pry$isDaytime() {
+        return ((net.minecraft.world.entity.player.Player) (Object) this).level() instanceof Level level
+                && level.getDayTime() % 24000L < 13000L;
     }
 
     /**
@@ -73,7 +93,7 @@ public abstract class MixinPlayerBase {
 
                 String timeCmd = "/time set " + targetTime;
                 serverLevel.getServer().getCommands().performPrefixedCommand(
-                    serverLevel.getServer().createCommandSourceStack(), 
+                    serverLevel.getServer().createCommandSourceStack(),
                     timeCmd
                 );
             }

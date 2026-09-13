@@ -23,6 +23,13 @@ public class InvisibleInTallGrassHandler {
     private static final int MARKER_DURATION = MobEffectInstance.INFINITE_DURATION;
 
     public static void checkAndApplyInvisibility(Player player) {
+        // 仅服务端处理：本 mixin 注入 Player.tick 双端执行，而规则值不同步到客户端
+        // （clientSync=false）。联机时装了本 mod 的客户端若不加守卫，会把服务端
+        // 施加的隐身药水误判为"规则关闭清理残留"而本地移除，与服务端视觉状态冲突。
+        if (player.level().isClientSide()) {
+            return;
+        }
+
         MobEffectInstance current = player.getEffect(MobEffects.INVISIBILITY);
         boolean hasOwnEffect = current != null
                 && current.getDuration() == MARKER_DURATION

@@ -1,10 +1,10 @@
-Carpet PRY Addition is a server-side Fabric extension for the [fabric-carpet](https://github.com/gnembon/fabric-carpet) mod, developed for the **Primaryuan Server**. It adds 16 configurable Carpet rules and several new commands covering bug fixes, fake player enhancements, and survival gameplay expansion.
+Carpet PRY Addition is a server-side Fabric extension for the [fabric-carpet](https://github.com/gnembon/fabric-carpet) mod, developed for the **Primaryuan Server**. It adds 24 configurable Carpet rules and 7 new commands (plus `/player` extensions) covering bug fixes, fake player enhancements, player interaction, and survival gameplay expansion.
 
 ---
 
 ## Fix
 
-### Xaero Minimap + LuckPerms Compatibility Fix (`FixXaeroLib`)
+### Xaero Minimap + LuckPerms Compatibility Fix (`fixXaeroLib`)
 
 Resolves an issue where fake player (carpet bot) data is lost or inventory is forced empty when **Xaero's Minimap / World Map** and **LuckPerms** are used together on the server.
 
@@ -14,7 +14,7 @@ Related upstream issues:
 - [LuckPerms #4232](https://github.com/LuckPerms/LuckPerms/issues/4232) — When using with Xaero's Minimap and Xaero's World map, carpet bot's inventory empty
 - [fabric-carpet #2158](https://github.com/gnembon/fabric-carpet/issues/2158) — Bot's inventory force empty with LuckPerms xaerolib (include in Xaero's Minimap and Xaero's Worldmap)
 
-### BlueMap Compatibility Fix (`FixBluemap`)
+### BlueMap Compatibility Fix (`fixBlueMap`)
 
 Fixes an issue where fake players do not trigger Fabric API connection events, causing mods like **BlueMap** to fail tracking fake player join/leave correctly.
 
@@ -42,7 +42,7 @@ Customize the appearance of carpet fake players by integrating with the optional
 
 Customize the name suggestion list shown when using the `/player` command to spawn fake players. Define a comma-separated list of names for quick selection.
 
-### Fake Player Pearl Teleport System (`TppFakePlayer`)
+### Fake Player Pearl Teleport System (`fakePlayerTpp`)
 
 A fully custom teleport network powered by fake players and ender pearls. Admins set up stations at key locations, and players teleport between them by having a temporary fake player right-click a pearl at the destination.
 
@@ -51,11 +51,19 @@ Commands:
 - `/tpp <station>` — teleport to a station.
 - `/tppset` — manage stations, player aliases, and per-station pearl use counts. Data is persisted in `config/carpet-pry-tpp.json`.
 
+### Fake Player Continuous Drop (`fakePlayerDropAll`)
+
+Adds a `/player <name> dropall` sub-command that drops the fake player's whole inventory at a configurable pace: once, every tick, at fixed intervals, after a delay, N times per second, or at random intervals — with `/player <name> dropall stop` to cancel.
+
+### Fake Player Inventory Link (`fakePlayerSendto`)
+
+Adds a `/player <name> sendto <target>` sub-command creating a one-way item flow between fake players: one stack is transferred per trigger, round-robin across multiple targets, and the source buffers items when a target is full. The same pace modifiers as dropall are supported; `sendto stop` removes all links. Links live in memory only and do not survive restarts.
+
 ---
 
 ## Gameplay Expansion
 
-### Player Hat (`playerhat`)
+### Player Hat (`playerHat`)
 
 ![](https://cdn.modrinth.com/data/cached_images/a53fc27b646fd4d9b41b911e25161a0a7a42d165_0.webp)
 
@@ -65,25 +73,45 @@ Wear any main-hand item on your head with the `/hat` command. When a **Totem of 
 
 ![](https://cdn.modrinth.com/data/cached_images/ecc7060b3e5779c1a804d393023aa142c32562d1_0.webp)
 
-Hold a **Totem of Undying** in your main hand and right-click another player to ride on top of them. Players can control whether others may ride them via `/ride on|off`. Up to `ridingPlayersPickUpLimit` (default 16) players can stack.
+Hold a **Totem of Undying** in your main hand and right-click another player to ride on top of them. Players can control whether others may ride them via `/riding on|off`. Up to `ridingPlayersStackLimit` (default 16) players can stack in one tower.
 
 Additional related rules:
 
-- `ridingPlayersDismountOnGameModeChange` — passengers dismount when a player's game mode changes.
-- `ridingPlayersClientAllowInteractions` — a client-side rule that allows interacting with blocks and entities even when carrying passengers. Requires the mod to be installed on the client.
+- `ridingPlayersAutoDismount` — passengers dismount when a player's game mode changes.
+- `ridingPlayersClientInteract` — a client-side rule (on by default) that allows interacting with blocks and entities even when carrying passengers. Requires the mod to be installed on the client.
 
 ### Picking Up Players (`pickupPlayers`)
 
 ![](https://cdn.modrinth.com/data/cached_images/50d6326b0c7b954962bf9998dc395036dca932b6_0.webp)
 
-Hold a **Totem of Undying** in your main hand and a **Golden Carrot** in your off-hand, then right-click another player to pick them up (they ride on your head). Players control whether others may pick them up via `/pickup on|off`. Shares the same stack limit as riding (`ridingPlayersPickUpLimit`).
+Hold a **Totem of Undying** in your main hand and a **Golden Carrot** in your off-hand, then right-click another player to pick them up (they ride on your head). Players control whether others may pick them up via `/picking on|off`. Shares the same stack limit as riding (`ridingPlayersStackLimit`).
+
+### Peaceful Players (`peacefulPlayers`)
+
+Enables the `/pvp` command: each player can turn their own PVP on or off. Players with PVP off cannot attack players and take no damage from players (self-inflicted damage unaffected); blocked attacks play a cue sound so the "poke" signal is preserved. Admins can toggle PVP for anyone or server-wide with `/pvp on|off @a`, and `/pvp list` shows everyone who currently has PVP off. States persist across restarts in `config/carpet-pry-pvp.json`.
+
+---
+
+## Player Scaling
+
+### Player Scale (`playerScale` + `playerScaleMin` / `playerScaleMax`)
+
+Registers the vanilla `minecraft:scale` attribute for players and enables the `/scale set|reset|info` command: players adjust their own size, and admins (or everyone, depending on the mode) can adjust others. Values only need to be greater than 0, bounded by `playerScaleMin` (default 0.1) and `playerScaleMax` (default 1.5). Includes automatic FOV compensation on clients with the mod installed.
+
+### Realistic Player Scale (`playerScalePhysics`)
+
+Optional physics linkage in three modes (gentle √scale curve, gentle + small-size floors, or strictly proportional): movement speed, jump height, step height, interaction range, fall safety and gravity all scale with size. Transient modifiers only — nothing is written to the save.
+
+### Player Scale Linked Entities (`playerScaleLinkedEntities`)
+
+Living entities spawned directly by a player using an item (armor stands, spawn-egg mobs, built golems, ...) inherit the player's size snapshot at spawn time.
 
 ---
 
 ## Other Features
 
 - **Daydreaming** (`sleepingDuringTheDay`) — sleep in a bed during daytime to skip forward to night (inspired by PCA).
-- **Better Snowball** (`betterSnowBall`) — snowballs deal knockback and damage to players ("stones hidden in snow").
+- **Better Snowball** (`betterSnowball`) — snowballs deal knockback and damage to players ("stones hidden in snow").
 - **Invisibility Grass** (`invisibleInTallGrass`) — standing with your head inside tall grass grants automatic invisibility.
 - **Unicode Command Arguments** (`unicodeArgumentsSupport`) — allows non-ASCII characters (Chinese, Japanese, Korean, etc.) in command arguments, enabling fake players with CJK names (ported from YACA).
 
@@ -91,9 +119,9 @@ Hold a **Totem of Undying** in your main hand and a **Golden Carrot** in your of
 
 ## Why Download
 
-- **All features are toggleable** — every mechanic is a Carpet rule, disabled by default. You only enable what you need.
+- **All features are toggleable** — every mechanic is a Carpet rule. Everything is off by default except `ridingPlayersClientInteract` (a client-side quality-of-life rule that is on by default).
 - **Wide version coverage** — supports Minecraft 1.21 through the latest snapshots (26.2), with 10 versions actively maintained.
-- **Server-side only** — players do not need to install the mod on their clients (except for the optional `ridingPlayersClientAllowInteractions` client rule).
+- **Server-side only** — players do not need to install the mod on their clients (except for the FOV compensation of the player scaling feature and the optional `ridingPlayersClientInteract` client rule).
 - **Lightweight and focused** — built on the Carpet framework, integrates naturally with existing Carpet setups.
 
 ---
@@ -104,8 +132,8 @@ Hold a **Totem of Undying** in your main hand and a **Golden Carrot** in your of
 - **Required dependencies:** [fabric-carpet](https://modrinth.com/mod/carpet) and [Fabric API](https://modrinth.com/mod/fabric-api) must be installed on the server.
 - **Fabric Loader >= 0.16.0** is required.
 - **Optional:** [skinrestorer](https://modrinth.com/mod/skinrestorer) is needed for the fake player skin features (`fakePlayerSkinMode` / `fakePlayerSkinSet`).
-- This is a **server-side** mod. Place it in the server's `mods` folder. Client installation is only needed for the `ridingPlayersClientAllowInteractions` rule.
-- All rules are **off by default** — use `/carpet` or the Carpet configuration files to enable the ones you want.
+- This is a **server-side** mod. Place it in the server's `mods` folder. Client installation is only needed for the player-scaling FOV compensation and the `ridingPlayersClientInteract` rule.
+- All rules are **off by default** (except `ridingPlayersClientInteract`) — use `/carpet` or the Carpet configuration files to enable the ones you want.
 - **Source code:** [GitHub](https://github.com/brokeyuan/Carpet-Primaryuan-Addition)
 - **Documentation:** [Wiki](https://primaryuan.top:2026/Primaryuan/mod/PRY/readme.html) | [GitHub README](https://github.com/brokeyuan/Carpet-Primaryuan-Addition/blob/master/README_en.md)
 

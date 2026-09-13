@@ -67,7 +67,7 @@ Teleport to the specified station (relayed via a fake player).
 
 #### Workflow
 
-1. Build the fake player name: alias (if any) or player name (truncated to 10 characters) + `_` + station name
+1. Build the fake player name: alias (if any) or player name + `_` + station name, capped at 16 characters total — the player name is truncated to the remaining space (alias up to 10 characters, the station name is always kept in full; a too-long station leaves no room for the player name)
 2. Execute `/player <fakePlayerName> rejoin` (have the existing fake player rejoin)
 3. Poll and wait for the fake player to come online (up to 10 seconds)
 4. Loop executing `/player <fakePlayerName> use` (the teleporter controls the fake player to right-click an ender pearl) based on the station-level use count (or the global default if not set), with a 0.5-second interval between each use
@@ -132,7 +132,7 @@ Set a fake player teleport alias for a player.
 - **Permission**: Admin only
 - **Parameters**:
   - `player` - Player's real name
-  - `alias` - Alias (up to 12 characters)
+  - `alias` - Alias (up to 10 characters)
 
 ##### `/tppset rename <player> remove`
 
@@ -209,8 +209,8 @@ Result: VIP_station (shorter and safe)
 
 ### Permission
 
-- Administrators can always use it
-- Regular players need the `playerHat` rule enabled
+- Available to everyone (including admins) while the `playerHat` rule is enabled
+- Hidden from everyone when the rule is disabled (no admin exemption)
 
 ### Description
 
@@ -244,7 +244,7 @@ Adds an independent `dropall` sub-command to Carpet's `/player <name>` command t
 /player <name> dropall [once|continuous|interval <ticks>|after <ticks>|perTick <times>|randomly <min> <max>|stop]
 ```
 
-`<modifier>` can be one of the following seven:
+`<modifier>` has 7 modifiers (the first table row is the top-level form with no modifier):
 
 | Modifier | Syntax | Behavior |
 |----------|--------|----------|
@@ -321,7 +321,7 @@ Adds a sendto sub-command under Carpet's built-in `/player <name>` command tree,
 ### Command Syntax
 
 - `/player <src> sendto <target>`: create the link and start transferring
-- `/player <src> sendto once\|continuous\|interval <ticks>\|after <ticks>\|perTick <times>\|randomly <min> <max>`: adjust the pace
+- `/player <src> sendto once|continuous|interval <ticks>|after <ticks>|perTick <times>|randomly <min> <max>`: adjust the pace
 - `/player <src> sendto stop`: stop and remove all links
 
 ### Transfer Behavior
@@ -393,8 +393,8 @@ scale
 #### Range Control
 
 - Hard bound: value only needs to be greater than 0 (no fixed bounds), applied uniformly to all paths
-- `playerScaleMin` (default 0.01): minimum allowed value for all players
-- `playerScaleMax` (default 16.0): maximum allowed value for all players
+- `playerScaleMin` (default 0.1): minimum allowed value for all players
+- `playerScaleMax` (default 1.5): maximum allowed value for all players
 - The soft bounds apply to everyone (including admins, on self and on others); admins who need a wider range can adjust the bounds themselves via `/carpet playerScaleMin` / `/carpet playerScaleMax`
 
 #### Description
@@ -442,13 +442,13 @@ Registers the `minecraft:scale` attribute for `Player` and manages it through a 
 
 - Set self: `§aYour scale has been set to 0.5x`
 - Set other: `§aSteve's scale has been set to 2.0x`
-- Out of range: `§cValue 0.05 is out of allowed range (0.1 ~ 10.0)`
+- Out of range: `§cValue 0.05 is out of allowed range (0.1 ~ 1.5)`
 - Permission denied (modify): `§cYou don't have permission to modify other players' scale (current mode only allows adjusting yourself)`
 - Notified to modified player: `§eAdmin Brokey has adjusted your scale to 2.0x` or `§ePlayer Alice has adjusted your scale to 0.5x`
 - `/scale info` example output (self mode):
 ```
 Your current scale: 0.5x (default 1.0x)
-Allowed range: 0.1 ~ 10.0
+Allowed range: 0.1 ~ 1.5
 Current mode: self (everyone can only adjust themselves)
 ```
 
@@ -469,8 +469,8 @@ Current mode: self (everyone can only adjust themselves)
 
 #### Permission
 
-- Administrators can always use it
-- Regular players need the `ridingPlayers` rule enabled
+- Available to everyone (including admins) while the `ridingPlayers` rule is enabled
+- Hidden from everyone when the rule is disabled (no admin exemption)
 
 #### Description
 
@@ -509,8 +509,8 @@ Set whether other players are allowed to ride you. When you set it to `on`, othe
 
 #### Permission
 
-- Administrators can always use it
-- Regular players need the `pickupPlayers` rule enabled
+- Available to everyone (including admins) while the `pickupPlayers` rule is enabled
+- Hidden from everyone when the rule is disabled (no admin exemption)
 
 #### Description
 
@@ -531,6 +531,7 @@ Set whether other players are allowed to pick you up (make you ride on their hea
 # Forbid other players from picking you up
 /picking off
 ```
+
 ---
 
 ## /pvp - Peaceful Players
@@ -542,9 +543,10 @@ Toggle PVP per player: players with PVP off cannot attack players and take no da
 ### Command Syntax
 
 - `/pvp`: view your PVP status
-- `/pvp on\|off`: toggle your own PVP
-- `/pvp on\|off <player>`: toggle a player
-- `/pvp on\|off @a`: server-wide switch (new joiners follow it)
+- `/pvp list`: list all players with PVP off (including registered offline players)
+- `/pvp on|off`: toggle your own PVP
+- `/pvp on|off <player>`: toggle a player
+- `/pvp on|off @a`: server-wide switch (new joiners follow it)
 
 ### Permission Modes (peacefulPlayers values)
 

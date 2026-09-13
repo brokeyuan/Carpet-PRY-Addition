@@ -142,8 +142,6 @@
   "carpetprimaryuan.command.scale.mode_true": "§etrue (only admins can modify others)",
   "carpetprimaryuan.command.scale.mode_everyone": "§aeveryone (anyone can modify others)",
 
-  "carpetprimaryuan.command.pvp.state_on": "ON",
-  "carpetprimaryuan.command.pvp.state_off": "OFF",
   "carpetprimaryuan.command.pvp.status_self_on": "§aYour PVP is currently ON (you can attack and be attacked by other players)",
   "carpetprimaryuan.command.pvp.status_self_off": "§cYour PVP is currently OFF (peaceful: you cannot attack players and take no damage from players)",
   "carpetprimaryuan.command.pvp.list_header": "§ePlayers with PVP disabled (%d): §f%s",

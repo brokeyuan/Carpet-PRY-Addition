@@ -12,8 +12,11 @@ import java.util.Set;
  *
  * 此前 TppCommand / DropSlotScheduler / SendtoLinkManager 各自实现一套
  * END_SERVER_TICK 惰性注册与双检锁样板；本类将其收敛为一处。
- * 所有任务仅在服务器主线程执行；服务器停止时全部任务自动放弃，
- * 静态任务集不跨服务器实例存活。
+ * 所有任务仅在服务器主线程执行；Fabric 的 tick 事件为 JVM 级全局注册，
+ * 本类只在首次注册时挂载事件监听（配合调用方的一次性初始化标志），
+ * 因此任务集跨同一 JVM 内的服务器实例存活——各任务需自行在 tick 中
+ * 检测状态有效性（玩家下线、服务器更换等），并在 SERVER_STOPPING
+ * 清理各自持有的业务状态（本类不再代为清空，否则第二次启动后任务静默失效）。
  */
 public final class ServerTickScheduler {
 
@@ -45,6 +48,5 @@ public final class ServerTickScheduler {
             if (TASKS.isEmpty()) return;
             TASKS.removeIf(task -> !task.tick(server));
         });
-        ServerLifecycleEvents.SERVER_STOPPING.register(server -> TASKS.clear());
     }
 }

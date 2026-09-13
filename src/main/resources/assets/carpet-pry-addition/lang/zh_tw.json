@@ -142,8 +142,6 @@
   "carpetprimaryuan.command.scale.mode_true": "§etrue（僅管理員可調他人）",
   "carpetprimaryuan.command.scale.mode_everyone": "§aeveryone（所有人可調他人）",
 
-  "carpetprimaryuan.command.pvp.state_on": "開啟",
-  "carpetprimaryuan.command.pvp.state_off": "關閉",
   "carpetprimaryuan.command.pvp.status_self_on": "§a你的 PVP 已開啟（可以與其他玩家互相攻擊）",
   "carpetprimaryuan.command.pvp.status_self_off": "§c你的 PVP 已關閉（和平狀態：不能攻擊玩家，也不會受到玩家傷害）",
   "carpetprimaryuan.command.pvp.list_header": "§e目前 PVP 關閉的玩家（%d 個）：§f%s",
