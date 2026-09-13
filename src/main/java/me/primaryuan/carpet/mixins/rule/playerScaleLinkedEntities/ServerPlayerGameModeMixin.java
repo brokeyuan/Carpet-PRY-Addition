@@ -24,12 +24,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * 在实体真正添加时读取，从而只联动"玩家用物品直接生成"的实体；
  * 发射器、刷怪笼等非玩家路径不在漏斗内，天然不受影响。
  *
- * 方法按名注入（两方法在各目标版本 1.21.5~26.2 已逐一验证签名一致，
- * 且无重载）；@Inject 捕获目标参数时必须完整捕获全部参数（含返回值的
+ * 方法按名注入（两方法在 1.21~26.2 各目标版本签名一致且无重载，已逐一核实）；
+ * @Inject 捕获目标参数时必须完整捕获全部参数（含返回值的
  * 目标需用 CallbackInfoReturnable）。异常路径 RETURN 不触发会残留引用，
  * 但仅限主线程单槽位、下次使用时被覆盖，无实际泄漏。
  *
- * 仅在 Minecraft 1.21.5+ 注册（mixins.json 门控）。
+ * 所有受支持的 Minecraft 版本均注册本类。
  */
 @Mixin(ServerPlayerGameMode.class)
 public abstract class ServerPlayerGameModeMixin {

@@ -24,15 +24,21 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  *
  * 是否生效以"客户端收到的属性同步数据里存在我们的 scale_speed 修改器"判定，
  * 而非读取本类的 Carpet 规则字段（规则值不保证同步到未安装本模组的原版客户端），
- * 因此对纯原版客户端同样有效。签名 getFieldOfViewModifier(boolean, float)
- * 在 1.21.5~26.2 各版本一致（已逐一验证）。
+ * 因此对纯原版客户端同样有效。
+ *
+ * 方法签名按版本分支（方法按名注入，各版本均无重载，已逐一验证）：
+ * 1.21.3+ 为 getFieldOfViewModifier(boolean, float)；1.21~1.21.1 为无参
+ * getFieldOfViewModifier()，处理器相应只捕获返回值。
  */
 @Mixin(AbstractClientPlayer.class)
 public abstract class AbstractClientPlayerMixin {
 
     @Inject(method = "getFieldOfViewModifier", at = @At("RETURN"), cancellable = true)
-    private void playerScale$compensateFov(boolean firstPerson, float partialTick, CallbackInfoReturnable<Float> cir) {
-        //#if MC >= 12105
+    private void playerScale$compensateFov(
+            //#if MC >= 12103
+            boolean firstPerson, float partialTick,
+            //#endif
+            CallbackInfoReturnable<Float> cir) {
         AbstractClientPlayer self = (AbstractClientPlayer) (Object) this;
         AttributeInstance speedAttr = self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED);
         if (speedAttr == null) {
@@ -62,6 +68,5 @@ public abstract class AbstractClientPlayerMixin {
         if (vanillaFactor != 0.0F) {
             cir.setReturnValue(cir.getReturnValueF() * (compensatedFactor / vanillaFactor));
         }
-        //#endif
     }
 }

@@ -307,12 +307,12 @@ Automatically makes the player invisible when their head is located in tall gras
 
 ### playerScale - Player Scale
 
-Registers the `minecraft:scale` attribute for Player and manages player size through the `/scale set|reset|info` command (value only needs to be greater than 0, with no fixed bounds; this mod lets any finite positive value through the SCALE attribute, keeping the command feedback consistent with the effective value); also compensates the scaling-induced FOV change (requires the mod installed client-side). Only supported on 1.21.5+.
+Registers the `minecraft:scale` attribute for Player and manages player size through the `/scale set|reset|info` command (value only needs to be greater than 0, with no fixed bounds; this mod lets any finite positive value through the SCALE attribute, keeping the command feedback consistent with the effective value); also compensates the scaling-induced FOV change (requires the mod installed client-side).
 
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `playerScale` |
-| **Description** | Registers minecraft:scale attribute for Player and adds /scale set/reset/info command (value only needs to be greater than 0, with no fixed bounds; display on vanilla clients is still clamped beyond the vanilla attribute range 0.0625–16), and compensates the scaling-induced FOV change (client-side install required). false=disable; self=everyone can only adjust themselves (even OPs); true=players adjust self only, admins adjust anyone; everyone=any player can adjust anyone. Only supported on 1.21.5+ |
+| **Description** | Registers minecraft:scale attribute for Player and adds /scale set/reset/info command (value only needs to be greater than 0, with no fixed bounds; display on vanilla clients is still clamped beyond the vanilla attribute range 0.0625–16), and compensates the scaling-induced FOV change (client-side install required). false=disable; self=everyone can only adjust themselves (even OPs); true=players adjust self only, admins adjust anyone; everyone=any player can adjust anyone |
 | **Type** | `string` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `self`, `true`, `everyone` |
@@ -361,7 +361,7 @@ Maximum scale value all players can set via `/scale set`; admins are limited too
 
 ### realisticPlayerScale - Realistic Player Scale
 
-Player physics scale with size in one of four modes. Requires the playerScale rule to adjust size. Only supported on 1.21.5+.
+Player physics scale with size in one of four modes. Requires the playerScale rule to adjust size.
 
 | Mode | Behavior |
 |------|----------|
@@ -391,7 +391,7 @@ All attribute modifications use transient modifiers (not persisted to save data)
 During creative flight vanilla overrides the vertical velocity, so gravity has no effect; during elytra gliding the gravity term does follow the gravity attribute, and gliding/firework movement distance is scaled by the elytra mixin using the same factor as movement speed (mode-dependent, see table above) — larger players glide and boost faster with wider turning radii (geometric similarity), smaller ones slower and floatier. Known trade-off: elytra wall-crash damage is computed from stored velocity (vanilla magnitude) and does not scale with the displacement.
 
 | **Rule Name** | `realisticPlayerScale` |
-| **Description** | Physics scale with size (minecraft:scale), four modes: false=off; true=gentle, movement/flying/elytra-firework speed, jump, step height, interaction ranges and safe fall distance all scale with the square root of size (no floors); safety=gentle+floors (recommended), adds small-size floors on top of true (speed/gravity 0.3x, jump/step/interaction/fall 0.5x) so tiny sizes stay playable; strict=strictly proportional, all speeds, step height, interaction ranges and safe fall distance scale exactly with size and jump height stays proportional to size (jump strength x scale^0.75), no floors. Gravity always scales with the square root (larger players fall faster). FOV compensation belongs to the playerScale rule (since v1.1.8). Requires the playerScale rule to adjust size. Only supported on 1.21.5+ |
+| **Description** | Physics scale with size (minecraft:scale), four modes: false=off; true=gentle, movement/flying/elytra-firework speed, jump, step height, interaction ranges and safe fall distance all scale with the square root of size (no floors); safety=gentle+floors (recommended), adds small-size floors on top of true (speed/gravity 0.3x, jump/step/interaction/fall 0.5x) so tiny sizes stay playable; strict=strictly proportional, all speeds, step height, interaction ranges and safe fall distance scale exactly with size and jump height stays proportional to size (jump strength x scale^0.75), no floors. Gravity always scales with the square root (larger players fall faster). FOV compensation belongs to the playerScale rule (since v1.1.8). Requires the playerScale rule to adjust size |
 | **Type** | `string` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true`, `safety`, `strict` |
@@ -399,12 +399,12 @@ During creative flight vanilla overrides the vertical velocity, so gravity has n
 
 ### playerScaleLinkedEntities - Player Scale Linked Entities
 
-Living entities spawned directly by a player using an item inherit the player's current size. Pairs with the playerScale rule (the size may also come from a minecraft:scale set via /attribute). Only supported on 1.21.5+.
+Living entities spawned directly by a player using an item inherit the player's current size. Pairs with the playerScale rule (the size may also come from a minecraft:scale set via /attribute).
 
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `playerScaleLinkedEntities` |
-| **Description** | Living entities spawned directly by a player using an item inherit the player's current size (stored as a minecraft:scale base-value snapshot): a 0.5x player places 0.5x armor stands; spawn-egg mobs and built iron/snow/copper golems are sized the same way (existing modifiers such as babies stack on top proportionally). Only covers living entities that have the scale attribute; projectiles, dropped items, item frames, boats, minecarts, TNT and other non-living entities are not linked; dispenser/spawner sources are not linked; players at size 1.0 are never modified. Only supported on 1.21.5+ |
+| **Description** | Living entities spawned directly by a player using an item inherit the player's current size (stored as a minecraft:scale base-value snapshot): a 0.5x player places 0.5x armor stands; spawn-egg mobs and built iron/snow/copper golems are sized the same way (existing modifiers such as babies stack on top proportionally). Only covers living entities that have the scale attribute; projectiles, dropped items, item frames, boats, minecarts, TNT and other non-living entities are not linked; dispenser/spawner sources are not linked; players at size 1.0 are never modified |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |

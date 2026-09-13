@@ -34,7 +34,7 @@ All rules are off by default except `ridingPlayersClientAllowInteractions` (on b
 | `fakePlayerDropStackModifiers` | boolean | `false` | Adds a `/player <name> dropall` sub-command that drops the fake player's inventory at a configured pace (frequencies: see Commands) |
 | `fakePlayerSendto` | boolean | `false` | Adds a `/player <name> sendto <target>` sub-command that creates one-way inventory item flow links between fake players: round-robin across targets, items buffer in the source inventory when a target is full |
 
-### Player Scaling (1.21.5+ only)
+### Player Scaling
 
 | Rule | Type | Default | Description |
 |------|------|---------|-------------|
@@ -84,7 +84,7 @@ All rules are off by default except `ridingPlayersClientAllowInteractions` (on b
 | `/hat` | Wear main-hand item on head |
 | `/riding on\|off` | Toggle permission for others to ride you |
 | `/picking on\|off` | Toggle permission for others to pick you up |
-| `/scale set\|reset\|info` | Player scale adjustment (requires `playerScale` rule, 1.21.5+) |
+| `/scale set\|reset\|info` | Player scale adjustment (requires `playerScale` rule) |
 | `/pvp [list\|on\|off [player\|@a]]` | Toggle PVP per player; `@a` is a server-wide switch (requires `peacefulPlayers`) |
 | `/player <name> dropall [once\|continuous\|interval <ticks>\|after <ticks>\|perTick <times>\|randomly <min> <max>\|stop]` | Drop the fake player's inventory at a configured pace (requires `fakePlayerDropStackModifiers`) |
 | `/player <name> sendto <target>` | One-way inventory item flow between fake players, same frequency parameters (requires `fakePlayerSendto`) |
@@ -110,13 +110,13 @@ All rules are off by default except `ridingPlayersClientAllowInteractions` (on b
 
 | Game Version | Development Status | Feature Differences |
 |--------------|--------------------|---------------------|
-| 1.21 | Maintained | Everything except the 5 scale rules; `sleepingDuringTheDay` cannot start sleeping in daytime |
+| 1.21 | Maintained | `sleepingDuringTheDay` cannot start sleeping in daytime |
 | 1.21.1 | Maintained | Same as 1.21 |
 | 1.21.3 | Maintained | Same as 1.21 |
 | 1.21.4 | Maintained | Same as 1.21 |
-| 1.21.5 | Maintained | Adds all scale rules; `sleepingDuringTheDay` cannot start sleeping in daytime |
-| 1.21.8 | Maintained | Same as 1.21.5 |
-| 1.21.10 | Maintained | Same as 1.21.5 |
+| 1.21.5 | Maintained | Same as 1.21 |
+| 1.21.8 | Maintained | Same as 1.21 |
+| 1.21.10 | Maintained | Same as 1.21 |
 | 1.21.11 (Main) | Maintained | Full feature set |
 | 26.1.2 | Maintained | Same as 1.21.11 |
 | 26.2 | Maintained | Same as 1.21.11 |

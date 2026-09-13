@@ -337,7 +337,7 @@ scale
 
 Registers the `minecraft:scale` attribute for `Player` and manages it through a unified three-tier subcommand `/scale set|reset|info`. Supports four modes (false / self / true / everyone). In `self` mode everyone (even OPs) can only adjust themselves; in `true` mode admins can adjust anyone; in `everyone` mode anyone can adjust anyone. Tab-completion filters players by current identity; range limits apply per-identity tier.
 
-> **Version requirement**: `minecraft:scale` attribute was added to vanilla in Minecraft 1.21.5; 1.21~1.21.4 servers show an unsupported-version message.
+> **Version note**: the `minecraft:scale` attribute has been provided by vanilla since Minecraft 1.20.5 (snapshot 23w51a); every version this mod supports (1.21~1.21.4, 1.21.5+) can use it, with no version restriction.
 >
 > **Tip**: Combine with the `realisticPlayerScale` rule (`/carpet realisticPlayerScale true`) to make speed, jump height, step height, interaction range, safe fall distance and more scale with size, with FOV compensation, for a more realistic experience.
 

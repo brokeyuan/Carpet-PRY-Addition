@@ -236,7 +236,6 @@ public final class ScaleCommand {
      * @param self true=查询自己，附带允许范围；false=查询他人，仅显示当前大小
      */
     private static void sendInfo(ServerPlayer target, CommandSourceStack source, boolean self) {
-        //#if MC >= 12105
         double current = target.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.SCALE).getBaseValue();
         String currentStr = formatScale(current);
         String defaultStr = formatScale(DEFAULT_SCALE);
@@ -257,10 +256,6 @@ public final class ScaleCommand {
             source.sendSuccess(() -> ServerI18n.tr(
                     "carpetprimaryuan.command.scale.info_other", name, currentStr, defaultStr), false);
         }
-        //#else
-        //$$ source.sendSuccess(() -> ServerI18n.tr(
-        //$$         "carpetprimaryuan.command.scale.unsupported_version"), false);
-        //#endif
     }
 
     // ==================== 核心：applyScale ====================
@@ -276,7 +271,6 @@ public final class ScaleCommand {
                                   CommandSourceStack source, String action, boolean isSelf) {
         String valueStr = formatScale(value);
 
-        //#if MC >= 12105
         target.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.SCALE)
                 .setBaseValue(value);
         if (isSelf) {
@@ -298,16 +292,6 @@ public final class ScaleCommand {
                     actorName, valueStr));
         }
         return 1;
-        //#else
-        //$$ if (isSelf) {
-        //$$     target.sendSystemMessage(ServerI18n.tr(
-        //$$             "carpetprimaryuan.command.scale.unsupported_version"));
-        //$$ } else {
-        //$$     source.sendSuccess(() -> ServerI18n.tr(
-        //$$             "carpetprimaryuan.command.scale.unsupported_version"), false);
-        //$$ }
-        //$$ return 0;
-        //#endif
     }
 
     // ==================== 工具方法 ====================

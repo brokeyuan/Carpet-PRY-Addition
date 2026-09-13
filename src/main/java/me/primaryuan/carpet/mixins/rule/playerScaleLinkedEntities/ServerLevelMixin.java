@@ -30,15 +30,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * - 写入的是快照基础值，生成后不随玩家体型变化
  * - 发射器、刷怪笼等非玩家来源不在物品使用漏斗内，不联动
  * 方法按名注入（addFreshEntity 为 ServerLevel 对 LevelWriter 的唯一覆写，
- * 1.21.5~26.2 已逐一验证存在且无重载）。
- * 仅在 Minecraft 1.21.5+ 注册（mixins.json 门控）。
+ * 1.21~26.2 各版本均存在且无重载，已逐一核实）。
+ * 所有受支持的 Minecraft 版本均注册本类。
  */
 @Mixin(ServerLevel.class)
 public abstract class ServerLevelMixin {
 
     @Inject(method = "addFreshEntity", at = @At("HEAD"))
     private void playerScaleLinkedEntities$scaleSpawnedEntity(Entity entity, CallbackInfoReturnable<Boolean> cir) {
-        //#if MC >= 12105
         if (!CarpetPrimaryuanSettings.playerScaleLinkedEntities) {
             return;
         }
@@ -58,6 +57,5 @@ public abstract class ServerLevelMixin {
         if (scaleAttr != null && scaleAttr.getBaseValue() != (float) playerScale) {
             scaleAttr.setBaseValue(playerScale);
         }
-        //#endif
     }
 }

@@ -31,8 +31,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  *   16 倍体型终端速度约 62 格/tick 失控）
  * 鞘翅滑翔/烟花的位移缩放由 LivingEntityMixin 按移动速度联动因子实现（因子随模式变化）。
  * 所有修改器均为瞬态（transient）、不写入 NBT，规则关闭或 scale 回到 1.0 后自动移除。
- * 仅在 Minecraft 1.21.5+ 生效：1.21~1.21.4 无 Attributes.SCALE，
- * 方法体被预处理清空，且 mixins.json 不注册本 mixin。
+ * 所有受支持的 Minecraft 版本均生效（SCALE 及各联动属性自 1.20.5 起原版可用）。
  */
 @Mixin(Player.class)
 public abstract class PlayerMixin {
@@ -45,7 +44,6 @@ public abstract class PlayerMixin {
      */
     @Inject(method = "tick", at = @At("TAIL"))
     private void realisticPlayerScale$onTick(CallbackInfo callbackInfo) {
-        //#if MC >= 12105
         Player self = (Player) (Object) this;
         // 仅服务端维护（含假人）；instanceof 判断避免 Level.isClientSide 字段在 1.21.9+ 私有化的版本差异
         if (!(self instanceof net.minecraft.server.level.ServerPlayer)) {
@@ -131,7 +129,6 @@ public abstract class PlayerMixin {
             abilities.setFlyingSpeed(targetFlyingSpeed);
             self.onUpdateAbilities();
         }
-        //#endif
     }
 
     /**
@@ -140,7 +137,6 @@ public abstract class PlayerMixin {
      * 属性实例为 null 时（理论不会发生，属性均在默认属性表中）静默跳过。
      */
     private static void realisticPlayerScale$updateModifier(AttributeInstance attr, String idPath, double amount) {
-        //#if MC >= 12105
         if (attr == null) {
             return;
         }
@@ -160,6 +156,5 @@ public abstract class PlayerMixin {
             attr.removeModifier(id);
             attr.addTransientModifier(new AttributeModifier(id, amount, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
         }
-        //#endif
     }
 }

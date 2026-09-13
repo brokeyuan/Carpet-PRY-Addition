@@ -39,15 +39,15 @@
   "carpet.rule.fakePlayerSendto.desc": "给 /player <name> 下追加独立的 sendto 子命令，建立假人之间单向的背包物品流链接（每次转移一组，默认每 tick 一组，多目标逐组轮流分配，目标满时源背包缓冲）。命令：/player <name> sendto <target>（建立链接并立即开始转移）、/player <name> sendto once|continuous|interval <ticks>|after <ticks>|perTick <times>|randomly <min> <max>（调整转移频率）、/player <name> sendto stop（停止并移除全部链接）。链接仅存内存，假人下线或服务器重启后失效",
 
   "carpet.rule.playerScale.name": "玩家随地大小变",
-  "carpet.rule.playerScale.desc": "为 Player 注册 minecraft:scale 属性，并添加 /scale set/reset/info 命令（value 仅要求大于 0，不设上下限；超出原版属性范围 0.0625–16 时纯原版客户端的显示仍会被夹紧），并补偿缩放带来的视野（FOV）变化（需客户端安装）。false=关闭命令；self=所有人都只能调自己（无论 OP）；true=玩家仅可调自己，管理员可调任意玩家；everyone=所有人可调任意玩家。仅 1.21.5+ 版本支持",
+  "carpet.rule.playerScale.desc": "为 Player 注册 minecraft:scale 属性，并添加 /scale set/reset/info 命令（value 仅要求大于 0，不设上下限；超出原版属性范围 0.0625–16 时纯原版客户端的显示仍会被夹紧），并补偿缩放带来的视野（FOV）变化（需客户端安装）。false=关闭命令；self=所有人都只能调自己（无论 OP）；true=玩家仅可调自己，管理员可调任意玩家；everyone=所有人可调任意玩家",
   "carpet.rule.playerScaleMin.name": "玩家大小最小值",
   "carpet.rule.playerScaleMin.desc": "所有玩家执行 /scale set 时可设置的最小 scale 值，管理员可通过修改本规则调整边界",
   "carpet.rule.playerScaleMax.name": "玩家大小最大值",
   "carpet.rule.playerScaleMax.desc": "所有玩家执行 /scale set 时可设置的最大 scale 值，管理员可通过修改本规则调整边界",
   "carpet.rule.realisticPlayerScale.name": "更真实的玩家大小变",
-  "carpet.rule.realisticPlayerScale.desc": "体型全方位联动，四种模式：false=关闭；true=平缓，移动/飞行/鞘翅烟花速度、跳跃、台阶、交互距离、摔落安全距离均按 √scale 平缓缩放，无保底；safety=平缓+保底（推荐），在 true 基础上为小体型保底（速度/重力 0.3×，跳跃/台阶/交互/摔落 0.5×），极端缩小仍可玩；strict=严格等比，所有速度、台阶、交互、摔落严格 ×scale，跳跃高度与体型等比放大（跳跃初速 ×scale^0.75），无任何保底。重力均为 √scale（大体型下落更快）。FOV 补偿归属 playerScale 规则（v1.1.8 起）。需配合玩家随地大小变规则使用，仅 1.21.5+ 版本支持",
+  "carpet.rule.realisticPlayerScale.desc": "体型全方位联动，四种模式：false=关闭；true=平缓，移动/飞行/鞘翅烟花速度、跳跃、台阶、交互距离、摔落安全距离均按 √scale 平缓缩放，无保底；safety=平缓+保底（推荐），在 true 基础上为小体型保底（速度/重力 0.3×，跳跃/台阶/交互/摔落 0.5×），极端缩小仍可玩；strict=严格等比，所有速度、台阶、交互、摔落严格 ×scale，跳跃高度与体型等比放大（跳跃初速 ×scale^0.75），无任何保底。重力均为 √scale（大体型下落更快）。FOV 补偿归属 playerScale 规则（v1.1.8 起）。需配合玩家随地大小变规则使用",
   "carpet.rule.playerScaleLinkedEntities.name": "玩家大小变联动实体",
-  "carpet.rule.playerScaleLinkedEntities.desc": "玩家使用物品直接生成的生物实体继承玩家当前体型（写入 minecraft:scale 基础值快照）：0.5 的玩家放出的盔甲架也是 0.5 大小，刷怪蛋生物、摆出的铁傀儡/雪傀儡/铜傀儡同理（幼崽等原有修饰符在此基础上叠加比例）。仅覆盖有 scale 属性的生物实体；投掷物、掉落物、物品展示框、船、矿车、TNT 等非生物实体不联动；发射器、刷怪笼等非玩家来源不联动；玩家体型为 1.0 时不做任何改动。仅 1.21.5+ 版本支持",
+  "carpet.rule.playerScaleLinkedEntities.desc": "玩家使用物品直接生成的生物实体继承玩家当前体型（写入 minecraft:scale 基础值快照）：0.5 的玩家放出的盔甲架也是 0.5 大小，刷怪蛋生物、摆出的铁傀儡/雪傀儡/铜傀儡同理（幼崽等原有修饰符在此基础上叠加比例）。仅覆盖有 scale 属性的生物实体；投掷物、掉落物、物品展示框、船、矿车、TNT 等非生物实体不联动；发射器、刷怪笼等非玩家来源不联动；玩家体型为 1.0 时不做任何改动",
 
   "carpet.rule.peacefulPlayers.name": "和平的玩家",
   "carpet.rule.peacefulPlayers.desc": "启用 /pvp 指令，按玩家开关 PVP：被关闭的玩家不能攻击玩家，也不会受到任何玩家造成的伤害（自伤不受限制）。被拦截的攻击会在受击方位置播放提示音（双方均可听到），保留以攻击提醒对方的信号作用。命令：/pvp（查看状态）、/pvp on|off（开关自己）、/pvp on|off <玩家>（开关指定玩家）、/pvp on|off @a（全服总开关，新加入玩家跟随全局）。false=隐藏；self=所有人都只能调自己（无论 OP）；true=玩家仅可调自己、管理员可调任意玩家；everyone=所有人可调任意玩家；@a 全局开关仅管理员可用（self 模式除外）。全局关闭期间所有个人开关操作均被锁定（含管理员），仅 /pvp on @a 可解除；解除时强制覆盖，所有玩家恢复 PVP 开启。玩家状态跨重启保留",
@@ -141,7 +141,6 @@
   "carpetprimaryuan.command.scale.mode_self": "§bself（所有人都只能调自己）",
   "carpetprimaryuan.command.scale.mode_true": "§etrue（仅管理员可调他人）",
   "carpetprimaryuan.command.scale.mode_everyone": "§aeveryone（所有人可调他人）",
-  "carpetprimaryuan.command.scale.unsupported_version": "§c当前 Minecraft 版本不支持 minecraft:scale 属性（需 1.21.5+）",
 
   "carpetprimaryuan.command.pvp.status_self_on": "§a你的 PVP 已开启（可以与其他玩家互相攻击）",
   "carpetprimaryuan.command.pvp.status_self_off": "§c你的 PVP 已关闭（和平状态：不能攻击玩家，也不会受到玩家伤害）",

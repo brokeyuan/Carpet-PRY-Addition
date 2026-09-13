@@ -14,8 +14,6 @@ import net.minecraft.server.level.ServerPlayer;
  *
  * 服务端物品使用与实体添加均在主线程执行；ThreadLocal 仅作线程隔离防御，
  * 读写严格成对（HEAD 设置 / RETURN 清除）。
- *
- * 仅在 Minecraft 1.21.5+ 的混入链路中被使用（mixins.json 门控）。
  */
 public final class SpawnContext {
 

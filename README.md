@@ -34,7 +34,7 @@
 | `fakePlayerDropStackModifiers` | boolean | `false` | 给假人追加 `/player <name> dropall` 子命令，按设定节奏持续丢出背包物品（频率参数见命令表） |
 | `fakePlayerSendto` | boolean | `false` | 给假人追加 `/player <name> sendto <目标>` 子命令，建立假人间单向背包物品流：多目标逐组轮流分配，目标放不下时物品留在源背包 |
 
-### 玩家缩放（仅 1.21.5+）
+### 玩家缩放
 
 | 规则 | 类型 | 默认值 | 简介 |
 |------|------|--------|------|
@@ -84,7 +84,7 @@
 | `/hat` | 将主手物品戴在头上 |
 | `/riding on\|off` | 开关他人骑乘自己的权限 |
 | `/picking on\|off` | 开关他人捡起自己的权限 |
-| `/scale set\|reset\|info` | 玩家大小调节（需 `playerScale` 规则，仅 1.21.5+） |
+| `/scale set\|reset\|info` | 玩家大小调节（需 `playerScale` 规则） |
 | `/pvp [list\|on\|off [玩家\|@a]]` | 按玩家开关 PVP，`@a` 为全服总开关（需 `peacefulPlayers`） |
 | `/player <name> dropall [once\|continuous\|interval <ticks>\|after <ticks>\|perTick <times>\|randomly <min> <max>\|stop]` | 假人按节奏持续丢出背包物品（需 `fakePlayerDropStackModifiers`） |
 | `/player <name> sendto <目标>` | 假人间背包物品流，同款频率参数可调速（需 `fakePlayerSendto`） |
@@ -121,13 +121,13 @@
 
 | 游戏版本 | 开发状态 | 功能差异 |
 |----------|----------|----------|
-| 1.21 | 维护中 | 除玩家缩放 5 条外全部可用；白日做梦不能在白天上床 |
+| 1.21 | 维护中 | 白日做梦不能在白天上床 |
 | 1.21.1 | 维护中 | 同 1.21 |
 | 1.21.3 | 维护中 | 同 1.21 |
 | 1.21.4 | 维护中 | 同 1.21 |
-| 1.21.5 | 维护中 | 增加玩家缩放全部规则；白日做梦不能在白天上床 |
-| 1.21.8 | 维护中 | 同 1.21.5 |
-| 1.21.10 | 维护中 | 同 1.21.5 |
+| 1.21.5 | 维护中 | 同 1.21 |
+| 1.21.8 | 维护中 | 同 1.21 |
+| 1.21.10 | 维护中 | 同 1.21 |
 | 1.21.11（主版本） | 维护中 | 全部功能可用 |
 | 26.1.2 | 维护中 | 同 1.21.11 |
 | 26.2 | 维护中 | 同 1.21.11 |

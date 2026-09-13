@@ -17,10 +17,17 @@
     "rule.playerhat.LivingEntityMixin",
     "rule.betterSnowBall.SnowballMixin",
     "rule.fakePlayerDropStackModifiers.EntityPlayerActionPackMixin",
-    "rule.fakePlayerCommandExtensions.PlayerCommandExtensionsMixin"
+    "rule.fakePlayerCommandExtensions.PlayerCommandExtensionsMixin",
+    "rule.playerScale.PlayerMixin",
+    "rule.playerScale.RangedAttributeMixin",
+    "rule.realisticPlayerScale.PlayerMixin",
+    "rule.realisticPlayerScale.LivingEntityMixin",
+    "rule.playerScaleLinkedEntities.ServerPlayerGameModeMixin",
+    "rule.playerScaleLinkedEntities.ServerLevelMixin"
   ],
   "client": [
-    "rule.entitiesRidingPlayers.ProjectileUtilMixin"
+    "rule.entitiesRidingPlayers.ProjectileUtilMixin",
+    "rule.playerScale.AbstractClientPlayerMixin"
   ],
   "injectors": {
     "defaultRequire": 1
