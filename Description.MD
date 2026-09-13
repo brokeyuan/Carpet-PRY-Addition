@@ -134,8 +134,8 @@ Living entities spawned directly by a player using an item (armor stands, spawn-
 - **Optional:** [skinrestorer](https://modrinth.com/mod/skinrestorer) is needed for the fake player skin features (`fakePlayerSkinMode` / `fakePlayerSkinSet`).
 - This is a **server-side** mod. Place it in the server's `mods` folder. Client installation is only needed for the player-scaling FOV compensation and the `ridingPlayersClientInteract` rule.
 - All rules are **off by default** (except `ridingPlayersClientInteract`) — use `/carpet` or the Carpet configuration files to enable the ones you want.
-- **Source code:** [GitHub](https://github.com/brokeyuan/Carpet-Primaryuan-Addition)
-- **Documentation:** [Wiki](https://primaryuan.top:2026/Primaryuan/mod/PRY/readme.html) | [GitHub README](https://github.com/brokeyuan/Carpet-Primaryuan-Addition/blob/master/README_en.md)
+- **Source code:** [GitHub](https://github.com/brokeyuan/Carpet-PRY-Addition)
+- **Documentation:** [Wiki](https://primaryuan.top:2026/Primaryuan/mod/PRY/readme.html) | [GitHub README](https://github.com/brokeyuan/Carpet-PRY-Addition/blob/master/README_en.md)
 
 ---
 

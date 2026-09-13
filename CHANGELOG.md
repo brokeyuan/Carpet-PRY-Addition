@@ -52,6 +52,7 @@ All notable changes to **Carpet-PRY-Addition** are documented in this file.
 - **Description.MD 全面重写**：规则数 16 → 24，清除全部已废弃规则名/命令名（FixXaeroLib、TppFakePlayer、/ride、/pickup 等），补齐 1.2.0 全部新功能（玩家缩放系列、dropall/sendto、/scale、/pvp），修正"所有规则默认关闭"与 `ridingPlayersClientInteract` 默认开启的矛盾
 - **CHANGELOG 补记**：[1.2.0] 补记遗漏的 peacefulPlayers + /pvp；[未发布] 补记 /scale 默认边界调整、/pvp 层级重构、拦截提示音等已提交未记录的变更
 - **README Modrinth 链接统一**为 `carpet-pry-addition`（原同文档内两个 slug 混用）
+- **GitHub / CurseForge 链接更正为新 slug**：README、README_en、Description.MD、fabric.mod.json 的 `sources` 统一指向 `brokeyuan/Carpet-PRY-Addition`，CurseForge 链接统一为 `carpet-pry-addition`（原均为改名前旧 slug）
 
 ### 文档
 

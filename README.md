@@ -2,9 +2,9 @@
 
 [![License](https://img.shields.io/badge/license-LGPL--3.0-blue)](https://choosealicense.com/licenses/lgpl-3.0/)
 [![Modrinth](https://img.shields.io/modrinth/dt/carpet-pry-addition?color=00AF5C&label=Modrinth%20downloads&logo=modrinth)](https://modrinth.com/mod/carpet-pry-addition)
-[![CurseForge](https://img.shields.io/curseforge/dt/1619008?logo=curseforge&label=CurseForge%20downloads&color=f16436)](https://www.curseforge.com/minecraft/mc-mods/carpet-primaryuan-addition)
-[![MC Versions](https://img.shields.io/badge/MC-1.21%20~%2026.2-blue)](https://github.com/brokeyuan/Carpet-Primaryuan-Addition)
-[![Github](https://img.shields.io/github/downloads/brokeyuan/Carpet-Primaryuan-Addition/total?color=161616&label=Github%20downloads&logo=github)](https://github.com/brokeyuan/Carpet-Primaryuan-Addition/releases)
+[![CurseForge](https://img.shields.io/curseforge/dt/1619008?logo=curseforge&label=CurseForge%20downloads&color=f16436)](https://www.curseforge.com/minecraft/mc-mods/carpet-pry-addition)
+[![MC Versions](https://img.shields.io/badge/MC-1.21%20~%2026.2-blue)](https://github.com/brokeyuan/Carpet-PRY-Addition)
+[![Github](https://img.shields.io/github/downloads/brokeyuan/Carpet-PRY-Addition/total?color=161616&label=Github%20downloads&logo=github)](https://github.com/brokeyuan/Carpet-PRY-Addition/releases)
 [![QQGroup:450108190](https://img.shields.io/badge/Chat-QQGroup-12B7F5?style=flat&logo=qq&logoColor=white)](https://qm.qq.com/q/Ez582Z5P0c)
 
 **中文** | [English](README_en.md)
@@ -22,9 +22,9 @@
 
 ## 下载
 
-- [GitHub Release](https://github.com/brokeyuan/Carpet-Primaryuan-Addition/releases/latest)
+- [GitHub Release](https://github.com/brokeyuan/Carpet-PRY-Addition/releases/latest)
 - [Modrinth](https://modrinth.com/mod/carpet-pry-addition)
-- [CurseForge](https://www.curseforge.com/minecraft/mc-mods/carpet-primaryuan-addition)
+- [CurseForge](https://www.curseforge.com/minecraft/mc-mods/carpet-pry-addition)
 
 ## 安装
 
