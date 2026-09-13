@@ -2,6 +2,10 @@
 
 All notable changes to **Carpet-PRY-Addition** are documented in this file.
 
+## [1.2.2] - 2026-09-14
+
+**与 1.2.1 代码完全相同，无功能性变更**，为验证更新后的 CurseForge 凭证重新走发布流水线。
+
 ## [1.2.1] - 2026-09-14
 
 **与 1.2.0 代码完全相同，无功能性变更**，为补齐 GitHub Release 资产重新走发布流水线。
