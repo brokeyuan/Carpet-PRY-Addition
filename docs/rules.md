@@ -120,7 +120,7 @@
 | 属性 | 值 |
 |------|-----|
 | **规则名** | `fakePlayerDropAll` |
-| **描述** | 给 /player <name> 追加 dropall 子命令，让假人按设定节奏持续丢出背包所有物品，详见命令文档 |
+| **描述** | 给 /player <name> 追加 dropall 子命令，让假人按设定节奏持续丢出背包所有物品 |
 | **类型** | `boolean` |
 | **默认值** | `false` |
 | **参考选项** | `false`, `true` |
@@ -135,13 +135,11 @@
 | 属性 | 值 |
 |------|-----|
 | **规则名** | `fakePlayerSendto` |
-| **描述** | 给 /player <name> 追加 sendto 子命令，建立假人间单向背包物品流（默认每 tick 一组，多目标轮流分配，目标满时源背包缓冲），转移频率可调；sendto stop 停止并移除链接，链接不跨重启，详见命令文档 |
+| **描述** | 给 /player <name> 追加 sendto 子命令，建立假人间单向背包物品流（默认每 tick 一组，多目标轮流分配，目标满时源背包缓冲），转移频率可调；sendto stop 停止并移除链接，链接不跨重启 |
 | **类型** | `boolean` |
 | **默认值** | `false` |
 | **参考选项** | `false`, `true` |
 | **分类** | `PRIMARYUAN`, `BOT`, `COMMAND` |
-
-> 完整命令用法详见[命令文档](commands.md#player-sendto---假人背包链接)。
 
 ---
 
@@ -311,7 +309,6 @@
 | **参考选项** | `false`, `true`, `self`, `everyone` |
 | **分类** | `PRIMARYUAN`, `SURVIVAL`, `COMMAND` |
 
-> 命令用法与全服总开关行为详见[命令文档](commands.md#pvp---和平的玩家)。
 
 ---
 
@@ -364,11 +361,9 @@
 
 ## 玩家缩放
 
-
 ### playerScale - 玩家随地大小变
 
 为 Player 注册 `minecraft:scale` 属性，并通过 `/scale set|reset|info` 命令调节玩家体型大小（value 仅要求大于 0，不设上下限；本模组放行 SCALE 属性的任意有限正值，保证命令反馈值与实际生效值一致）；同时补偿缩放带来的视野（FOV）变化（需客户端安装本模组）。
-
 
 | 属性 | 值 |
 |------|-----|

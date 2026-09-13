@@ -122,13 +122,11 @@ Adds a dropall sub-command to /player <name> that drops the fake player's whole 
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `fakePlayerDropAll` |
-| **Description** | Adds a dropall sub-command to /player <name> that drops the fake player's whole inventory at a configured pace; see the commands doc |
+| **Description** | Adds a dropall sub-command to /player <name> that drops the fake player's whole inventory at a configured pace |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
 | **Categories** | `PRIMARYUAN`, `BOT`, `COMMAND` |
-
-> Full command usage: see the [commands doc](commands_en.md#fake-player-continuous-inventory-drop).
 
 ---
 
@@ -139,13 +137,11 @@ Adds a sendto sub-command to /player <name> creating one-way inventory item flow
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `fakePlayerSendto` |
-| **Description** | Adds a sendto sub-command to /player <name> creating one-way inventory item flow between fake players (one stack per trigger, default every tick, round-robin across targets, source buffers when a target is full) with adjustable pace; sendto stop removes all links, links do not survive restarts; see the commands doc |
+| **Description** | Adds a sendto sub-command to /player <name> creating one-way inventory item flow between fake players (one stack per trigger, default every tick, round-robin across targets, source buffers when a target is full) with adjustable pace; sendto stop removes all links, links do not survive restarts |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
 | **Categories** | `PRIMARYUAN`, `BOT`, `COMMAND` |
-
-> Full command usage: see the [commands doc](commands_en.md#player-sendto---fake-player-inventory-link).
 
 ---
 
@@ -313,8 +309,6 @@ Enables /pvp to toggle PVP per player: two-way protection, self-damage unaffecte
 | **Suggested Options** | `false`, `true`, `self`, `everyone` |
 | **Categories** | `PRIMARYUAN`, `SURVIVAL`, `COMMAND` |
 
-> Full command usage: see the [commands doc](commands_en.md#pvp---peaceful-players).
-
 ---
 
 ## Survival Features
@@ -365,7 +359,6 @@ Automatically makes the player invisible when their head is located in tall gras
 ---
 
 ## Player Scaling
-
 
 ### playerScale - Player Scale
 

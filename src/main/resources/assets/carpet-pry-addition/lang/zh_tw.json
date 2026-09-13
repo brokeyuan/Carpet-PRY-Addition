@@ -33,10 +33,10 @@
   "carpet.rule.betterSnowball.desc": "雪中藏石。允許雪球給玩家造成擊退和傷害",
 
   "carpet.rule.fakePlayerDropAll.name": "假人持續清空背包",
-  "carpet.rule.fakePlayerDropAll.desc": "給 /player <name> 追加 dropall 子命令，讓假人按設定節奏持續丟出背包所有物品，詳見命令文件",
+  "carpet.rule.fakePlayerDropAll.desc": "給 /player <name> 追加 dropall 子命令，讓假人按設定節奏持續丟出背包所有物品",
 
   "carpet.rule.fakePlayerSendto.name": "假人背包連結",
-  "carpet.rule.fakePlayerSendto.desc": "給 /player <name> 追加 sendto 子命令，建立假人間單向背包物品流（預設每 tick 一組，多目標輪流分配，目標滿時源背包緩衝），轉移頻率可調；sendto stop 停止並移除連結，連結不跨重啟，詳見命令文件",
+  "carpet.rule.fakePlayerSendto.desc": "給 /player <name> 追加 sendto 子命令，建立假人間單向背包物品流（預設每 tick 一組，多目標輪流分配，目標滿時源背包緩衝），轉移頻率可調；sendto stop 停止並移除連結，連結不跨重啟",
 
   "carpet.rule.playerScale.name": "玩家隨地大小變",
   "carpet.rule.playerScale.desc": "為 Player 註冊 minecraft:scale 屬性並啟用 /scale set|reset|info；value 僅需大於 0，受 playerScaleMin/Max 約束。false=隱藏命令；self=僅能調自己；true=可調自己且管理員可調任意玩家；everyone=人人可互調。FOV 補償需用戶端安裝",
