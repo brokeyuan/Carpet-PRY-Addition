@@ -76,56 +76,33 @@ All rules are off by default except the client-side rule `ridingPlayersClientAll
 
 ### Fake Player Enhancements
 
-| Rule | Type | Default | Description |
-|------|------|---------|-------------|
-| `TppFakePlayer` | boolean | `false` | Fake player pearl teleport stations, enables `/tpp` and `/tppset` commands |
-| `fakePlayerSkinMode` | string | `default` | Fake player skin mode: `default` / `summon` / `same_skin` |
-| `fakePlayerSkinSet` | string | `Brokeyuan` | Player name used for the shared skin in `same_skin` mode |
-| `fakePlayerDropStackModifiers` | boolean | `false` | Adds a `/player <name> dropall` sub-command that drops the fake player's inventory at a configured pace (frequencies: see Commands) |
-| `fakePlayerSendto` | boolean | `false` | Adds a `/player <name> sendto <target>` sub-command that creates one-way inventory item flow links between fake players: round-robin across targets, items buffer in the source inventory when a target is full |
+- `TppFakePlayer`: fake player pearl teleport stations with `/tpp` / `/tppset`
+- `fakePlayerSkinMode` / `fakePlayerSkinSet`: fake player skin mode (default / summon / same skin) and the shared skin player name
+- `fakePlayerDropStackModifiers`: paced `/player dropall` dropping of the fake player's inventory
+- `fakePlayerSendto`: `/player sendto` one-way inventory item flow between fake players
 
 ### Player Scaling
 
-| Rule | Type | Default | Description |
-|------|------|---------|-------------|
-| `playerScale` | string | `false` | Registers the `minecraft:scale` attribute for Player and enables the `/scale set\|reset\|info` command, with FOV compensation (client install required). See the [rule docs](docs/rules_en.md) |
-| `playerScaleMin` / `playerScaleMax` | double | `0.1` / `1.5` | Soft bounds for `/scale set`; admins can adjust them by changing these rules |
-| `realisticPlayerScale` | string | `false` | Player physics scale with body size: `true`=gentle (√scale), `safety`=gentle + small-size floors (recommended), `strict`=strictly proportional, `false`=off; gravity always √scale. Requires `playerScale` |
-| `playerScaleLinkedEntities` | boolean | `false` | Living entities spawned directly by a player using an item inherit the player's current size (scale base-value snapshot); non-living entities and non-player sources (dispensers etc.) are not linked |
+- `playerScale`: registers `minecraft:scale` for players, adjusts size via `/scale set|reset|info`, FOV compensation included
+- `playerScaleMin` / `playerScaleMax`: soft bounds for `/scale set`
+- `realisticPlayerScale`: physics scale with size (gentle / gentle + small-size floors / strictly proportional), gravity √scale
+- `playerScaleLinkedEntities`: entities spawned by a player using an item inherit the player's size
 
 ### Player Interaction
 
-| Rule | Type | Default | Description |
-|------|------|---------|-------------|
-| `ridingPlayers` | boolean | `false` | Ride other players by holding a Totem of Undying in main hand |
-| `pickupPlayers` | boolean | `false` | Pick up other players by holding a Totem of Undying + Golden Carrot in off-hand |
-| `ridingPlayersPickUpLimit` | int | `16` | Maximum player stack size shared by riding and pickup; any value settable via `/carpet` |
-| `ridingPlayersDismountOnGameModeChange` | boolean | `false` | Passengers automatically dismount when game mode changes |
-| `ridingPlayersClientAllowInteractions` | boolean | `true` | Allow block/entity interaction while carrying a passenger (requires client install) |
-| `peacefulPlayers` | string | `false` | Enables `/pvp` to toggle PVP per player (two-way protection, self-damage unaffected, blocked attacks play a notice sound); `/pvp on\|off @a` is a server-wide switch, admin-only |
+- `ridingPlayers` / `pickupPlayers`: ride / pick up other players (Totem of Undying triggered)
+- `ridingPlayersPickUpLimit`: shared player stack size limit for riding and pickup
+- `ridingPlayersDismountOnGameModeChange`: passengers auto-dismount on game mode change
+- `ridingPlayersClientAllowInteractions`: keep interacting while carrying a passenger (requires client install)
+- `peacefulPlayers`: per-player `/pvp` toggles, `@a` as a server-wide switch
 
 ### Survival Features
 
-| Rule | Type | Default | Description |
-|------|------|---------|-------------|
-| `sleepingDuringTheDay` | boolean | `false` | Sleep during daytime to skip to night (referenced from PCA) |
-| `playerhat` | boolean | `false` | `/hat` command to wear items on head; Totem of Undying in head slot triggers death protection |
-| `betterSnowBall` | boolean | `false` | Snowballs deal knockback and damage to players |
-| `invisibleInTallGrass` | boolean | `false` | Auto-invisibility when head is inside tall grass |
+- `sleepingDuringTheDay`: sleep during daytime, wake to night
+- `playerhat`: `/hat` to wear items on head, Totem of Undying in head slot triggers death protection
+- `betterSnowBall`: snowballs deal knockback and damage to players
+- `invisibleInTallGrass`: auto-invisibility when head is inside tall grass
 
-### Commands
-
-| Command | Description |
-|---------|-------------|
-| `/tpp <station>` | Teleport via pearl stations |
-| `/tppset` | Manage teleport stations (stations / player aliases / use counts) |
-| `/hat` | Wear main-hand item on head |
-| `/riding on\|off` | Toggle permission for others to ride you |
-| `/picking on\|off` | Toggle permission for others to pick you up |
-| `/scale set\|reset\|info` | Player scale adjustment (requires `playerScale` rule) |
-| `/pvp [list\|on\|off [player\|@a]]` | Toggle PVP per player; `@a` is a server-wide switch (requires `peacefulPlayers`) |
-| `/player <name> dropall [once\|continuous\|interval <ticks>\|after <ticks>\|perTick <times>\|randomly <min> <max>\|stop]` | Drop the fake player's inventory at a configured pace (requires `fakePlayerDropStackModifiers`) |
-| `/player <name> sendto <target>` | One-way inventory item flow between fake players, same frequency parameters (requires `fakePlayerSendto`) |
 
 ## Credits
 

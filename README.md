@@ -77,59 +77,32 @@
 
 ### 假人增强
 
-| 规则 | 类型 | 默认值 | 简介 |
-|------|------|--------|------|
-| `TppFakePlayer` | boolean | `false` | 假人珍珠站传送，启用 `/tpp` 与 `/tppset` 命令 |
-| `fakePlayerSkinMode` | string | `default` | 假人皮肤模式：`default` / `summon` / `same_skin` |
-| `fakePlayerSkinSet` | string | `Brokeyuan` | `same_skin` 模式下用于统一皮肤的玩家名 |
-| `fakePlayerDropStackModifiers` | boolean | `false` | 给假人追加 `/player <name> dropall` 子命令，按设定节奏持续丢出背包物品（频率参数见命令表） |
-| `fakePlayerSendto` | boolean | `false` | 给假人追加 `/player <name> sendto <目标>` 子命令，建立假人间单向背包物品流：多目标逐组轮流分配，目标放不下时物品留在源背包 |
+- `TppFakePlayer`：假人珍珠传送站，附 `/tpp` / `/tppset` 命令
+- `fakePlayerSkinMode` / `fakePlayerSkinSet`：假人皮肤模式（默认 / 召唤时 / 统一皮肤）与统一皮肤玩家名
+- `fakePlayerDropStackModifiers`：`/player dropall` 按设定节奏持续丢出假人背包物品
+- `fakePlayerSendto`：`/player sendto` 建立假人间单向背包物品流
 
 ### 玩家缩放
 
-| 规则 | 类型 | 默认值 | 简介 |
-|------|------|--------|------|
-| `playerScale` | string | `false` | 为 Player 注册 `minecraft:scale` 属性并启用 `/scale set\|reset\|info` 命令，含 FOV 补偿（需客户端安装），详见[规则文档](docs/rules.md) |
-| `playerScaleMin` / `playerScaleMax` | double | `0.1` / `1.5` | `/scale set` 的软边界，管理员可修改本规则调整范围 |
-| `realisticPlayerScale` | string | `false` | 玩家物理随体型联动：`true`=√scale 平缓、`safety`=平缓+小体型保底（推荐）、`strict`=严格等比、`false`=关闭；重力均 √scale。需配合 `playerScale` 使用 |
-| `playerScaleLinkedEntities` | boolean | `false` | 玩家用物品直接生成的生物实体继承玩家当前体型（scale 基础值快照）；非生物实体与发射器等非玩家来源不联动 |
-
-
-
+- `playerScale`：为玩家注册 `minecraft:scale` 属性，`/scale set|reset|info` 调整体型，含 FOV 补偿
+- `playerScaleMin` / `playerScaleMax`：`/scale set` 的软边界
+- `realisticPlayerScale`：物理随体型联动（平缓 / 平缓+小体型保底 / 严格等比），重力 √scale
+- `playerScaleLinkedEntities`：玩家用物品直接生成的生物实体继承玩家体型
 
 ### 玩家交互
 
-| 规则 | 类型 | 默认值 | 简介 |
-|------|------|--------|------|
-| `ridingPlayers` | boolean | `false` | 主手持不死图腾时可骑上其他玩家 |
-| `pickupPlayers` | boolean | `false` | 主手持不死图腾 + 副手金胡萝卜时可捡起其他玩家 |
-| `ridingPlayersPickUpLimit` | int | `16` | 骑乘与捡起共用的最大堆叠人数，`/carpet` 可设任意值 |
-| `ridingPlayersDismountOnGameModeChange` | boolean | `false` | 游戏模式变更时乘客自动下车 |
-| `ridingPlayersClientAllowInteractions` | boolean | `true` | 头上有乘客时仍可交互方块/实体（需客户端安装） |
-| `peacefulPlayers` | string | `false` | 启用 `/pvp` 按玩家开关 PVP（双向保护，自伤不限，拦截时播放提示音）；`/pvp on\|off @a` 为全服总开关，仅管理员可用 |
+- `ridingPlayers` / `pickupPlayers`：骑乘 / 捡起其他玩家（主手持不死图腾触发）
+- `ridingPlayersPickUpLimit`：骑乘与捡起共用的堆叠人数上限
+- `ridingPlayersDismountOnGameModeChange`：游戏模式变更时乘客自动下车
+- `ridingPlayersClientAllowInteractions`：头上有乘客时仍可交互方块/实体（需客户端安装）
+- `peacefulPlayers`：`/pvp` 按玩家开关 PVP，`@a` 为全服总开关
 
 ### 生存功能
 
-| 规则 | 类型 | 默认值 | 简介 |
-|------|------|--------|------|
-| `sleepingDuringTheDay` | boolean | `false` | 白天睡觉，睡醒切换至夜晚（参考 PCA） |
-| `playerhat` | boolean | `false` | `/hat` 命令将物品戴在头上；头部不死图腾可触发死亡保护 |
-| `betterSnowBall` | boolean | `false` | 雪球对玩家造成击退与伤害 |
-| `invisibleInTallGrass` | boolean | `false` | 头部位于高草丛时自动隐身 |
-
-### 命令
-
-| 命令 | 说明 |
-|------|------|
-| `/tpp <station>` | 经珍珠传送站传送 |
-| `/tppset` | 管理传送站（站点 / 玩家别名 / 触发次数） |
-| `/hat` | 将主手物品戴在头上 |
-| `/riding on\|off` | 开关他人骑乘自己的权限 |
-| `/picking on\|off` | 开关他人捡起自己的权限 |
-| `/scale set\|reset\|info` | 玩家大小调节（需 `playerScale` 规则） |
-| `/pvp [list\|on\|off [玩家\|@a]]` | 按玩家开关 PVP，`@a` 为全服总开关（需 `peacefulPlayers`） |
-| `/player <name> dropall [once\|continuous\|interval <ticks>\|after <ticks>\|perTick <times>\|randomly <min> <max>\|stop]` | 假人按节奏持续丢出背包物品（需 `fakePlayerDropStackModifiers`） |
-| `/player <name> sendto <目标>` | 假人间背包物品流，同款频率参数可调速（需 `fakePlayerSendto`） |
+- `sleepingDuringTheDay`：白天睡觉，睡醒切换至夜晚
+- `playerhat`：`/hat` 将物品戴在头上，头部不死图腾可触发死亡保护
+- `betterSnowBall`：雪球对玩家造成击退与伤害
+- `invisibleInTallGrass`：头部位于高草丛时自动隐身
 
 
 ## 致谢
