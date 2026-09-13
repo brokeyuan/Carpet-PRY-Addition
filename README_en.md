@@ -32,7 +32,7 @@ All rules are off by default except the client-side rule `ridingPlayersClientAll
 2. Install required dependencies: **[Fabric Carpet](https://modrinth.com/mod/carpet)** + **[Fabric API](https://fabricmc.net/)**
 3. Optional: [skinrestorer](https://modrinth.com/mod/skinrestorer) (only needed for fake player skin features)
 4. Place the mod JAR in the server's `mods/` folder
-5. This is a **server-side** mod — players do not need it installed (only `ridingPlayersClientAllowInteractions` requires client installation)
+5. This is a **server-side** mod — players do not need it installed. Optional client install provides two client-side features: `ridingPlayersClientAllowInteractions` (keep interacting while carrying a passenger) and the player-scaling FOV compensation
 6. Rules are **off by default** (except `ridingPlayersClientAllowInteractions`) — use `/carpet` or config files to enable what you need
 
 ## Dependencies
@@ -79,7 +79,7 @@ All rules are off by default except the client-side rule `ridingPlayersClientAll
 
 ### Player Scaling
 
-- `playerScale`: registers `minecraft:scale` for players, adjusts size via `/scale set|reset|info`, FOV compensation included
+- `playerScale`: registers `minecraft:scale` for players, adjusts size via `/scale set|reset|info`, FOV compensation included (requires client install)
 - `playerScaleMin` / `playerScaleMax`: soft bounds for `/scale set`
 - `realisticPlayerScale`: physics scale with size (gentle / gentle + small-size floors / strictly proportional), gravity √scale
 - `playerScaleLinkedEntities`: entities spawned by a player using an item inherit the player's size

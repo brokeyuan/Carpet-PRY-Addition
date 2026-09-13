@@ -32,7 +32,7 @@
 2. 安装必需前置：**[Fabric Carpet](https://modrinth.com/mod/carpet)** + **[Fabric API](https://fabricmc.net/)**
 3. 可选前置：[skinrestorer](https://modrinth.com/mod/skinrestorer)（仅假人皮肤功能需要）
 4. 将 mod JAR 文件放入服务器的 `mods/` 文件夹
-5. 本模组为**服务端模组**，玩家无需安装（仅 `ridingPlayersClientAllowInteractions` 规则需要客户端安装）
+5. 本模组为**服务端模组**，玩家无需安装；客户端可选安装，提供两项客户端功能——`ridingPlayersClientAllowInteractions`（头上有乘客时仍可交互）与玩家缩放的视野（FOV）补偿
 6. 规则默认关闭（`ridingPlayersClientAllowInteractions` 除外），使用 `/carpet` 命令或配置文件按需启用
 
 ## 依赖
@@ -80,7 +80,7 @@
 
 ### 玩家缩放
 
-- `playerScale`：为玩家注册 `minecraft:scale` 属性，`/scale set|reset|info` 调整体型，含 FOV 补偿
+- `playerScale`：为玩家注册 `minecraft:scale` 属性，`/scale set|reset|info` 调整体型，含 FOV 补偿（需客户端安装）
 - `playerScaleMin` / `playerScaleMax`：`/scale set` 的软边界
 - `realisticPlayerScale`：物理随体型联动（平缓 / 平缓+小体型保底 / 严格等比），重力 √scale
 - `playerScaleLinkedEntities`：玩家用物品直接生成的生物实体继承玩家体型
