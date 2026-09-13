@@ -43,6 +43,7 @@ All notable changes to **Carpet-PRY-Addition** are documented in this file.
 - **隐身草联机视觉状态冲突**：`Player.tick` 注入双端执行而规则值不同步到客户端，装了本 mod 的客户端会把服务端施加的隐身药水误判为"规则关闭清理残留"而本地移除。handler 现仅服务端处理
 - **骑乘堆叠上限 off-by-one**：原实现实际允许"基座 + 上限+1 名乘客"。现与文档语义对齐：塔内玩家总数（含基座与新乘客）不得超过上限；`startRiding` 因竞争失败时命令如实返回失败而非成功
 - **`RangedAttributeMixin` 无规则门控**：放行 SCALE 属性范围的注入原先全局生效，现仅在玩家缩放功能开启（`playerScale`/`playerScalePhysics` 非 false）时放行，全部关闭时回落原版 0.0625–16.0 夹紧
+- **假人皮肤在新版 skinrestorer（2.8+ / 2.11 multiloader）下失效**：`SkinService.setSkinAsync` 的集合元素由 ServerPlayer 改为 `SkinTarget` 记录，反射签名因擦除不变、元素错传在其内部抛 ClassCastException（`Failed to set skin 'mojang:xxx'`，皮肤不生效）。现存在 `SkinTarget#of(ServerPlayer)` 时包装传入，旧版 skinrestorer 行为不变
 - **1.21.11 的 `carpet_dependency` 笔误**：`>=1.4.100` 修正为 `>=1.4.193`（实际构建绑定版本）
 - 4 个 mixin 源码目录名与 package 声明统一（`betterSnowBall`→`betterSnowball`、`playerhat`→`playerHat`、`fakePlayerDropStackModifiers`→`fakePlayerDropAll`、`realisticPlayerScale`→`playerScalePhysics`；更名规则时漏改目录），删除更名残留的空目录 `playerScaleModifiers`
 - 类注释与实现对齐：`ScaleCommand` 类头"OP 调他人不受范围限制"（实际软边界约束所有人）、`PvpManager` 类头"禁言期间仅管理员可个别解禁"（实际锁定所有人，仅 @a 可解除）

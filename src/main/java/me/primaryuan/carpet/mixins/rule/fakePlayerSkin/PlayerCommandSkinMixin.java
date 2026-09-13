@@ -81,7 +81,7 @@ public class PlayerCommandSkinMixin {
             Object context = contextConstructor.newInstance("mojang", skinPlayerName, slimVariant);
 
             java.lang.reflect.Method setSkinAsyncMethod = skinServiceClass.getMethod("setSkinAsync", net.minecraft.server.MinecraftServer.class, java.util.Collection.class, skinProviderContextClass, boolean.class);
-            setSkinAsyncMethod.invoke(null, server, java.util.Collections.singletonList(targetPlayer), context, true);
+            setSkinAsyncMethod.invoke(null, server, java.util.Collections.singletonList(wrapSkinTarget(targetPlayer)), context, true);
 
             Class<?> playerUtilsClass = Class.forName("net.lionarius.skinrestorer.util.PlayerUtils");
             java.lang.reflect.Method refreshPlayerMethod = playerUtilsClass.getMethod("refreshPlayer", ServerPlayer.class);
@@ -92,6 +92,25 @@ public class PlayerCommandSkinMixin {
         } catch (Exception e) {
             System.err.println("[PRY] 皮肤设置失败: " + e.getMessage());
             e.printStackTrace();
+        }
+
+    }
+
+    /**
+     * skinrestorer 新版（26.1-multiloader 重构起）把 setSkinAsync 的集合元素从
+     * ServerPlayer 换成了 SkinTarget 记录——反射签名因 Collection 擦除不变，
+     * 直接传实体会在其内部 ClassCastException（Failed to set skin 'mojang:xxx'）。
+     * 存在 SkinTarget#of(ServerPlayer) 时包装；旧版无该类，保持直接传实体。
+     */
+    private static Object wrapSkinTarget(ServerPlayer player) {
+        try {
+            Class<?> skinTargetClass = Class.forName("net.lionarius.skinrestorer.skin.SkinTarget");
+            return skinTargetClass.getMethod("of", ServerPlayer.class).invoke(null, player);
+        } catch (ClassNotFoundException ignored) {
+            return player;
+        } catch (ReflectiveOperationException e) {
+            System.err.println("[PRY] SkinTarget.of 包装失败，回退直接传实体: " + e);
+            return player;
         }
     }
 
