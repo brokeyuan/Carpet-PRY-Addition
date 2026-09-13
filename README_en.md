@@ -108,7 +108,7 @@ All rules are off by default except `ridingPlayersClientAllowInteractions` (on b
 
 ## Version Support
 
-All supported versions share an identical feature set: player scaling, daydream sleeping and every other rule/command work everywhere.
+All supported versions share an identical feature set; every rule and command works everywhere.
 
 | Game Version | Development Status |
 |--------------|--------------------|
