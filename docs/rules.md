@@ -1,8 +1,8 @@
 # Carpet Pry Addition 规则文档
 
-> Mod ID: `carpet-pry-addition` | 版本: `1.1.2`
+> Mod ID: `carpet-pry-addition` | 版本: `1.2.0`
 >
-> 共 **16 条**规则
+> 共 **24 条**规则
 >
 > **提示：可以使用 `Ctrl+F` 快速查找自己想要的规则**
 
@@ -15,6 +15,8 @@
   - [fakePlayerNameSuggestions - 假人名称建议](#fakeplayernamesuggestions---假人名称建议)
   - [fakePlayerSkinMode - 假人皮肤设置](#fakeplayerskinmode---假人皮肤设置)
   - [fakePlayerSkinSet - 假人统一皮肤设置](#fakeplayerskinset---假人统一皮肤设置)
+  - [fakePlayerDropStackModifiers - 假人持续清空背包](#fakeplayerdropstackmodifiers---假人持续清空背包)
+  - [fakePlayerSendto - 假人背包链接](#fakeplayersendto---假人背包链接)
 - [漏洞修复 (BUGFIX)](#漏洞修复-bugfix)
   - [FixXaeroLib - XaeroLib兼容性修复补丁](#fixxaerolib---xaerolib兼容性修复补丁)
   - [FixBluemap - BlueMap兼容性修复补丁](#fixbluemap---bluemap兼容性修复补丁)
@@ -27,10 +29,17 @@
   - [ridingPlayersPickUpLimit - 玩家骑乘堆叠上限](#ridingplayerspickuplimit---玩家骑乘堆叠上限)
   - [ridingPlayersDismountOnGameModeChange - 玩家骑乘更改模式下车](#ridingplayersdismountongamemodechange---玩家骑乘更改模式下车)
   - [ridingPlayersClientAllowInteractions - 玩家骑乘时可交互（客户端）](#ridingplayersclientallowinteractions---玩家骑乘时可交互客户端)
+  - [peacefulPlayers - 和平的玩家](#peacefulplayers---和平的玩家)
 - [生存功能](#生存功能)
   - [playerhat - 玩家帽子](#playerhat---玩家帽子)
   - [betterSnowBall - 更好的雪球](#bettersnowball---更好的雪球)
   - [invisibleInTallGrass - 隐身草](#invisibleintallgrass---隐身草)
+- [玩家缩放](#玩家缩放)
+  - [playerScale - 玩家随地大小变](#playerscale---玩家随地大小变)
+  - [playerScaleMin - 玩家大小最小值](#playerscalemin---玩家大小最小值)
+  - [playerScaleMax - 玩家大小最大值](#playerscalemax---玩家大小最大值)
+  - [realisticPlayerScale - 更真实的玩家大小变](#realisticplayerscale---更真实的玩家大小变)
+  - [playerScaleLinkedEntities - 玩家大小变联动实体](#playerscalelinkedentities---玩家大小变联动实体)
 
 ---
 
@@ -116,6 +125,23 @@
 | **默认值** | `false` |
 | **参考选项** | `false`, `true` |
 | **分类** | `PRIMARYUAN`, `BOT`, `COMMAND` |
+
+---
+
+### fakePlayerSendto - 假人背包链接
+
+给 /player <name> 追加 sendto 子命令，建立假人之间单向的背包物品流链接。
+
+| 属性 | 值 |
+|------|-----|
+| **规则名** | `fakePlayerSendto` |
+| **描述** | 给 /player <name> 追加 sendto 子命令，建立假人间单向背包物品流（默认每 tick 一组，多目标轮流分配，目标满时源背包缓冲）。频率：once \| continuous \| interval <ticks> \| after <ticks> \| perTick <times> \| randomly <min> <max>；sendto stop 停止并移除链接，链接不跨重启，详见命令文档 |
+| **类型** | `boolean` |
+| **默认值** | `false` |
+| **参考选项** | `false`, `true` |
+| **分类** | `PRIMARYUAN`, `BOT`, `COMMAND` |
+
+> 完整命令用法详见[命令文档](commands.md#player-sendto---假人背包链接)。
 
 ---
 
@@ -272,6 +298,23 @@
 
 ---
 
+### peacefulPlayers - 和平的玩家
+
+启用 /pvp 指令，按玩家开关 PVP：双向免伤、自伤不限，拦截时播放提示音。
+
+| 属性 | 值 |
+|------|-----|
+| **规则名** | `peacefulPlayers` |
+| **描述** | 启用 /pvp 按玩家开关 PVP：双向免伤、自伤不限，拦截时播放提示音。false=隐藏命令；self=仅能调自己；true=管理员可调任意玩家；everyone=人人可调；/pvp on\|off @a 为全服总开关（仅管理员），全局关闭期间锁定个人开关，状态跨重启保留 |
+| **类型** | `string` |
+| **默认值** | `"false"` |
+| **参考选项** | `false`, `true`, `self`, `everyone` |
+| **分类** | `PRIMARYUAN`, `SURVIVAL`, `COMMAND` |
+
+> 命令用法与全服总开关行为详见[命令文档](commands.md#pvp---和平的玩家)。
+
+---
+
 ## 生存功能
 
 ### playerhat - 玩家帽子
@@ -318,6 +361,9 @@
 | **分类** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
 
 ---
+
+## 玩家缩放
+
 
 ### playerScale - 玩家随地大小变
 

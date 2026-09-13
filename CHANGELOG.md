@@ -16,6 +16,8 @@ All notable changes to **Carpet-PRY-Addition** are documented in this file.
 
 ### 文档
 
+- **规则文档补全**（docs/rules*.md）：补齐缺失的规则小节（中文补 fakePlayerSendto、peacefulPlayers；英文另补 fakePlayerDropStackModifiers），新增"玩家缩放"分组标题，规则总数更正为 24 条，文档版本号更新至 1.2.0，快速导航按正文重建
+- **命令文档补全**（docs/commands*.md）：每个命令章节顶部标注**所属规则**（/tpp、/tppset→TppFakePlayer；/hat→playerhat；dropall→fakePlayerDropStackModifiers；/scale→playerScale；/riding→ridingPlayers；/picking→pickupPlayers；sendto→fakePlayerSendto；/pvp→peacefulPlayers），补齐缺失的 `/player sendto - 假人背包链接` 与 `/pvp - 和平的玩家` 两个完整章节（命令语法/权限模式/行为边界/使用示例），文档版本号更新至 1.2.0，快速导航重建
 - README（中/英）、规则与命令文档同步移除"仅 1.21.5+"标记并修正属性引入版本表述；版本支持表移除"功能差异"列（全版本功能一致），并补充说明客户端可选安装对应的两项客户端功能（ridingPlayersClientAllowInteractions 与玩家缩放 FOV 补偿）
 - **规则描述精简（三语言）**：10 条冗长规则的游戏内描述按「功能一句话 + 取值/模式枚举 + 命令形态」模板重写（TppFakePlayer、fakePlayerNameSuggestions、fakePlayerSkinMode、fakePlayerSkinSet、fakePlayerDropStackModifiers、fakePlayerSendto、playerScale、realisticPlayerScale、playerScaleLinkedEntities、peacefulPlayers）；完整命令语法与联动数值细节移交 docs 命令/规则文档，游戏内描述不再携带版本变更史（如"v1.1.8 起"），并修正 fakePlayerSkinSet 描述中的规则名拼写（FakeplayersSkinMode → fakePlayerSkinMode）；docs/rules*.md 描述行同步
 

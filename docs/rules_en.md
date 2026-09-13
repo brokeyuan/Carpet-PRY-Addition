@@ -1,8 +1,8 @@
 # Carpet Pry Addition Rules Documentation
 
-> Mod ID: `carpet-pry-addition` | Version: `1.1.2`
+> Mod ID: `carpet-pry-addition` | Version: `1.2.0`
 >
-> Total: **16 rules**
+> Total: **24 rules**
 >
 > **Tip: Use `Ctrl+F` to quickly find the rule you want**
 
@@ -15,8 +15,9 @@
   - [fakePlayerNameSuggestions - Fake Player Name Suggestions](#fakeplayernamesuggestions---fake-player-name-suggestions)
   - [fakePlayerSkinMode - Fake Player Skin Setting](#fakeplayerskinmode---fake-player-skin-setting)
   - [fakePlayerSkinSet - Fake Player Unified Skin Setting](#fakeplayerskinset---fake-player-unified-skin-setting)
-  - [fakePlayerDropStackModifiers - Fake Player Continuous Drop](#fakeplayerdropstackmodifiers---fake-player-continuous-drop)
 - [Bug Fixes (BUGFIX)](#bug-fixes-bugfix)
+  - [fakePlayerDropStackModifiers - Fake Player Continuous Drop](#fakeplayerdropstackmodifiers---fake-player-continuous-drop)
+  - [fakePlayerSendto - Fake Player Inventory Link](#fakeplayersendto---fake-player-inventory-link)
   - [FixXaeroLib - XaeroLib Compatibility Patch](#fixxaerolib---xaerolib-compatibility-patch)
   - [FixBluemap - BlueMap Compatibility Patch](#fixbluemap---bluemap-compatibility-patch)
 - [Ported Features (PORTING)](#ported-features-porting)
@@ -28,10 +29,17 @@
   - [ridingPlayersPickUpLimit - Player Riding Stack Limit](#ridingplayerspickuplimit---player-riding-stack-limit)
   - [ridingPlayersDismountOnGameModeChange - Dismount on Game Mode Change](#ridingplayersdismountongamemodechange---dismount-on-game-mode-change)
   - [ridingPlayersClientAllowInteractions - Allow Interaction While Riding (Client)](#ridingplayersclientallowinteractions---allow-interaction-while-riding-client)
+  - [peacefulPlayers - Peaceful Players](#peacefulplayers---peaceful-players)
 - [Survival Features](#survival-features)
   - [playerhat - Player Hat](#playerhat---player-hat)
   - [betterSnowBall - Better Snowball](#bettersnowball---better-snowball)
   - [invisibleInTallGrass - Invisibility Grass](#invisibleintallgrass---invisibility-grass)
+- [Player Scaling](#player-scaling)
+  - [playerScale - Player Scale](#playerscale---player-scale)
+  - [playerScaleMin - Player Scale Min](#playerscalemin---player-scale-min)
+  - [playerScaleMax - Player Scale Max](#playerscalemax---player-scale-max)
+  - [realisticPlayerScale - Realistic Player Scale](#realisticplayerscale---realistic-player-scale)
+  - [playerScaleLinkedEntities - Player Scale Linked Entities](#playerscalelinkedentities---player-scale-linked-entities)
 
 ---
 
@@ -106,6 +114,40 @@ When FakeplayersSkinMode is same_skin, sets the player name used for the fake pl
 ---
 
 ## Bug Fixes (BUGFIX)
+
+### fakePlayerDropStackModifiers - Fake Player Continuous Drop
+
+Adds a dropall sub-command to /player <name> that drops the fake player's whole inventory at a configured pace.
+
+| Property | Value |
+|----------|-------|
+| **Rule Name** | `fakePlayerDropStackModifiers` |
+| **Description** | Adds a dropall sub-command to /player <name> that drops the fake player's whole inventory at a configured pace. Pace: once \| continuous \| interval <ticks> \| after <ticks> \| perTick <times> \| randomly <min> <max>; see the commands doc |
+| **Type** | `boolean` |
+| **Default Value** | `false` |
+| **Suggested Options** | `false`, `true` |
+| **Categories** | `PRIMARYUAN`, `BOT`, `COMMAND` |
+
+> Full command usage: see the [commands doc](commands_en.md#fake-player-continuous-inventory-drop).
+
+---
+
+### fakePlayerSendto - Fake Player Inventory Link
+
+Adds a sendto sub-command to /player <name> creating one-way inventory item flow between fake players.
+
+| Property | Value |
+|----------|-------|
+| **Rule Name** | `fakePlayerSendto` |
+| **Description** | Adds a sendto sub-command to /player <name> creating one-way inventory item flow between fake players (one stack per trigger, default every tick, round-robin across targets, source buffers when a target is full). Pace: once \| continuous \| interval <ticks> \| after <ticks> \| perTick <times> \| randomly <min> <max>; sendto stop removes all links, links do not survive restarts; see the commands doc |
+| **Type** | `boolean` |
+| **Default Value** | `false` |
+| **Suggested Options** | `false`, `true` |
+| **Categories** | `PRIMARYUAN`, `BOT`, `COMMAND` |
+
+> Full command usage: see the [commands doc](commands_en.md#player-sendto---fake-player-inventory-link).
+
+---
 
 ### FixXaeroLib - XaeroLib Compatibility Patch
 
@@ -258,6 +300,23 @@ Requires client installation. When there are passengers on top, you can still in
 
 ---
 
+### peacefulPlayers - Peaceful Players
+
+Enables /pvp to toggle PVP per player: two-way protection, self-damage unaffected, blocked attacks play a notice sound.
+
+| Property | Value |
+|----------|-------|
+| **Rule Name** | `peacefulPlayers` |
+| **Description** | Enables /pvp to toggle PVP per player: two-way protection, self-damage unaffected, blocked attacks play a notice sound. false=hide command; self=adjust self only; true=admins adjust anyone; everyone=anyone adjusts anyone; /pvp on\|off @a is a server-wide switch (admin-only), per-player toggles are locked while the global switch is off, states persist across restarts |
+| **Type** | `string` |
+| **Default Value** | `"false"` |
+| **Suggested Options** | `false`, `true`, `self`, `everyone` |
+| **Categories** | `PRIMARYUAN`, `SURVIVAL`, `COMMAND` |
+
+> Full command usage: see the [commands doc](commands_en.md#pvp---peaceful-players).
+
+---
+
 ## Survival Features
 
 ### playerhat - Player Hat
@@ -304,6 +363,9 @@ Automatically makes the player invisible when their head is located in tall gras
 | **Categories** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
 
 ---
+
+## Player Scaling
+
 
 ### playerScale - Player Scale
 

@@ -1,7 +1,7 @@
 # Commands Documentation
 
 > **Mod ID**: carpet-pry-addition  
-> **Version**: 1.1.7
+> **Version**: 1.2.0
 
 ---
 
@@ -11,17 +11,39 @@
   - [/tpp - Fake Player Pearl Teleport](#tpp---fake-player-pearl-teleport)
   - [/tppset - Station Management](#tppset---station-management)
 - [/hat - Player Hat](#hat---player-hat)
+  - [Syntax](#syntax)
+  - [Permission](#permission)
+  - [Description](#description)
+  - [Related Rules](#related-rules)
+  - [Usage Examples](#usage-examples)
 - [Fake Player Continuous Inventory Drop](#fake-player-continuous-inventory-drop)
+  - [Command Syntax](#command-syntax)
+  - [Permission](#permission)
+  - [Related Rule](#related-rule)
+  - [Relationship with Vanilla dropStack](#relationship-with-vanilla-dropstack)
+  - [Examples](#examples)
+  - [Auto-Stop Conditions](#auto-stop-conditions)
+- [/player sendto - Fake Player Inventory Link](#player-sendto---fake-player-inventory-link)
+  - [Command Syntax](#command-syntax)
+  - [Transfer Behavior](#transfer-behavior)
+  - [Usage Examples](#usage-examples)
 - [Player Scale Modifiers](#player-scale-modifiers)
+  - [/scale - Player Scale Adjustment](#scale---player-scale-adjustment)
 - [Riding Permission Commands](#riding-permission-commands)
   - [/riding - Riding Permission Management](#riding---riding-permission-management)
   - [/picking - Pickup Permission Management](#picking---pickup-permission-management)
+- [/pvp - Peaceful Players](#pvp---peaceful-players)
+  - [Command Syntax](#command-syntax)
+  - [Permission Modes (peacefulPlayers values)](#permission-modes-peacefulplayers-values)
+  - [Server-wide Switch Behavior](#server-wide-switch-behavior)
 
 ---
 
 ## Fake Player Pearl Teleport Commands
 
 ### /tpp - Fake Player Pearl Teleport
+
+> **Rule**: `TppFakePlayer`
 
 #### Syntax
 
@@ -65,6 +87,8 @@ Teleport to the specified station (relayed via a fake player).
 ---
 
 ### /tppset - Station Management
+
+> **Rule**: `TppFakePlayer`
 
 #### Permission
 
@@ -175,6 +199,8 @@ Result: VIP_station (shorter and safe)
 
 ## /hat - Player Hat
 
+> **Rule**: `playerhat`
+
 ### Syntax
 
 ```
@@ -207,6 +233,8 @@ Wears the main-hand item on the head, swapping it with the item currently on the
 ---
 
 ## Fake Player Continuous Inventory Drop
+
+> **Rule**: `fakePlayerDropStackModifiers`
 
 ### Command Syntax
 
@@ -284,9 +312,45 @@ Reuses Carpet's own permission check on the `/player` command (controlled by Car
 
 ---
 
+## /player sendto - Fake Player Inventory Link
+
+> **Rule**: `fakePlayerSendto`
+
+Adds a sendto sub-command under Carpet's built-in `/player <name>` command tree, creating **one-way** inventory item flow links between fake players: the source keeps transferring its items to the target.
+
+### Command Syntax
+
+- `/player <src> sendto <target>`: create the link and start transferring
+- `/player <src> sendto once\|continuous\|interval <ticks>\|after <ticks>\|perTick <times>\|randomly <min> <max>`: adjust the pace
+- `/player <src> sendto stop`: stop and remove all links
+
+### Transfer Behavior
+
+- One stack per trigger, default every tick
+- Round-robin across multiple targets
+- Items buffer in the source when a target is full (nothing lost)
+- Links are memory-only: lost on fake player logout or server restart
+
+### Usage Examples
+
+```bash
+# Create link and start transferring
+/player Steve sendto Alex
+
+# Transfer one stack every 20 ticks
+/player Steve sendto interval 20
+
+# Stop and remove all links
+/player Steve sendto stop
+```
+
+---
+
 ## Player Scale Modifiers
 
 ### /scale - Player Scale Adjustment
+
+> **Rule**: `playerScale (bounds: playerScaleMin / playerScaleMax)`
 
 #### Command structure (uniform 3-level subcommands: action first, then value/target)
 
@@ -394,6 +458,8 @@ Current mode: self (everyone can only adjust themselves)
 
 ### /riding - Riding Permission Management
 
+> **Rule**: `ridingPlayers`
+
 #### Syntax
 
 ```
@@ -432,6 +498,8 @@ Set whether other players are allowed to ride you. When you set it to `on`, othe
 
 ### /picking - Pickup Permission Management
 
+> **Rule**: `pickupPlayers`
+
 #### Syntax
 
 ```
@@ -463,3 +531,32 @@ Set whether other players are allowed to pick you up (make you ride on their hea
 # Forbid other players from picking you up
 /picking off
 ```
+---
+
+## /pvp - Peaceful Players
+
+> **Rule**: `peacefulPlayers`
+
+Toggle PVP per player: players with PVP off cannot attack players and take no damage from players (self-damage unaffected). Blocked attacks play a notice sound at the victim's position (heard by both sides), keeping the poke-to-get-attention signal.
+
+### Command Syntax
+
+- `/pvp`: view your PVP status
+- `/pvp on\|off`: toggle your own PVP
+- `/pvp on\|off <player>`: toggle a player
+- `/pvp on\|off @a`: server-wide switch (new joiners follow it)
+
+### Permission Modes (peacefulPlayers values)
+
+- `false`: hide the /pvp command
+- `self`: everyone can only toggle themselves (even OPs)
+- `true`: players toggle themselves, admins toggle anyone
+- `everyone`: anyone toggles anyone
+- The `@a` global switch is admin-only (except in self mode)
+
+### Server-wide Switch Behavior
+
+- While the global switch is off, all per-player toggles are locked (admins included); only `/pvp on @a` can lift it
+- Lifting force-overrides and restores PVP for all players
+- Player PVP states persist across server restarts
+
