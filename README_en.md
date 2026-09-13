@@ -11,11 +11,54 @@
 
 ## Introduction
 
-**Carpet-Primaryuan-Addition** is a server-side Fabric extension for [Fabric Carpet](https://github.com/gnembon/fabric-carpet), developed for the **Primaryuan Server**. It adds **24** configurable Carpet rules and **7** commands (plus two fake-player sub-command extensions: `/player <name> dropall` and `/player <name> sendto`), covering fake player enhancements, player scaling, server management, mod compatibility fixes, ported features, player interactions, and survival gameplay expansion.
+**Carpet-Primaryuan-Addition** is a server-side Fabric extension for [Fabric Carpet](https://github.com/gnembon/fabric-carpet), developed for the **Primaryuan Server**; it also enhances the experience when installed client-side. It adds **24** configurable Carpet rules and **7** commands, covering fake player enhancements, player scaling, server management, mod compatibility fixes, ported features, player interactions, and survival gameplay expansion.
 
-All rules are off by default except `ridingPlayersClientAllowInteractions` (on by default); enable what you need.
+All rules are off by default except the client-side rule `ridingPlayersClientAllowInteractions`; enable what you need.
 
-## Features
+## Documentation
+
+- [Rules](docs/rules_en.md) | [规则](docs/rules.md)
+- [Commands](docs/commands_en.md) | [命令](docs/commands.md)
+
+## Download
+
+- [GitHub Release](https://github.com/brokeyuan/Carpet-Primaryuan-Addition/releases/latest)
+- [Modrinth](https://modrinth.com/mod/carpet-primaryuan-addition)
+- [CurseForge](https://www.curseforge.com/minecraft/mc-mods/carpet-primaryuan-addition)
+
+## Installation
+
+1. Ensure **Fabric Loader >= 0.16.0** is installed on the server
+2. Install required dependencies: **[Fabric Carpet](https://modrinth.com/mod/carpet)** + **[Fabric API](https://fabricmc.net/)**
+3. Optional: [skinrestorer](https://modrinth.com/mod/skinrestorer) (only needed for fake player skin features)
+4. Place the mod JAR in the server's `mods/` folder
+5. This is a **server-side** mod — players do not need it installed (only `ridingPlayersClientAllowInteractions` requires client installation)
+6. Rules are **off by default** (except `ridingPlayersClientAllowInteractions`) — use `/carpet` or config files to enable what you need
+
+## Dependencies
+
+| Name | Type | Links |
+|------|------|-------|
+| Carpet | Required | [Modrinth](https://modrinth.com/mod/carpet) · [MC百科](https://www.mcmod.cn/class/2361.html) |
+| Fabric API | Required | [Official](https://fabricmc.net/) · [MC百科](https://www.mcmod.cn/class/3124.html) |
+| skinrestorer | Optional | [Modrinth](https://modrinth.com/mod/skinrestorer) |
+
+## Version Support
+
+| Game Version | Development Status |
+|--------------|--------------------|
+| 1.21 | Maintained |
+| 1.21.1 | Maintained |
+| 1.21.3 | Maintained |
+| 1.21.4 | Maintained |
+| 1.21.5 | Maintained |
+| 1.21.8 | Maintained |
+| 1.21.10 | Maintained |
+| 1.21.11 (Main) | Maintained |
+| 26.1.2 | Maintained |
+| 26.2 | Maintained |
+
+## Key Features
 
 ### Bugfixes
 
@@ -23,6 +66,13 @@ All rules are off by default except `ridingPlayersClientAllowInteractions` (on b
 |------|------|---------|-------------|
 | `FixXaeroLib` | boolean | `false` | Fixes fake player data loss when Xaero's maps are used with LuckPerms |
 | `FixBluemap` | boolean | `false` | Fixes fake players not triggering Fabric API connection events, allowing BlueMap and similar mods to track bots properly |
+
+### Ported Rules
+
+| Rule | Type | Default | Description |
+|------|------|---------|-------------|
+| `fakePlayerNameSuggestions` | string | `Steve,Alex` | Customize autocomplete suggestions for the `/player` command (ported from Ivan-Carpet-Addition) |
+| `unicodeArgumentsSupport` | boolean | `false` | Allow non-ASCII characters in command arguments, enabling fake players with CJK names (ported from YACA) |
 
 ### Fake Player Enhancements
 
@@ -43,19 +93,6 @@ All rules are off by default except `ridingPlayersClientAllowInteractions` (on b
 | `realisticPlayerScale` | string | `false` | Player physics scale with body size: `true`=gentle (√scale), `safety`=gentle + small-size floors (recommended), `strict`=strictly proportional, `false`=off; gravity always √scale. Requires `playerScale` |
 | `playerScaleLinkedEntities` | boolean | `false` | Living entities spawned directly by a player using an item inherit the player's current size (scale base-value snapshot); non-living entities and non-player sources (dispensers etc.) are not linked |
 
-### Ported Features
-
-| Rule | Type | Default | Description |
-|------|------|---------|-------------|
-| `fakePlayerNameSuggestions` | string | `Steve,Alex` | Customize autocomplete suggestions for the `/player` command (ported from Ivan-Carpet-Addition) |
-| `unicodeArgumentsSupport` | boolean | `false` | Allow non-ASCII characters in command arguments, enabling fake players with CJK names (ported from YACA) |
-
-### Server Management
-
-| Rule | Type | Default | Description |
-|------|------|---------|-------------|
-| `peacefulPlayers` | string | `false` | Enables `/pvp` to toggle PVP per player (two-way protection, self-damage unaffected, blocked attacks play a notice sound); `/pvp on\|off @a` is a server-wide switch, admin-only |
-
 ### Player Interaction
 
 | Rule | Type | Default | Description |
@@ -65,6 +102,7 @@ All rules are off by default except `ridingPlayersClientAllowInteractions` (on b
 | `ridingPlayersPickUpLimit` | int | `16` | Maximum player stack size shared by riding and pickup; any value settable via `/carpet` |
 | `ridingPlayersDismountOnGameModeChange` | boolean | `false` | Passengers automatically dismount when game mode changes |
 | `ridingPlayersClientAllowInteractions` | boolean | `true` | Allow block/entity interaction while carrying a passenger (requires client install) |
+| `peacefulPlayers` | string | `false` | Enables `/pvp` to toggle PVP per player (two-way protection, self-damage unaffected, blocked attacks play a notice sound); `/pvp on\|off @a` is a server-wide switch, admin-only |
 
 ### Survival Features
 
@@ -88,51 +126,6 @@ All rules are off by default except `ridingPlayersClientAllowInteractions` (on b
 | `/pvp [list\|on\|off [player\|@a]]` | Toggle PVP per player; `@a` is a server-wide switch (requires `peacefulPlayers`) |
 | `/player <name> dropall [once\|continuous\|interval <ticks>\|after <ticks>\|perTick <times>\|randomly <min> <max>\|stop]` | Drop the fake player's inventory at a configured pace (requires `fakePlayerDropStackModifiers`) |
 | `/player <name> sendto <target>` | One-way inventory item flow between fake players, same frequency parameters (requires `fakePlayerSendto`) |
-
-## Installation
-
-1. Ensure **Fabric Loader >= 0.16.0** is installed on the server
-2. Install required dependencies: **[Fabric Carpet](https://modrinth.com/mod/carpet)** + **[Fabric API](https://fabricmc.net/)**
-3. Optional: [skinrestorer](https://modrinth.com/mod/skinrestorer) (only needed for fake player skin features)
-4. Place the mod JAR in the server's `mods/` folder
-5. This is a **server-side** mod — players do not need it installed (only `ridingPlayersClientAllowInteractions` requires client installation)
-6. Rules are **off by default** (except `ridingPlayersClientAllowInteractions`) — use `/carpet` or config files to enable what you need
-
-## Dependencies
-
-| Name | Type | Links |
-|------|------|-------|
-| Carpet | Required | [Modrinth](https://modrinth.com/mod/carpet) · [MC百科](https://www.mcmod.cn/class/2361.html) |
-| Fabric API | Required | [Official](https://fabricmc.net/) · [MC百科](https://www.mcmod.cn/class/3124.html) |
-| skinrestorer | Optional | [Modrinth](https://modrinth.com/mod/skinrestorer) |
-
-## Version Support
-
-All supported versions share an identical feature set; every rule and command works everywhere.
-
-| Game Version | Development Status |
-|--------------|--------------------|
-| 1.21 | Maintained |
-| 1.21.1 | Maintained |
-| 1.21.3 | Maintained |
-| 1.21.4 | Maintained |
-| 1.21.5 | Maintained |
-| 1.21.8 | Maintained |
-| 1.21.10 | Maintained |
-| 1.21.11 (Main) | Maintained |
-| 26.1.2 | Maintained |
-| 26.2 | Maintained |
-
-## Documentation
-
-- [Rules](docs/rules_en.md) | [规则](docs/rules.md)
-- [Commands](docs/commands_en.md) | [命令](docs/commands.md)
-
-## Download
-
-- [GitHub Release](https://github.com/brokeyuan/Carpet-Primaryuan-Addition/releases/latest)
-- [Modrinth](https://modrinth.com/mod/carpet-primaryuan-addition)
-- [CurseForge](https://www.curseforge.com/minecraft/mc-mods/carpet-primaryuan-addition)
 
 ## Credits
 
