@@ -70,7 +70,7 @@ All rules are off by default except `ridingPlayersClientAllowInteractions` (on b
 
 | Rule | Type | Default | Description |
 |------|------|---------|-------------|
-| `sleepingDuringTheDay` | boolean | `false` | Sleep during daytime to skip to night (referenced from PCA; full functionality requires 1.21.11+) |
+| `sleepingDuringTheDay` | boolean | `false` | Sleep during daytime to skip to night (referenced from PCA) |
 | `playerhat` | boolean | `false` | `/hat` command to wear items on head; Totem of Undying in head slot triggers death protection |
 | `betterSnowBall` | boolean | `false` | Snowballs deal knockback and damage to players |
 | `invisibleInTallGrass` | boolean | `false` | Auto-invisibility when head is inside tall grass |
@@ -108,18 +108,20 @@ All rules are off by default except `ridingPlayersClientAllowInteractions` (on b
 
 ## Version Support
 
-| Game Version | Development Status | Feature Differences |
-|--------------|--------------------|---------------------|
-| 1.21 | Maintained | `sleepingDuringTheDay` cannot start sleeping in daytime |
-| 1.21.1 | Maintained | Same as 1.21 |
-| 1.21.3 | Maintained | Same as 1.21 |
-| 1.21.4 | Maintained | Same as 1.21 |
-| 1.21.5 | Maintained | Same as 1.21 |
-| 1.21.8 | Maintained | Same as 1.21 |
-| 1.21.10 | Maintained | Same as 1.21 |
-| 1.21.11 (Main) | Maintained | Full feature set |
-| 26.1.2 | Maintained | Same as 1.21.11 |
-| 26.2 | Maintained | Same as 1.21.11 |
+All supported versions share an identical feature set: player scaling, daydream sleeping and every other rule/command work everywhere.
+
+| Game Version | Development Status |
+|--------------|--------------------|
+| 1.21 | Maintained |
+| 1.21.1 | Maintained |
+| 1.21.3 | Maintained |
+| 1.21.4 | Maintained |
+| 1.21.5 | Maintained |
+| 1.21.8 | Maintained |
+| 1.21.10 | Maintained |
+| 1.21.11 (Main) | Maintained |
+| 26.1.2 | Maintained |
+| 26.2 | Maintained |
 
 ## Documentation
 

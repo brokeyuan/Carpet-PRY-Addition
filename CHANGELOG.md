@@ -6,6 +6,7 @@ All notable changes to **Carpet-PRY-Addition** are documented in this file.
 
 ### 新增
 
+- **`sleepingDuringTheDay` 白日做梦补齐旧版本实现**：白天入睡的放行此前仅在 1.21.11+ 生效（`BedRule.canSleep` redirect），1.21~1.21.10 上原版禁止白天上床、规则整体不可用。旧版本改经 fabric-entity-events-v1 的 `ALLOW_SLEEP_TIME` 钩子放行——旧版本的检查点（1.21~1.21.4 为 `Level.isDay()`、1.21.5 为 `Level.isBrightOutside()`、1.21.8~1.21.10 为 `ServerLevel.isBrightOutside()`，已逐一核实字节码）已被 fabric 按版本适配占用，本模组再直接 @Redirect 同一调用会冲突，故注册事件监听：规则开启时返回 SUCCESS 放行白天入睡，关闭时 PASS 走原版（怪物检测等其他入睡条件不受影响；白天点床仍会记录重生点，与 1.21.11+ 行为一致）。入睡后的唤醒控制与"醒来切换至夜晚"由 `MixinPlayerBase`（全版本注册）处理。`sleepingDuringTheDay.MixinPlayer` 相应收口为 1.21.11+ 专用。全部受支持版本功能现已一致
 - **玩家缩放全规则前移支持 1.21~1.21.4**：`playerScale`（含 `/scale` 命令与 FOV 补偿）、`realisticPlayerScale`（四模式物理联动）、`playerScaleLinkedEntities` 三条规则及其 7 个 mixin 此前仅注册于 1.21.5+，现覆盖全部受支持版本。前移依据：`minecraft:scale` 属性与各联动属性（移速/跳跃/台阶/交互距离/摔落安全距离/重力）实际自 1.20.5（快照 23w51a）起即由原版提供并默认存在于所有生物（含玩家）的属性表——此前"SCALE 属性 1.21.5 才加入原版"的注释与文档表述系误记，已一并修正。逐版本映射后字节码核实：`Attributes.SCALE` 等字段 1.21~1.21.4 均为 `Holder<Attribute>` 且签名与 1.21.5+ 一致；`RangedAttribute.sanitizeValue(double)`、`ServerPlayerGameMode.useItem/useItemOn`、`ServerLevel.addFreshEntity` 全版本一致；`AbstractClientPlayer.getFieldOfViewModifier` 在 1.21~1.21.1 为无参签名（FOV 补偿处理器相应按版本分支捕获参数）；鞘翅联动注入点按版本分支——1.21.3+ 注入 `travelFallFlying`，1.21~1.21.1 无此拆分、改注入 `travel` 的 move 调用点并以 `isFallFlying()` 甄别（travel 内 move 为各移动分支共用）。1.21 服务端实机启动验证通过（Done + 0 mixin 错误），各版本 `mixins.json` 已注册
 - `playerScale` 的 `PlayerMixin` 注释澄清：scale 属性 1.20.5+ 已在原版默认属性表中，该 mixin 的注册为幂等兜底保险
 

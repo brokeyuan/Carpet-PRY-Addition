@@ -16,6 +16,9 @@ import me.primaryuan.carpet.handler.entitiesRidingPlayers.EntitiesRidingPlayersH
 import me.primaryuan.carpet.handler.peacefulPlayers.PvpManager;
 import me.primaryuan.carpet.settings.CarpetRuleRegistrar;
 import me.primaryuan.carpet.util.SendtoLinkManager;
+//#if MC < 12111
+//$$ import net.fabricmc.fabric.api.entity.event.v1.EntitySleepEvents;
+//#endif
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.world.InteractionResult;
@@ -100,6 +103,20 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
 
             return InteractionResult.PASS;
         });
+
+        //#if MC < 12111
+        //$$ // 白日做梦（1.21~1.21.10）：白天入睡检查由 fabric-entity-events-v1 的
+        //$$ // ALLOW_SLEEP_TIME 钩子接管（该检查点在旧版本分别位于 Level.isDay /
+        //$$ // (Server)Level.isBrightOutside，fabric 已按版本适配注入点，本模组直接
+        //$$ // @Redirect 同一调用会冲突）。规则开启时返回 SUCCESS 放行白天入睡，
+        //$$ // 关闭时 PASS 走原版；怪物检测等其他入睡条件不受影响。
+        //$$ // 1.21.11+ 由 sleepingDuringTheDay.MixinPlayer 的 BedRule.canSleep
+        //$$ // redirect 处理（fabric 在该版本段未占用此调用点）。
+        //$$ EntitySleepEvents.ALLOW_SLEEP_TIME.register((player, sleepingPos, vanillaResult) ->
+        //$$         CarpetPrimaryuanSettings.sleepingDuringTheDay
+        //$$                 ? InteractionResult.SUCCESS
+        //$$                 : InteractionResult.PASS);
+        //#endif
 
         // 规则变更时刷新命令树，使所有受控命令的可见性立即随对应规则切换
         CarpetServer.settingsManager.registerRuleObserver((source, changedRule, userInput) -> {
