@@ -43,7 +43,7 @@
 | 属性 | 值 |
 |------|-----|
 | **规则名** | `TppFakePlayer` |
-| **描述** | 使用假人快速使用珍珠传送站。当为true时启用/tppset设置指令和/tpp 玩家指令 |
+| **描述** | 使用假人快速使用珍珠传送站；开启后启用 /tppset 站点管理与 /tpp 传送命令 |
 | **类型** | `boolean` |
 | **默认值** | `false` |
 | **参考选项** | `false`, `true` |
@@ -58,7 +58,7 @@
 | 属性 | 值 |
 |------|-----|
 | **规则名** | `fakePlayerNameSuggestions` |
-| **描述** | 自定义/player建议的假人列表。使用','分隔每个名称 |
+| **描述** | 自定义 /player 命令建议的假人名称列表，使用 ',' 分隔 |
 | **类型** | `string` |
 | **默认值** | `Steve,Alex` |
 | **参考选项** | `Steve,Alex`, `Pry,hsds`, `Pry,hsds,Firework,Food`, `` |
@@ -73,7 +73,7 @@
 | 属性 | 值 |
 |------|-----|
 | **规则名** | `fakePlayerSkinMode` |
-| **描述** | 安装前置skinrestorer后，可以设置假人的皮肤。default=不更改假人皮肤，summon=假人使用召唤者的皮肤，same_skin=假人使用统一皮肤 |
+| **描述** | 安装前置 skinrestorer 后可设置假人皮肤：default=不修改；summon=使用召唤者的皮肤；same_skin=使用 fakePlayerSkinSet 指定玩家的皮肤 |
 | **类型** | `string` |
 | **默认值** | `default` |
 | **参考选项** | `default`, `summon`, `same_skin` |
@@ -96,7 +96,7 @@
 | 属性 | 值 |
 |------|-----|
 | **规则名** | `fakePlayerSkinSet` |
-| **描述** | 当FakeplayersSkinMode为same_skin时，设置用于假人皮肤的玩家名称 |
+| **描述** | fakePlayerSkinMode 为 same_skin 时，用于统一假人皮肤的玩家名 |
 | **类型** | `string` |
 | **默认值** | `Brokeyuan` |
 | **参考选项** | `Brokeyuan`, `hsds`, `` |
@@ -111,7 +111,7 @@
 | 属性 | 值 |
 |------|-----|
 | **规则名** | `fakePlayerDropStackModifiers` |
-| **描述** | 给 /player <name> 下追加独立的 dropall 子命令，让假人按设定节奏持续丢出背包所有物品。命令：/player <name> dropall [once\|continuous\|interval <ticks>\|after <ticks>\|perTick <times>\|randomly <min> <max>\|stop] |
+| **描述** | 给 /player <name> 追加 dropall 子命令，让假人按设定节奏持续丢出背包所有物品。频率：once \| continuous \| interval <ticks> \| after <ticks> \| perTick <times> \| randomly <min> <max>，详见命令文档 |
 | **类型** | `boolean` |
 | **默认值** | `false` |
 | **参考选项** | `false`, `true` |
@@ -327,7 +327,7 @@
 | 属性 | 值 |
 |------|-----|
 | **规则名** | `playerScale` |
-| **描述** | 为 Player 注册 minecraft:scale 属性，并添加 /scale set/reset/info 命令（value 仅要求大于 0，不设上下限；超出原版属性范围 0.0625–16 时纯原版客户端的显示仍会被夹紧），并补偿缩放带来的视野（FOV）变化（需客户端安装）。false=关闭命令；self=所有人都只能调自己（无论 OP）；true=玩家仅可调自己，管理员可调任意玩家；everyone=所有人可调任意玩家 |
+| **描述** | 为 Player 注册 minecraft:scale 属性并启用 /scale set\|reset\|info；value 仅需大于 0，受 playerScaleMin/Max 约束。false=隐藏命令；self=仅能调自己；true=可调自己且管理员可调任意玩家；everyone=人人可互调。FOV 补偿需客户端安装 |
 | **类型** | `string` |
 | **默认值** | `false` |
 | **参考选项** | `false`, `self`, `true`, `everyone` |
@@ -406,7 +406,7 @@
 创造飞行时原版会以飞行前的竖直速度覆盖重力，重力属性无效；鞘翅滑翔的重力项随重力属性生效，滑翔与烟花的移动距离由鞘翅联动 mixin 按移动速度联动因子缩放（因子随模式变化，见上表）——大体型滑翔极速与烟花极速随体型放大、转向半径更大（几何相似），小体型更慢更飘。已知取舍：鞘翅撞墙伤害按存储速度（原版量级）计算，不随位移缩放。
 
 | **规则名** | `realisticPlayerScale` |
-| **描述** | 体型全方位联动，四种模式：false=关闭；true=平缓，移动/飞行/鞘翅烟花速度、跳跃、台阶、交互距离、摔落安全距离均按 √scale 平缓缩放，无保底；safety=平缓+保底（推荐），在 true 基础上为小体型保底（速度/重力 0.3×，跳跃/台阶/交互/摔落 0.5×），极端缩小仍可玩；strict=严格等比，所有速度、台阶、交互、摔落严格 ×scale，跳跃高度与体型等比放大（跳跃初速 ×scale^0.75），无任何保底。重力均为 √scale（大体型下落更快）。FOV 补偿归属 playerScale 规则（v1.1.8 起）。需配合玩家随地大小变规则使用 |
+| **描述** | 玩家物理随体型联动（需 playerScale）：true=平缓，关键属性按 √scale 缩放；safety=平缓+小体型保底（速度/重力 0.3×，跳跃/台阶/交互/摔落 0.5×，推荐）；strict=严格等比 ×scale，跳高与体型成正比。数值细节见规则文档 |
 | **类型** | `string` |
 | **默认值** | `false` |
 | **参考选项** | `false`, `true`, `safety`, `strict` |
@@ -419,7 +419,7 @@
 | 属性 | 值 |
 |------|-----|
 | **规则名** | `playerScaleLinkedEntities` |
-| **描述** | 玩家使用物品直接生成的生物实体继承玩家当前体型（写入 minecraft:scale 基础值快照）：0.5 的玩家放出的盔甲架也是 0.5 大小，刷怪蛋生物、摆出的铁傀儡/雪傀儡/铜傀儡同理（幼崽等原有修饰符在此基础上叠加比例）。仅覆盖有 scale 属性的生物实体；投掷物、掉落物、物品展示框、船、矿车、TNT 等非生物实体不联动；发射器、刷怪笼等非玩家来源不联动；玩家体型为 1.0 时不做任何改动 |
+| **描述** | 玩家用物品直接生成的生物实体继承玩家体型快照（盔甲架、刷怪蛋生物、铁/雪/铜傀儡等，比例与幼崽等原修饰符叠加）。仅限生物实体与玩家手持来源；发射器/刷怪笼与非生物实体不联动 |
 | **类型** | `boolean` |
 | **默认值** | `false` |
 | **参考选项** | `false`, `true` |

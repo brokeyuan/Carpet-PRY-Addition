@@ -44,7 +44,7 @@ Use fake players to quickly use pearl teleport stations. When set to true, enabl
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `TppFakePlayer` |
-| **Description** | Use fake players to quickly use pearl teleport stations. When set to true, enables the /tppset setup command and the /tpp player command |
+| **Description** | Use fake players to trigger pearl teleport stations; enables the /tppset station manager and the /tpp teleport command |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
@@ -59,7 +59,7 @@ Customize the fake player list suggested by /player. Use ',' to separate each na
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `fakePlayerNameSuggestions` |
-| **Description** | Customize the fake player list suggested by /player. Use ',' to separate each name |
+| **Description** | Customize the fake player names suggested by the /player command, separated by ',' |
 | **Type** | `string` |
 | **Default Value** | `Steve,Alex` |
 | **Suggested Options** | `Steve,Alex`, `Pry,hsds`, `Pry,hsds,Firework,Food`, `` |
@@ -74,7 +74,7 @@ After installing the [skinrestorer](https://modrinth.com/mod/skinrestorer) depen
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `fakePlayerSkinMode` |
-| **Description** | After installing the skinrestorer dependency, you can set the skin of fake players. default=no change to fake player skin, summon=fake player uses the summoner's skin, same_skin=fake player uses a unified skin |
+| **Description** | Set fake player skins with the skinrestorer dependency: default=keep as-is; summon=use the summoner's skin; same_skin=use the skin of the player set in fakePlayerSkinSet |
 | **Type** | `string` |
 | **Default Value** | `default` |
 | **Suggested Options** | `default`, `summon`, `same_skin` |
@@ -97,7 +97,7 @@ When FakeplayersSkinMode is same_skin, sets the player name used for the fake pl
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `fakePlayerSkinSet` |
-| **Description** | When FakeplayersSkinMode is same_skin, sets the player name used for the fake player skin |
+| **Description** | When fakePlayerSkinMode is same_skin, the player name whose skin is used for fake players |
 | **Type** | `string` |
 | **Default Value** | `Brokeyuan` |
 | **Suggested Options** | `Brokeyuan`, `hsds`, `` |
@@ -312,7 +312,7 @@ Registers the `minecraft:scale` attribute for Player and manages player size thr
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `playerScale` |
-| **Description** | Registers minecraft:scale attribute for Player and adds /scale set/reset/info command (value only needs to be greater than 0, with no fixed bounds; display on vanilla clients is still clamped beyond the vanilla attribute range 0.0625–16), and compensates the scaling-induced FOV change (client-side install required). false=disable; self=everyone can only adjust themselves (even OPs); true=players adjust self only, admins adjust anyone; everyone=any player can adjust anyone |
+| **Description** | Registers the minecraft:scale attribute for Player and enables /scale set\|reset\|info; value only needs to be greater than 0, bounded by playerScaleMin/Max. false=hide command; self=adjust self only; true=adjust self, admins adjust anyone; everyone=anyone adjusts anyone. FOV compensation requires client install |
 | **Type** | `string` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `self`, `true`, `everyone` |
@@ -391,7 +391,7 @@ All attribute modifications use transient modifiers (not persisted to save data)
 During creative flight vanilla overrides the vertical velocity, so gravity has no effect; during elytra gliding the gravity term does follow the gravity attribute, and gliding/firework movement distance is scaled by the elytra mixin using the same factor as movement speed (mode-dependent, see table above) — larger players glide and boost faster with wider turning radii (geometric similarity), smaller ones slower and floatier. Known trade-off: elytra wall-crash damage is computed from stored velocity (vanilla magnitude) and does not scale with the displacement.
 
 | **Rule Name** | `realisticPlayerScale` |
-| **Description** | Physics scale with size (minecraft:scale), four modes: false=off; true=gentle, movement/flying/elytra-firework speed, jump, step height, interaction ranges and safe fall distance all scale with the square root of size (no floors); safety=gentle+floors (recommended), adds small-size floors on top of true (speed/gravity 0.3x, jump/step/interaction/fall 0.5x) so tiny sizes stay playable; strict=strictly proportional, all speeds, step height, interaction ranges and safe fall distance scale exactly with size and jump height stays proportional to size (jump strength x scale^0.75), no floors. Gravity always scales with the square root (larger players fall faster). FOV compensation belongs to the playerScale rule (since v1.1.8). Requires the playerScale rule to adjust size |
+| **Description** | Player physics scale with size (requires playerScale): true=gentle, key attributes scale with sqrt(scale); safety=gentle + small-size floors (speed/gravity 0.3x, jump/step/interaction/fall 0.5x, recommended); strict=strictly proportional, jump height proportional to size. Details in the rules doc |
 | **Type** | `string` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true`, `safety`, `strict` |
@@ -404,7 +404,7 @@ Living entities spawned directly by a player using an item inherit the player's 
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `playerScaleLinkedEntities` |
-| **Description** | Living entities spawned directly by a player using an item inherit the player's current size (stored as a minecraft:scale base-value snapshot): a 0.5x player places 0.5x armor stands; spawn-egg mobs and built iron/snow/copper golems are sized the same way (existing modifiers such as babies stack on top proportionally). Only covers living entities that have the scale attribute; projectiles, dropped items, item frames, boats, minecarts, TNT and other non-living entities are not linked; dispenser/spawner sources are not linked; players at size 1.0 are never modified |
+| **Description** | Living entities spawned directly by a player using an item inherit the player's size snapshot (armor stands, spawn-egg mobs, built iron/snow/copper golems; ratios stack with existing modifiers such as babies). Living entities from the player's hand only; dispensers/spawners and non-living entities are not linked |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
