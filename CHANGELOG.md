@@ -2,16 +2,24 @@
 
 All notable changes to **Carpet-PRY-Addition** are documented in this file.
 
-## [未发布]
+## [1.2.0] - 2026-09-14
 
 ### 新增
-
 - **`sleepingDuringTheDay` 白日做梦补齐旧版本实现**：白天入睡的放行此前仅在 1.21.11+ 生效（`BedRule.canSleep` redirect），1.21~1.21.10 上原版禁止白天上床、规则整体不可用。旧版本改经 fabric-entity-events-v1 的 `ALLOW_SLEEP_TIME` 钩子放行——旧版本的检查点（1.21~1.21.4 为 `Level.isDay()`、1.21.5 为 `Level.isBrightOutside()`、1.21.8~1.21.10 为 `ServerLevel.isBrightOutside()`，已逐一核实字节码）已被 fabric 按版本适配占用，本模组再直接 @Redirect 同一调用会冲突，故注册事件监听：规则开启时返回 SUCCESS 放行白天入睡，关闭时 PASS 走原版（怪物检测等其他入睡条件不受影响；白天点床仍会记录重生点，与 1.21.11+ 行为一致）。入睡后的唤醒控制与"醒来切换至夜晚"由 `MixinPlayerBase`（全版本注册）处理。`sleepingDuringTheDay.MixinPlayer` 相应收口为 1.21.11+ 专用。全部受支持版本功能现已一致
 - **玩家缩放全规则前移支持 1.21~1.21.4**：`playerScale`（含 `/scale` 命令与 FOV 补偿）、`realisticPlayerScale`（四模式物理联动）、`playerScaleLinkedEntities` 三条规则及其 7 个 mixin 此前仅注册于 1.21.5+，现覆盖全部受支持版本。前移依据：`minecraft:scale` 属性与各联动属性（移速/跳跃/台阶/交互距离/摔落安全距离/重力）实际自 1.20.5（快照 23w51a）起即由原版提供并默认存在于所有生物（含玩家）的属性表——此前"SCALE 属性 1.21.5 才加入原版"的注释与文档表述系误记，已一并修正。逐版本映射后字节码核实：`Attributes.SCALE` 等字段 1.21~1.21.4 均为 `Holder<Attribute>` 且签名与 1.21.5+ 一致；`RangedAttribute.sanitizeValue(double)`、`ServerPlayerGameMode.useItem/useItemOn`、`ServerLevel.addFreshEntity` 全版本一致；`AbstractClientPlayer.getFieldOfViewModifier` 在 1.21~1.21.1 为无参签名（FOV 补偿处理器相应按版本分支捕获参数）；鞘翅联动注入点按版本分支——1.21.3+ 注入 `travelFallFlying`，1.21~1.21.1 无此拆分、改注入 `travel` 的 move 调用点并以 `isFallFlying()` 甄别（travel 内 move 为各移动分支共用）。1.21 服务端实机启动验证通过（Done + 0 mixin 错误），各版本 `mixins.json` 已注册
 - `playerScale` 的 `PlayerMixin` 注释澄清：scale 属性 1.20.5+ 已在原版默认属性表中，该 mixin 的注册为幂等兜底保险
 
-### 行为变更
+- **`peacefulPlayers` 和平的玩家 + `/pvp` 指令**：按玩家开关 PVP（类似群聊禁言模型）——关闭 PVP 的玩家不能攻击玩家、也不会受到玩家伤害（自伤不限），被拦截的攻击播放提示音；`/pvp on|off` 开关自己，`/pvp on|off <玩家>`（权限随模式：self/true/everyone），`/pvp on|off @a` 全服总开关（仅管理员、self 模式除外；全局关闭期间个人操作锁定，解除时强制全员恢复开启），`/pvp list` 列出所有 PVP 关闭的玩家；状态跨重启持久化于 `config/carpet-pry-pvp.json`，新加入玩家跟随全服默认状态
+- **`playerScaleLinkedEntities` 玩家大小变联动实体**：玩家使用物品直接生成的生物实体继承玩家当前体型（写入 minecraft:scale 基础值快照）——0.5 的玩家放出的盔甲架也是 0.5 大小，刷怪蛋生物、摆出的铁/雪/铜傀儡同理（放南瓜的构造生成同步发生在使用漏斗内；幼崽等原有修饰符在此基础上叠加比例）。实现上经 `ServerPlayerGameMode` 的 useItem/useItemOn 漏斗记录操作玩家，在 `ServerLevel.addFreshEntity` 收口处写入体型（仅 1.21.5+ 注册）。仅覆盖有 scale 属性的生物实体，不触碰渲染与碰撞箱；投掷物、掉落物、物品展示框、船、矿车、TNT 等非生物实体不联动；发射器、刷怪笼等非玩家来源不联动；写入为快照不随玩家后续变化，玩家体型为 1.0 时不做任何改动
+- **`realisticPlayerScale` 物理联动模式化**：规则由布尔改为 `false / true / safety / strict` 四模式，覆盖三种真实化取向：
+  - `true`（平缓）：移动/飞行/鞘翅烟花速度、跳跃、台阶、交互距离、摔落安全距离均按 √scale 曲线缩放（16 倍体型移速 4 倍而非 16 倍），无保底
+  - `safety`（平缓+保底，推荐）：曲线同 true，为小体型（scale<1.0）加保底——速度/飞行/重力 0.3×、跳跃/台阶/交互/摔落 0.5×，极端缩小（如 0.1）仍可玩
+  - `strict`（严格等比）：速度/台阶/交互/摔落严格 ×scale；跳跃初速 ×scale^0.75，与重力 √scale 配套后跳高与体型等比放大（2 倍体型跳 2 倍高、16 倍体型跳 16 倍高）；无任何保底，完全按几何比例行动
+  - 重力在三种模式下均 ×√scale（加速度量按平方根联动；线性缩放会使 16 倍体型终端速度约 62 格/tick 失控）
+- **`realisticPlayerScale` 鞘翅滑翔/烟花联动**：新增鞘翅位移缩放（`LivingEntityMixin`，仅 1.21.5+ 注册）——鞘翅滑翔中 `move()` 的位移按移动速度联动因子等比缩放（因子随模式变化：true/safety 为 √scale、strict 为线性 scale）。原版滑翔位移、烟花加速的极速（速度被拉向视线方向 ×1.5 的固定控制器）与转向项均为硬编码、与体型无关；现大体型滑翔/烟花极速随体型放大、转向半径更大（几何相似），小体型更慢更飘。只缩放传给 move 的位移、不改写存储速度，物理无正反馈、任意体型稳定收敛；生效判定与 FOV 补偿一致（以移动速度属性上的 scale_speed 修改器为准），服务端（含假人）与客户端本地预测一致；已知取舍：鞘翅撞墙伤害按存储速度（原版量级）计算，不随位移缩放
+- **`realisticPlayerScale` 重力联动（下落速度）**：下落加速度随体型平方根缩放（×√scale；仅 safety 模式对小体型 0.3 保底）——大体型下落明显更快（scale 4→2×、16→4×），缩小更飘逸（0.25→0.5×）。创造飞行时原版会以飞行前竖直速度覆盖重力、重力属性无效；鞘翅滑翔的重力项则随重力属性生效（此前文档称鞘翅不受重力影响，与 1.21.5+ 实际实现不符，已修正），滑翔/烟花位移另由鞘翅联动 mixin 缩放
 
+### 行为变更
 - **10 条规则更名（破坏性：`carpet.conf` 中旧值失效回落默认，需重新设置）**，统一 lowerCamelCase 命名（首单词小写、后续单词首字母大写）：
   - `TppFakePlayer` → `fakePlayerTpp`
   - `FixXaeroLib` → `fixXaeroLib`
@@ -25,15 +33,20 @@ All notable changes to **Carpet-PRY-Addition** are documented in this file.
   - `ridingPlayersClientAllowInteractions` → `ridingPlayersClientInteract`
   - 保留不改：`playerScaleLinkedEntities`、`peacefulPlayers`（命名合规）。README / docs / 语言文件 / mixins.json 包名全部同步
 
-### 移除
-
-- `/scale` 在低版本上的"版本不支持"降级分支与 `carpetprimaryuan.command.scale.unsupported_version` 文案键（三语言），`/scale set|reset|info` 全版本行为一致
-- 删除无引用的死类 `SleepUtil`；清理 en_us/zh_tw 中代码未引用的死键 `carpetprimaryuan.command.pvp.state_on/off`（三语言 key 集合对齐至 148 个）
-- CI：移除 build.yml 中调用不存在任务 `runServerMixinAudit` 的死 step 与 `mixin_audit` 输入（启动级 mixin 验证由 mixin-boot-check.yml 承担），其版本矩阵补齐 1.21.11 / 26.1.2 / 26.2 三个最新节点
-- 开发/CI 环境 fabric-loader 0.18.4 → 0.19.3：carpet 26.2 要求 loader >= 0.19.3，旧 loader 下 26.2 runServer 启动即被 FabricLoader 解析拒绝
+- **`realisticPlayerScale` 类型由 `boolean` 改为字符串选项**：`false/true/safety/strict`；旧配置中的 `true` 直接映射为新 `true`（平缓）模式，原"小体型 √+保底、大体型线性"的混合行为由 `safety`（缩小场景）与 `strict`（放大场景）分别承接
+- **`/scale` 硬边界改为仅要求大于 0**：value 参数不再设固定上下限（原对齐原版属性的 0.0625–16.0），任何大于 0 的有限值均可直接设置生效；`RangedAttributeMixin` 相应放行 SCALE 属性的任意有限正值，非正值/非有限值（NaN/Infinity）回落原版夹紧兜底，服务端命令反馈值与实际生效值一致。注意：纯原版客户端（未安装本模组）在超出原版范围（<0.0625 或 >16.0）时显示仍会被客户端侧夹紧，需客户端安装本模组；极端缩放值可能引发生物碰撞箱与渲染异常，请自行斟酌
+- **`/scale` 软边界调整**：`playerScaleMin/Max` 软边界统一约束所有玩家（原管理员"调他人"不受限，现含管理员在内均受限；管理员可通过 `/carpet` 修改这两条规则调整边界本身）；软边界默认值由 0.1–10.0 调整为 0.01–16.0，发布前最终调整为 **0.1–1.5**
+- **规则改名 `playerScaleModifiers` → `playerScale`**：命令门控与权限模式（false/self/true/everyone）不变；旧配置文件中的规则值失效，需以新名称重新设置
+- **FOV 补偿归属调整**：视野（FOV）补偿自 `realisticPlayerScale` 移至 `playerScale` 规则（客户端 mixin 注册随之迁移；触发仍以属性同步中的 scale_speed 修改器为准——该修改器由 realisticPlayerScale 的移速联动施加，故实际补偿行为不变，仅归属与文档描述调整）
+- **假人名构建规则**（`TppFakePlayer`）：站点内部名上限从 5 字符放宽至 **16 字符**；总长超限时按新优先级取舍——站点完整保留（必须）→ `_` 分隔符（可省略）→ 玩家名尽可能多。站点占满 16 字符时假人名即站点名本身，该站点所有玩家共用同一假人名
+- **`/tppset set` 新增站点名长度校验**（≤16 字符），`/tppset rename` 别名上限统一为 10 字符；旧配置中的超长站点名在执行 `/tpp` 时会被明确拦截并提示
+- **规则默认值**：`fakePlayerSendto` 默认改为关闭（`false`）；`fakePlayerNameSuggestions` 默认保持 `Steve,Alex`
+- 错误反馈通道修正：站点已存在/别名空/无权限/玩家离线等约 12 处失败提示从 `sendSuccess` 改为 `sendFailure`（红色文本、命令返回 0）；dropall 的 `already_running` 同步改为失败语义
+- dropall/sendto 解析目标假人失败时的提示接入三语言 i18n（原为硬编码英文）
+- **`TppFakePlayer` 选项顺序统一**：options 从 `false, true` 调整为 `true, false`，与其余布尔规则一致
+- **dropall / sendto 在规则关闭时隐藏命令**：`/player <name> dropall` 与 `/player <name> sendto` 此前未挂 requires 谓词——规则关闭时命令仍可见（dropall 甚至实际生效、sendto 可输入但转移被暂停）。现与其他命令一致：规则关闭时整棵子树不可见、不可执行，规则切换时经 RuleObserver 立即刷新命令树
 
 ### 修复
-
 - **sendto 多源链接时的服务器崩溃**：tick 任务遍历 `LINKS` 期间，懒清理路径（源假人下线/全部目标失效）会结构性删除条目，抛 `ConcurrentModificationException` 致服务器崩溃——默认配置（`fixBlueMap` 关闭，假人下线不走事件路径）下，≥2 个源假人有链接且其一离线即可触发。改为快照遍历
 - **betterSnowBall 单人游戏客户端崩溃**：`onHitEntity` 注入点在单人游戏中客户端线程同样执行，`hurtServer` 的 `(ServerLevel)` 强转遇 `ClientLevel` 直接 ClassCastException。客户端逻辑侧现提前返回，击退与伤害仅由服务端施加
 - **白日做梦（sleepingDuringTheDay）昼夜循环破坏**：唤醒分支原以"醒来时是白天 + sleepTimer≥100"判定，而夜间入睡的玩家在黎明被原版唤醒时同样满足这两个条件——时间被错误拨回 13000，白天几乎无法自然到来。现改为在 `startSleepInBed`（`ServerPlayer` 校验通过后调用 super 的路径，全版本核实）记录"入睡时刻是否为白天"，仅白天开始的睡眠由规则接管；夜间开始的睡眠完全放行原版
@@ -48,58 +61,28 @@ All notable changes to **Carpet-PRY-Addition** are documented in this file.
 - 4 个 mixin 源码目录名与 package 声明统一（`betterSnowBall`→`betterSnowball`、`playerhat`→`playerHat`、`fakePlayerDropStackModifiers`→`fakePlayerDropAll`、`realisticPlayerScale`→`playerScalePhysics`；更名规则时漏改目录），删除更名残留的空目录 `playerScaleModifiers`
 - 类注释与实现对齐：`ScaleCommand` 类头"OP 调他人不受范围限制"（实际软边界约束所有人）、`PvpManager` 类头"禁言期间仅管理员可个别解禁"（实际锁定所有人，仅 @a 可解除）
 
-### 文档
+- **隐身草离开草地后隐身永久残留**：归属标记误用 `Integer.MAX_VALUE` 作时长，而原版对有限时长每 tick 递减，标记在添加后第一 tick 即失效，移除分支永远无法命中。改用原版无限时长表示（`INFINITE_DURATION = -1`，不递减）作归属标记，并叠加"无粒子"位区分药水来源；规则中途关闭时的残留清理一并修复
+- **TPP 配置原子写**：`config/carpet-pry-tpp.json` 改为先写临时文件再原子替换，避免写一半崩溃导致配置损坏；空配置文件不再抛 NPE；日志统一到 log4j
+- **sendto `once` 无链接时的崩溃**：反馈文案含两个 `%s` 但只传了一个参数，会抛 `MissingFormatArgumentException`（随命令树重构一并修复）
 
+### 移除
+- `/scale` 在低版本上的"版本不支持"降级分支与 `carpetprimaryuan.command.scale.unsupported_version` 文案键（三语言），`/scale set|reset|info` 全版本行为一致
+- 删除无引用的死类 `SleepUtil`；清理 en_us/zh_tw 中代码未引用的死键 `carpetprimaryuan.command.pvp.state_on/off`（三语言 key 集合对齐至 148 个）
+- CI：移除 build.yml 中调用不存在任务 `runServerMixinAudit` 的死 step 与 `mixin_audit` 输入（启动级 mixin 验证由 mixin-boot-check.yml 承担），其版本矩阵补齐 1.21.11 / 26.1.2 / 26.2 三个最新节点
+- 开发/CI 环境 fabric-loader 0.18.4 → 0.19.3：carpet 26.2 要求 loader >= 0.19.3，旧 loader 下 26.2 runServer 启动即被 FabricLoader 解析拒绝
+
+### 文档
 - **规则文档与命令文档对齐代码现状**：`playerScaleMin`/`playerScaleMax` 默认值 0.01/16.0 → **0.1/1.5**（补列默认选项 1.5）；/hat、/riding、/picking 权限说明修正为"规则开启时所有人可用，关闭时对所有人隐藏"（原"管理员总是可用"与 requires 实现不符）；/pvp 语法清单补漏 `/pvp list`；/tppset rename 别名上限 12 → 10 字符；/tpp 假人名构建说明改为按站点长度动态截断（原固定 10 字符为旧行为）；rules_en.md 的 fakePlayerDropAll/fakePlayerSendto 从 Bug Fixes 组移回 BOT 组（与代码分类及中文版一致）；`FakeplayersSkinMode` 旧名残留清理（表格外正文）；骑乘堆叠上限语义澄清；若干标点/转义/排版修正
 - **Description.MD 全面重写**：规则数 16 → 24，清除全部已废弃规则名/命令名（FixXaeroLib、TppFakePlayer、/ride、/pickup 等），补齐 1.2.0 全部新功能（玩家缩放系列、dropall/sendto、/scale、/pvp），修正"所有规则默认关闭"与 `ridingPlayersClientInteract` 默认开启的矛盾
-- **CHANGELOG 补记**：[1.2.0] 补记遗漏的 peacefulPlayers + /pvp；[未发布] 补记 /scale 默认边界调整、/pvp 层级重构、拦截提示音等已提交未记录的变更
 - **README Modrinth 链接统一**为 `carpet-pry-addition`（原同文档内两个 slug 混用）
 - **GitHub / CurseForge 链接更正为新 slug**：README、README_en、Description.MD、fabric.mod.json 的 `sources` 统一指向 `brokeyuan/Carpet-PRY-Addition`，CurseForge 链接统一为 `carpet-pry-addition`（原均为改名前旧 slug）
-
-### 文档
 
 - **规则文档补全**（docs/rules*.md）：补齐缺失的规则小节（中文补 fakePlayerSendto、peacefulPlayers；英文另补 fakePlayerDropStackModifiers），新增"玩家缩放"分组标题，规则总数更正为 24 条，文档版本号更新至 1.2.0，快速导航按正文重建
 - **命令文档补全**（docs/commands*.md）：每个命令章节顶部标注**所属规则**（/tpp、/tppset→TppFakePlayer；/hat→playerhat；dropall→fakePlayerDropStackModifiers；/scale→playerScale；/riding→ridingPlayers；/picking→pickupPlayers；sendto→fakePlayerSendto；/pvp→peacefulPlayers），补齐缺失的 `/player sendto - 假人背包链接` 与 `/pvp - 和平的玩家` 两个完整章节（命令语法/权限模式/行为边界/使用示例），文档版本号更新至 1.2.0，快速导航重建
 - README（中/英）、规则与命令文档同步移除"仅 1.21.5+"标记并修正属性引入版本表述；版本支持表移除"功能差异"列（全版本功能一致），并补充说明客户端可选安装对应的两项客户端功能（ridingPlayersClientAllowInteractions 与玩家缩放 FOV 补偿）
 - **规则描述精简（三语言）**：10 条冗长规则的游戏内描述按「功能一句话 + 取值/模式枚举 + 命令形态」模板重写（TppFakePlayer、fakePlayerNameSuggestions、fakePlayerSkinMode、fakePlayerSkinSet、fakePlayerDropStackModifiers、fakePlayerSendto、playerScale、realisticPlayerScale、playerScaleLinkedEntities、peacefulPlayers）；完整命令语法与联动数值细节移交 docs 命令/规则文档，游戏内描述不再携带版本变更史（如"v1.1.8 起"），并修正 fakePlayerSkinSet 描述中的规则名拼写（FakeplayersSkinMode → fakePlayerSkinMode）；docs/rules*.md 描述行同步
 
-## [1.2.0] - 2026-09-12
-
-### 新增
-
-- **`peacefulPlayers` 和平的玩家 + `/pvp` 指令**：按玩家开关 PVP（类似群聊禁言模型）——关闭 PVP 的玩家不能攻击玩家、也不会受到玩家伤害（自伤不限），被拦截的攻击播放提示音；`/pvp on|off` 开关自己，`/pvp on|off <玩家>`（权限随模式：self/true/everyone），`/pvp on|off @a` 全服总开关（仅管理员、self 模式除外；全局关闭期间个人操作锁定，解除时强制全员恢复开启），`/pvp list` 列出所有 PVP 关闭的玩家；状态跨重启持久化于 `config/carpet-pry-pvp.json`，新加入玩家跟随全服默认状态
-- **`playerScaleLinkedEntities` 玩家大小变联动实体**：玩家使用物品直接生成的生物实体继承玩家当前体型（写入 minecraft:scale 基础值快照）——0.5 的玩家放出的盔甲架也是 0.5 大小，刷怪蛋生物、摆出的铁/雪/铜傀儡同理（放南瓜的构造生成同步发生在使用漏斗内；幼崽等原有修饰符在此基础上叠加比例）。实现上经 `ServerPlayerGameMode` 的 useItem/useItemOn 漏斗记录操作玩家，在 `ServerLevel.addFreshEntity` 收口处写入体型（仅 1.21.5+ 注册）。仅覆盖有 scale 属性的生物实体，不触碰渲染与碰撞箱；投掷物、掉落物、物品展示框、船、矿车、TNT 等非生物实体不联动；发射器、刷怪笼等非玩家来源不联动；写入为快照不随玩家后续变化，玩家体型为 1.0 时不做任何改动
-- **`realisticPlayerScale` 物理联动模式化**：规则由布尔改为 `false / true / safety / strict` 四模式，覆盖三种真实化取向：
-  - `true`（平缓）：移动/飞行/鞘翅烟花速度、跳跃、台阶、交互距离、摔落安全距离均按 √scale 曲线缩放（16 倍体型移速 4 倍而非 16 倍），无保底
-  - `safety`（平缓+保底，推荐）：曲线同 true，为小体型（scale<1.0）加保底——速度/飞行/重力 0.3×、跳跃/台阶/交互/摔落 0.5×，极端缩小（如 0.1）仍可玩
-  - `strict`（严格等比）：速度/台阶/交互/摔落严格 ×scale；跳跃初速 ×scale^0.75，与重力 √scale 配套后跳高与体型等比放大（2 倍体型跳 2 倍高、16 倍体型跳 16 倍高）；无任何保底，完全按几何比例行动
-  - 重力在三种模式下均 ×√scale（加速度量按平方根联动；线性缩放会使 16 倍体型终端速度约 62 格/tick 失控）
-- **`realisticPlayerScale` 鞘翅滑翔/烟花联动**：新增鞘翅位移缩放（`LivingEntityMixin`，仅 1.21.5+ 注册）——鞘翅滑翔中 `move()` 的位移按移动速度联动因子等比缩放（因子随模式变化：true/safety 为 √scale、strict 为线性 scale）。原版滑翔位移、烟花加速的极速（速度被拉向视线方向 ×1.5 的固定控制器）与转向项均为硬编码、与体型无关；现大体型滑翔/烟花极速随体型放大、转向半径更大（几何相似），小体型更慢更飘。只缩放传给 move 的位移、不改写存储速度，物理无正反馈、任意体型稳定收敛；生效判定与 FOV 补偿一致（以移动速度属性上的 scale_speed 修改器为准），服务端（含假人）与客户端本地预测一致；已知取舍：鞘翅撞墙伤害按存储速度（原版量级）计算，不随位移缩放
-- **`realisticPlayerScale` 重力联动（下落速度）**：下落加速度随体型平方根缩放（×√scale；仅 safety 模式对小体型 0.3 保底）——大体型下落明显更快（scale 4→2×、16→4×），缩小更飘逸（0.25→0.5×）。创造飞行时原版会以飞行前竖直速度覆盖重力、重力属性无效；鞘翅滑翔的重力项则随重力属性生效（此前文档称鞘翅不受重力影响，与 1.21.5+ 实际实现不符，已修正），滑翔/烟花位移另由鞘翅联动 mixin 缩放
-
-### 行为变更
-
-- **`realisticPlayerScale` 类型由 `boolean` 改为字符串选项**：`false/true/safety/strict`；旧配置中的 `true` 直接映射为新 `true`（平缓）模式，原"小体型 √+保底、大体型线性"的混合行为由 `safety`（缩小场景）与 `strict`（放大场景）分别承接
-- **`/scale` 硬边界改为仅要求大于 0**：value 参数不再设固定上下限（原对齐原版属性的 0.0625–16.0），任何大于 0 的有限值均可直接设置生效；`RangedAttributeMixin` 相应放行 SCALE 属性的任意有限正值，非正值/非有限值（NaN/Infinity）回落原版夹紧兜底，服务端命令反馈值与实际生效值一致。注意：纯原版客户端（未安装本模组）在超出原版范围（<0.0625 或 >16.0）时显示仍会被客户端侧夹紧，需客户端安装本模组；极端缩放值可能引发生物碰撞箱与渲染异常，请自行斟酌
-- **`/scale` 软边界调整**：`playerScaleMin/Max` 软边界统一约束所有玩家（原管理员"调他人"不受限，现含管理员在内均受限；管理员可通过 `/carpet` 修改这两条规则调整边界本身）；软边界默认值由 0.1–10.0 调整为 **0.01–16.0**（下限与硬边界对齐，上限对齐原版属性声明范围）
-- **规则改名 `playerScaleModifiers` → `playerScale`**：命令门控与权限模式（false/self/true/everyone）不变；旧配置文件中的规则值失效，需以新名称重新设置
-- **FOV 补偿归属调整**：视野（FOV）补偿自 `realisticPlayerScale` 移至 `playerScale` 规则（客户端 mixin 注册随之迁移；触发仍以属性同步中的 scale_speed 修改器为准——该修改器由 realisticPlayerScale 的移速联动施加，故实际补偿行为不变，仅归属与文档描述调整）
-- **假人名构建规则**（`TppFakePlayer`）：站点内部名上限从 5 字符放宽至 **16 字符**；总长超限时按新优先级取舍——站点完整保留（必须）→ `_` 分隔符（可省略）→ 玩家名尽可能多。站点占满 16 字符时假人名即站点名本身，该站点所有玩家共用同一假人名
-- **`/tppset set` 新增站点名长度校验**（≤16 字符），`/tppset rename` 别名上限统一为 10 字符；旧配置中的超长站点名在执行 `/tpp` 时会被明确拦截并提示
-- **规则默认值**：`fakePlayerSendto` 默认改为关闭（`false`）；`fakePlayerNameSuggestions` 默认保持 `Steve,Alex`
-- 错误反馈通道修正：站点已存在/别名空/无权限/玩家离线等约 12 处失败提示从 `sendSuccess` 改为 `sendFailure`（红色文本、命令返回 0）；dropall 的 `already_running` 同步改为失败语义
-- dropall/sendto 解析目标假人失败时的提示接入三语言 i18n（原为硬编码英文）
-- **`TppFakePlayer` 选项顺序统一**：options 从 `false, true` 调整为 `true, false`，与其余布尔规则一致
-- **dropall / sendto 在规则关闭时隐藏命令**：`/player <name> dropall` 与 `/player <name> sendto` 此前未挂 requires 谓词——规则关闭时命令仍可见（dropall 甚至实际生效、sendto 可输入但转移被暂停）。现与其他命令一致：规则关闭时整棵子树不可见、不可执行，规则切换时经 RuleObserver 立即刷新命令树
-
-### 修复
-
-- **隐身草离开草地后隐身永久残留**：归属标记误用 `Integer.MAX_VALUE` 作时长，而原版对有限时长每 tick 递减，标记在添加后第一 tick 即失效，移除分支永远无法命中。改用原版无限时长表示（`INFINITE_DURATION = -1`，不递减）作归属标记，并叠加"无粒子"位区分药水来源；规则中途关闭时的残留清理一并修复
-- **TPP 配置原子写**：`config/carpet-pry-tpp.json` 改为先写临时文件再原子替换，避免写一半崩溃导致配置损坏；空配置文件不再抛 NPE；日志统一到 log4j
-- **sendto `once` 无链接时的崩溃**：反馈文案含两个 `%s` 但只传了一个参数，会抛 `MissingFormatArgumentException`（随命令树重构一并修复）
-
 ### 重构（内部，行为不变）
-
 - **`ServerTickScheduler`**：TppCommand / DropSlotScheduler / SendtoLinkManager 三处各自的 `END_SERVER_TICK` 惰性注册与双检锁样板收敛为中央调度器；服务器停止时统一放弃任务
 - **`FrequencyCommandTree`**：dropall 与 sendto 的频率子命令树（once/continuous/interval/after/perTick/randomly/stop）与 `startMode` 参数拼装去重，新增第三个 `/player` 扩展命令的成本大幅降低
 - **`FakePlayerSessionManager`**：/tpp 的假人操作 tick 状态机从 TppCommand 拆出独立管理（TppCommand 565 → 412 行）
@@ -110,7 +93,6 @@ All notable changes to **Carpet-PRY-Addition** are documented in this file.
 - 删除 9 个版本专属 `TppCommand` 覆盖（约 4600 行），统一由根模板预处理提供
 
 ### 测试与 CI
-
 - 新增 JUnit 单元测试源集（随最新版本子项目构建执行）：覆盖 `ScheduleMode` 调度语义、假人名取舍优先级（含 14/15/16 字符边界与中文）、sendto 原子转移算法（合并/限流/防刷）
 - 版本专属 `mixins.json` 由单行紧凑格式统一为与根模板一致的多行格式（内容等价）
 
