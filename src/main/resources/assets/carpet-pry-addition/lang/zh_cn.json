@@ -55,6 +55,9 @@
   "carpet.rule.moreEndCrystalTypes.name": "更多种类的末地水晶",
   "carpet.rule.moreEndCrystalTypes.desc": "允许把末地水晶放在哭泣的黑曜石上：true=放出的为普通水晶（不无敌）；invulnerable=放出的为无敌水晶（Invulnerable=1 且显示底部板，与原版复活龙时推出的无敌水晶相同）。两种模式放出的水晶光束均指向固定坐标 (0,128,0)。放在普通黑曜石/基岩上的水晶不受影响",
 
+  "carpet.rule.fixEndCrystalSync.name": "修复末地水晶位置不同步",
+  "carpet.rule.fixEndCrystalSync.desc": "修复活塞推动末地水晶后客户端与服务端位置不同步的问题。原因：原版末地水晶不做周期性位置同步，活塞推动由客户端和服务端各自独立模拟，模拟结果一旦分歧永不自愈（重进/重启后才恢复）。开启后服务端检测到末地水晶位置变化即强制执行原版位置同步，客户端 1 tick 内自动对齐，重进服务器时的出生时序竞争同样会被纠正",
+
   "carpetprimaryuan.command.support.player_not_found": "§c玩家不在线: %s",
   "carpetprimaryuan.command.support.missing_player": "§c缺少玩家参数",
 

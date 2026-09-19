@@ -2,7 +2,7 @@
 
 > Mod ID: `carpet-pry-addition` | 版本: `1.2.0`
 >
-> 共 **25 条**规则
+> 共 **26 条**规则
 >
 > **提示：可以使用 `Ctrl+F` 快速查找自己想要的规则**
 
@@ -20,6 +20,7 @@
 - [漏洞修复 (BUGFIX)](#漏洞修复-bugfix)
   - [fixXaeroLib - XaeroLib兼容性修复补丁](#fixxaerolib---xaerolib兼容性修复补丁)
   - [fixBlueMap - BlueMap兼容性修复补丁](#fixbluemap---bluemap兼容性修复补丁)
+  - [fixEndCrystalSync - 修复末地水晶位置不同步](#fixendcrystalsync---修复末地水晶位置不同步)
 - [移植功能 (PORTING)](#移植功能-porting)
   - [sleepingDuringTheDay - 白日做梦](#sleepingduringtheday---白日做梦)
   - [unicodeArgumentsSupport - Unicode 参数支持](#unicodeargumentssupport---unicode-参数支持)
@@ -185,6 +186,23 @@
 - [fabric-carpet #1962](https://github.com/gnembon/fabric-carpet/issues/1962) — Compatibility issue with Bluemap
 - [fabric-carpet PR #2142](https://github.com/gnembon/fabric-carpet/pull/2142)
 - [BlueMap #598](https://github.com/BlueMap-Minecraft/BlueMap/issues/598) — Unable to properly handle fake players who go offline
+
+---
+
+### fixEndCrystalSync - 修复末地水晶位置不同步
+
+修复活塞推动末地水晶（含无敌水晶）后，客户端显示位置与服务端真实位置不同步的问题。
+
+| 属性 | 值 |
+|------|-----|
+| **规则名** | `fixEndCrystalSync` |
+| **描述** | 修复活塞推动末地水晶后客户端与服务端位置不同步的问题。原因：原版末地水晶不做周期性位置同步，活塞推动由客户端和服务端各自独立模拟，模拟结果一旦分歧永不自愈（重进/重启后才恢复）。开启后服务端检测到末地水晶位置变化即强制执行原版位置同步，客户端 1 tick 内自动对齐，重进服务器时的出生时序竞争同样会被纠正 |
+| **类型** | `boolean` |
+| **默认值** | `false` |
+| **参考选项** | `false`, `true` |
+| **分类** | `PRIMARYUAN`, `BUGFIX` |
+
+**工作原理**：原版把末地水晶的跟踪间隔注册为 `updateInterval=Integer.MAX_VALUE`，服务端位置同步分支对水晶永不触发（除出生包外）；活塞推动时客户端与服务端各自在 `PistonMovingBlockEntity` 里独立模拟，一旦分歧没有任何自愈途径。开启后服务端在水晶位置变化时把 `ServerEntity.tickCount` 归零，令本次同步命中原版位置同步分支——数据包构造与广播完全复用原版，客户端 1 tick 内对齐。26.2 起 `tickCount` 自增移至门控之前，按版本预处理置 -1。
 
 ---
 

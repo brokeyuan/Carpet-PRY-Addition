@@ -159,4 +159,10 @@ public class CarpetPrimaryuanSettings {
             categories = {PRIMARYUAN, SURVIVAL, FEATURE}
     )
     public static String moreEndCrystalTypes = "false";
+
+    // 修复活塞推动末地水晶后客户端位置不同步
+    @Rule(
+            categories = {PRIMARYUAN, BUGFIX}
+    )
+    public static boolean fixEndCrystalSync = false;
 }

@@ -55,6 +55,9 @@
   "carpet.rule.moreEndCrystalTypes.name": "More End Crystal Types",
   "carpet.rule.moreEndCrystalTypes.desc": "Allows placing end crystals on crying obsidian: true=places a normal (vulnerable) crystal; invulnerable=places an invulnerable one (Invulnerable=1 with the bottom slab shown, identical to the invulnerable crystal obtainable by pushing it off a pillar mid dragon resurrection). In both modes the crystal's beam points to the fixed position (0,128,0). Crystals placed on obsidian/bedrock are unaffected",
 
+  "carpet.rule.fixEndCrystalSync.name": "Fix End Crystal Sync",
+  "carpet.rule.fixEndCrystalSync.desc": "Fixes client-side position desync when end crystals are pushed by pistons. Cause: vanilla never streams position updates for end crystals and both sides simulate piston pushes independently, so any divergence never self-corrects (only a relog/restart recovers). When enabled, the server forces the vanilla position-sync branch whenever a tracked crystal's position changes, realigning clients within 1 tick; the spawn-order race on relogin is covered too",
+
   "carpetprimaryuan.command.support.player_not_found": "§cPlayer not found: %s",
   "carpetprimaryuan.command.support.missing_player": "§cMissing player argument",
 

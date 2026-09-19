@@ -2,7 +2,7 @@
 
 > Mod ID: `carpet-pry-addition` | Version: `1.2.0`
 >
-> Total: **25 rules**
+> Total: **26 rules**
 >
 > **Tip: Use `Ctrl+F` to quickly find the rule you want**
 
@@ -20,6 +20,7 @@
 - [Bug Fixes (BUGFIX)](#bug-fixes-bugfix)
   - [fixXaeroLib - XaeroLib Compatibility Patch](#fixxaerolib---xaerolib-compatibility-patch)
   - [fixBlueMap - BlueMap Compatibility Patch](#fixbluemap---bluemap-compatibility-patch)
+  - [fixEndCrystalSync - Fix End Crystal Sync](#fixendcrystalsync---fix-end-crystal-sync)
 - [Ported Features (PORTING)](#ported-features-porting)
   - [sleepingDuringTheDay - Daydreaming](#sleepingduringtheday---daydreaming)
   - [unicodeArgumentsSupport - Unicode Argument Support](#unicodeargumentssupport---unicode-argument-support)
@@ -185,6 +186,23 @@ Fixes fake players not triggering Fabric API connection events, causing mods lik
 - [fabric-carpet #1962](https://github.com/gnembon/fabric-carpet/issues/1962) — Compatibility issue with Bluemap
 - [fabric-carpet PR #2142](https://github.com/gnembon/fabric-carpet/pull/2142)
 - [BlueMap #598](https://github.com/BlueMap-Minecraft/BlueMap/issues/598) — Unable to properly handle fake players who go offline
+
+---
+
+### fixEndCrystalSync - Fix End Crystal Sync
+
+Fixes the client-side position desync when an end crystal (including invulnerable ones) is pushed by pistons.
+
+| Property | Value |
+|----------|-------|
+| **Rule Name** | `fixEndCrystalSync` |
+| **Description** | Fixes client-side position desync when end crystals are pushed by pistons. Cause: vanilla never streams position updates for end crystals and both sides simulate piston pushes independently, so any divergence never self-corrects (only a relog/restart recovers). When enabled, the server forces the vanilla position-sync branch whenever a tracked crystal's position changes, realigning clients within 1 tick; the spawn-order race on relogin is covered too |
+| **Type** | `boolean` |
+| **Default Value** | `false` |
+| **Suggested Options** | `false`, `true` |
+| **Categories** | `PRIMARYUAN`, `BUGFIX` |
+
+**How it works**: vanilla registers the end crystal with `updateInterval=Integer.MAX_VALUE`, so the server position-sync branch never runs for crystals (except the initial spawn packet); during piston pushes, client and server simulate independently in `PistonMovingBlockEntity` with no self-healing path once they diverge. When enabled, the server zeroes `ServerEntity.tickCount` whenever a tracked crystal's position changes, making the current sync run the vanilla position-sync branch — packet construction and broadcasting are entirely vanilla, and clients realign within 1 tick. Since 26.2 the `tickCount` increment moved before the gate, so the preprocessor sets -1 per version.
 
 ---
 

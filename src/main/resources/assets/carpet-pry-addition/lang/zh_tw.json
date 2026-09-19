@@ -55,6 +55,9 @@
   "carpet.rule.moreEndCrystalTypes.name": "更多種類的終界水晶",
   "carpet.rule.moreEndCrystalTypes.desc": "允許把終界水晶放在哭泣的黑曜石上：true=放出的為普通水晶（不無敵）；invulnerable=放出的為無敵水晶（Invulnerable=1 且顯示底部板，與原版復活龍時推出的無敵水晶相同）。兩種模式放出的水晶光束均指向固定座標 (0,128,0)。放在普通黑曜石/基岩上的水晶不受影響",
 
+  "carpet.rule.fixEndCrystalSync.name": "修復終界水晶位置不同步",
+  "carpet.rule.fixEndCrystalSync.desc": "修復活塞推動終界水晶後用戶端與伺服器位置不同步的問題。原因：原版終界水晶不做週期性位置同步，活塞推動由用戶端和伺服器各自獨立模擬，模擬結果一旦分歧永不自癒（重進/重啟後才恢復）。開啟後伺服器偵測到終界水晶位置變化即強制執行原版位置同步，用戶端 1 tick 內自動對齊，重進伺服器時的出生時序競爭同樣會被糾正",
+
   "carpetprimaryuan.command.support.player_not_found": "§c玩家不在線: %s",
   "carpetprimaryuan.command.support.missing_player": "§c缺少玩家參數",
 
