@@ -2,6 +2,11 @@
 
 All notable changes to **Carpet-PRY-Addition** are documented in this file.
 
+## 未发布
+
+### 修复
+- **与 Axiom 的创造飞行速度冲突**（[#8](https://github.com/brokeyuan/Carpet-PRY-Addition/issues/8)）：同时安装 Axiom 时，其"创造模式飞行速度"调整会被快速打回 100%。根因是 `playerScalePhysics` 的每 tick 物理联动无条件管理 `Abilities.flyingSpeed`：Axiom 并非纯客户端调速——其服务端部分（单人存档的内置服务端同样加载）会通过 `axiom:set_fly_speed` 自定义包把调速值直接写入服务端玩家能力值，而本模组规则处于默认关闭时，只要发现该值偏离默认（0.05 = 100%）就立即复位并发送能力包，把 Axiom 的调整打回原形（Axiom 的 HUD 按当前值实时渲染百分比，故显示"回到 100%"）。现改为"所有权让位"策略：只接管原版默认值或本模组自己写入过的值；第三方的自定义速度（如 Axiom 调速）不改写、不发能力包，该值回到默认后自动重新接管。规则关闭 / scale 回 1.0 时对残留联动速度的清理行为不变，scale≠1 的飞行速度联动语义不变
+
 ## [1.2.2] - 2026-09-14
 
 **与 1.2.1 代码完全相同，无功能性变更**，为验证更新后的 CurseForge 凭证重新走发布流水线。

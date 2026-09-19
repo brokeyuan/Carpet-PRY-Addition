@@ -10,6 +10,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.util.WeakHashMap;
+
 /**
  * playerScalePhysics 规则：更真实的玩家大小。
  *
@@ -32,6 +34,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * 鞘翅滑翔/烟花的位移缩放由 LivingEntityMixin 按移动速度联动因子实现（因子随模式变化）。
  * 所有修改器均为瞬态（transient）、不写入 NBT，规则关闭或 scale 回到 1.0 后自动移除。
  * 所有受支持的 Minecraft 版本均生效（SCALE 及各联动属性自 1.20.5 起原版可用）。
+ *
+ * 飞行速度没有可挂修改器的属性，由本 mixin 直接写 Abilities.flyingSpeed 并经
+ * onUpdateAbilities() 发能力包同步。该字段也会被其他模组直接管理（如 Axiom 调整
+ * 创造飞行速度：客户端把调速经 axiom:set_fly_speed 自定义包写入服务端能力值），
+ * 故按"所有权让位"策略同步（见 syncFlyingSpeed）：只接管原版默认值
+ * （0.05）或本模组写入过的值，第三方的自定义速度不改写、不发能力包，避免其调速被
+ * 立即打回 100%（issue #8）；第三方值回到默认后自动重新接管。
  */
 @Mixin(Player.class)
 public abstract class PlayerMixin {
@@ -39,8 +48,17 @@ public abstract class PlayerMixin {
     private static final float playerScalePhysics$DEFAULT_FLYING_SPEED = 0.05F;
 
     /**
+     * 飞行速度当前值由本模组写入过的玩家及其写入值（弱引用，玩家对象回收后条目自动清理）。
+     * 用于"所有权让位"判定：当前速度非默认值、又不是本模组写入的，视为第三方
+     * （Axiom 等）的自定义速度，本 mixin 不覆盖。
+     */
+    private static final WeakHashMap<net.minecraft.server.level.ServerPlayer, Float> playerScalePhysics$OWNED_FLYING_SPEED =
+            new WeakHashMap<>();
+
+    /**
      * 每 tick 末尾幂等地同步各项物理量与 scale。数值无变化时不执行任何 add/remove/发包，
-     * 避免属性被标记 dirty 而产生每 tick 属性同步包。
+     * 避免属性被标记 dirty 而产生每 tick 属性同步包。飞行速度按"所有权让位"策略同步，
+     * 见 {@link #playerScalePhysics$syncFlyingSpeed}。
      */
     @Inject(method = "tick", at = @At("TAIL"))
     private void playerScalePhysics$onTick(CallbackInfo callbackInfo) {
@@ -49,6 +67,7 @@ public abstract class PlayerMixin {
         if (!(self instanceof net.minecraft.server.level.ServerPlayer)) {
             return;
         }
+        net.minecraft.server.level.ServerPlayer serverPlayer = (net.minecraft.server.level.ServerPlayer) self;
         AttributeInstance scaleAttr = self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.SCALE);
         if (scaleAttr == null) {
             return;
@@ -56,7 +75,8 @@ public abstract class PlayerMixin {
         Abilities abilities = self.getAbilities();
         String mode = CarpetPrimaryuanSettings.playerScalePhysics;
         if ("false".equalsIgnoreCase(mode)) {
-            // 规则关闭：移除残留的速度修改器并恢复默认飞行速度
+            // 规则关闭：移除残留的速度修改器；飞行速度仅回收本模组写入过的值
+            // （Axiom 等第三方写入的自定义速度让位，不覆盖）
             playerScalePhysics$updateModifier(
                     self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED), "scale_speed", 0.0D);
             playerScalePhysics$updateModifier(
@@ -71,10 +91,7 @@ public abstract class PlayerMixin {
                     self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.SAFE_FALL_DISTANCE), "scale_fall", 0.0D);
             playerScalePhysics$updateModifier(
                     self.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.GRAVITY), "scale_gravity", 0.0D);
-            if (abilities.getFlyingSpeed() != playerScalePhysics$DEFAULT_FLYING_SPEED) {
-                abilities.setFlyingSpeed(playerScalePhysics$DEFAULT_FLYING_SPEED);
-                self.onUpdateAbilities();
-            }
+            playerScalePhysics$syncFlyingSpeed(serverPlayer, abilities, playerScalePhysics$DEFAULT_FLYING_SPEED);
             return;
         }
 
@@ -124,10 +141,36 @@ public abstract class PlayerMixin {
 
         // 飞行速度：与移动速度同曲线（true/safety √scale、strict 线性，safety 有保底）
         double flyMul = speedMul;
-        float targetFlyingSpeed = (float) (playerScalePhysics$DEFAULT_FLYING_SPEED * flyMul);
-        if (abilities.getFlyingSpeed() != targetFlyingSpeed) {
+        playerScalePhysics$syncFlyingSpeed(
+                serverPlayer, abilities, (float) (playerScalePhysics$DEFAULT_FLYING_SPEED * flyMul));
+    }
+
+    /**
+     * 幂等同步飞行速度到目标值（数值无变化时不发包），并按"所有权让位"策略维护
+     * {@link #playerScalePhysics$OWNED_FLYING_SPEED} 所有权标记：
+     * <ul>
+     * <li>当前值为原版默认（0.05）→ 允许接管写入目标值（scale≠1 联动照常生效）；</li>
+     * <li>当前值为本模组写入过的值 → 允许改写（规则关闭、scale 回 1.0 时的清理照常生效）；</li>
+     * <li>当前值为非默认且非本模组写入（Axiom 等第三方调速）→ 不改写、不发能力包并释放
+     * 所有权，避免其调整被立即打回 100%（issue #8）；该值回到默认后自动重新接管。</li>
+     * </ul>
+     */
+    private static void playerScalePhysics$syncFlyingSpeed(
+            net.minecraft.server.level.ServerPlayer player, Abilities abilities, float targetFlyingSpeed) {
+        Float owned = playerScalePhysics$OWNED_FLYING_SPEED.get(player);
+        float current = abilities.getFlyingSpeed();
+        // 非默认值、又不是本模组写入的 → 第三方自定义速度，让位
+        boolean foreign = current != playerScalePhysics$DEFAULT_FLYING_SPEED
+                && (owned == null || owned != current);
+        if (current != targetFlyingSpeed && !foreign) {
             abilities.setFlyingSpeed(targetFlyingSpeed);
-            self.onUpdateAbilities();
+            player.onUpdateAbilities();
+            current = targetFlyingSpeed;
+        }
+        if (current == targetFlyingSpeed && targetFlyingSpeed != playerScalePhysics$DEFAULT_FLYING_SPEED) {
+            playerScalePhysics$OWNED_FLYING_SPEED.put(player, targetFlyingSpeed);
+        } else {
+            playerScalePhysics$OWNED_FLYING_SPEED.remove(player);
         }
     }
 
