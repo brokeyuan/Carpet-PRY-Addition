@@ -2,7 +2,7 @@
 
 > Mod ID: `carpet-pry-addition` | Version: `1.2.0`
 >
-> Total: **24 rules**
+> Total: **25 rules**
 >
 > **Tip: Use `Ctrl+F` to quickly find the rule you want**
 
@@ -34,6 +34,7 @@
   - [playerHat - Player Hat](#playerhat---player-hat)
   - [betterSnowball - Better Snowball](#bettersnowball---better-snowball)
   - [invisibleInTallGrass - Invisibility Grass](#invisibleintallgrass---invisibility-grass)
+  - [moreEndCrystalTypes - More End Crystal Types](#moreendcrystaltypes---more-end-crystal-types)
 - [Player Scaling](#player-scaling)
   - [playerScale - Player Scale](#playerscale---player-scale)
   - [playerScaleMin - Player Scale Min](#playerscalemin---player-scale-min)
@@ -355,6 +356,23 @@ Automatically makes the player invisible when their head is located in tall gras
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
 | **Categories** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
+
+---
+
+### moreEndCrystalTypes - More End Crystal Types
+
+Allows placing end crystals on crying obsidian. In vanilla, end crystals can only be placed on obsidian and bedrock; this rule unlocks crying obsidian as a crystal base. When set to `invulnerable`, the placed crystal is invulnerable — identical to the one obtainable in vanilla by pushing a pillar crystal off during dragon resurrection and interrupting the process (`Invulnerable=1` with the bottom slab shown); when set to `true`, the placed crystal is a normal vulnerable one. In both modes the crystal's beam points to the fixed position `(0, 128, 0)` (matching the vanilla resurrection crystal, regardless of placement location). Crystals placed on obsidian/bedrock are unaffected.
+
+| Property | Value |
+|----------|-------|
+| **Rule Name** | `moreEndCrystalTypes` |
+| **Description** | Allows placing end crystals on crying obsidian: true=places a normal (vulnerable) crystal; invulnerable=places an invulnerable one (Invulnerable=1 with the bottom slab shown, identical to the invulnerable crystal obtainable by pushing it off a pillar mid dragon resurrection). In both modes the crystal's beam points to the fixed position (0,128,0). Crystals placed on obsidian/bedrock are unaffected |
+| **Type** | `string` |
+| **Default Value** | `false` |
+| **Suggested Options** | `false`, `true`, `invulnerable` |
+| **Categories** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
+
+**How it works**: vanilla `EndCrystalItem.useOn` only accepts obsidian/bedrock as the base; when the rule is enabled, the clicked crying obsidian is swapped for an obsidian state to pass the check, and all remaining placement logic (space check, entity collision check, spawning, item consumption) is reused from vanilla. The spawned crystal gets its beam target set to `(0, 128, 0)`; in invulnerable mode it is additionally set `Invulnerable` (immune to attacks/explosions, still pushable by pistons and breakable in creative) and renders its bottom slab. The same `useOn` runs on both client and server, so the local prediction matches the server; vanilla clients on a dedicated server work too (1.19+ clients send the interaction packet before the local prediction).
 
 ---
 

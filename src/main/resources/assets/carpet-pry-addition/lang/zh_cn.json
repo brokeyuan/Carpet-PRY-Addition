@@ -52,6 +52,9 @@
   "carpet.rule.peacefulPlayers.name": "和平的玩家",
   "carpet.rule.peacefulPlayers.desc": "启用 /pvp 按玩家开关 PVP：双向免伤、自伤不限，拦截时播放提示音。false=隐藏命令；self=仅能调自己；true=管理员可调任意玩家；everyone=人人可调；/pvp on|off @a 为全服总开关（仅管理员），全局关闭期间锁定个人开关，状态跨重启保留",
 
+  "carpet.rule.moreEndCrystalTypes.name": "更多种类的末地水晶",
+  "carpet.rule.moreEndCrystalTypes.desc": "允许把末地水晶放在哭泣的黑曜石上：true=放出的为普通水晶（不无敌）；invulnerable=放出的为无敌水晶（Invulnerable=1 且显示底部板，与原版复活龙时推出的无敌水晶相同）。两种模式放出的水晶光束均指向固定坐标 (0,128,0)。放在普通黑曜石/基岩上的水晶不受影响",
+
   "carpetprimaryuan.command.support.player_not_found": "§c玩家不在线: %s",
   "carpetprimaryuan.command.support.missing_player": "§c缺少玩家参数",
 

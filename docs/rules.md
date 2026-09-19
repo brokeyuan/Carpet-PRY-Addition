@@ -2,7 +2,7 @@
 
 > Mod ID: `carpet-pry-addition` | 版本: `1.2.0`
 >
-> 共 **24 条**规则
+> 共 **25 条**规则
 >
 > **提示：可以使用 `Ctrl+F` 快速查找自己想要的规则**
 
@@ -34,6 +34,7 @@
   - [playerHat - 玩家帽子](#playerhat---玩家帽子)
   - [betterSnowball - 更好的雪球](#bettersnowball---更好的雪球)
   - [invisibleInTallGrass - 隐身草](#invisibleintallgrass---隐身草)
+  - [moreEndCrystalTypes - 更多种类的末地水晶](#moreendcrystaltypes---更多种类的末地水晶)
 - [玩家缩放](#玩家缩放)
   - [playerScale - 玩家随地大小变](#playerscale---玩家随地大小变)
   - [playerScaleMin - 玩家大小最小值](#playerscalemin---玩家大小最小值)
@@ -356,6 +357,23 @@
 | **默认值** | `false` |
 | **参考选项** | `false`, `true` |
 | **分类** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
+
+---
+
+### moreEndCrystalTypes - 更多种类的末地水晶
+
+允许把末地水晶放在哭泣的黑曜石上。原版末地水晶只能放在黑曜石和基岩上，本规则解锁哭泣的黑曜石作为水晶基座。设为 `invulnerable` 时放出的为无敌水晶——与原版复活龙过程中推出柱子、打断复活得到的水晶相同（`Invulnerable=1` 且显示底部黑曜石板）；设为 `true` 时放出的为不无敌的普通水晶。两种模式放出的水晶光束均指向固定坐标 `(0, 128, 0)`（与原版复活龙水晶一致，无论放在哪里）。放在普通黑曜石/基岩上的水晶不受影响。
+
+| 属性 | 值 |
+|------|-----|
+| **规则名** | `moreEndCrystalTypes` |
+| **描述** | 允许把末地水晶放在哭泣的黑曜石上：true=放出的为普通水晶（不无敌）；invulnerable=放出的为无敌水晶（Invulnerable=1 且显示底部板，与原版复活龙时推出的无敌水晶相同）。两种模式放出的水晶光束均指向固定坐标 (0,128,0)。放在普通黑曜石/基岩上的水晶不受影响 |
+| **类型** | `string` |
+| **默认值** | `false` |
+| **参考选项** | `false`, `true`, `invulnerable` |
+| **分类** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
+
+**工作原理**：原版 `EndCrystalItem.useOn` 只接受黑曜石/基岩作为基座，规则开启时把点击的哭泣黑曜石替换为黑曜石状态骗过校验，其余放置逻辑（上方空间检查、实体碰撞检查、生成、扣物品）全部复用原版。生成的水晶被设置光束指向点 `(0, 128, 0)`；无敌模式下再被设为 `Invulnerable`（无法被攻击/爆炸摧毁，仍可被活塞推动、创造模式破坏）并显示底部板。客户端与服务端共用同一份 `useOn`，本地预测与服务端判定一致；纯原版客户端在服务器上也可用（1.19+ 客户端先发送交互包再做本地预测）。
 
 ---
 

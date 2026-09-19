@@ -52,6 +52,9 @@
   "carpet.rule.peacefulPlayers.name": "和平的玩家",
   "carpet.rule.peacefulPlayers.desc": "啟用 /pvp 按玩家開關 PVP：雙向免傷、自傷不限，攔截時播放提示音。false=隱藏命令；self=僅能調自己；true=管理員可調任意玩家；everyone=人人可調；/pvp on|off @a 為全服總開關（僅管理員），全域關閉期間鎖定個人開關，狀態跨重啟保留",
 
+  "carpet.rule.moreEndCrystalTypes.name": "更多種類的終界水晶",
+  "carpet.rule.moreEndCrystalTypes.desc": "允許把終界水晶放在哭泣的黑曜石上：true=放出的為普通水晶（不無敵）；invulnerable=放出的為無敵水晶（Invulnerable=1 且顯示底部板，與原版復活龍時推出的無敵水晶相同）。兩種模式放出的水晶光束均指向固定座標 (0,128,0)。放在普通黑曜石/基岩上的水晶不受影響",
+
   "carpetprimaryuan.command.support.player_not_found": "§c玩家不在線: %s",
   "carpetprimaryuan.command.support.missing_player": "§c缺少玩家參數",
 

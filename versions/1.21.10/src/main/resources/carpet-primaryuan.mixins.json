@@ -23,7 +23,8 @@
     "rule.playerScalePhysics.PlayerMixin",
     "rule.playerScalePhysics.LivingEntityMixin",
     "rule.playerScaleLinkedEntities.ServerPlayerGameModeMixin",
-    "rule.playerScaleLinkedEntities.ServerLevelMixin"
+    "rule.playerScaleLinkedEntities.ServerLevelMixin",
+    "rule.moreEndCrystalTypes.EndCrystalItemMixin"
   ],
   "client": [
     "rule.entitiesRidingPlayers.ProjectileUtilMixin",

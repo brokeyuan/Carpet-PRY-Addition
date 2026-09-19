@@ -151,4 +151,12 @@ public class CarpetPrimaryuanSettings {
             categories = {PRIMARYUAN, SURVIVAL, COMMAND}
     )
     public static String peacefulPlayers = "false";
+
+    // 更多种类的末地水晶：允许把末地水晶放在哭泣的黑曜石上（invulnerable=放出的为无敌水晶）
+    @Rule(
+            options = {"false", "true", "invulnerable"},
+            strict = false,
+            categories = {PRIMARYUAN, SURVIVAL, FEATURE}
+    )
+    public static String moreEndCrystalTypes = "false";
 }
