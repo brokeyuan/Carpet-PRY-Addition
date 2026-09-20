@@ -79,12 +79,12 @@
 
 ### fakePlayerSkinMode - 假人皮肤设置
 
-安装前置 [skinrestorer](https://modrinth.com/mod/skinrestorer) 后，可以设置假人的皮肤。default=不更改假人皮肤，summon=假人使用召唤者的皮肤，same_skin=假人使用统一皮肤。
+安装前置 [skinrestorer](https://modrinth.com/mod/skinrestorer) 后，可以设置假人的皮肤。default=不更改假人皮肤，summon=假人使用召唤者的皮肤，same_skin=假人使用统一皮肤。皮肤仅对假人生效，不写入 skinrestorer 的持久存储，因此不会影响同名真人玩家的皮肤。
 
 | 属性 | 值 |
 |------|-----|
 | **规则名** | `fakePlayerSkinMode` |
-| **描述** | 安装前置 skinrestorer 后可设置假人皮肤：default=不修改；summon=使用召唤者的皮肤；same_skin=使用 fakePlayerSkinSet 指定玩家的皮肤 |
+| **描述** | 安装前置 skinrestorer 后可设置假人皮肤：default=不修改；summon=使用召唤者的皮肤；same_skin=使用 fakePlayerSkinSet 指定玩家的皮肤。皮肤仅对假人生效，不写入 skinrestorer 的持久存储，因此不会影响同名真人玩家的皮肤 |
 | **类型** | `string` |
 | **默认值** | `default` |
 | **参考选项** | `default`, `summon`, `same_skin` |
@@ -97,6 +97,8 @@
 | `default` | 不更改假人皮肤 |
 | `summon` | 假人使用召唤者的皮肤 |
 | `same_skin` | 假人使用统一皮肤 |
+
+> 皮肤仅应用到假人当前会话，不写入 skinrestorer 的持久存储：假人与同名真人玩家共用 UUID（服务器用户缓存命中或离线服场景下），一旦持久化，真人玩家上线时会被换肤，自行通过 `/skin` 设置的皮肤也会被覆盖。因此本规则从不持久化皮肤，真人玩家的皮肤不受任何影响。
 
 ---
 

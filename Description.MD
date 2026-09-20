@@ -35,6 +35,7 @@ Customize the appearance of carpet fake players by integrating with the optional
 
 - **`summon` mode** — the fake player uses the skin of the player who summoned it.
 - **`same_skin` mode** — all fake players share a unified skin, specified by `fakePlayerSkinSet` (default: `Brokeyuan`).
+- Skins apply to the fake player's session only — nothing is persisted to skinrestorer's storage, so real players sharing the same name (same UUID on offline-mode servers) never get reskinned.
 
 ### Fake Player Name Suggestions (`fakePlayerNameSuggestions`)
 

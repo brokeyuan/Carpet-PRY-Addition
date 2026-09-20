@@ -79,12 +79,12 @@ Customize the fake player list suggested by /player. Use ',' to separate each na
 
 ### fakePlayerSkinMode - Fake Player Skin Setting
 
-After installing the [skinrestorer](https://modrinth.com/mod/skinrestorer) dependency, you can set the skin of fake players. default=no change to fake player skin, summon=fake player uses the summoner's skin, same_skin=fake player uses a unified skin.
+After installing the [skinrestorer](https://modrinth.com/mod/skinrestorer) dependency, you can set the skin of fake players. default=no change to fake player skin, summon=fake player uses the summoner's skin, same_skin=fake player uses a unified skin. Skins apply to the fake player's session only and are never persisted to skinrestorer's storage, so real players sharing the name are never affected.
 
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `fakePlayerSkinMode` |
-| **Description** | Set fake player skins with the skinrestorer dependency: default=keep as-is; summon=use the summoner's skin; same_skin=use the skin of the player set in fakePlayerSkinSet |
+| **Description** | Set fake player skins with the skinrestorer dependency: default=keep as-is; summon=use the summoner's skin; same_skin=use the skin of the player set in fakePlayerSkinSet. Skins apply to the fake player's session only and are never persisted to skinrestorer's storage, so real players sharing the name are never affected |
 | **Type** | `string` |
 | **Default Value** | `default` |
 | **Suggested Options** | `default`, `summon`, `same_skin` |
@@ -97,6 +97,8 @@ After installing the [skinrestorer](https://modrinth.com/mod/skinrestorer) depen
 | `default` | No change to fake player skin |
 | `summon` | Fake player uses the summoner's skin |
 | `same_skin` | Fake player uses a unified skin |
+
+> Skins apply to the fake player's current session only and are never persisted to skinrestorer's storage: a fake player shares the UUID of a real player with the same name (when the name is in the server's user cache, or on offline-mode servers), so persisting would reskin that player on their next join, overriding even a skin they set via `/skin`. Fake player skins are therefore never saved, and real players' skins are never touched.
 
 ---
 

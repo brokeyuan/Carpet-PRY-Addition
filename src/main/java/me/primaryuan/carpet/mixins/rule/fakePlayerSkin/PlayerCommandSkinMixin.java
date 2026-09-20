@@ -81,7 +81,9 @@ public class PlayerCommandSkinMixin {
             Object context = contextConstructor.newInstance("mojang", skinPlayerName, slimVariant);
 
             java.lang.reflect.Method setSkinAsyncMethod = skinServiceClass.getMethod("setSkinAsync", net.minecraft.server.MinecraftServer.class, java.util.Collection.class, skinProviderContextClass, boolean.class);
-            setSkinAsyncMethod.invoke(null, server, java.util.Collections.singletonList(wrapSkinTarget(targetPlayer)), context, true);
+            // save=false：仅对假人当前会话生效，不写入 SkinRestorer 持久存储——
+            // 假人 UUID 与同名真人相同，落库会导致真人上线被换肤
+            setSkinAsyncMethod.invoke(null, server, java.util.Collections.singletonList(wrapSkinTarget(targetPlayer)), context, false);
 
             Class<?> playerUtilsClass = Class.forName("net.lionarius.skinrestorer.util.PlayerUtils");
             java.lang.reflect.Method refreshPlayerMethod = playerUtilsClass.getMethod("refreshPlayer", ServerPlayer.class);
