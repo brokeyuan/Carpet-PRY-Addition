@@ -1,6 +1,6 @@
 {
   "carpet.rule.fakePlayerTpp.name": "Fake Player Pearl Station TP",
-  "carpet.rule.fakePlayerTpp.desc": "Use fake players to trigger pearl teleport stations; enables the /tppset station manager and the /tpp teleport command",
+  "carpet.rule.fakePlayerTpp.desc": "Use fake players to trigger pearl teleport stations; enables the /tppset station manager and the /tpp teleport command. /tpp requires Carpet TIS Addition (provides /player rejoin); everything else works without it",
   "carpet.rule.fakePlayerNameSuggestions.name": "Fake Player Name Suggestions",
   "carpet.rule.fakePlayerNameSuggestions.desc": "Customize the fake player names suggested by the /player command, separated by ','",
   "carpet.rule.fakePlayerSkinMode.name": "Fake Player Skin Mode",
@@ -73,6 +73,7 @@
   "carpetprimaryuan.command.ride.disallow_pickup_subtitle": "§c%s player cannot be picked up",
 
   "carpetprimaryuan.command.tpp.disabled": "§cFake player pearl teleport is not enabled. Please ask admin to run /carpet fakePlayerTpp true.",
+  "carpetprimaryuan.command.tpp.tis_required": "§c/tpp requires Carpet TIS Addition (it provides /player rejoin to respawn the fake player where it logged off). Please install it and retry; /tppset and other features are unaffected",
   "carpetprimaryuan.command.tpp.station_not_found": "§cStation '%s' does not exist. Available stations: %s",
   "carpetprimaryuan.command.tpp.teleporting": "Teleporting to station: %s (%s)",
   "carpetprimaryuan.command.tpp.teleport_failed": "§cTeleport failed: fake player %s did not come online before timeout",

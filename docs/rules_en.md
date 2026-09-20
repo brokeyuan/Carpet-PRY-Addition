@@ -49,12 +49,12 @@
 
 ### fakePlayerTpp - Fake Player Pearl Station Teleport
 
-Use fake players to quickly use pearl teleport stations. When set to true, enables the /tppset setup command and the /tpp player command.
+Use fake players to quickly use pearl teleport stations. When set to true, enables the /tppset setup command and the /tpp player command. The `/tpp` teleport requires [Carpet TIS Addition](https://modrinth.com/mod/carpet-tis-addition) (its `/player rejoin` respawns the station's fake player where it logged off); without it, `/tpp` fails immediately with a clear message, while `/tppset` and everything else keep working.
 
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `fakePlayerTpp` |
-| **Description** | Use fake players to trigger pearl teleport stations; enables the /tppset station manager and the /tpp teleport command |
+| **Description** | Use fake players to trigger pearl teleport stations; enables the /tppset station manager and the /tpp teleport command. /tpp requires Carpet TIS Addition (provides /player rejoin); everything else works without it |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
@@ -99,6 +99,8 @@ After installing the [skinrestorer](https://modrinth.com/mod/skinrestorer) depen
 | `same_skin` | Fake player uses a unified skin |
 
 > Skins apply to the fake player's current session only and are never persisted to skinrestorer's storage: a fake player shares the UUID of a real player with the same name (when the name is in the server's user cache, or on offline-mode servers), so persisting would reskin that player on their next join, overriding even a skin they set via `/skin`. Fake player skins are therefore never saved, and real players' skins are never touched.
+
+> If [Carpet TIS Addition](https://modrinth.com/mod/carpet-tis-addition) is installed, its `/player <name> rejoin` (respawning the fake player where it logged off) applies these skins as well: rejoin internally reuses Carpet's vanilla spawn logic, where this mod's skin hook sits at the tail — behavior is identical to a plain spawn (`summon` mode uses the skin of whoever ran the rejoin command).
 
 ---
 

@@ -1,6 +1,6 @@
 {
   "carpet.rule.fakePlayerTpp.name": "假人珍珠站傳送",
-  "carpet.rule.fakePlayerTpp.desc": "使用假人快速使用珍珠傳送站；開啟後啟用 /tppset 站點管理與 /tpp 傳送命令",
+  "carpet.rule.fakePlayerTpp.desc": "使用假人快速使用珍珠傳送站；開啟後啟用 /tppset 站點管理與 /tpp 傳送命令。/tpp 需前置 Carpet TIS Addition（提供 /player rejoin），未安裝時其餘功能不受影響",
   "carpet.rule.fakePlayerNameSuggestions.name": "假人名稱建議",
   "carpet.rule.fakePlayerNameSuggestions.desc": "自訂 /player 命令建議的假人名稱清單，使用 ',' 分隔",
   "carpet.rule.fakePlayerSkinMode.name": "假人皮膚設定",
@@ -73,6 +73,7 @@
   "carpetprimaryuan.command.ride.disallow_pickup_subtitle": "§c%s 玩家禁止被撿起",
 
   "carpetprimaryuan.command.tpp.disabled": "§c假人珍珠傳送功能未開啟。請管理員使用 /carpet fakePlayerTpp true 開啟。",
+  "carpetprimaryuan.command.tpp.tis_required": "§c/tpp 需要 Carpet TIS Addition（其提供 /player rejoin，用於在假人下線位置重生）。請安裝後重試；/tppset 等其餘功能不受影響",
   "carpetprimaryuan.command.tpp.station_not_found": "§c站點 '%s' 不存在。可用站點: %s",
   "carpetprimaryuan.command.tpp.teleporting": "正在傳送到站點: %s (%s)",
   "carpetprimaryuan.command.tpp.teleport_failed": "§c傳送失敗: 假人 %s 未能在逾時前上線",

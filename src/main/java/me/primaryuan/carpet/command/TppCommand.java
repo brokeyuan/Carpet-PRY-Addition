@@ -10,6 +10,7 @@ import me.primaryuan.carpet.TppConfigManager;
 import me.primaryuan.carpet.i18n.ServerI18n;
 import me.primaryuan.carpet.util.FakePlayerSessionManager;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -32,6 +33,14 @@ public class TppCommand {
     private static final int MAX_BASE_NAME_LENGTH = 10;
     /** Minecraft 玩家名/GameProfile 名上限（也是站点内部名上限：站点必须完整保留） */
     private static final int MAX_FAKE_NAME_LENGTH = 16;
+
+    /**
+     * Carpet TIS Addition 是否已安装（提供 /player rejoin：在假人下线位置与朝向重生）。
+     * /tpp 的传送流程依赖 rejoin，是该模组唯一的软依赖方；未安装时 /tpp 立即给出明确提示，
+     * 其余功能（含 /tppset spawn，走原版 spawn）不受影响。
+     */
+    private static final boolean TIS_ADDITION_LOADED =
+            FabricLoader.getInstance().isModLoaded("carpet-tis-addition");
 
     /** resolveStation 的解析结果：站点内部名 / 构建好的假人名 / 显示名 */
     private record StationRequest(String station, String fakePlayerName, String displayName) {}
@@ -179,6 +188,12 @@ public class TppCommand {
     private static int teleportToStation(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         CommandSourceStack source = context.getSource();
         ServerPlayer player = source.getPlayerOrException();
+
+        // /tpp 依赖 rejoin 在假人下线位置重生（由 Carpet TIS Addition 提供，软依赖）
+        if (!TIS_ADDITION_LOADED) {
+            source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.tpp.tis_required"));
+            return 0;
+        }
 
         StationRequest request = resolveStation(source, player, context.getArgument(STATION_ARG, String.class));
         if (request == null) return 0;

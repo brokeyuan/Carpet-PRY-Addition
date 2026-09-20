@@ -36,6 +36,7 @@ Customize the appearance of carpet fake players by integrating with the optional
 - **`summon` mode** — the fake player uses the skin of the player who summoned it.
 - **`same_skin` mode** — all fake players share a unified skin, specified by `fakePlayerSkinSet` (default: `Brokeyuan`).
 - Skins apply to the fake player's session only — nothing is persisted to skinrestorer's storage, so real players sharing the same name (same UUID on offline-mode servers) never get reskinned.
+- With [Carpet TIS Addition](https://modrinth.com/mod/carpet-tis-addition) installed, `/player <name> rejoin` gets the same skin treatment — rejoin reuses Carpet's spawn logic, where the skin hook applies.
 
 ### Fake Player Name Suggestions (`fakePlayerNameSuggestions`)
 
@@ -51,6 +52,8 @@ Commands:
 
 - `/tpp <station>` — teleport to a station.
 - `/tppset` — manage stations, player aliases, and per-station pearl use counts. Data is persisted in `config/carpet-pry-tpp.json`.
+
+`/tpp` requires [Carpet TIS Addition](https://modrinth.com/mod/carpet-tis-addition) — its `/player rejoin` respawns the station's fake player at its logged-off position and orientation. This is a soft dependency: without it, `/tpp` immediately reports the missing requirement, while `/tppset` and everything else work normally.
 
 ### Fake Player Continuous Drop (`fakePlayerDropAll`)
 

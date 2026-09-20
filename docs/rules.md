@@ -49,12 +49,12 @@
 
 ### fakePlayerTpp - 假人珍珠站传送
 
-使用假人快速使用珍珠传送站。当为true时启用/tppset设置指令和/tpp 玩家指令。
+使用假人快速使用珍珠传送站。当为true时启用/tppset设置指令和/tpp 玩家指令。`/tpp` 传送需前置 [Carpet TIS Addition](https://modrinth.com/mod/carpet-tis-addition)（其 `/player rejoin` 让站点假人在下线位置与朝向重生）；未安装时执行 `/tpp` 会立即提示缺少前置，`/tppset` 站点管理与其余功能不受影响。
 
 | 属性 | 值 |
 |------|-----|
 | **规则名** | `fakePlayerTpp` |
-| **描述** | 使用假人快速使用珍珠传送站；开启后启用 /tppset 站点管理与 /tpp 传送命令 |
+| **描述** | 使用假人快速使用珍珠传送站；开启后启用 /tppset 站点管理与 /tpp 传送命令。/tpp 需前置 Carpet TIS Addition（提供 /player rejoin），未安装时其余功能不受影响 |
 | **类型** | `boolean` |
 | **默认值** | `false` |
 | **参考选项** | `false`, `true` |
@@ -99,6 +99,8 @@
 | `same_skin` | 假人使用统一皮肤 |
 
 > 皮肤仅应用到假人当前会话，不写入 skinrestorer 的持久存储：假人与同名真人玩家共用 UUID（服务器用户缓存命中或离线服场景下），一旦持久化，真人玩家上线时会被换肤，自行通过 `/skin` 设置的皮肤也会被覆盖。因此本规则从不持久化皮肤，真人玩家的皮肤不受任何影响。
+
+> 若安装 [Carpet TIS Addition](https://modrinth.com/mod/carpet-tis-addition)，其提供的 `/player <name> rejoin`（假人在下线位置与朝向重生）同样会应用上述皮肤：rejoin 内部复用 Carpet 原版 spawn 逻辑，本模组的皮肤注入点位于其末尾，行为与普通 spawn 完全一致（`summon` 模式使用执行 rejoin 命令者的皮肤）。
 
 ---
 
