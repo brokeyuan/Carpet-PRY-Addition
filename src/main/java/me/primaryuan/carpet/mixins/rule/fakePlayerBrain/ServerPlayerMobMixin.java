@@ -15,72 +15,74 @@ import org.spongepowered.asm.mixin.Unique;
 /**
  * 假人"生物化"注入 Mixin（核心架构第 1 步：注入导航器/移动控制/目标选择器）。
  *
- * <p>把 {@link PryMob} 假面接口以 {@code @Implements(prefix = "pry$")} 嫁接到
- * 所有 {@code ServerPlayer}（含 Carpet 假人）上：下面每个 {@code pry$xxx}
- * 方法即接口抽象方法（{@code getNavigation}/{@code getMoveControl}/…）的实装，
- * 全部转发到 {@link MobFields} 惰性状态容器。</p>
+ * <p>把 {@link PryMob} 假面接口嫁接到所有 {@code ServerPlayer}（含 Carpet 假人）上：
+ * mixin 类<b>直接 {@code implements PryMob}</b>——Mixin 会把 mixin 类声明的接口
+ * 一并合并进目标类（Carpet 自己的 {@code ServerPlayerInterface} 就是这个写法，
+ * 全版本可靠）。最初版本用的 {@code @Implements(prefix=...)} 软嫁接在部分
+ * Mixin 版本上不生效（接口没进目标类，运行期 ClassCastException），故废弃。</p>
  *
- * <p>关键点：</p>
+ * <p>下面每个接口方法的实装全部转发到 {@link MobFields} 惰性状态容器：</p>
  * <ul>
  *   <li><b>真人零开销</b>：{@link MobFields} 在首次被访问时才创建；真人既无
- *       Brain 也不运行 Goal，几乎永远不会触达——不注入任何每 tick 逻辑；</li>
+ *       Brain 也不运行 Goal，几乎永远不会触达；</li>
  *   <li><b>只换脑子、不换身体</b>：注入的都是"逻辑状态"（寻路/移动/视线/目标），
  *       不碰模型/碰撞箱/属性，实体的类型始终是 {@code ServerPlayer}；</li>
  *   <li><b>零额外实体</b>：任何控制器都没有对应的 Entity 对象。</li>
  * </ul>
  */
 @Mixin(ServerPlayer.class)
-@org.spongepowered.asm.mixin.Implements(
-        @org.spongepowered.asm.mixin.Interface(iface = PryMob.class, prefix = "pry$", unique = true)
-)
-public abstract class ServerPlayerMobMixin {
+public abstract class ServerPlayerMobMixin implements PryMob {
 
     /** 惰性状态容器（真人无脑时保持 null，零分配） */
     @Unique
     private MobFields pry$mobFields;
 
-    /**
-     * PryMob.fields() 的实装（方法名 = 前缀 + 接口方法名）：
-     * 首次访问才创建容器。
-     */
-    public MobFields pry$fields() {
+    /** PryMob.fields()：首次访问才创建容器 */
+    @Override
+    public MobFields fields() {
         if (this.pry$mobFields == null) {
             this.pry$mobFields = new MobFields((ServerPlayer) (Object) this);
         }
         return this.pry$mobFields;
     }
 
-    // ----- 以下均为 PryMob 抽象方法的实装（转发到 MobFields）-----
-
-    public PlayerPathNavigation pry$getNavigation() {
-        return this.pry$fields().getNavigation();
+    @Override
+    public PlayerPathNavigation getNavigation() {
+        return this.fields().getNavigation();
     }
 
-    public PlayerMoveControl pry$getMoveControl() {
-        return this.pry$fields().getMoveControl();
+    @Override
+    public PlayerMoveControl getMoveControl() {
+        return this.fields().getMoveControl();
     }
 
-    public PlayerLookControl pry$getLookControl() {
-        return this.pry$fields().getLookControl();
+    @Override
+    public PlayerLookControl getLookControl() {
+        return this.fields().getLookControl();
     }
 
-    public PlayerSensing pry$getSensing() {
-        return this.pry$fields().getSensing();
+    @Override
+    public PlayerSensing getSensing() {
+        return this.fields().getSensing();
     }
 
-    public PlayerGoalSelector pry$getGoalSelector() {
-        return this.pry$fields().goalSelector();
+    @Override
+    public PlayerGoalSelector getGoalSelector() {
+        return this.fields().goalSelector();
     }
 
-    public PlayerGoalSelector pry$getTargetSelector() {
-        return this.pry$fields().targetSelector();
+    @Override
+    public PlayerGoalSelector getTargetSelector() {
+        return this.fields().targetSelector();
     }
 
-    public LivingEntity pry$getTarget() {
-        return this.pry$fields().getTarget();
+    @Override
+    public LivingEntity getTarget() {
+        return this.fields().getTarget();
     }
 
-    public void pry$setTarget(LivingEntity target) {
-        this.pry$fields().setTarget(target);
+    @Override
+    public void setTarget(LivingEntity target) {
+        this.fields().setTarget(target);
     }
 }

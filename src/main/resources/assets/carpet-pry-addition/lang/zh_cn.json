@@ -150,6 +150,7 @@
   "carpetprimaryuan.command.brain.unknown_mode": "§c未知 AI 模式: %s（可用: zombie / skeleton / irongolem / spider / pillager / wolf / villager / enderman / off）",
   "carpetprimaryuan.command.brain.need_owner_player": "§c狼模式需要一名真人玩家作为主人（请以玩家身份执行该命令）",
   "carpetprimaryuan.command.brain.attached": "§a已为 %s 挂载 %s AI，Carpet 手动指令已屏蔽（brain off 或关闭规则后恢复）",
+  "carpetprimaryuan.command.brain.creative_hint": "§e提示：%s 当前为创造模式，AI 不会索敌玩家也不会被玩家类目标选中（与原版生物一致）；需要战斗请切换到生存模式",
 
   "carpetprimaryuan.command.scale.set_self": "§a你的大小已设为 %sx",
   "carpetprimaryuan.command.scale.set_other_admin": "§a已将 %s 的大小设为 %sx",

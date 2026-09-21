@@ -23,6 +23,13 @@ public class PlayerPanicGoal extends PlayerGoal {
 
     private static final double SPEED = 1.35;      // 惊惧狂奔的速度系数（快于行走）
     private static final int MAX_DIST = 8;         // 逃跑目标最大距离（格）
+    /**
+     * 恐慌窗口（tick）：仅"最近 100 tick（5 秒）内受过伤"才算恐慌中。
+     * 必须有时间盒——{@code getLastHurtByMob()} 永不清除，没有窗口的话
+     * 村民被恐吓一次就会永远跑下去（原版 PanicGoal 用的是带时限的
+     * {@code getLastDamageSource()}，语义等价）。
+     */
+    private static final int PANIC_WINDOW_TICKS = 100;
 
     private final PryMob mob;
     private double posX;
@@ -39,7 +46,10 @@ public class PlayerPanicGoal extends PlayerGoal {
     @Override
     public boolean canUse() {
         LivingEntity threat = this.mob.getLastHurtByMob();
-        if (threat == null && !this.mob.asLiving().isOnFire()) {
+        boolean recentlyHurt = threat != null
+                && this.mob.asLiving().tickCount - this.mob.asLiving().getLastHurtByMobTimestamp()
+                        < PANIC_WINDOW_TICKS;
+        if (!recentlyHurt && !this.mob.asLiving().isOnFire() && !this.mob.asLiving().isFreezing()) {
             return false;
         }
         if (threat != null && !threat.isAlive()) {

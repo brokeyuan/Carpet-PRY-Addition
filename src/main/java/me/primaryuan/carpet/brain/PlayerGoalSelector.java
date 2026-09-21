@@ -58,6 +58,7 @@ public class PlayerGoalSelector {
         this.goals.clear();
     }
 
+
     /** 每 tick 调度入口（BrainManager 驱动，位于玩家 travel 之前） */
     public void tick() {
         Iterator<WrappedGoal> it = this.runningGoals.iterator();
@@ -70,7 +71,8 @@ public class PlayerGoalSelector {
                 it.remove();
             }
         }
-        // 尝试启动新目标：优先级升序、要求冷却通过 + 旗标不冲突
+        // 尝试启动新目标：优先级升序、要求冷却通过；旗标冲突时允许
+        // 更高优先级（数值更小）的新目标抢占运行中的低优先级目标
         List<WrappedGoal> candidates = new ArrayList<>();
         for (WrappedGoal wrapped : this.goals.values()) {
             if (!wrapped.running && wrapped.goal.canStart()) {
@@ -79,28 +81,57 @@ public class PlayerGoalSelector {
         }
         candidates.sort(Comparator.comparingInt(w -> w.priority));
         for (WrappedGoal wrapped : candidates) {
-            if (!flagsAreFree(wrapped.goal.getFlags())) {
-                continue; // 与运行中目标抢占同一"部位"，放弃启动
-            }
-            if (wrapped.goal.canUse()) {
-                wrapped.goal.start();
-                wrapped.running = true;
-                this.runningGoals.add(wrapped);
-                break; // 每 tick 至多启动一个（与原版逐 tick 挑选的节奏一致）
-            }
+            this.tryStart(wrapped);
         }
     }
 
-    /** 候选目标的旗标是否与所有运行中目标的旗标不相交 */
-    private boolean flagsAreFree(java.util.Set<PlayerGoal.Flag> candidate) {
-        for (WrappedGoal wrapped : this.runningGoals) {
-            for (PlayerGoal.Flag flag : wrapped.goal.getFlags()) {
-                if (candidate.contains(flag)) {
-                    return false;
-                }
+    /**
+     * 尝试启动一个候选目标（原版 GoalSelector 的旗标互斥 + 抢占语义）。
+     * 缺少抢占时会出现"漫步中假人对眼前的敌人视而不见"——漫步（低优先级）
+     * 未走完路径前，近战/恐慌（高优先级）一直被旗标互斥拦住。
+     *
+     * @return 是否成功启动
+     */
+    private boolean tryStart(WrappedGoal candidate) {
+        // 先评估候选是否真要启动（canUse 通常带目标扫描/A* 等开销，
+        // 顺序上必须在停止任何运行中目标之前）
+        if (!candidate.goal.canUse()) {
+            return false;
+        }
+        List<WrappedGoal> preempted = null;
+        for (WrappedGoal running : this.runningGoals) {
+            if (!conflicts(running, candidate)) {
+                continue;
+            }
+            if (running.priority <= candidate.priority) {
+                return false; // 运行中的目标优先级不低于候选：排队等待，不抢占
+            }
+            if (preempted == null) {
+                preempted = new ArrayList<>();
+            }
+            preempted.add(running);
+        }
+        if (preempted != null) {
+            for (WrappedGoal running : preempted) {
+                running.goal.stop();
+                running.running = false;
+                this.runningGoals.remove(running);
             }
         }
+        candidate.goal.start();
+        candidate.running = true;
+        this.runningGoals.add(candidate);
         return true;
+    }
+
+    /** 两个目标的旗标是否相交（互斥判定） */
+    private boolean conflicts(WrappedGoal a, WrappedGoal b) {
+        for (PlayerGoal.Flag flag : a.goal.getFlags()) {
+            if (b.goal.getFlags().contains(flag)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** 目标包装：priority + running 状态（对齐原版 WrappedGoal 的最小形态） */

@@ -6,11 +6,13 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import me.primaryuan.carpet.CarpetPrimaryuanServer;
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import me.primaryuan.carpet.brain.BrainManager;
 import me.primaryuan.carpet.i18n.ServerI18n;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.List;
@@ -108,16 +110,32 @@ public final class PlayerBrainCommand {
             ownerUuid = owner.getUUID();
         }
 
-        String attached = BrainManager.attach(player, mode, ownerUuid);
-        if (attached == null) {
-            source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.brain.unknown_mode", mode));
+        try {
+            String attached = BrainManager.attach(player, mode, ownerUuid);
+            if (attached == null) {
+                source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.brain.unknown_mode", mode));
+                return 0;
+            }
+            final String modeDisplay = ServerI18n.tr(
+                    "carpetprimaryuan.command.brain.mode_" + attached).getString();
+            source.sendSuccess(() -> ServerI18n.tr(
+                    "carpetprimaryuan.command.brain.attached", name, modeDisplay), true);
+            // 创造模式的假人不会被任何 AI 索敌、也无法索敌玩家（与原版生物的
+            // 目标可见性一致）——最常见的"挂了脑子没反应"原因，主动提示
+            if (player.isCreative()) {
+                source.sendSystemMessage(ServerI18n.tr(
+                        "carpetprimaryuan.command.brain.creative_hint", name));
+            }
+            return 1;
+        } catch (Throwable t) {
+            // 挂载失败必须可见：RCON 等来源会把异常吞成一句"unexpected error"，
+            // 这里回显异常类型与首帧，并把完整堆栈写进服务器日志
+            CarpetPrimaryuanServer.LOGGER.error("brain attach failed for {} ({})", name, mode, t);
+            StackTraceElement top = t.getStackTrace().length > 0 ? t.getStackTrace()[0] : null;
+            source.sendFailure(Component.literal("§cbrain attach failed: " + t
+                    + (top != null ? " @ " + top : "")));
             return 0;
         }
-        final String modeDisplay = ServerI18n.tr(
-                "carpetprimaryuan.command.brain.mode_" + attached).getString();
-        source.sendSuccess(() -> ServerI18n.tr(
-                "carpetprimaryuan.command.brain.attached", name, modeDisplay), true);
-        return 1;
     }
 
     /** 模式名补全：zombie / skeleton / irongolem / spider / wolf / villager / off */

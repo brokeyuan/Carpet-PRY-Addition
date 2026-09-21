@@ -16,8 +16,9 @@ import net.minecraft.world.item.Items;
  * 原生 {@code startUsingItem → releaseUsingItem} 流程——由原版
  * {@code CrossbowItem.releaseUsing} 扣除背包箭矢并射出。</p>
  *
- * <p><b>激活条件（收弩熄火）</b>：仅当假人主手持弩时整套目标链可用；
- * 装好后中途取下由目标谓词每 tick 复核判定失败，目标释放、远程 Goal 停摆。</p>
+ * <p><b>激活条件（收弩熄火）</b>：目标选择与远程 Goal 均按
+ * {@code isHolding(Items.CROSSBOW)} 每 tick 动态判定——挂脑时不要求已持弩，
+ * 中途收弩即熄火，重新持弩自动恢复。</p>
  */
 public class PillagerBrain extends PlayerBrainController {
 
@@ -32,10 +33,8 @@ public class PillagerBrain extends PlayerBrainController {
 
     @Override
     protected void assemble() {
-        // 主手无弩：整个模式不装配任何目标（装好后中途取弩则由谓词动态熄火）
-        if (!this.player.getMainHandItem().is(Items.CROSSBOW)) {
-            return;
-        }
+        // 收弩熄火由谓词/远程 Goal 的 canUse 动态判定（此刻无弩也照常装配，
+        // 之后拿到弩立即生效——避免"先挂脑后给装备"时序导致的空脑子）
         // 被打反击（原版掠夺者同样挂 HurtByTargetGoal）
         this.targetSelector.addGoal(1, new PlayerHurtByTargetGoal(this.prowler, null));
         // 追击目标：最近的存活玩家；谓词里额外要求假人此刻仍持弩（收弩即熄火）

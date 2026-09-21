@@ -11,10 +11,10 @@ import net.minecraft.world.item.Items;
 /**
  * 骷髅模式脑（装配器）：原版远程风筝 AI，零凭空造物。
  *
- * <p><b>激活条件（摘弓熄火）</b>：仅当假人主手持弓（{@link Items#BOW}）时
- * 整套目标链才可用——装配时主手无弓直接不装；装好后中途取下弓，由目标谓词
- * （{@code this.prowler.isHolding(...)}）在每 tick 复核时判定失败，目标被释放、
- * 远程 Goal 随即停摆，假人原地熄火。重新拿弓自动恢复。</p>
+ * <p><b>激活条件（摘弓熄火）</b>：目标选择与远程 Goal 均按
+ * {@code isHolding(Items.BOW)} 每 tick 动态判定——挂脑时不要求已持弓
+ * （"先挂脑后给装备"也能立即生效），中途摘弓则目标被释放、远程 Goal 停摆，
+ * 重新拿弓自动恢复。</p>
  *
  * <p><b>零凭空造物（红线的落地方案）</b>：不手动实例化任何箭。拉弓蓄力走原生
  * {@code Player.startUsingItem}，满弦（{@link PlayerRangedAttackGoal} 蓄力 20 tick）
@@ -39,10 +39,8 @@ public class SkeletonBrain extends PlayerBrainController {
 
     @Override
     protected void assemble() {
-        // 主手无弓：整个模式不装配任何目标（装好后中途取弓则由谓词动态熄火）
-        if (!this.player.getMainHandItem().is(Items.BOW)) {
-            return;
-        }
+        // 摘弓熄火由谓词/远程 Goal 的 canUse 动态判定（此刻无弓也照常装配，
+        // 之后拿到弓立即生效——避免"先挂脑后给装备"时序导致的空脑子）
         // 被打反击（原版骷髅同样挂 HurtByTargetGoal）
         this.targetSelector.addGoal(1, new PlayerHurtByTargetGoal(this.prowler, null));
         // 追击目标：最近的存活玩家；谓词里额外要求假人此刻仍持弓（摘弓即熄火）

@@ -150,6 +150,7 @@
   "carpetprimaryuan.command.brain.unknown_mode": "§cUnknown AI mode: %s (available: zombie / skeleton / irongolem / spider / pillager / wolf / villager / enderman / off)",
   "carpetprimaryuan.command.brain.need_owner_player": "§cWolf mode requires a real player as the owner (run the command as a player)",
   "carpetprimaryuan.command.brain.attached": "§aAttached %s AI to %s, Carpet manual actions are suppressed (restore with brain off or disabling the rule)",
+  "carpetprimaryuan.command.brain.creative_hint": "§eNote: %s is in Creative mode; AI neither targets players nor gets targeted by player-seeking goals (vanilla parity). Switch to Survival for combat",
 
   "carpetprimaryuan.command.scale.set_self": "§aYour scale has been set to %sx",
   "carpetprimaryuan.command.scale.set_other_admin": "§a%s's scale has been set to %sx",
