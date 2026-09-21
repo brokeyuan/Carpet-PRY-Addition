@@ -5,6 +5,7 @@ import me.primaryuan.carpet.brain.PryMob;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -38,6 +39,8 @@ public class PlayerRangedAttackGoal extends PlayerGoal {
     private final float maxAttackRadiusSqr;
     /** 认可的远程武器（弓/弩）：主手（或副手）持有才允许开弓 */
     private final Item weapon;
+    /** 是否为弩（上弦完成由 isCharged 状态驱动射击；弓按蓄力 tick 驱动） */
+    private final boolean crossbow;
     /** 满蓄力所需 tick */
     private final int chargeTime;
 
@@ -60,6 +63,7 @@ public class PlayerRangedAttackGoal extends PlayerGoal {
         this.attackRadiusSqr = attackRadius * attackRadius;
         this.maxAttackRadiusSqr = attackRadius * attackRadius * 3.0F;
         this.weapon = weapon;
+        this.crossbow = weapon == Items.CROSSBOW;
         this.chargeTime = chargeTime;
         this.attackTime = attackIntervalMin;
         this.setFlags(EnumSet.of(PlayerGoal.Flag.MOVE, PlayerGoal.Flag.LOOK));
@@ -140,16 +144,22 @@ public class PlayerRangedAttackGoal extends PlayerGoal {
             this.mob.getLookControl().setLookAt(target, 30.0F, 30.0F);
         }
 
-        // 射击状态机：蓄力 → 满弦放箭 → 冷却 → 再开弓
+        // 射击状态机：蓄力 → 满弦/上弦完成放箭 → 冷却 → 再开弓
         if (this.mob.isUsingItem()) {
             if (!hasLineOfSight && this.seeTime < -60) {
                 this.mob.stopUsingItem(); // 跟丢目标：静默收弓重新瞄准（不发射）
             } else if (hasLineOfSight) {
                 int charge = this.mob.getTicksUsingItem();
-                if (charge >= this.chargeTime) {
+                // 弩在蓄满瞬间由原版 onUseTick 自动装填背包真箭（isCharged 翻 true），
+                // 弓无此状态，按 elapsed 蓄力 tick 判定满弦
+                boolean loaded = this.crossbow
+                        ? CrossbowItem.isCharged(this.mob.getMainHandItem())
+                        : charge >= this.chargeTime;
+                if (loaded) {
                     // ★ 原生流程：releaseUsingItem 触发 ItemStack.releaseUsing →
-                    //   BowItem/CrossbowItem.releaseUsing，扣除背包真实箭矢、
-                    //   按满蓄力力学射出并广播生成包（零凭空造物）★
+                    //   BowItem.releaseUsing / CrossbowItem.releaseUsing，
+                    //   按满蓄力力学射出（弩射出的正是 onUseTick 从背包装填的真箭，
+                    //   零凭空造物）★
                     this.mob.releaseUsingItem();
                     this.mob.performRangedAttack(target, getPowerForTime(charge, this.chargeTime));
                     this.attackTime = SHOOT_COOLDOWN;
@@ -157,11 +167,17 @@ public class PlayerRangedAttackGoal extends PlayerGoal {
             }
         } else if (--this.attackTime <= 0 && this.seeTime >= -60) {
             ItemStack weapon = this.mob.getMainHandItem();
-            if (weapon.is(this.weapon)
+            if (this.crossbow && CrossbowItem.isCharged(weapon)) {
+                // 已上弦但"使用中"状态被原版蓄满自动完成（completeUsingItem）收走：
+                // 走原版 use() 扣扳机射击（等价真人右键击发已上弦的弩）
+                weapon.getItem().use(this.mob.asPlayer().level(), this.mob.asPlayer(),
+                        InteractionHand.MAIN_HAND);
+                this.attackTime = SHOOT_COOLDOWN;
+            } else if (weapon.is(this.weapon)
                     && !this.mob.asPlayer().getProjectile(weapon).isEmpty()) {
                 this.mob.startUsingItem(InteractionHand.MAIN_HAND); // 拉弦/上弦
             } else {
-                this.attackTime = 10; // 背包无箭：稍后再试（原生流程无箭不发射，别空转空查）
+                this.attackTime = 10; // 无弹药/武器不符：稍后再试，避免每 tick 空转空查
             }
         }
     }

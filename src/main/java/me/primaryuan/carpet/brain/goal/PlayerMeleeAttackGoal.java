@@ -98,6 +98,9 @@ public class PlayerMeleeAttackGoal extends PlayerGoal {
         if (target == null) {
             return;
         }
+        // 攻击冷却递减（原版 MeleeAttackGoal 的 1 秒节奏）——漏掉这一步会导致
+        // "攻击一次后冷却永远 >0，之后永久哑火、只追不打"
+        this.ticksUntilNextAttack = Math.max(this.ticksUntilNextAttack - 1, 0);
         // 眼睛始终盯住目标（限速 30°/tick）
         this.mob.getLookControl().setLookAt(target, 30.0F, 30.0F);
         this.ticksUntilNextPathRecalculation = Math.max(this.ticksUntilNextPathRecalculation - 1, 0);

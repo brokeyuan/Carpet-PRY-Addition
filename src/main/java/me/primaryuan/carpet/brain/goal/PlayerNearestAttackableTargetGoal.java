@@ -39,6 +39,9 @@ public class PlayerNearestAttackableTargetGoal<T extends LivingEntity> extends P
 
     /** 可见性记忆：连续多少 tick 看不见才放弃 */
     private final int memoryTicks = 60;
+    /** 运行中复扫周期（tick）：出现明显更近的合法目标时切换（原版锁定语义的增强） */
+    private static final int RETARGET_SCAN_INTERVAL = 20;
+    private int retargetCountdown = RETARGET_SCAN_INTERVAL;
     private int unseenTicks;
     /** 本周期搜索到的目标（等待 start 时写入） */
     private LivingEntity pendingTarget;
@@ -106,6 +109,18 @@ public class PlayerNearestAttackableTargetGoal<T extends LivingEntity> extends P
             return;
         }
         this.unseenTicks = this.mob.getSensing().hasLineOfSight(target) ? 0 : this.unseenTicks + 1;
+        // 运行中周期复扫：出现明显更近的合法目标时切换。
+        // 原版 NearestAttackableTargetGoal 只在目标失效后重搜，锁死首个目标；
+        // 这里每 20 tick 扫一次，新目标须比当前目标近 20% 以上才切换，避免等距抖动
+        if (--this.retargetCountdown <= 0) {
+            this.retargetCountdown = RETARGET_SCAN_INTERVAL;
+            LivingEntity best = this.findBestTarget();
+            if (best != null && best != target
+                    && this.mob.distanceToSqr(best) < this.mob.distanceToSqr(target) * 0.8) {
+                this.mob.setTarget(best);
+                this.unseenTicks = 0;
+            }
+        }
     }
 
     /** 在范围内找最近满足谓词的候选 */

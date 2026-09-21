@@ -135,11 +135,14 @@ public interface PryMob {
 
     /**
      * 近战攻击转写点（对齐原版 {@code Mob#doHurtTarget}）：
-     * 直接调用<b>玩家原生的 {@code Player#attack}</b>——伤害/暴击/击退/扫击/附魔/
-     * 武器耐久/音效全套走原版玩家战斗逻辑，绝不手搓伤害。
+     * 调用<b>玩家原生的 {@code Player#attack}</b>——伤害/暴击/击退/扫击/附魔/
+     * 武器耐久/音效全套走原版玩家战斗逻辑，绝不手搓伤害；随后挥手广播
+     * （原版 {@code MeleeAttackGoal} 在 {@code doHurtTarget} 前同样显式 swing，
+     * {@code Player#attack} 自身不含挥手，缺了它客户端看不到攻击动画）。
      */
     default boolean doHurtTarget(Entity target) {
         asPlayer().attack(target);
+        asPlayer().swing(InteractionHand.MAIN_HAND);
         return true;
     }
 
