@@ -1,6 +1,8 @@
 package me.primaryuan.carpet.brain;
 
+import me.primaryuan.carpet.brain.goal.PlayerHurtByTargetGoal;
 import me.primaryuan.carpet.brain.goal.PlayerNearestAttackableTargetGoal;
+import me.primaryuan.carpet.brain.goal.PlayerRandomStrollGoal;
 import me.primaryuan.carpet.brain.goal.PlayerRangedAttackGoal;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -34,6 +36,8 @@ public class PillagerBrain extends PlayerBrainController {
         if (!this.player.getMainHandItem().is(Items.CROSSBOW)) {
             return;
         }
+        // 被打反击（原版掠夺者同样挂 HurtByTargetGoal）
+        this.targetSelector.addGoal(1, new PlayerHurtByTargetGoal(this.prowler, null));
         // 追击目标：最近的存活玩家；谓词里额外要求假人此刻仍持弩（收弩即熄火）
         this.targetSelector.addGoal(2, new PlayerNearestAttackableTargetGoal<>(
                 this.prowler, Player.class, 24.0, 10, true,
@@ -43,5 +47,7 @@ public class PillagerBrain extends PlayerBrainController {
         // ★ 零凭空造物：releaseUsingItem → 原生 CrossbowItem.releaseUsing 射出背包箭矢 ★
         this.goalSelector.addGoal(1, new PlayerRangedAttackGoal(
                 this.prowler, 1.0, 20, 8.0F, Items.CROSSBOW, 25));
+        // 空闲漫游（原版掠夺者同样挂 RandomStrollGoal）
+        this.goalSelector.addGoal(2, new PlayerRandomStrollGoal(this.prowler, 1.0));
     }
 }

@@ -1,6 +1,8 @@
 package me.primaryuan.carpet.brain;
 
+import me.primaryuan.carpet.brain.goal.PlayerHurtByTargetGoal;
 import me.primaryuan.carpet.brain.goal.PlayerNearestAttackableTargetGoal;
+import me.primaryuan.carpet.brain.goal.PlayerRandomStrollGoal;
 import me.primaryuan.carpet.brain.goal.PlayerRangedAttackGoal;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -41,13 +43,17 @@ public class SkeletonBrain extends PlayerBrainController {
         if (!this.player.getMainHandItem().is(Items.BOW)) {
             return;
         }
+        // 被打反击（原版骷髅同样挂 HurtByTargetGoal）
+        this.targetSelector.addGoal(1, new PlayerHurtByTargetGoal(this.prowler, null));
         // 追击目标：最近的存活玩家；谓词里额外要求假人此刻仍持弓（摘弓即熄火）
         this.targetSelector.addGoal(2, new PlayerNearestAttackableTargetGoal<>(
                 this.prowler, Player.class, 24.0, 10, true,
                 p -> p != this.player && p.isAlive() && !p.isSpectator() && !p.isCreative()
                         && this.prowler.isHolding(s -> s.is(Items.BOW))));
         // 行为：原版远程 Goal（速度 1.0、最短射击间隔 20 tick、攻击半径 8 格）
-        // ★ 射箭零凭空造物：满弦后 stopUsingItem() → 原生 BowItem.releaseUsing 射出 ★
+        // ★ 射箭零凭空造物：满弦后 releaseUsingItem() → 原生 BowItem.releaseUsing 射出 ★
         this.goalSelector.addGoal(1, new PlayerRangedAttackGoal(this.prowler, 1.0, 20, 8.0F));
+        // 空闲漫游（原版骷髅同样挂 RandomStrollGoal）
+        this.goalSelector.addGoal(2, new PlayerRandomStrollGoal(this.prowler, 1.0));
     }
 }

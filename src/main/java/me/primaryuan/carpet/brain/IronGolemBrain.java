@@ -2,6 +2,7 @@ package me.primaryuan.carpet.brain;
 
 import me.primaryuan.carpet.brain.goal.PlayerMeleeAttackGoal;
 import me.primaryuan.carpet.brain.goal.PlayerNearestAttackableTargetGoal;
+import me.primaryuan.carpet.brain.goal.PlayerRandomStrollGoal;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Creeper;
@@ -45,5 +46,7 @@ public class IronGolemBrain extends PlayerBrainController {
                 this.prowler, Monster.class, 16.0, 10, true,
                 m -> m.isAlive() && !(m instanceof Creeper)));
         this.goalSelector.addGoal(1, new PlayerMeleeAttackGoal(this.prowler, 1.0, true));
+        // 空闲漫游（原版铁傀儡同样挂 RandomStrollGoal）：无怪可清时巡逻而非原地挂机
+        this.goalSelector.addGoal(2, new PlayerRandomStrollGoal(this.prowler, 1.0));
     }
 }

@@ -1,5 +1,6 @@
 package me.primaryuan.carpet.brain;
 
+import me.primaryuan.carpet.brain.goal.PlayerHurtByTargetGoal;
 import me.primaryuan.carpet.brain.goal.PlayerMeleeAttackGoal;
 import me.primaryuan.carpet.brain.goal.PlayerNearestAttackableTargetGoal;
 import me.primaryuan.carpet.brain.goal.PlayerRandomStrollGoal;
@@ -26,6 +27,8 @@ public class SpiderBrain extends PlayerBrainController {
 
     @Override
     protected void assemble() {
+        // 被打反击：蜘蛛被打随时还手（不受昼夜门控限制，与原版 HurtByTargetGoal 一致）
+        this.targetSelector.addGoal(1, new PlayerHurtByTargetGoal(this.prowler, null));
         // 只在夜间（外界不明亮）把玩家当作目标；白天该目标 canUse 恒 false
         this.targetSelector.addGoal(2, new PlayerNearestAttackableTargetGoal<>(
                 this.prowler, Player.class, 20.0, 10, true,

@@ -70,6 +70,9 @@ public class PlayerStareAggroGoal extends PlayerGoal {
 
     @Override
     public void stop() {
+        // 目标脱离索敌范围/死亡：清空攻击目标，近战 Goal 随之收手，
+        // 行为链回落到漫游/反击——避免"人在视野外仍持有幽灵目标"
+        this.mob.setTarget(null);
         this.pendingTarget = null;
     }
 
