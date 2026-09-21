@@ -3,6 +3,7 @@ package me.primaryuan.carpet.mixins.rule.fakePlayerCommandExtensions;
 import carpet.commands.PlayerCommand;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import me.primaryuan.carpet.command.PlayerBrainCommand;
 import me.primaryuan.carpet.command.PlayerCommandExtension;
 import me.primaryuan.carpet.command.PlayerSendtoCommandExtension;
 import net.minecraft.commands.CommandBuildContext;
@@ -42,7 +43,8 @@ public class PlayerCommandExtensionsMixin {
                 Commands.literal("player")
                         .then(Commands.argument("player", StringArgumentType.word())
                                 .then(PlayerCommandExtension.buildDropAllNode())
-                                .then(PlayerSendtoCommandExtension.buildSendtoNode()))
+                                .then(PlayerSendtoCommandExtension.buildSendtoNode())
+                                .then(PlayerBrainCommand.buildBrainNode()))
         );
     }
 }

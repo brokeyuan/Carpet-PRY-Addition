@@ -2,7 +2,7 @@
 
 > Mod ID: `carpet-pry-addition` | 版本: `1.2.0`
 >
-> 共 **26 条**规则
+> 共 **27 条**规则
 >
 > **提示：可以使用 `Ctrl+F` 快速查找自己想要的规则**
 
@@ -17,6 +17,7 @@
   - [fakePlayerSkinSet - 假人统一皮肤设置](#fakeplayerskinset---假人统一皮肤设置)
   - [fakePlayerDropAll - 假人持续清空背包](#fakeplayerdropall---假人持续清空背包)
   - [fakePlayerSendto - 假人背包链接](#fakeplayersendto---假人背包链接)
+  - [fakePlayerBrain - 假人脑子](#fakeplayerbrain---假人脑子)
 - [漏洞修复 (BUGFIX)](#漏洞修复-bugfix)
   - [fixXaeroLib - XaeroLib兼容性修复补丁](#fixxaerolib---xaerolib兼容性修复补丁)
   - [fixBlueMap - BlueMap兼容性修复补丁](#fixbluemap---bluemap兼容性修复补丁)
@@ -142,6 +143,37 @@
 |------|-----|
 | **规则名** | `fakePlayerSendto` |
 | **描述** | 给 /player <name> 追加 sendto 子命令，建立假人间单向背包物品流（默认每 tick 一组，多目标轮流分配，目标满时源背包缓冲），转移频率可调；sendto stop 停止并移除链接，链接不跨重启 |
+| **类型** | `boolean` |
+| **默认值** | `false` |
+| **参考选项** | `false`, `true` |
+| **分类** | `PRIMARYUAN`, `BOT`, `COMMAND` |
+
+---
+
+### fakePlayerBrain - 假人脑子
+
+给 `/player <name>` 下追加 brain 子命令，把原版生物式 AI"脑子"挂到假人身上。核心设计是**只换脑子、不换身体、零额外实体**：假人始终保持 `ServerPlayer` 实体类型，血量/攻击/背包/交互全部为玩家原生属性；AI 的移动指令全部折算为玩家原生按键输入（`zza/xxa` + 限速转向 + 原生跳跃），交由玩家原生 `travel()` 物理执行，绝不直接改写坐标或速度。寻路为自研紧凑 A*（原版 `MobNavigation` 构造器强绑定 `Mob` 实例，为守住"零额外实体"红线，在方块网格上等价复刻了原版寻路的节点推进与卡死重算语义）。架构为策略模式：mixin 在 `ServerPlayer` 初始化时嫁接 `PryMob` 假面接口（导航器/移动控制/视线控制/双目标选择器按需惰性挂载，真人零开销），各模式往双选择器装配移植 Goal，纯服务端实现、客户端无需安装任何模组。
+
+可用模式（`/player <name> brain <mode>`，`off` 为卸载）：
+
+| 模式 | 行为 |
+|------|------|
+| `zombie` | 近战追击最近的玩家（原版 `MeleeAttackGoal` 语义），进入玩家原生攻击距离后调用原生 `attack()` 挥砍 |
+| `skeleton` | 主手持弓时激活：远程锁定 + 风筝走位，原生 `startUsingItem → releaseUsingItem` 拉弓消耗背包真实箭矢 |
+| `pillager` | 同骷髅但持弩（上弦 25 tick） |
+| `irongolem` | 攻击周围敌对生物（`Monster`，不攻击苦力怕，对齐原版铁傀儡）与敌对假人（处于敌对 AI 模式的假人，含报复攻击过自己的玩家） |
+| `spider` | 昼中立、夜敌对（对齐原版蜘蛛），夜间疾跑追击 |
+| `wolf` | 跟随主人（执行命令的玩家）并仇恨同步：主人被谁打就咬谁 |
+| `villager` | 无仇恨：随机漫步、被攻击恐慌逃离、遇僵尸反向逃跑（原版 `PanicGoal`/`AvoidEntityGoal` 语义） |
+| `enderman` | 被凝视激怒（原版 `isStaredAt` 点积算法）后锁定目标并 `setSprinting(true)` 疾跑扑击 |
+| `off` | 卸载脑子，恢复 Carpet 手动控制 |
+
+挂载期间 Carpet 的手动移动/攻击指令（`/player <name> move|attack|use` 等）会被屏蔽（actionPack 停摆），`brain off` 或关闭规则后立即恢复；规则关闭、模式切换、假人下线/死亡均自动卸载。视觉同步（行走/疾跑/挥手/拉弓/视角）全部由原版实体同步机制驱动，客户端零依赖。
+
+| 属性 | 值 |
+|------|-----|
+| **规则名** | `fakePlayerBrain` |
+| **描述** | 给 /player <name> 追加 brain 子命令，为假人注入生物 AI（纯服务端、零额外实体、无需客户端模组；AI 移动全部折算为玩家原生按键输入，绝不直接改坐标），8 种模式：zombie / skeleton / pillager / irongolem / spider / wolf / villager / enderman |
 | **类型** | `boolean` |
 | **默认值** | `false` |
 | **参考选项** | `false`, `true` |

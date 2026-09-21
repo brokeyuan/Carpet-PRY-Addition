@@ -2,7 +2,7 @@
 
 > Mod ID: `carpet-pry-addition` | Version: `1.2.0`
 >
-> Total: **26 rules**
+> Total: **27 rules**
 >
 > **Tip: Use `Ctrl+F` to quickly find the rule you want**
 
@@ -17,6 +17,7 @@
   - [fakePlayerSkinSet - Fake Player Unified Skin Setting](#fakeplayerskinset---fake-player-unified-skin-setting)
   - [fakePlayerDropAll - Fake Player Continuous Drop](#fakeplayerdropall---fake-player-continuous-drop)
   - [fakePlayerSendto - Fake Player Inventory Link](#fakeplayersendto---fake-player-inventory-link)
+  - [fakePlayerBrain - Fake Player Brain](#fakeplayerbrain---fake-player-brain)
 - [Bug Fixes (BUGFIX)](#bug-fixes-bugfix)
   - [fixXaeroLib - XaeroLib Compatibility Patch](#fixxaerolib---xaerolib-compatibility-patch)
   - [fixBlueMap - BlueMap Compatibility Patch](#fixbluemap---bluemap-compatibility-patch)
@@ -142,6 +143,37 @@ Adds a sendto sub-command to /player <name> creating one-way inventory item flow
 |----------|-------|
 | **Rule Name** | `fakePlayerSendto` |
 | **Description** | Adds a sendto sub-command to /player <name> creating one-way inventory item flow between fake players (one stack per trigger, default every tick, round-robin across targets, source buffers when a target is full) with adjustable pace; sendto stop removes all links, links do not survive restarts |
+| **Type** | `boolean` |
+| **Default Value** | `false` |
+| **Suggested Options** | `false`, `true` |
+| **Categories** | `PRIMARYUAN`, `BOT`, `COMMAND` |
+
+---
+
+### fakePlayerBrain - Fake Player Brain
+
+Adds a brain sub-command to `/player <name>` attaching vanilla-mob-style AI to fake players. Core design: **swap the brain, keep the body, zero extra entities** — the fake player always stays a `ServerPlayer` with native health/attack/inventory/interactions; every AI movement command is translated into native player movement input (`zza/xxa` + rate-limited turning + native jumping) and executed by the player's native `travel()` physics, never by directly writing coordinates or velocity. Pathfinding is a self-contained compact A* (vanilla `MobNavigation` is hard-bound to a `Mob` instance in its constructor; to honor the zero-extra-entity rule, node advancement and stuck-recompute semantics are faithfully re-implemented on the block grid). Architecture is strategy pattern: a mixin grafts the `PryMob` facade interface onto `ServerPlayer` at init (navigation/move-control/look-control/dual goal selectors are lazily attached, zero cost for real players); each mode assembles ported Goals into the dual selectors. Purely server-side, no client mod required.
+
+Available modes (`/player <name> brain <mode>`, `off` detaches):
+
+| Mode | Behavior |
+|------|----------|
+| `zombie` | Melee-chases the nearest player (vanilla `MeleeAttackGoal` semantics) and swings via the native `attack()` once in player reach |
+| `skeleton` | Active while holding a bow: ranged lock-on + kiting; native `startUsingItem → releaseUsingItem` draws the bow and consumes real arrows from the inventory |
+| `pillager` | Same as skeleton but with a crossbow (25-tick charge) |
+| `irongolem` | Attacks nearby hostile mobs (`Monster`, creepers excluded, matching vanilla iron golems) and hostile fake players (fake players in hostile AI modes, plus retaliating against whoever attacked it) |
+| `spider` | Neutral in daylight, hostile at night (matching vanilla spiders); sprints in pursuit at night |
+| `wolf` | Follows its owner (the command executor) and syncs aggro: bites whoever hurts the owner |
+| `villager` | No aggro: random strolling, panics when attacked, flees from zombies (vanilla `PanicGoal`/`AvoidEntityGoal` semantics) |
+| `enderman` | Provoked by being stared at (vanilla `isStaredAt` dot-product algorithm), locks the starer and sprints via `setSprinting(true)` |
+| `off` | Detaches the brain, restoring Carpet manual control |
+
+While attached, Carpet manual move/attack actions (`/player <name> move|attack|use` etc.) are suppressed (actionPack suspended) and restored immediately on `brain off` or disabling the rule; rule toggle-off, mode switch, fake player logoff or death all detach automatically. Visual sync (walking/sprinting/swing/bow draw/looking) is driven entirely by vanilla entity synchronization — zero client dependency.
+
+| Property | Value |
+|----------|-------|
+| **Rule Name** | `fakePlayerBrain` |
+| **Description** | Adds a brain sub-command to /player <name> injecting mob-style AI into fake players (server-side only, zero extra entities, no client mod; AI movement is translated into native player movement input, coordinates are never touched), 8 modes: zombie / skeleton / pillager / irongolem / spider / wolf / villager / enderman |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |

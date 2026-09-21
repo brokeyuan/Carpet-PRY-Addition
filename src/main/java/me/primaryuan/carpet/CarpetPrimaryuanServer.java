@@ -7,6 +7,7 @@ import com.google.common.collect.Maps;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import me.primaryuan.carpet.brain.BrainManager;
 import me.primaryuan.carpet.command.HatCommand;
 import me.primaryuan.carpet.command.PvpCommand;
 import me.primaryuan.carpet.command.RidingCommand;
@@ -48,8 +49,9 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
             "ridingPlayers",                  // /riding
             "pickupPlayers",                  // /picking
             "fakePlayerDropAll",   // /player <name> dropall
-            "playerScale",                    // /scale
             "fakePlayerSendto",               // /player <name> sendto
+            "fakePlayerBrain",                // /player <name> brain
+            "playerScale",                    // /scale
             "peacefulPlayers"                 // /pvp
     );
 
@@ -82,6 +84,9 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
 
         // 假人背包链接（sendto）：初始化 tick 转移调度、假人下线清理与服务器停止清空监听
         SendtoLinkManager.init();
+
+        // 假人脑子（brain）：初始化会话周期扫描、停服清理与跨维度防御性重挂
+        BrainManager.init();
 
         // 不按规则门控：onLogOut 除骑乘下车外还清理骑乘/捡起两张许可表，
         // 只开 pickupPlayers 的服务器同样需要下线清理，否则同名重进继承旧许可

@@ -38,6 +38,9 @@
   "carpet.rule.fakePlayerSendto.name": "Fake Player Inventory Link",
   "carpet.rule.fakePlayerSendto.desc": "Adds a sendto sub-command to /player <name> creating one-way inventory item flow between fake players (one stack per trigger, default every tick, round-robin across targets, source buffers when a target is full) with adjustable pace; sendto stop removes all links, links do not survive restarts",
 
+  "carpet.rule.fakePlayerBrain.name": "Fake Player Brain",
+  "carpet.rule.fakePlayerBrain.desc": "Adds a brain sub-command to /player <name> injecting mob-style AI into fake players (server-side only, zero extra entities, no client mod; all AI movement is translated into native player movement input, coordinates are never touched): zombie=melee-chases the nearest player and swings with the vanilla player attack(); skeleton/pillager=ranged attacks with a bow/crossbow in main hand plus kiting (native item-use consumes real arrows from the inventory); irongolem=attacks hostile mobs (except creepers) and hostile fake players (also retaliates against its attackers); spider=neutral in daylight, hostile at night; wolf=follows its owner and syncs aggro (bites whoever hurts the owner); villager=random strolling and flees from zombies; enderman=provoked by being stared at, then sprints at the starer. While attached, Carpet manual move/attack actions are suppressed (actionPack); detached on brain off, mode switch, rule toggle-off, fake player logoff or death",
+
   "carpet.rule.playerScale.name": "Player Scale",
   "carpet.rule.playerScale.desc": "Registers the minecraft:scale attribute for Player and enables /scale set|reset|info; value only needs to be greater than 0, bounded by playerScaleMin/Max. false=hide command; self=adjust self only; true=adjust self, admins adjust anyone; everyone=anyone adjusts anyone. FOV compensation requires client install",
   "carpet.rule.playerScaleMin.name": "Player Scale Min",
@@ -130,6 +133,23 @@
   "carpetprimaryuan.command.sendto.started_after": "§aFake player %s will transfer one stack after %d ticks",
   "carpetprimaryuan.command.sendto.started_perTick": "§aFake player %s transfer mode set to %d times per second",
   "carpetprimaryuan.command.sendto.started_randomly": "§aFake player %s transfer mode set to random interval %d-%d ticks per stack",
+
+  "carpetprimaryuan.command.brain.status_off": "§e%s has no brain attached (Carpet manual control)",
+  "carpetprimaryuan.command.brain.status_on": "§a%s current AI mode: %s",
+  "carpetprimaryuan.command.brain.mode_zombie": "Zombie",
+  "carpetprimaryuan.command.brain.mode_skeleton": "Skeleton",
+  "carpetprimaryuan.command.brain.mode_irongolem": "Iron Golem",
+  "carpetprimaryuan.command.brain.mode_spider": "Spider",
+  "carpetprimaryuan.command.brain.mode_wolf": "Wolf",
+  "carpetprimaryuan.command.brain.mode_villager": "Villager",
+  "carpetprimaryuan.command.brain.mode_pillager": "Pillager",
+  "carpetprimaryuan.command.brain.mode_enderman": "Enderman",
+  "carpetprimaryuan.command.brain.not_fake": "§c%s is not a fake player, brain only supports carpet fake players",
+  "carpetprimaryuan.command.brain.detached": "§aDetached %s's brain, Carpet manual control restored",
+  "carpetprimaryuan.command.brain.no_brain": "§e%s has no brain attached",
+  "carpetprimaryuan.command.brain.unknown_mode": "§cUnknown AI mode: %s (available: zombie / skeleton / irongolem / spider / pillager / wolf / villager / enderman / off)",
+  "carpetprimaryuan.command.brain.need_owner_player": "§cWolf mode requires a real player as the owner (run the command as a player)",
+  "carpetprimaryuan.command.brain.attached": "§aAttached %s AI to %s, Carpet manual actions are suppressed (restore with brain off or disabling the rule)",
 
   "carpetprimaryuan.command.scale.set_self": "§aYour scale has been set to %sx",
   "carpetprimaryuan.command.scale.set_other_admin": "§a%s's scale has been set to %sx",

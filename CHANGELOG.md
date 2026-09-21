@@ -5,6 +5,9 @@ All notable changes to **Carpet-PRY-Addition** are documented in this file.
 ## 未发布
 
 ### 功能
+### 功能
+- **假人脑子**（`fakePlayerBrain`）：给 `/player <name>` 追加 brain 子命令，把原版生物式 AI"脑子"挂到假人身上，提供 8 种模式——`zombie`（近战追击最近玩家，原生 `attack()` 挥砍）、`skeleton`/`pillager`（主手持弓/弩时远程锁定与风筝走位，走原生 `startUsingItem → releaseUsingItem` 流程消耗背包真实箭矢）、`irongolem`（攻击敌对生物——不攻击苦力怕——与攻击过自己的假人）、`spider`（昼中立夜敌对）、`wolf`（跟随执行命令的主人并仇恨同步：主人被谁打就咬谁）、`villager`（随机漫步、被攻击恐慌、遇僵尸反向逃跑）、`enderman`（被凝视激怒——原版 `isStaredAt` 点积算法——后锁定并 `setSprinting(true)` 疾跑扑击）。核心设计遵循"只换脑子、不换身体、零额外实体、零凭空造物"：假人始终保持 `ServerPlayer` 类型与全部原生属性；寻路为自研紧凑 A*（原版 `MobNavigation` 构造器强绑定 `Mob` 实例，为守住零实体红线在方块网格上等价复刻节点推进/卡死重算语义）；AI 移动全部经注入的 `PlayerMoveControl` 折算为玩家原生按键输入（`zza/xxa`+限速转向+原生跳跃），交由玩家原生 `travel()` 物理执行，绝不直接改坐标/速度，避免玩家物理与生物瞬移式移动打架导致的"鬼畜抽搐"；架构为策略模式——mixin 在 `ServerPlayer` 初始化时以 `@Implements` 嫁接 `PryMob` 假面接口，导航器/移动控制/视线控制/双目标选择器按需惰性挂载（真人零开销），各模式向双选择器装配移植 Goal；挂载期间 Carpet 手动移动/攻击指令屏蔽（actionPack 停摆），`brain off`/切换模式/关闭规则/假人下线死亡均自动卸载且无残留；视觉同步（行走/疾跑/挥手/拉弓/视角）由原版实体同步机制驱动，纯服务端，客户端无需安装任何模组
+
 - **更多种类的末地水晶**（`moreEndCrystalTypes`）：允许把末地水晶放在哭泣的黑曜石上。`true` = 放出的为普通水晶（不无敌）；`invulnerable` = 放出的为无敌水晶（`Invulnerable=1` 且显示底部板，与原版复活龙过程中推出柱子、打断复活得到的水晶相同）。两种模式放出的水晶光束均指向固定坐标 `(0,128,0)`。实现上仅把点击的哭泣黑曜石替换为黑曜石状态骗过原版基座校验，其余放置逻辑全部复用原版；客户端/服务端共用同一份逻辑，纯原版客户端在服务器上也可用。放在普通黑曜石/基岩上的水晶不受影响
 
 ### 修复

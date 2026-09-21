@@ -26,7 +26,10 @@
     "rule.playerScaleLinkedEntities.ServerPlayerGameModeMixin",
     "rule.playerScaleLinkedEntities.ServerLevelMixin",
     "rule.moreEndCrystalTypes.EndCrystalItemMixin",
-    "rule.fixEndCrystalSync.ServerEntityMixin"
+    "rule.fixEndCrystalSync.ServerEntityMixin",
+    "rule.fakePlayerBrain.ServerPlayerBrainMixin",
+    "rule.fakePlayerBrain.EntityPlayerActionPackBrainMixin",
+    "rule.fakePlayerBrain.ServerPlayerMobMixin"
   ],
   "client": [
     "rule.entitiesRidingPlayers.ProjectileUtilMixin",

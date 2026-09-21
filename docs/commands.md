@@ -24,6 +24,7 @@
   - [使用示例](#使用示例)
   - [自动停止条件](#自动停止条件)
 - [/player sendto - 假人背包链接](#player-sendto---假人背包链接)
+- [/player brain - 假人脑子](#player-brain---假人脑子)
   - [命令语法](#命令语法)
   - [转移行为](#转移行为)
   - [使用示例](#使用示例)
@@ -343,6 +344,64 @@
 # 停止并移除全部链接
 /player Steve sendto stop
 ```
+
+## /player brain - 假人脑子
+
+### 命令语法
+
+通过 Mixin 在 Carpet 自带的 `/player <name>` 命令树下追加独立的 `brain` 子命令，为假人挂载/卸载生物式 AI：
+
+```text
+/player <name> brain [zombie|skeleton|pillager|irongolem|spider|wolf|villager|enderman|off]
+```
+
+| 参数 | 行为 |
+|------|------|
+| (无参数) | 查询当前 AI 模式 |
+| `zombie` | 僵尸模式：近战追击最近玩家，原生 `attack()` 挥砍 |
+| `skeleton` | 骷髅模式：主手持弓时远程射击 + 风筝走位，原生拉弓消耗背包箭矢 |
+| `pillager` | 掠夺者模式：同骷髅但持弩（上弦 25 tick） |
+| `irongolem` | 铁傀儡模式：攻击敌对生物（不攻击苦力怕）与敌对假人（含报复攻击过自己的玩家） |
+| `spider` | 蜘蛛模式：昼中立、夜敌对 |
+| `wolf` | 狼模式：跟随执行命令的玩家并仇恨同步（主人被谁打就咬谁） |
+| `villager` | 村民模式：随机漫步、被攻击恐慌、遇僵尸反向逃跑 |
+| `enderman` | 末影人模式：被凝视激怒后疾跑扑击 |
+| `off` | 卸载脑子，恢复 Carpet 手动控制 |
+
+### 权限
+
+沿用 Carpet `/player` 命令本身的权限检查（由 Carpet 的 `commandPlayer` 规则控制），不额外限制。狼模式的"主人"是执行命令的真人玩家（控制台执行无主人，狼模式挂载失败并提示）。
+
+### 相关规则
+
+- **fakePlayerBrain** — 控制整个 `brain` 命令的可见性。
+  - 规则关闭时：整个 `brain` 命令不可见（tab 补全不到、无法执行），已挂载的脑子会在下一 tick 自动卸载。
+  - 规则切换立即生效：通过 Carpet `RuleObserver` 在规则变更时重新下发命令树，玩家无需重新登录。
+
+### 使用示例
+
+```bash
+# 查询假人当前 AI 模式
+/player Steve brain
+
+# 挂载僵尸模式（给假人一把剑效果更好）
+/player Steve brain zombie
+
+# 挂载骷髅模式（记得给假人弓和箭）
+/player Steve brain skeleton
+
+# 卸载脑子，恢复 Carpet 手动控制
+/player Steve brain off
+```
+
+### 自动卸载条件
+
+- 执行 `/player <name> brain off`
+- 切换为其他模式（先卸旧脑再挂新脑）
+- 关闭 `fakePlayerBrain` 规则（下一 tick 自动卸载）
+- 假人死亡、下线或被 `/player <name> kill`
+
+卸载后假人恢复静止木桩状态，无任何残留实体或状态（模块不生成任何额外实体）。
 
 ---
 

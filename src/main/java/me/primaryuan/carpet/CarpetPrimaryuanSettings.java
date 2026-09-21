@@ -111,6 +111,14 @@ public class CarpetPrimaryuanSettings {
     )
     public static boolean fakePlayerSendto = false;
 
+    // 假人脑子：为假人注入原版生物 AI（/player <name> brain
+    // <zombie|skeleton|irongolem|spider|wolf|villager|off>），策略模式按假人切换
+    // 不同"大脑"，纯服务端实现、零额外实体、零凭空造物，客户端无需安装任何模组
+    @Rule(
+            categories = {PRIMARYUAN, BOT, COMMAND}
+    )
+    public static boolean fakePlayerBrain = false;
+
     @Rule(
             options = {"false", "true", "self", "everyone"},
             strict = false,

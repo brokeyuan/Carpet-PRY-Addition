@@ -24,6 +24,7 @@
   - [Examples](#examples)
   - [Auto-Stop Conditions](#auto-stop-conditions)
 - [/player sendto - Fake Player Inventory Link](#player-sendto---fake-player-inventory-link)
+- [/player brain - Fake Player Brain](#player-brain---fake-player-brain)
   - [Command Syntax](#command-syntax)
   - [Transfer Behavior](#transfer-behavior)
   - [Usage Examples](#usage-examples)
@@ -343,6 +344,64 @@ Adds a sendto sub-command under Carpet's built-in `/player <name>` command tree,
 # Stop and remove all links
 /player Steve sendto stop
 ```
+
+## /player brain - Fake Player Brain
+
+### Syntax
+
+Adds a standalone `brain` sub-command under Carpet's `/player <name>` command tree via a Mixin, attaching/detaching mob-style AI to fake players:
+
+```text
+/player <name> brain [zombie|skeleton|pillager|irongolem|spider|wolf|villager|enderman|off]
+```
+
+| Argument | Behavior |
+|----------|----------|
+| (none) | Query the current AI mode |
+| `zombie` | Zombie mode: melee-chases the nearest player, swings via native `attack()` |
+| `skeleton` | Skeleton mode: ranged attacks + kiting while holding a bow, native bow draw consumes inventory arrows |
+| `pillager` | Pillager mode: same as skeleton but with a crossbow (25-tick charge) |
+| `irongolem` | Iron golem mode: attacks hostile mobs (creepers excluded) and hostile fake players (also retaliates against its attackers) |
+| `spider` | Spider mode: neutral in daylight, hostile at night |
+| `wolf` | Wolf mode: follows the executing player and syncs aggro (bites whoever hurts the owner) |
+| `villager` | Villager mode: random strolling, panics when attacked, flees from zombies |
+| `enderman` | Enderman mode: provoked by being stared at, then sprints at the starer |
+| `off` | Detaches the brain, restoring Carpet manual control |
+
+### Permission
+
+Inherits Carpet's `/player` command permission check (controlled by Carpet's `commandPlayer` rule), no extra restriction. The wolf mode's "owner" is the real player executing the command (console execution has no owner; wolf mode fails to attach with a message).
+
+### Related Rules
+
+- **fakePlayerBrain** — controls the visibility of the entire `brain` command.
+  - Rule off: the whole `brain` command is invisible (no tab completion, not executable); any attached brain detaches within one tick.
+  - Rule changes take effect immediately: the command tree is re-sent via Carpet's `RuleObserver`, no re-login required.
+
+### Examples
+
+```bash
+# Query the fake player's current AI mode
+/player Steve brain
+
+# Attach zombie mode (a sword in the fake player's hand helps)
+/player Steve brain zombie
+
+# Attach skeleton mode (remember to give the fake player a bow and arrows)
+/player Steve brain skeleton
+
+# Detach the brain, restoring Carpet manual control
+/player Steve brain off
+```
+
+### Automatic Detach Conditions
+
+- Running `/player <name> brain off`
+- Switching to another mode (the old brain is detached first)
+- Disabling the `fakePlayerBrain` rule (detaches within one tick)
+- The fake player dying, logging off, or being killed via `/player <name> kill`
+
+After detaching, the fake player returns to a still "mannequin" state with no leftover entities or state (the module never spawns extra entities).
 
 ---
 
