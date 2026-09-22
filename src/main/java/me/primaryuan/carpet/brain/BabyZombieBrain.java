@@ -4,8 +4,19 @@ import me.primaryuan.carpet.brain.goal.PlayerHurtByTargetGoal;
 import me.primaryuan.carpet.brain.goal.PlayerMeleeAttackGoal;
 import me.primaryuan.carpet.brain.goal.PlayerNearestAttackableTargetGoal;
 import me.primaryuan.carpet.brain.goal.PlayerRandomStrollGoal;
+//#if MC >= 12111
+import net.minecraft.world.entity.animal.golem.IronGolem;
+import net.minecraft.world.entity.animal.turtle.Turtle;
+import net.minecraft.world.entity.npc.villager.AbstractVillager;
+//#else
+//$$ import net.minecraft.world.entity.animal.IronGolem;
+//$$ import net.minecraft.world.entity.animal.Turtle;
+//$$ import net.minecraft.world.entity.npc.AbstractVillager;
+//#endif
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Items;
 
 /**
  * 小僵尸模式脑（装配器）：比僵尸更快更急躁的近战追击。
@@ -36,10 +47,24 @@ public class BabyZombieBrain extends PlayerBrainController {
     protected void assemble() {
         // 被打反击：小僵尸被打同样火速还手
         this.targetSelector.addGoal(1, new PlayerHurtByTargetGoal(this.prowler, null));
-        // 追击目标：最近的存活玩家（范围略小于成年僵尸）
+        // 追击目标（与成年僵尸同构，范围 16/戴僵尸头 8 = 减半）：
         this.targetSelector.addGoal(2, new PlayerNearestAttackableTargetGoal<>(
                 this.prowler, Player.class, 16.0, 10, true,
-                p -> p != this.player && p.isAlive() && !p.isSpectator() && !p.isCreative()));
+                p -> p != this.player && p.isAlive() && !p.isSpectator() && !p.isCreative()
+                        && !p.getItemBySlot(EquipmentSlot.HEAD).is(Items.ZOMBIE_HEAD)));
+        this.targetSelector.addGoal(2, new PlayerNearestAttackableTargetGoal<>(
+                this.prowler, Player.class, 8.0, 10, true,
+                p -> p != this.player && p.isAlive() && !p.isSpectator() && !p.isCreative()
+                        && p.getItemBySlot(EquipmentSlot.HEAD).is(Items.ZOMBIE_HEAD)));
+        this.targetSelector.addGoal(3, new PlayerNearestAttackableTargetGoal<>(
+                this.prowler, AbstractVillager.class, 16.0, 10, false,
+                v -> v.isAlive() && !v.isBaby()));
+        this.targetSelector.addGoal(4, new PlayerNearestAttackableTargetGoal<>(
+                this.prowler, IronGolem.class, 16.0, 10, true,
+                g -> g.isAlive()));
+        this.targetSelector.addGoal(5, new PlayerNearestAttackableTargetGoal<>(
+                this.prowler, Turtle.class, 16.0, 10, true,
+                t -> t.isBaby()));
         // 行为：疾速近战（1.25 → 原生疾跑，小僵尸的"窜"）
         this.goalSelector.addGoal(1, new PlayerMeleeAttackGoal(this.prowler, 1.25, true));
         // 空闲漫游

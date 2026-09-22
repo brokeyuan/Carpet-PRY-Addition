@@ -9,8 +9,20 @@ import me.primaryuan.carpet.brain.goal.PlayerRandomStrollGoal;
 //$$ // 故 26.x 专属 import/goal 用 //$$ 行标注
 //$$ import me.primaryuan.carpet.brain.goal.PlayerSpearAttackGoal;
 //#endif
+//#if MC >= 12111
+// 1.21.11 起铁傀儡/海龟/村民类迁入子包（rootNode 方言 = 裸行）
+import net.minecraft.world.entity.animal.golem.IronGolem;
+import net.minecraft.world.entity.animal.turtle.Turtle;
+import net.minecraft.world.entity.npc.villager.AbstractVillager;
+//#else
+//$$ import net.minecraft.world.entity.animal.IronGolem;
+//$$ import net.minecraft.world.entity.animal.Turtle;
+//$$ import net.minecraft.world.entity.npc.AbstractVillager;
+//#endif
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Items;
 
 /**
  * 僵尸模式脑（装配器）：原版近战追击 AI——自动追逐最近的存活玩家（含其它假人，
@@ -41,10 +53,29 @@ public class ZombieBrain extends PlayerBrainController {
     protected void assemble() {
         // 被打反击：谁打我锁谁（原版 HurtByTargetGoal，优先级 1 压过常规索敌）
         this.targetSelector.addGoal(1, new PlayerHurtByTargetGoal(this.prowler, null));
-        // 追击目标：最近的存活玩家（视野内 mustSee；10 tick 节流搜索）
+        // 追击目标（对齐原版僵尸目标选择器，优先级数值越小越优先）：
+        // pri 2 玩家（mustSee）——戴僵尸头的玩家追踪距离减半（wiki：35→17.5），
+        // 用两个并列 pri 2 的 goal 表达：同旗标互斥，按插入序先评"未戴头"者
         this.targetSelector.addGoal(2, new PlayerNearestAttackableTargetGoal<>(
                 this.prowler, Player.class, 20.0, 10, true,
-                p -> p != this.player && p.isAlive() && !p.isSpectator() && !p.isCreative()));
+                p -> p != this.player && p.isAlive() && !p.isSpectator() && !p.isCreative()
+                        && !p.getItemBySlot(EquipmentSlot.HEAD).is(Items.ZOMBIE_HEAD)));
+        this.targetSelector.addGoal(2, new PlayerNearestAttackableTargetGoal<>(
+                this.prowler, Player.class, 10.0, 10, true,
+                p -> p != this.player && p.isAlive() && !p.isSpectator() && !p.isCreative()
+                        && p.getItemBySlot(EquipmentSlot.HEAD).is(Items.ZOMBIE_HEAD)));
+        // pri 3 村民/流浪商人（mustSee=false：原版僵尸可透过方块定位村民）
+        this.targetSelector.addGoal(3, new PlayerNearestAttackableTargetGoal<>(
+                this.prowler, AbstractVillager.class, 20.0, 10, false,
+                v -> v.isAlive() && !v.isBaby()));
+        // pri 4 铁傀儡
+        this.targetSelector.addGoal(4, new PlayerNearestAttackableTargetGoal<>(
+                this.prowler, IronGolem.class, 20.0, 10, true,
+                g -> g.isAlive()));
+        // pri 5 幼年海龟（原版最低优先级目标；isBaby 排除成年海龟）
+        this.targetSelector.addGoal(5, new PlayerNearestAttackableTargetGoal<>(
+                this.prowler, Turtle.class, 20.0, 10, true,
+                t -> t.isBaby()));
         // 长矛刺击（26.1.2+）：主手持矛时接管，与原版 26.x 僵尸同款优先级 2；
         // 1.21.x 无长矛物品，此 Goal 不编入，近战直接兜底
         //#if MC >= 260102

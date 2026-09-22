@@ -347,7 +347,7 @@ public class PlayerPathNavigation {
         return closed.contains(key(best.x, best.y, best.z)) ? this.buildPath(best) : null;
     }
 
-    /** 展开上下左右 + 三种高度（持平/爬一格/降一格），带爬坡代价惩罚 */
+    /** 展开上下左右 + 三种高度（持平/爬一格/降一格），带爬坡代价与危险地形惩罚 */
     private void expand(PriorityQueue<Node> open, java.util.Map<Long, Node> openMap,
                         Set<Long> closed, Node node, BlockPos goal) {
         for (int dx = -1; dx <= 1; dx++) {
@@ -369,6 +369,17 @@ public class PlayerPathNavigation {
                     } else if (climb == -1) {
                         cost = 1.1;
                     }
+                    // 危险地形规避（对齐原版僵尸寻路 malus 语义）：
+                    // 熔岩/火焰格（含头顶）→ 禁行——熔岩与火焰无碰撞箱，
+                    // 可站立判定本身不排除它们，必须显式拦截；
+                    // 铁轨格 → 高代价软惩罚（原版僵尸"不尝试穿过铁轨"，
+                    // 绕不过去才走）。每步最多 ±1 高差，A* 天然不会生成
+                    // 下落超过 3 格的路径，悬崖规避由此得到保证。
+                    double hazard = this.hazardPenalty(node.x + dx, dy, node.z + dz);
+                    if (hazard < 0) {
+                        continue;
+                    }
+                    cost += hazard;
                     long nKey = key(node.x + dx, dy, node.z + dz);
                     if (closed.contains(nKey)) {
                         continue;
@@ -384,6 +395,29 @@ public class PlayerPathNavigation {
                 }
             }
         }
+    }
+
+    /**
+     * 危险地形代价（对齐原版僵尸"避开熔岩/火焰、不穿过铁轨"）。
+     *
+     * @return 附加代价；{@code -1} 表示该格禁行
+     */
+    private double hazardPenalty(int x, int y, int z) {
+        BlockPos pos = new BlockPos(x, y, z);
+        var state = this.level.getBlockState(pos);
+        // 身体/头部所在格是熔岩或火焰 → 禁行（两者的碰撞箱为空，
+        // 仅靠可站立判定会认为"能站"，必须显式排除）
+        if (state.is(net.minecraft.world.level.block.Blocks.LAVA)
+                || state.is(net.minecraft.world.level.block.Blocks.FIRE)
+                || state.is(net.minecraft.world.level.block.Blocks.SOUL_FIRE)) {
+            return -1;
+        }
+        // 铁轨（含充能/探测/激活铁轨，BlockTags.RAILS 全版本一致）：
+        // 高代价软惩罚，绕行优先
+        if (state.is(net.minecraft.tags.BlockTags.RAILS)) {
+            return 8.0;
+        }
+        return 0.0;
     }
 
     /** 曼哈顿启发（三轴），系数略大于 1 保证朝目标收敛且同分判定稳定 */
