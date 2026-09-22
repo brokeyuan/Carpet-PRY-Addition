@@ -39,7 +39,7 @@
   "carpet.rule.fakePlayerSendto.desc": "给 /player <name> 追加 sendto 子命令，建立假人间单向背包物品流（默认每 tick 一组，多目标轮流分配，目标满时源背包缓冲），转移频率可调；sendto stop 停止并移除链接，链接不跨重启",
 
   "carpet.rule.fakePlayerBrain.name": "假人脑子",
-  "carpet.rule.fakePlayerBrain.desc": "给 /player <name> 追加 brain 子命令，为假人注入生物 AI（纯服务端、零额外实体、无需客户端模组；AI 移动全部折算为玩家原生按键输入，绝不直接改坐标）：zombie=近战追击最近玩家（原版玩家 attack() 挥砍）；skeleton/pillager=主手持弓/弩时远程射击与风筝走位（原生拉弓/上弦消耗背包箭矢）；irongolem=攻击敌对生物（不攻击苦力怕）与敌对假人（含报复攻击过自己的玩家）；spider=昼中立夜敌对；wolf=跟随主人并仇恨同步（主人被谁打就咬谁）；villager=随机漫步、遇僵尸反向逃跑；enderman=被凝视激怒后疾跑扑击。挂载期间屏蔽 Carpet 手动移动/攻击指令（actionPack），brain off/切换/关闭规则/假人下线/死亡均自动卸载",
+  "carpet.rule.fakePlayerBrain.desc": "给 /player <name> 追加 brain 子命令，为假人注入生物 AI（纯服务端、零额外实体、无需客户端模组；AI 移动全部折算为玩家原生按键输入，绝不直接改坐标）：zombie=近战追击最近玩家（原版玩家 attack() 挥砍）；skeleton/pillager=主手持弓/弩时远程射击与风筝走位（原生拉弓/上弦消耗背包箭矢）；irongolem=攻击敌对生物（不攻击苦力怕）与敌对假人（含报复攻击过自己的玩家）；spider=昼中立夜敌对；wolf=跟随主人并仇恨同步（主人被谁打就咬谁）；villager=随机漫步、遇僵尸反向逃跑；enderman=被凝视激怒后疾跑扑击；babyzombie=小僵尸（更快的近战追击）；pig=猪（完全中立，被打逃跑）；piglin=猪灵（敌视不穿金装的玩家，金装中立）。挂载期间屏蔽 Carpet 手动移动/攻击指令（actionPack），brain off/切换/关闭规则/假人下线/死亡均自动卸载",
 
   "carpet.rule.playerScale.name": "玩家随地大小变",
   "carpet.rule.playerScale.desc": "为 Player 注册 minecraft:scale 属性并启用 /scale set|reset|info；value 仅需大于 0，受 playerScaleMin/Max 约束。false=隐藏命令；self=仅能调自己；true=可调自己且管理员可调任意玩家；everyone=人人可互调。FOV 补偿需客户端安装",
@@ -144,10 +144,13 @@
   "carpetprimaryuan.command.brain.mode_villager": "村民",
   "carpetprimaryuan.command.brain.mode_pillager": "掠夺者",
   "carpetprimaryuan.command.brain.mode_enderman": "末影人",
+  "carpetprimaryuan.command.brain.mode_babyzombie": "小僵尸",
+  "carpetprimaryuan.command.brain.mode_pig": "猪",
+  "carpetprimaryuan.command.brain.mode_piglin": "猪灵",
   "carpetprimaryuan.command.brain.not_fake": "§c%s 不是假人，brain 仅支持 carpet 假人",
   "carpetprimaryuan.command.brain.detached": "§a已卸载 %s 的脑子，恢复 Carpet 手动控制",
   "carpetprimaryuan.command.brain.no_brain": "§e%s 当前没有挂载脑子",
-  "carpetprimaryuan.command.brain.unknown_mode": "§c未知 AI 模式: %s（可用: zombie / skeleton / irongolem / spider / pillager / wolf / villager / enderman / off）",
+  "carpetprimaryuan.command.brain.unknown_mode": "§c未知 AI 模式: %s（可用: zombie / babyzombie / skeleton / pillager / irongolem / spider / piglin / wolf / villager / pig / enderman / off）",
   "carpetprimaryuan.command.brain.need_owner_player": "§c狼模式需要一名真人玩家作为主人（请以玩家身份执行该命令）",
   "carpetprimaryuan.command.brain.attached": "§a已为 %s 挂载 %s AI，Carpet 手动指令已屏蔽（brain off 或关闭规则后恢复）",
   "carpetprimaryuan.command.brain.creative_hint": "§e提示：%s 当前为创造模式，AI 不会索敌玩家也不会被玩家类目标选中（与原版生物一致）；需要战斗请切换到生存模式",

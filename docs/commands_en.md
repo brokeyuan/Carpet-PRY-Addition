@@ -352,7 +352,7 @@ Adds a sendto sub-command under Carpet's built-in `/player <name>` command tree,
 Adds a standalone `brain` sub-command under Carpet's `/player <name>` command tree via a Mixin, attaching/detaching mob-style AI to fake players:
 
 ```text
-/player <name> brain [zombie|skeleton|pillager|irongolem|spider|wolf|villager|enderman|off]
+/player <name> brain [zombie|babyzombie|skeleton|pillager|irongolem|spider|piglin|wolf|villager|pig|enderman|off]
 ```
 
 | Argument | Behavior |
@@ -366,6 +366,7 @@ Adds a standalone `brain` sub-command under Carpet's `/player <name>` command tr
 | `wolf` | Wolf mode: follows the executing player and syncs aggro (bites whoever hurts the owner) |
 | `villager` | Villager mode: random strolling, panics when attacked, flees from zombies |
 | `enderman` | Enderman mode: provoked by being stared at, then sprints at the starer |
+| `babyzombie` | Baby zombie mode: faster melee pursuit |
 | `off` | Detaches the brain, restoring Carpet manual control |
 
 ### Permission

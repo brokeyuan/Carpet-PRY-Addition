@@ -39,8 +39,8 @@ public final class PlayerBrainCommand {
 
     /** 可用的 AI 模式（不含 off，off 单独作为卸载语义处理） */
     private static final List<String> MODES = List.of(
-            "zombie", "skeleton", "irongolem", "spider", "pillager", "wolf",
-            "villager", "enderman", "off");
+            "zombie", "babyzombie", "skeleton", "pillager", "irongolem", "spider", "piglin",
+            "wolf", "villager", "pig", "enderman", "off");
 
     private PlayerBrainCommand() {}
 

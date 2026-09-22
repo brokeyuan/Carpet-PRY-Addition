@@ -73,12 +73,13 @@ public final class BrainManager {
     /**
      * 该假人是否处于"敌对"AI 模式（铁傀儡脑的目标选择用：
      * 敌对假人在铁傀儡眼里等同怪物）。敌对 = 会主动攻击玩家的模式：
-     * zombie / skeleton / pillager / spider / enderman。
+     * zombie / babyzombie / skeleton / pillager / spider / piglin / enderman。
      */
     public static boolean isHostileFake(ServerPlayer player) {
         String mode = getModeKey(player);
-        return "zombie".equals(mode) || "skeleton".equals(mode) || "pillager".equals(mode)
-                || "spider".equals(mode) || "enderman".equals(mode);
+        return "zombie".equals(mode) || "babyzombie".equals(mode) || "skeleton".equals(mode)
+                || "pillager".equals(mode) || "spider".equals(mode)
+                || "piglin".equals(mode) || "enderman".equals(mode);
     }
 
     /**
@@ -100,6 +101,9 @@ public final class BrainManager {
             case "villager" -> new VillagerBrain(player);
             case "pillager" -> new PillagerBrain(player);
             case "enderman" -> new EndermanBrain(player);
+            case "babyzombie" -> new BabyZombieBrain(player);
+            case "pig" -> new PigBrain(player);
+            case "piglin" -> new PiglinBrain(player);
             default -> null;
         };
         if (brain == null) {

@@ -5,6 +5,7 @@ All notable changes to **Carpet-PRY-Addition** are documented in this file.
 ## 未发布
 
 ### 功能
+- **假人脑子新增 4 种模式与长矛支持**（`fakePlayerBrain`，现共 11 种模式）：`babyzombie`（小僵尸——1.25 疾跑近战追击，行为对齐原版幼年僵尸的速度加成，身体锁定红线约束下不缩小模型）、`pig`（猪——完全中立无仇恨，被打/着火恐慌逃跑 + 随机漫步）、`piglin`（猪灵——复用原版 `PiglinAi` 金装判定（1.21~1.21.1 为 `isWearingGold`、1.21.3+ 更名 `isWearingSafeArmor`，预处理宏分支），敌视不穿金装的玩家、对金装玩家中立、被谁打都还手）；**26.1.2+ 僵尸模式支持原版长矛**：与原版 26.x 僵尸同款装配（移植版 `SpearUseGoal` 挂优先级 2、近战降为 3 兜底）——主手持矛（动能武器 `KINETIC_WEAPON` 组件）时接近→举矛蓄力→全速冲刺（刺击伤害由 `LivingEntity` 在使用期间的原版动能判定结算，零凭空造物）→后撤循环，1.21.x 无长矛物品该 Goal 不编入不受影响；铁傀儡的敌对假人判定同步纳入 babyzombie/piglin
 ### 功能
 - **假人脑子**（`fakePlayerBrain`）：给 `/player <name>` 追加 brain 子命令，把原版生物式 AI"脑子"挂到假人身上，提供 8 种模式——`zombie`（近战追击最近玩家，原生 `attack()` 挥砍）、`skeleton`/`pillager`（主手持弓/弩时远程锁定与风筝走位，走原生 `startUsingItem → releaseUsingItem` 流程消耗背包真实箭矢）、`irongolem`（攻击敌对生物——不攻击苦力怕——与攻击过自己的假人）、`spider`（昼中立夜敌对）、`wolf`（跟随执行命令的主人并仇恨同步：主人被谁打就咬谁）、`villager`（随机漫步、被攻击恐慌、遇僵尸反向逃跑）、`enderman`（被凝视激怒——原版 `isStaredAt` 点积算法——后锁定并 `setSprinting(true)` 疾跑扑击）。核心设计遵循"只换脑子、不换身体、零额外实体、零凭空造物"：假人始终保持 `ServerPlayer` 类型与全部原生属性；寻路为自研紧凑 A*（原版 `MobNavigation` 构造器强绑定 `Mob` 实例，为守住零实体红线在方块网格上等价复刻节点推进/卡死重算语义）；AI 移动全部经注入的 `PlayerMoveControl` 折算为玩家原生按键输入（`zza/xxa`+限速转向+原生跳跃），交由玩家原生 `travel()` 物理执行，绝不直接改坐标/速度，避免玩家物理与生物瞬移式移动打架导致的"鬼畜抽搐"；架构为策略模式——mixin 在 `ServerPlayer` 初始化时以 `@Implements` 嫁接 `PryMob` 假面接口，导航器/移动控制/视线控制/双目标选择器按需惰性挂载（真人零开销），各模式向双选择器装配移植 Goal；挂载期间 Carpet 手动移动/攻击指令屏蔽（actionPack 停摆），`brain off`/切换模式/关闭规则/假人下线死亡均自动卸载且无残留；视觉同步（行走/疾跑/挥手/拉弓/视角）由原版实体同步机制驱动，纯服务端，客户端无需安装任何模组
 

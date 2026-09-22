@@ -352,7 +352,7 @@
 通过 Mixin 在 Carpet 自带的 `/player <name>` 命令树下追加独立的 `brain` 子命令，为假人挂载/卸载生物式 AI：
 
 ```text
-/player <name> brain [zombie|skeleton|pillager|irongolem|spider|wolf|villager|enderman|off]
+/player <name> brain [zombie|babyzombie|skeleton|pillager|irongolem|spider|piglin|wolf|villager|pig|enderman|off]
 ```
 
 | 参数 | 行为 |
@@ -366,6 +366,7 @@
 | `wolf` | 狼模式：跟随执行命令的玩家并仇恨同步（主人被谁打就咬谁） |
 | `villager` | 村民模式：随机漫步、被攻击恐慌、遇僵尸反向逃跑 |
 | `enderman` | 末影人模式：被凝视激怒后疾跑扑击 |
+| `babyzombie` | 小僵尸模式：更快的近战追击 |
 | `off` | 卸载脑子，恢复 Carpet 手动控制 |
 
 ### 权限

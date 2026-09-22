@@ -152,9 +152,9 @@ Adds a sendto sub-command to /player <name> creating one-way inventory item flow
 
 ### fakePlayerBrain - Fake Player Brain
 
-Adds a brain sub-command to `/player <name>` attaching vanilla-mob-style AI to fake players. Core design: **swap the brain, keep the body, zero extra entities** — the fake player always stays a `ServerPlayer` with native health/attack/inventory/interactions; every AI movement command is translated into native player movement input (`zza/xxa` + rate-limited turning + native jumping) and executed by the player's native `travel()` physics, never by directly writing coordinates or velocity. Pathfinding is a self-contained compact A* (vanilla `MobNavigation` is hard-bound to a `Mob` instance in its constructor; to honor the zero-extra-entity rule, node advancement and stuck-recompute semantics are faithfully re-implemented on the block grid). Architecture is strategy pattern: a mixin grafts the `PryMob` facade interface onto `ServerPlayer` at init (navigation/move-control/look-control/dual goal selectors are lazily attached, zero cost for real players); each mode assembles ported Goals into the dual selectors. Purely server-side, no client mod required.
+Adds a brain sub-command to `/player <name>` attaching vanilla-mob-style AI to fake players (11 modes). Core design: **swap the brain, keep the body, zero extra entities** — the fake player always stays a `ServerPlayer` with native health/attack/inventory/interactions; every AI movement command is translated into native player movement input (`zza/xxa` + rate-limited turning + native jumping) and executed by the player's native `travel()` physics, never by directly writing coordinates or velocity. Pathfinding is a self-contained compact A* (vanilla `MobNavigation` is hard-bound to a `Mob` instance in its constructor; to honor the zero-extra-entity rule, node advancement and stuck-recompute semantics are faithfully re-implemented on the block grid). Architecture is strategy pattern: a mixin grafts the `PryMob` facade interface onto `ServerPlayer` at init (navigation/move-control/look-control/dual goal selectors are lazily attached, zero cost for real players); each mode assembles ported Goals into the dual selectors. Purely server-side, no client mod required.
 
-Available modes (`/player <name> brain <mode>`, `off` detaches):
+Available modes (`/player <name> brain <mode>`, `off` detaches; on 26.1.2+ the zombie mode additionally supports vanilla spears: with a spear in main hand a ported `SpearUseGoal` takes over — approach, draw, sprint-stab via vanilla kinetic-weapon damage, then retreat; 1.21.x has no spear items and is unaffected):
 
 | Mode | Behavior |
 |------|----------|
@@ -166,6 +166,7 @@ Available modes (`/player <name> brain <mode>`, `off` detaches):
 | `wolf` | Follows its owner (the command executor) and syncs aggro: bites whoever hurts the owner |
 | `villager` | No aggro: random strolling, panics when attacked, flees from zombies (vanilla `PanicGoal`/`AvoidEntityGoal` semantics) |
 | `enderman` | Provoked by being stared at (vanilla `isStaredAt` dot-product algorithm), locks the starer and sprints via `setSprinting(true)` |
+| `babyzombie` | Baby zombie: faster melee pursuit (1.25 sprint) |
 | `off` | Detaches the brain, restoring Carpet manual control |
 
 While attached, Carpet manual move/attack actions (`/player <name> move|attack|use` etc.) are suppressed (actionPack suspended) and restored immediately on `brain off` or disabling the rule; rule toggle-off, mode switch, fake player logoff or death all detach automatically. Visual sync (walking/sprinting/swing/bow draw/looking) is driven entirely by vanilla entity synchronization — zero client dependency.
