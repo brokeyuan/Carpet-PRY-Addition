@@ -41,6 +41,9 @@ public class PlayerMeleeAttackGoal extends PlayerGoal {
         this.speedModifier = speedModifier;
         this.followingTargetEvenIfNotSeen = followingTargetEvenIfNotSeen;
         this.setFlags(EnumSet.of(PlayerGoal.Flag.MOVE, PlayerGoal.Flag.LOOK));
+        // 短评估间隔：目标锁定后最多 4 tick 内开始追击（canUse 无目标时是
+        // 一次空指针级廉价检查，有目标时才会尝试算路，无空转开销）
+        this.setInterval(4);
     }
 
     @Override
@@ -110,9 +113,13 @@ public class PlayerMeleeAttackGoal extends PlayerGoal {
         boolean targetMoved = this.pathedTargetX == 0.0 && this.pathedTargetY == 0.0 && this.pathedTargetZ == 0.0
                 || target.distanceToSqr(this.pathedTargetX, this.pathedTargetY, this.pathedTargetZ) >= 1.0
                 || this.mob.getRandom().nextFloat() < 0.05F;
+        // 路径已走完但仍够不着目标时强制重算（否则目标站住不动 + 5% 随机不中
+        // 时，假人会在攻击范围边缘罚站——"跑着跑着不动了"的主要成因）
+        boolean pathExhausted = this.mob.getNavigation().isDone()
+                && distSq > this.getAttackReachSqr(target);
         if (this.ticksUntilNextPathRecalculation <= 0
                 && (this.followingTargetEvenIfNotSeen || this.mob.getSensing().hasLineOfSight(target))
-                && targetMoved) {
+                && (targetMoved || pathExhausted)) {
             this.pathedTargetX = target.getX();
             this.pathedTargetY = target.getY();
             this.pathedTargetZ = target.getZ();
@@ -124,6 +131,13 @@ public class PlayerMeleeAttackGoal extends PlayerGoal {
             }
             if (!this.mob.getNavigation().moveTo(target, this.speedModifier)) {
                 this.ticksUntilNextPathRecalculation += 15; // 算不出路：暂缓重试
+                // 直线逼近兜底：A* 判定不可达（水面/台阶/复杂地形判定过严）时，
+                // 只要看得见目标就直接朝它走（移动控制器自带的撞墙跳 + 到达判定
+                // 会处理简单障碍），避免"不可达 = 永久站桩"
+                if (this.mob.getSensing().hasLineOfSight(target)) {
+                    this.mob.getMoveControl().setWantedPosition(
+                            target.getX(), target.getY(), target.getZ(), this.speedModifier);
+                }
             }
         }
         this.checkAndPerformAttack(target, distSq);

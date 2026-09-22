@@ -55,6 +55,12 @@ public abstract class PlayerBrainController {
         this.prowler.getNavigation().tick();
         this.prowler.getMoveControl().tick();
         this.prowler.getLookControl().tick();
+        // 兜底保险：无任何 MOVE 旗标目标在运行且路径已走完时，强制移动控制
+        // 复位为 WAIT——防止个别 goal 的 stop() 漏清导致 STRAFE/MOVE_TO 指令
+        // 永久粘滞（假人"目标没了还朝固定方向蹭/原地冻结"）
+        if (!this.goalSelector.hasRunningMoveGoal() && this.prowler.getNavigation().isDone()) {
+            this.prowler.getMoveControl().setStop();
+        }
     }
 
     /** 挂载钩子：BrainManager.attach 时调用（先清后装，幂等） */

@@ -49,6 +49,16 @@ public class PlayerGoalSelector {
         }
     }
 
+    /** 是否有持有 MOVE 旗标的目标正在运行（移动控制粘滞保险的判定用） */
+    public boolean hasRunningMoveGoal() {
+        for (WrappedGoal wrapped : this.runningGoals) {
+            if (wrapped.goal.getFlags().contains(PlayerGoal.Flag.MOVE)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** 清空全部目标并 stop 所有激活中的目标（挂载/卸载脑时先调） */
     public void removeAllGoals() {
         for (WrappedGoal wrapped : this.runningGoals) {

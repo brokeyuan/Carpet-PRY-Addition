@@ -63,8 +63,11 @@ public class PlayerHurtByTargetGoal extends PlayerGoal {
     @Override
     public boolean canContinueToUse() {
         LivingEntity target = this.mob.getTarget();
+        // 追击上限 48 格（原版 HurtByTargetGoal 无距离上限会追到世界边缘），
+        // 攻击者跑出范围即清目标，交还给常规索敌/漫游
         return target != null && target.isAlive()
-                && target.level() == this.mob.level();
+                && target.level() == this.mob.level()
+                && this.mob.distanceToSqr(target) <= 48.0 * 48.0;
     }
 
     @Override

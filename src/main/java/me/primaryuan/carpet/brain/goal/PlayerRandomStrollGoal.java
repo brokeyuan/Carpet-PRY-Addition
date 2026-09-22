@@ -23,8 +23,6 @@ public class PlayerRandomStrollGoal extends PlayerGoal {
 
     private final PryMob mob;
     private final double speedModifier;
-    /** 每 tick 重选目标的概率（原版 1/120） */
-    private static final float PROBABILITY = 1.0F / 120.0F;
     /** 选点半径 */
     private static final int RADIUS = 10;
 
@@ -37,14 +35,14 @@ public class PlayerRandomStrollGoal extends PlayerGoal {
         this.mob = mob;
         this.speedModifier = speedModifier;
         this.setFlags(EnumSet.of(PlayerGoal.Flag.MOVE));
-        this.setInterval(30); // 30 tick 才允许重新评估一次（漫步本来就不急）
+        this.setInterval(60); // 平均 3 秒尝试选一个漫步点（原版 1/120 掷骰的等效节奏）
     }
 
     @Override
     public boolean canUse() {
-        if (this.mob.getRandom().nextFloat() < PROBABILITY) {
-            return false; // 概率门：不是每 tick 都在重新想"走去哪"
-        }
+        // 节流由 canStart() 的 interval 统一承担（原版是每 tick 评估 × 1/120 掷骰，
+        // 等效平均 120 tick 一步；此处 60 tick 评估一次 + 稳定尝试，节奏一致且
+        // 避免"两层节流相乘 = 平均 3 分钟才挪一步"的假死观感）
         BlockPos dest = this.findRandomWalkablePos();
         if (dest == null) {
             return false;

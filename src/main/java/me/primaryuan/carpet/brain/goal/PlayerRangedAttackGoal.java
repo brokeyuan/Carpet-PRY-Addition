@@ -49,6 +49,9 @@ public class PlayerRangedAttackGoal extends PlayerGoal {
     private boolean strafingClockwise;
     private boolean strafingBackwards;
     private int strafingTime = -1;
+    /** 接近阶段的重算路径倒计时（tick）：A* 每次最多 4096 次迭代，
+     *  每 tick 全量重算会把多假人服务器的 tick 拖垮（表现为全员卡顿） */
+    private int pathRecalcCooldown;
 
     /** 弓构造（默认 20 tick 满弦） */
     public PlayerRangedAttackGoal(PryMob mob, double speedModifier, int attackIntervalMin, float attackRadius) {
@@ -95,6 +98,10 @@ public class PlayerRangedAttackGoal extends PlayerGoal {
         this.seeTime = 0;
         this.attackTime = -1;
         this.mob.stopUsingItem(); // 收弓：原生流程，箭不发射
+        // 必须连同导航器一起停：风筝走位最后的 STRAFE 指令会永久粘滞在
+        // 移动控制器里（其他 goal 的 stop 均经 nav.stop() 清理，唯此处曾漏），
+        // 表现为"目标停止后假人仍朝固定方向蹭/原地冻结"
+        this.mob.getNavigation().stop();
     }
 
     @Override
@@ -111,12 +118,15 @@ public class PlayerRangedAttackGoal extends PlayerGoal {
         }
         this.seeTime += hasLineOfSight ? 1 : -1;
 
-        // 移动模式：已在射程内且盯着目标 → 停下来风筝；否则逼近
+        // 移动模式：已在射程内且盯着目标 → 停下来风筝；否则按 5 tick 节奏重算路径逼近
         if (distSq <= this.attackRadiusSqr && this.seeTime >= 20) {
             this.mob.getNavigation().stop();
             this.strafingTime++;
         } else {
-            this.mob.getNavigation().moveTo(target, this.speedModifier);
+            if (--this.pathRecalcCooldown <= 0) {
+                this.mob.getNavigation().moveTo(target, this.speedModifier);
+                this.pathRecalcCooldown = 5;
+            }
             this.strafingTime = -1;
         }
         // 风筝方向变速（原版随机翻转，制造不那么死板的绕圈）

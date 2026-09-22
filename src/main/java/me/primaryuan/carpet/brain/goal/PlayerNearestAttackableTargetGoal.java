@@ -60,13 +60,15 @@ public class PlayerNearestAttackableTargetGoal<T extends LivingEntity> extends P
         this.mustSee = mustSee;
         this.selector = predicate;
         this.setFlags(EnumSet.of(PlayerGoal.Flag.TARGET));
+        // 评估间隔 = 原版 randomInterval 语义的唯一节流层（canUse 内不再掷骰）
+        this.setInterval(Math.max(1, randomInterval));
     }
 
     @Override
     public boolean canUse() {
-        if (this.randomInterval > 0 && this.mob.getRandom().nextInt(this.randomInterval) != 0) {
-            return false; // 原版节流：10 tick 才真正搜一次
-        }
+        // 节流由 canStart() 的 interval 统一承担（每 randomInterval tick 评估一次）。
+        // 勿在此处再掷骰——两层节流相乘会把有效扫描频率拖到平均 100 tick 以上，
+        // 表现为"杀完一个目标后长时间不索敌"
         LivingEntity best = this.findBestTarget();
         this.pendingTarget = best;
         return best != null && this.canAttack(best);
@@ -78,8 +80,10 @@ public class PlayerNearestAttackableTargetGoal<T extends LivingEntity> extends P
         if (target == null || !target.isAlive()) {
             return false;
         }
-        // 范围/谓词复核（原版 TargetGoal 的 range 复检）
-        if (!this.inRange(target) || !this.acceptsTarget(target)) {
+        // 丢失半径 = 搜索半径 × 1.25（滞后回差）：目标在搜索半径边缘走位时，
+        // 等半径的"锁定/丢失"判定会来回闪烁（表现为"莫名丢失索敌"）
+        double loseRangeSq = this.searchRange * this.searchRange * 1.5625;
+        if (this.mob.distanceToSqr(target) > loseRangeSq || !this.acceptsTarget(target)) {
             return false;
         }
         if (this.mustSee && !this.mob.getSensing().hasLineOfSight(target)
