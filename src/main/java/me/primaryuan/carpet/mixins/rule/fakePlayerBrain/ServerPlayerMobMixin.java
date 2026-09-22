@@ -8,6 +8,8 @@ import me.primaryuan.carpet.brain.PlayerPathNavigation;
 import me.primaryuan.carpet.brain.PlayerSensing;
 import me.primaryuan.carpet.brain.PryMob;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -84,5 +86,17 @@ public abstract class ServerPlayerMobMixin implements PryMob {
     @Override
     public void setTarget(LivingEntity target) {
         this.fields().setTarget(target);
+    }
+
+    /**
+     * 近战攻击转写（PryMob.doHurtTarget）：玩家原生 attack + 挥手广播。
+     * 实现在 mixin 上（而非接口 default）以保证 Mixin 合并后分派可达——
+     * 接口 default 在合并环境实测不可达（见 PryMob 注释）。
+     */
+    @Override
+    public boolean doHurtTarget(Entity target) {
+        ((ServerPlayer) (Object) this).attack(target);
+        ((ServerPlayer) (Object) this).swing(InteractionHand.MAIN_HAND);
+        return true;
     }
 }

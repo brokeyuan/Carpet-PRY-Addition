@@ -139,12 +139,12 @@ public interface PryMob {
      * 武器耐久/音效全套走原版玩家战斗逻辑，绝不手搓伤害；随后挥手广播
      * （原版 {@code MeleeAttackGoal} 在 {@code doHurtTarget} 前同样显式 swing，
      * {@code Player#attack} 自身不含挥手，缺了它客户端看不到攻击动画）。
+     *
+     * <p><b>抽象方法（而非接口 default）的原因</b>：接口 default 在 Mixin 的
+     * 接口合并环境下分派不可达（实测 default 体从未执行），改为抽象方法由
+     * {@code ServerPlayerMobMixin} 直接实现，方法体落在目标类上必然可达。</p>
      */
-    default boolean doHurtTarget(Entity target) {
-        asPlayer().attack(target);
-        asPlayer().swing(InteractionHand.MAIN_HAND);
-        return true;
-    }
+    boolean doHurtTarget(Entity target);
 
     /** 玩家没有"敌对姿态"概念；对齐 Goal 接口留空实现 */
     default void setAggressive(boolean aggressive) {
