@@ -49,6 +49,8 @@ public class PlayerRangedAttackGoal extends PlayerGoal {
     private boolean strafingClockwise;
     private boolean strafingBackwards;
     private int strafingTime = -1;
+    /** 射击时是否左右走位：弓类生物（骷髅）会绕圈风筝；猪灵持弩"射箭时不左右移动" */
+    private boolean strafingEnabled = true;
     /** 接近阶段的重算路径倒计时（tick）：A* 每次最多 4096 次迭代，
      *  每 tick 全量重算会把多假人服务器的 tick 拖垮（表现为全员卡顿） */
     private int pathRecalcCooldown;
@@ -61,6 +63,12 @@ public class PlayerRangedAttackGoal extends PlayerGoal {
     /** 通用构造：掠夺者传 {@code Items.CROSSBOW} + 25 tick 上弦 */
     public PlayerRangedAttackGoal(PryMob mob, double speedModifier, int attackIntervalMin, float attackRadius,
                                   Item weapon, int chargeTime) {
+        this(mob, speedModifier, attackIntervalMin, attackRadius, weapon, chargeTime, true);
+    }
+
+    /** 完整构造：strafing=false 时射击带内只前进/后退、不左右绕圈（对齐猪灵） */
+    public PlayerRangedAttackGoal(PryMob mob, double speedModifier, int attackIntervalMin, float attackRadius,
+                                  Item weapon, int chargeTime, boolean strafing) {
         this.mob = mob;
         this.speedModifier = speedModifier;
         this.attackRadiusSqr = attackRadius * attackRadius;
@@ -68,6 +76,7 @@ public class PlayerRangedAttackGoal extends PlayerGoal {
         this.weapon = weapon;
         this.crossbow = weapon == Items.CROSSBOW;
         this.chargeTime = chargeTime;
+        this.strafingEnabled = strafing;
         this.attackTime = attackIntervalMin;
         this.setFlags(EnumSet.of(PlayerGoal.Flag.MOVE, PlayerGoal.Flag.LOOK));
     }
@@ -118,7 +127,8 @@ public class PlayerRangedAttackGoal extends PlayerGoal {
         }
         this.seeTime += hasLineOfSight ? 1 : -1;
 
-        // 移动模式：已在射程内且盯着目标 → 停下来风筝；否则按 5 tick 节奏重算路径逼近
+        // 移动模式：已在射程内且盯着目标 → 停下来风筝；否则按 5 tick 节奏重算路径逼近。
+        // strafingEnabled=false（猪灵持弩）时保留前后进退（太近后退拉开）、去掉左右绕圈
         if (distSq <= this.attackRadiusSqr && this.seeTime >= 20) {
             this.mob.getNavigation().stop();
             this.strafingTime++;
@@ -140,7 +150,7 @@ public class PlayerRangedAttackGoal extends PlayerGoal {
             this.strafingTime = 0;
         }
         if (this.strafingTime > -1) {
-            // 风筝：太近后退、太远前进，侧移绕圈
+            // 风筝：太近后退、太远前进；左右绕圈仅弓类（猪灵持弩不走位）
             if (distSq > this.maxAttackRadiusSqr) {
                 this.strafingBackwards = false;
             } else if (distSq < this.attackRadiusSqr) {
@@ -148,7 +158,7 @@ public class PlayerRangedAttackGoal extends PlayerGoal {
             }
             this.mob.getMoveControl().strafe(
                     this.strafingBackwards ? -0.5F : 0.5F,
-                    this.strafingClockwise ? 0.5F : -0.5F);
+                    this.strafingEnabled && this.strafingClockwise ? 0.5F : 0.0F);
             this.mob.lookAt(target, 30.0F, 30.0F); // 风筝时视线钉死目标
         } else {
             this.mob.getLookControl().setLookAt(target, 30.0F, 30.0F);
