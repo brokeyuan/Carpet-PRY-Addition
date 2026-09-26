@@ -33,13 +33,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * 或旧版 TeleportEntityPacket）与广播全部复用原版逻辑，客户端 1 tick 内
  * 对齐，同时覆盖重进服务器时"活塞先于水晶实体 tick"的出生时序竞争。
  *
- * 版本差异（sendChanges 内 tickCount 自增位置，逐一反编译核实）：
- *  - 1.21 / 1.21.3 / 1.21.4 / 1.21.5 / 1.21.8 / 1.21.10 / 1.21.11 / 26.1.2：
- *    自增位于方法末尾（1.21 偏移 1183、1.21.11 偏移 1146、26.1.2 偏移 1152），
- *    门控在自增前读取 → 归零为 0 即命中；
- *  - 26.2：自增移至方法开头（偏移 238），门控读到的是自增后的值 → 需置 -1
- *    （自增后为 0 才命中）。
- * tickCount/entity 字段名与 sendChanges 方法签名在 1.21~26.2 一致。
+ * 版本差异（sendChanges 内 tickCount 写点，逐一反编译核实）：
+ *  - 1.21 / 1.21.3 / 1.21.4 / 1.21.5 / 1.21.8 / 1.21.10 / 1.21.11 / 26.1.2 /
+ *    26.2 / 26.3：无条件自增均在方法末尾（1.21 偏移 1183、1.21.11 偏移 1146、
+ *    26.1.2 偏移 1152、26.3 偏移 957），门控在自增前读取 → 归零为 0 即命中。
+ *    （旧注释曾记 26.2"自增移至方法开头"——经 26.2/26.3 jar 反编译核实，偏移
+ *    238 处的 putfield 是门控未命中时的对齐写回分支，无条件自增仍在末尾，
+ *    全版本行为一致。曾按失实注释对 26.2+ 置 -1，导致首次同步晚 1 tick。）
+ * tickCount/entity 字段名与 sendChanges 方法签名在 1.21~26.3 一致。
  */
 @Mixin(ServerEntity.class)
 public abstract class ServerEntityMixin {
@@ -66,10 +67,7 @@ public abstract class ServerEntityMixin {
         if (last == null || last.equals(current)) {
             return;
         }
-        //#if MC >= 260200
-        //$$ this.tickCount = -1;
-        //#else
+        // 全版本一致：门控在方法末尾的自增前读取 tickCount，置 0 当 tick 即命中
         this.tickCount = 0;
-        //#endif
     }
 }

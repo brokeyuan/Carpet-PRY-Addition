@@ -46,9 +46,11 @@ public enum ScheduleMode {
 
     /**
      * PERTICK 模式换算：每秒 times 次对应的触发间隔（tick），至少间隔 1 tick。
-     * 命令层（dropall / sendto 的 perTick 子命令）统一使用本方法换算。
+     * 用 ceil 而非整除：整除会把 3 次/秒截成 6 tick（实际 3.33 次/秒，偏快），
+     * ceil(20/3)=7 → 2.86 次/秒，比目标略慢但不超频。命令层（dropall / sendto
+     * 的 perTick 子命令）统一使用本方法换算。
      */
     public static int perTickInterval(int times) {
-        return Math.max(1, 20 / Math.max(1, times));
+        return Math.max(1, (int) Math.ceil(20.0 / Math.max(1, times)));
     }
 }

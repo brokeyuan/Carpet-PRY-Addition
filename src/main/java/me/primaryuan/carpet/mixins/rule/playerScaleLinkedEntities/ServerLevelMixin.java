@@ -41,7 +41,9 @@ public abstract class ServerLevelMixin {
         if (!CarpetPrimaryuanSettings.playerScaleLinkedEntities) {
             return;
         }
-        net.minecraft.server.level.ServerPlayer player = SpawnContext.ACTING_PLAYER.get();
+        // current() 校验 game time 戳：useItem 异常中断的跨 tick 残留判无效
+        net.minecraft.server.level.ServerPlayer player =
+                SpawnContext.current((ServerLevel) (Object) this);
         if (player == null || !(entity instanceof LivingEntity living)) {
             return;
         }

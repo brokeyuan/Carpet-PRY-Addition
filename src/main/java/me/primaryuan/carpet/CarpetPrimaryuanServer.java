@@ -82,6 +82,9 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         // 和平的玩家（pvp）：加载持久化状态、注册 PVP 伤害拦截与玩家加入登记
         PvpManager.init();
 
+        // 骑乘/捡起许可表的下线清理兜底扫描（假人在默认配置下不触发 DISCONNECT）
+        EntitiesRidingPlayersHandler.init();
+
         // 假人背包链接（sendto）：初始化 tick 转移调度、假人下线清理与服务器停止清空监听
         SendtoLinkManager.init();
 

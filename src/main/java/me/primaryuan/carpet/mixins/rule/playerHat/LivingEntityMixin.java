@@ -52,9 +52,12 @@ public abstract class LivingEntityMixin {
         }
 
         player.setHealth(1.0F);
-        player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 40, 1));
-        player.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 200, 1));
-        player.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 40, 0));
+        // 参数对齐原版图腾（1.21.11 DeathProtection 组件字节码实测）：
+        // REGENERATION(900,1) / ABSORPTION(100,1) / FIRE_RESISTANCE(800,0)。
+        // 旧值 40/200/40 与原版全不符（火抗仅 2 秒，触发后仍可能被烧死）
+        player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 900, 1));
+        player.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 100, 1));
+        player.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 800, 0));
 
         player.level().broadcastEntityEvent(player, (byte) 35);
 

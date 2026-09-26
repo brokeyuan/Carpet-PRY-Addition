@@ -2,6 +2,7 @@ package me.primaryuan.carpet.handler.entitiesRidingPlayers;
 
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import me.primaryuan.carpet.i18n.ServerI18n;
+import me.primaryuan.carpet.util.ServerTickScheduler;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetPassengersPacket;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
@@ -17,7 +18,9 @@ import net.minecraft.world.level.Level;
 
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class EntitiesRidingPlayersHandler {
 
@@ -33,6 +36,38 @@ public class EntitiesRidingPlayersHandler {
 
     /** key=玩家名，value=可再次交互的 game time；仅服务器主线程访问，下线即清理 */
     private static final Map<String, Long> interactionCooldowns = new HashMap<>();
+
+    /** 周期清理的注册标志（惰性注册一次） */
+    private static boolean sweepRegistered = false;
+
+    /**
+     * 注册下线清理的兜底兜底扫描（CarpetPrimaryuanServer.onGameStarted 调用）。
+     *
+     * <p>DISCONNECT 快路径只覆盖真人 + fixBlueMap=true 的假人；默认配置下假人
+     * 被 kill 不会触发该事件，按名记录的许可/冷却条目会残留并被同名重召的
+     * 假人继承（违背"下线即清理"契约）。此处每 20 tick 把不在在线名单里的
+     * 条目清掉——真人下线本就清过，此扫描对真人无感。</p>
+     */
+    public static void init() {
+        if (sweepRegistered) return;
+        sweepRegistered = true;
+        ServerTickScheduler.register(server -> {
+            if (permissions.get(Permission.RIDE).isEmpty()
+                    && permissions.get(Permission.PICKUP).isEmpty()
+                    && interactionCooldowns.isEmpty()) {
+                return true;
+            }
+            Set<String> onlineNames = new HashSet<>();
+            for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+                onlineNames.add(p.getName().getString());
+            }
+            for (Map<String, Boolean> m : permissions.values()) {
+                m.keySet().removeIf(name -> !onlineNames.contains(name));
+            }
+            interactionCooldowns.keySet().removeIf(name -> !onlineNames.contains(name));
+            return true;
+        });
+    }
 
     public static InteractionResult rideEntity(Player player, Entity targetEntity, Level level, InteractionHand hand) {
         if (preconditionsUnmet(player, targetEntity, level, hand)) {
@@ -112,6 +147,8 @@ public class EntitiesRidingPlayersHandler {
     /**
      * 取得骑乘塔的顶端（新乘客的落点）。
      * 语义与规则描述一致：塔内玩家总数（含基座与新乘客）不得超过 limit；
+     * 新乘客自己头上已有的乘客塔会随原版 startRiding 整体移植，一并计入
+     * （只统计攀爬侧会让 pickUp 场景以 limit=2 造出 3 人塔）；
      * 检测到 newPassenger 已在塔内（防自环/重复骑乘）或加入后超限时返回 null。
      */
     public static Entity getHighestOrSelf(Entity vehicle, Entity newPassenger, int limit) {
@@ -119,6 +156,12 @@ public class EntitiesRidingPlayersHandler {
         while (vehicle.isVehicle()) {
             vehicle = vehicle.getFirstPassenger();
             if (vehicle == newPassenger) return null;
+            towerCount++;
+        }
+        // 新乘客自身的子塔随 startRiding 一同迁入目标塔，必须计入总人数
+        Entity sub = newPassenger;
+        while (sub.isVehicle()) {
+            sub = sub.getFirstPassenger();
             towerCount++;
         }
         return towerCount + 1 > limit ? null : vehicle;

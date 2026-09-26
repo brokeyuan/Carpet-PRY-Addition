@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import carpet.patches.EntityPlayerMPFake;
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import me.primaryuan.carpet.command.CommandSupport;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * 和平的玩家（peacefulPlayers）核心管理器。
@@ -69,6 +71,11 @@ public final class PvpManager {
 
     private static boolean initialized = false;
 
+    /** 上次播放拦截提示音的 game time（按受害方节流——攻击冷却不限制挥空尝试，无节流可被刷屏） */
+    private static final Map<UUID, Long> soundCooldowns = new HashMap<>();
+    /** 提示音节流间隔（tick）：0.5 秒内同一受害方只播一次 */
+    private static final int SOUND_COOLDOWN_TICKS = 10;
+
     private PvpManager() {}
 
     // ===== 初始化 =====
@@ -95,9 +102,11 @@ public final class PvpManager {
             return false;
         });
 
-        // 玩家加入时按当前默认状态登记，保证 /pvp list 能列出所有 PVP 关闭的玩家（含之后离线的）
+        // 玩家加入时按当前默认状态登记，保证 /pvp list 能列出所有 PVP 关闭的玩家（含之后离线的）。
+        // 假人不登记：假人名被永久写入状态文件（且随重召反复累积），其 PVP 跟随默认状态即可
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
-            if (!"false".equalsIgnoreCase(CarpetPrimaryuanSettings.peacefulPlayers)) {
+            if (!"false".equalsIgnoreCase(CarpetPrimaryuanSettings.peacefulPlayers)
+                    && !(handler.player instanceof EntityPlayerMPFake)) {
                 registerPlayer(handler.player);
             }
         });
@@ -110,6 +119,13 @@ public final class PvpManager {
      * 使用世界级广播（except=null），攻击者与被攻击者及附近玩家均可听到。
      */
     private static void playBlockedAttackSound(ServerPlayer victim) {
+        // 按受害方节流：原版攻击冷却只衰减伤害不限制挥空尝试，无节流可被连点刷屏
+        long now = victim.level().getGameTime();
+        Long last = soundCooldowns.get(victim.getUUID());
+        if (last != null && now - last < SOUND_COOLDOWN_TICKS) {
+            return;
+        }
+        soundCooldowns.put(victim.getUUID(), now);
         victim.level().playSound(null, victim.getX(), victim.getY(), victim.getZ(),
                 SoundEvents.NOTE_BLOCK_PLING, SoundSource.PLAYERS, 1.0F, 1.0F);
     }

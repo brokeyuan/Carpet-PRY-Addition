@@ -27,7 +27,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * 方法按名注入（两方法在 1.21~26.2 各目标版本签名一致且无重载，已逐一核实）；
  * @Inject 捕获目标参数时必须完整捕获全部参数（含返回值的
  * 目标需用 CallbackInfoReturnable）。异常路径 RETURN 不触发会残留引用，
- * 但仅限主线程单槽位、下次使用时被覆盖，无实际泄漏。
+ * 由 SpawnContext 的 game time 戳校验兜底：跨 tick 的残留读取时判无效。
  *
  * 所有受支持的 Minecraft 版本均注册本类。
  */
@@ -36,21 +36,21 @@ public abstract class ServerPlayerGameModeMixin {
 
     @Inject(method = "useItem", at = @At("HEAD"))
     private void playerScaleLinkedEntities$beginUseItem(ServerPlayer player, Level level, ItemStack stack, InteractionHand hand, CallbackInfoReturnable<InteractionResult> cir) {
-        SpawnContext.ACTING_PLAYER.set(player);
+        SpawnContext.begin(player, level);
     }
 
     @Inject(method = "useItem", at = @At("RETURN"))
     private void playerScaleLinkedEntities$endUseItem(ServerPlayer player, Level level, ItemStack stack, InteractionHand hand, CallbackInfoReturnable<InteractionResult> cir) {
-        SpawnContext.ACTING_PLAYER.remove();
+        SpawnContext.clear();
     }
 
     @Inject(method = "useItemOn", at = @At("HEAD"))
     private void playerScaleLinkedEntities$beginUseItemOn(ServerPlayer player, Level level, ItemStack stack, InteractionHand hand, BlockHitResult hitResult, CallbackInfoReturnable<InteractionResult> cir) {
-        SpawnContext.ACTING_PLAYER.set(player);
+        SpawnContext.begin(player, level);
     }
 
     @Inject(method = "useItemOn", at = @At("RETURN"))
     private void playerScaleLinkedEntities$endUseItemOn(ServerPlayer player, Level level, ItemStack stack, InteractionHand hand, BlockHitResult hitResult, CallbackInfoReturnable<InteractionResult> cir) {
-        SpawnContext.ACTING_PLAYER.remove();
+        SpawnContext.clear();
     }
 }

@@ -83,6 +83,7 @@
   "carpetprimaryuan.command.tpp.teleport_complete": "§aTeleport complete: %s",
   "carpetprimaryuan.command.tpp.teleport_interrupted": "§cTeleport interrupted",
   "carpetprimaryuan.command.tpp.operation_in_progress": "§cA fake player operation is already in progress, please wait",
+  "carpetprimaryuan.command.tpp.fake_player_busy": "§cFake player %s is busy with another teleport operation, try again later",
   "carpetprimaryuan.command.tpp.fake_player_spawned": "§aSpawned fake player: %s",
   "carpetprimaryuan.command.tpp.fake_player_spawning": "Spawning fake player: %s (in 2 seconds)...",
   "carpetprimaryuan.command.tpp.admin_only": "§cThis command is admin-only",

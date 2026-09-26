@@ -83,6 +83,7 @@
   "carpetprimaryuan.command.tpp.teleport_complete": "§a傳送完成: %s",
   "carpetprimaryuan.command.tpp.teleport_interrupted": "§c傳送被中斷",
   "carpetprimaryuan.command.tpp.operation_in_progress": "§c已有進行中的假人操作，請稍後再試",
+  "carpetprimaryuan.command.tpp.fake_player_busy": "§c假人 %s 正在被其他傳送操作使用，請稍候再試",
   "carpetprimaryuan.command.tpp.fake_player_spawned": "§a已生成假人: %s",
   "carpetprimaryuan.command.tpp.fake_player_spawning": "正在生成假人: %s (2秒後)...",
   "carpetprimaryuan.command.tpp.admin_only": "§c此指令僅管理員可用",

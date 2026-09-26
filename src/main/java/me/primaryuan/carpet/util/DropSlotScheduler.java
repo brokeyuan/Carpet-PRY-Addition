@@ -1,5 +1,6 @@
 package me.primaryuan.carpet.util;
 
+import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import me.primaryuan.carpet.i18n.ServerI18n;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.commands.CommandSourceStack;
@@ -124,6 +125,10 @@ public final class DropSlotScheduler {
         if (registered) return;
         registered = true;
         ServerTickScheduler.register(server -> {
+            // 规则关闭：暂停丢出（任务保留，重新开启后恢复）。与 SendtoLinkManager
+            // 同款语义——若不门控，规则切 false 后命令树随之隐藏，管理员将无法用
+            // /player <name> dropall stop 停止仍在执行的任务（规则语义被绕过）
+            if (!CarpetPrimaryuanSettings.fakePlayerDropAll) return true;
             if (tasks.isEmpty()) return true;
             // 所有状态仅在服务器主线程访问，可直接迭代移除，无需防御性拷贝
             Iterator<Map.Entry<UUID, Map<String, DropTask>>> playerIt = tasks.entrySet().iterator();

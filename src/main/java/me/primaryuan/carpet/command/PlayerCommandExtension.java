@@ -47,8 +47,8 @@ public final class PlayerCommandExtension {
         public int once(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
             ServerPlayer player = CommandSupport.resolvePlayer(ctx);
             if (player == null) return 0;
-            DropSlotScheduler.dropOnce(player, DropSlotScheduler.SLOT_ALL);
-            return 1;
+            // 用实际丢弃数作返回值：背包为空（0）时报失败，而非虚假成功
+            return DropSlotScheduler.dropOnce(player, DropSlotScheduler.SLOT_ALL) > 0 ? 1 : 0;
         }
 
         @Override

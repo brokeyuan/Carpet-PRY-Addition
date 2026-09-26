@@ -70,48 +70,63 @@ public class TppConfigManager {
                 return;
             }
 
-            stationMap.clear();
+            // 先解析到临时结构、全部成功后再原子提交内存态——
+            // 边解析边清空时中途抛异常（如 aliases 被手改成数组）会留下
+            // "站点新、别名空、计数旧"的残缺内存态，之后任意一次 save()
+            // 会把残缺态全量写盘（别名/计数从磁盘静默抹除）
+            Map<String, String> newStations = new LinkedHashMap<>();
             JsonElement stationsElem = json.get("stations");
             if (stationsElem != null) {
                 if (stationsElem.isJsonArray()) {
-                    // 旧格式兼容：JsonArray → 转为 stationMap（value=null）
+                    // 旧格式兼容：JsonArray → 转为 stations（value=null）
                     JsonArray arr = stationsElem.getAsJsonArray();
                     for (int i = 0; i < arr.size(); i++) {
-                        stationMap.put(arr.get(i).getAsString(), null);
+                        newStations.put(arr.get(i).getAsString(), null);
                     }
                 } else if (stationsElem.isJsonObject()) {
                     // 新格式：JsonObject
                     JsonObject obj = stationsElem.getAsJsonObject();
                     for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
                         String value = entry.getValue().isJsonNull() ? null : entry.getValue().getAsString();
-                        stationMap.put(entry.getKey(), value);
+                        newStations.put(entry.getKey(), value);
                     }
                 }
             }
 
-            aliases.clear();
+            Map<String, String> newAliases = new LinkedHashMap<>();
             JsonObject aliasesObj = json.getAsJsonObject("aliases");
             if (aliasesObj != null) {
                 for (Map.Entry<String, JsonElement> entry : aliasesObj.entrySet()) {
-                    aliases.put(entry.getKey(), entry.getValue().getAsString());
+                    newAliases.put(entry.getKey(), entry.getValue().getAsString());
                 }
             }
 
-            // 加载 useCount
+            // 加载 useCount（未配置时保留当前默认值 1）
+            int newUseCount = useCount;
             if (json.has("useCount")) {
-                useCount = json.get("useCount").getAsInt();
+                newUseCount = json.get("useCount").getAsInt();
             }
 
             // 加载站点级右键次数配置
-            stationUseCount.clear();
+            Map<String, Integer> newStationUseCount = new HashMap<>();
             JsonObject stationUseCountObj = json.getAsJsonObject("stationUseCount");
             if (stationUseCountObj != null) {
                 for (Map.Entry<String, JsonElement> entry : stationUseCountObj.entrySet()) {
-                    stationUseCount.put(entry.getKey(), entry.getValue().getAsInt());
+                    newStationUseCount.put(entry.getKey(), entry.getValue().getAsInt());
                 }
             }
+
+            // 全部解析成功：原子提交内存态
+            stationMap.clear();
+            stationMap.putAll(newStations);
+            aliases.clear();
+            aliases.putAll(newAliases);
+            useCount = newUseCount;
+            stationUseCount.clear();
+            stationUseCount.putAll(newStationUseCount);
         } catch (Exception e) {
-            LOGGER.error("[TPP] Failed to load config", e);
+            // 解析失败时内存态保持原样（首次启动为空默认），绝不以残缺态覆盖磁盘
+            LOGGER.error("[TPP] Failed to load config (live state untouched)", e);
         }
     }
 

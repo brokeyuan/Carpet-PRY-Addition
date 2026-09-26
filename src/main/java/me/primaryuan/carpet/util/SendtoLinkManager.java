@@ -248,14 +248,17 @@ public final class SendtoLinkManager {
      * 源无效（下线/移除）时懒清理其全部链接；到触发时机时转移一组。
      */
     private static void tickSource(MinecraftServer server, String sourceName, SourceLinks links) {
-        if (links.mode == ScheduleMode.NONE || links.targets.isEmpty()) {
-            return;
-        }
         // 源已下线/无效：移除其全部链接（懒清理兜底——fixBlueMap 规则关闭时
-        // 假人不触发 Fabric DISCONNECT 事件，靠这里清掉残留）
+        // 假人不触发 Fabric DISCONNECT 事件，靠这里清掉残留）。
+        // 必须先于 NONE 态早退执行：after 完成后的 NONE 态条目若先早退将永远
+        // 清理不到，同名假人重召时会被 addLink 的 computeIfAbsent 捡回、
+        // 追加进旧目标列表并自动切回 CONTINUOUS（"幽灵收货人"）
         ServerPlayer source = server.getPlayerList().getPlayerByName(sourceName);
         if (!isValidFake(source)) {
             LINKS.remove(sourceName);
+            return;
+        }
+        if (links.mode == ScheduleMode.NONE || links.targets.isEmpty()) {
             return;
         }
 

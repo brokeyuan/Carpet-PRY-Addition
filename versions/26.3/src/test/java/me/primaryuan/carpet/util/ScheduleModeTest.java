@@ -53,5 +53,9 @@ class ScheduleModeTest {
         assertEquals(1, ScheduleMode.perTickInterval(20));
         assertEquals(1, ScheduleMode.perTickInterval(100)); // 超频至少隔 1 tick
         assertEquals(20, ScheduleMode.perTickInterval(0));  // 非法输入按最慢频率处理（防除零）
+        // ceil 换算：整除会把 3 次/秒截成 6 tick（3.33 次/秒偏快），ceil(20/3)=7 不超频
+        assertEquals(7, ScheduleMode.perTickInterval(3));
+        assertEquals(3, ScheduleMode.perTickInterval(7));
+        assertEquals(4, ScheduleMode.perTickInterval(6));
     }
 }

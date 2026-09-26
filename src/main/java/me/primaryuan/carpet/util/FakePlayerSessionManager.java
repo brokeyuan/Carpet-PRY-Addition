@@ -6,8 +6,10 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -18,7 +20,9 @@ import java.util.UUID;
  * - 传送：rejoin → 等待上线 → use×N → 等待传送完成 → kill
  * - spawn：spawn → 等待停留时间 → kill
  *
- * 同一发起者同时只允许一个进行中的会话；所有状态仅在服务器主线程访问；
+ * 同一发起者同时只允许一个进行中的会话；假人名按"玩家名_站点"确定性生成，
+ * 进行中的会话按假人名独占（两名玩家 10 秒窗口内对同站点 /tpp 会互抢同一个
+ * 假人的 use/kill，按名互斥杜绝）；所有状态仅在服务器主线程访问；
  * 服务器停止时放弃全部会话（假人随服务器一起断开，无需 kill）。
  */
 public final class FakePlayerSessionManager {
@@ -66,6 +70,8 @@ public final class FakePlayerSessionManager {
 
     /** 发起者 UUID → 进行中的会话 */
     private static final Map<UUID, Session> SESSIONS = new HashMap<>();
+    /** 进行中的会话占用的假人名（并发同名互斥） */
+    private static final Set<String> BUSY_FAKE_NAMES = new HashSet<>();
     private static boolean registered = false;
 
     private FakePlayerSessionManager() {}
@@ -79,6 +85,12 @@ public final class FakePlayerSessionManager {
     public static void startTeleport(MinecraftServer server, ServerPlayer initiator,
                                      String fakePlayerName, String stationDisplayName, int totalUses) {
         ensureRegistered();
+        if (!BUSY_FAKE_NAMES.add(fakePlayerName)) {
+            // 该假人名已有会话占用（其他玩家的同站点 /tpp 进行中）：
+            // 不启动会话，避免双方对同一个假人互抢 use/kill
+            sendFeedback(initiator, "carpetprimaryuan.command.tpp.fake_player_busy", fakePlayerName);
+            return;
+        }
         performPlayerCommand(server, initiator, fakePlayerName, "rejoin");
         SESSIONS.put(initiator.getUUID(), new Session(initiator, fakePlayerName, stationDisplayName, totalUses, Phase.WAIT_JOIN));
     }
@@ -86,6 +98,10 @@ public final class FakePlayerSessionManager {
     /** 启动 /tppset spawn 会话：立即以发起者身份生成假人，停留 SPAWN_LINGER_TICKS 后自动下线 */
     public static void startSpawn(MinecraftServer server, ServerPlayer initiator, String fakePlayerName) {
         ensureRegistered();
+        if (!BUSY_FAKE_NAMES.add(fakePlayerName)) {
+            sendFeedback(initiator, "carpetprimaryuan.command.tpp.fake_player_busy", fakePlayerName);
+            return;
+        }
         performPlayerCommand(server, initiator, fakePlayerName, "spawn");
         SESSIONS.put(initiator.getUUID(), new Session(initiator, fakePlayerName, null, 0, Phase.WAIT_KILL));
     }
@@ -98,14 +114,19 @@ public final class FakePlayerSessionManager {
             if (SESSIONS.isEmpty()) return true;
             Iterator<Map.Entry<UUID, Session>> it = SESSIONS.entrySet().iterator();
             while (it.hasNext()) {
-                if (!tickSession(server, it.next().getValue())) {
+                Session session = it.next().getValue();
+                if (!tickSession(server, session)) {
                     it.remove();
+                    BUSY_FAKE_NAMES.remove(session.fakePlayerName);
                 }
             }
             return true;
         });
         // 服务器停止时放弃所有会话（假人随服务器一起断开，无需 kill）
-        ServerLifecycleEvents.SERVER_STOPPING.register(server -> SESSIONS.clear());
+        ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
+            SESSIONS.clear();
+            BUSY_FAKE_NAMES.clear();
+        });
     }
 
     /**

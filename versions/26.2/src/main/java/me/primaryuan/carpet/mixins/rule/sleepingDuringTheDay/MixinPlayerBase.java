@@ -6,7 +6,9 @@ import com.mojang.datafixers.util.Either;
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.gamerules.GameRules;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -58,12 +60,42 @@ public abstract class MixinPlayerBase {
             this.pry$startedDuringDay = false;
             original.call(player, wakeImmediately, updateLevel);
         } else if (player.getSleepTimer() >= 100) {
-            // 白天入睡且睡满 100 tick：跳到夜晚并唤醒
+            // 白天入睡且睡满 100 tick：跳到夜晚并唤醒（gamerule 门控见
+            // pry$canSkipToNight——不满足时仍正常醒来，可再次入睡）
             this.pry$startedDuringDay = false;
-            setTimeToNight(player);
+            if (pry$canSkipToNight(player)) {
+                setTimeToNight(player);
+            }
             original.call(player, wakeImmediately, updateLevel);
         }
         // 白天入睡未满 100 tick：阻止唤醒（标记保留，下一 tick 原版会再次尝试）
+    }
+
+    /**
+     * 是否允许把时间拨到夜晚（gamerule 门控，防单人白天睡觉强制全服入夜）：
+     * doDaylightCycle 不拨表（26.x 更名 ADVANCE_TIME，包移至 world.level.gamerules，
+     * getBoolean/getInt 统一为 get）；playersSleepingPercentage 比例语义与
+     * 原版夜跳一致。与根版本实现相同，仅时间读取与 gamerule API 不同。
+     */
+    @Unique
+    private static boolean pry$canSkipToNight(net.minecraft.world.entity.player.Player player) {
+        if (!(player.level() instanceof ServerLevel serverLevel)) {
+            return false;
+        }
+        GameRules rules = serverLevel.getGameRules();
+        if (!rules.get(GameRules.ADVANCE_TIME)) {
+            return false;
+        }
+        int pct = rules.get(GameRules.PLAYERS_SLEEPING_PERCENTAGE);
+        int total = 0;
+        int sleeping = 0;
+        for (ServerPlayer p : serverLevel.players()) {
+            total++;
+            if (p.isSleeping()) {
+                sleeping++;
+            }
+        }
+        return sleeping * 100 >= total * pct;
     }
 
     /** 当前世界时间是否处于白天（与根版本判据一致：dayTime mod 24000 < 13000） */

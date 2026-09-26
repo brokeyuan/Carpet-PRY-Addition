@@ -6,6 +6,12 @@ import com.mojang.datafixers.util.Either;
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+//#if MC >= 12111
+import net.minecraft.world.level.gamerules.GameRules;
+//#else
+//$$ import net.minecraft.world.level.GameRules;
+//#endif
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -66,12 +72,54 @@ public abstract class MixinPlayerBase {
             this.pry$startedDuringDay = false;
             original.call(player, wakeImmediately, updateLevel);
         } else if (player.getSleepTimer() >= 100) {
-            // 白天入睡且睡满 100 tick：跳到夜晚并唤醒
+            // 白天入睡且睡满 100 tick：跳到夜晚并唤醒（gamerule 门控见
+            // pry$canSkipToNight——不满足时仍正常醒来，可再次入睡）
             this.pry$startedDuringDay = false;
-            setTimeToNight(player);
+            if (pry$canSkipToNight(player)) {
+                setTimeToNight(player);
+            }
             original.call(player, wakeImmediately, updateLevel);
         }
         // 白天入睡未满 100 tick：阻止唤醒（标记保留，下一 tick 原版会再次尝试）
+    }
+
+    /**
+     * 是否允许把时间拨到夜晚（gamerule 门控，防单人白天睡觉强制全服入夜）：
+     * <ul>
+     *   <li>doDaylightCycle 冻结时不拨表（1.21.11 起更名 ADVANCE_TIME、
+     *       包移 world.level.gamerules、getBoolean/getInt 统一为 get）；</li>
+     *   <li>{@code playersSleepingPercentage}：与原版夜跳一致的比例语义——
+     *       睡满的白天入睡者占本维度玩家的比例达到阈值才拨表。</li>
+     * </ul>
+     * 注意：根模板会被 1.21.11（rootNode）不经预处理地直接编译，
+     * fork 的活动分支必须是 1.21.11 形态。
+     */
+    @Unique
+    private static boolean pry$canSkipToNight(net.minecraft.world.entity.player.Player player) {
+        if (!(player.level() instanceof ServerLevel serverLevel)) {
+            return false;
+        }
+        GameRules rules = serverLevel.getGameRules();
+        //#if MC >= 12111
+        if (!rules.get(GameRules.ADVANCE_TIME)) {
+            return false;
+        }
+        int pct = rules.get(GameRules.PLAYERS_SLEEPING_PERCENTAGE);
+        //#else
+        //$$ if (!rules.getBoolean(GameRules.RULE_DAYLIGHT)) {
+        //$$     return false;
+        //$$ }
+        //$$ int pct = rules.getInt(GameRules.RULE_PLAYERS_SLEEPING_PERCENTAGE);
+        //#endif
+        int total = 0;
+        int sleeping = 0;
+        for (ServerPlayer p : serverLevel.players()) {
+            total++;
+            if (p.isSleeping()) {
+                sleeping++;
+            }
+        }
+        return sleeping * 100 >= total * pct;
     }
 
     /** 当前世界时间是否处于白天（与旧版判据一致：dayTime mod 24000 < 13000） */

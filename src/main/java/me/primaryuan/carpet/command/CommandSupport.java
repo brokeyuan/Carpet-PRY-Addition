@@ -83,11 +83,13 @@ public final class CommandSupport {
     }
 
     /**
-     * 判定命令来源是否为管理员（等级 4 / LEVEL_OWNERS）；控制台视为管理员。
+     * 判定命令来源是否为管理员（等级 4 / LEVEL_OWNERS）。
+     * 控制台/RCON 来源的权限等级即 4，天然通过；命令方块（等级 2）被拒——
+     * 旧实现的 {@code !isPlayer() → true} 短路曾把命令方块提权为管理员
+     * （可执行 /pvp @a 全服开关、/tppset 管理、/scale set 他人）。
      * 封装跨版本权限检查 API 差异。
      */
     public static boolean isAdmin(CommandSourceStack source) {
-        if (!source.isPlayer()) return true;
         //#if MC <= 12110
         //$$ return source.hasPermission(4);
         //#else
