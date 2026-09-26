@@ -115,9 +115,9 @@ public class PlayerMoveControl {
         //    travel() 走原版行走物理（摩擦/疾跑/碰撞全原生）★★★
         this.player.zza = (float) Mth.clamp(this.speedModifier, 0.1, 1.0);
         this.player.xxa = 0.0F;
-        if (this.speedModifier >= 1.2) {
-            this.player.setSprinting(true); // 高移速系数 → 原生疾跑
-        }
+        // 高移速系数 → 原生疾跑；降速档（回避 1.35→0.9、跟随→0.6）必须显式复位，
+        // 否则假人保持疾跑状态/动画直到本条移动指令结束（原实现只置不复位）
+        this.player.setSprinting(this.speedModifier >= 1.2);
 
         // 3) 跳跃：目标点明显高于脚下（台阶/田埂）且横向贴近 → 原生跳跃；
         //    撞墙兜底：水平碰撞且在地面 → 也跳一下（原版 MoveControl 的撞墙跳）

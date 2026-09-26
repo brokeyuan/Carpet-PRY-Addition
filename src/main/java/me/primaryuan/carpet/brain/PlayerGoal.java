@@ -74,9 +74,4 @@ public abstract class PlayerGoal {
     public void setInterval(int ticks) {
         this.interval = ticks;
     }
-
-    /** 立即清除冷却（供装配/切换模式时使用，避免"新脑上路要空转 20 tick"） */
-    public void resetInterval() {
-        this.cooldown = 0;
-    }
 }

@@ -9,14 +9,14 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 
 import java.util.EnumSet;
-import java.util.function.Predicate;
 
 /**
  * 移植版规避目标（← 原版 {@code AvoidEntityGoal}）。
  *
  * <p>语义：检测到视距内出现某类实体（如村民遇僵尸）时，朝远离它的方向
  * 逃跑并盯着它看；距离近（7 格内）加速（sprint 疾跑），远了恢复常速。
- * 原版依赖 {@code RandomPos} 选点，这里自包含复刻（反方向 + 随机扇形偏移）。</p>
+ * 原版依赖 {@code RandomPos} 选点，这里自包含复刻（反方向 + 随机扇形偏移）。
+ * 仅规避存活实体（旧实现收下 Predicate 参数却从未存储，isAlive 过滤随之丢失）。</p>
  */
 public class PlayerAvoidEntityGoal<T extends LivingEntity> extends PlayerGoal {
 
@@ -32,12 +32,6 @@ public class PlayerAvoidEntityGoal<T extends LivingEntity> extends PlayerGoal {
 
     public PlayerAvoidEntityGoal(PryMob mob, Class<T> avoidClass, float maxDist,
                                  double walkSpeedModifier, double sprintSpeedModifier) {
-        this(mob, avoidClass, maxDist, walkSpeedModifier, sprintSpeedModifier, e -> e.isAlive());
-    }
-
-    public PlayerAvoidEntityGoal(PryMob mob, Class<T> avoidClass, float maxDist,
-                                 double walkSpeedModifier, double sprintSpeedModifier,
-                                 Predicate<LivingEntity> predicate) {
         this.mob = mob;
         this.avoidClass = avoidClass;
         this.maxDist = maxDist;
@@ -56,7 +50,8 @@ public class PlayerAvoidEntityGoal<T extends LivingEntity> extends PlayerGoal {
         this.toAvoid = null;
         double bestSq = this.maxDist * this.maxDist;
         for (T candidate : this.mob.level().getEntitiesOfClass(this.avoidClass,
-                this.mob.getBoundingBox().inflate(this.maxDist, 3.0, this.maxDist))) {
+                this.mob.getBoundingBox().inflate(this.maxDist, 3.0, this.maxDist),
+                e -> e.isAlive() && !e.isRemoved())) {
             double sq = candidate.distanceToSqr(sx, sy, sz);
             if (sq < bestSq) {
                 bestSq = sq;

@@ -14,8 +14,9 @@ import net.minecraft.world.entity.monster.Monster;
  * <p>两个攻击目标选择器（对应原版铁傀儡的 TargetSelector 差异）：</p>
  * <ul>
  *   <li>优先级 1 —— 敌对玩家（含假人）：处于敌对 AI 模式的假人
- *       （{@link BrainManager#isHostileFake}：zombie/skeleton/pillager/spider/enderman，
- *       即规范要求识别的 {@code isHostile()} 假人），以及攻击过本假人的玩家
+ *       （{@link BrainManager#isHostileFake}：zombie/babyzombie/skeleton/pillager/
+ *       spider/piglin/enderman 共 7 种，即规范要求识别的 {@code isHostile()} 假人），
+ *       以及攻击过本假人的玩家
  *       （{@code getLastHurtByMob()} 近期伤害来源，报复判定）；</li>
  *   <li>优先级 2 —— 视野内的敌对生物（{@link Monster} 基类），排除苦力怕
  *       （原版铁傀儡的克制：爆炸无益于守护）。</li>

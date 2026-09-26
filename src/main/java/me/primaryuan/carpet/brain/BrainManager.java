@@ -51,23 +51,32 @@ public final class BrainManager {
     public static void init() {
         if (registered) return;
         registered = true;
-        // 每 20 tick（1 秒）扫描：清理 tick 驱动已触达不了的死会话
+        // 每 20 tick（1 秒）扫描：清理 tick 驱动已触达不了的死会话（计数器实现，
+        // 与类注释契约一致；空表时近乎零成本）
         ServerTickScheduler.register(server -> {
+            if (++sweepCounter % 20 != 0) {
+                return true;
+            }
             sweep(server);
             return true;
         });
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> detachAll());
     }
 
+    /** sweep 的 20 tick 分频计数器 */
+    private static int sweepCounter = 0;
+
     /** 该假人是否处于 AI 接管状态（供 ActionPack 取消 mixin 查询） */
     public static boolean hasBrain(ServerPlayer player) {
         return BRAINS.containsKey(player.getUUID());
     }
 
-    /** 当前挂载的脑子模式标识（无脑子返回 null，供命令状态查询） */
+    /** 当前挂载的脑子模式标识（无脑子返回 null，供命令状态查询）。
+     *  校验脑子记录的实例就是查询实例：Carpet 影子假人与真人共享同一
+     *  GameProfile/UUID，仅按 UUID 查表会互相串状态 */
     public static String getModeKey(ServerPlayer player) {
         PlayerBrainController brain = BRAINS.get(player.getUUID());
-        return brain != null ? brain.modeKey() : null;
+        return brain != null && brain.player == player ? brain.modeKey() : null;
     }
 
     /**

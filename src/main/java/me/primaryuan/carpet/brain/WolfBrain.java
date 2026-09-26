@@ -60,7 +60,18 @@ public class WolfBrain extends PlayerBrainController {
         super.tick();
     }
 
-    /** 仇恨同步：主人最近被谁打，狼就咬谁（原版狼的护主逻辑） */
+    /**
+     * 仇恨同步：主人最近被谁打，狼就咬谁（原版狼的护主逻辑）。
+     *
+     * <p>目标字段有两个写方（本方法与 targetSelector 里的
+     * {@code PlayerHurtByTargetGoal}），仲裁顺序对齐原版狼：主人攻击者
+     * （OwnerHurtByTargetGoal 优先级更高）&gt; 自身被打反击——</p>
+     * <ul>
+     *   <li>want 有效：无条件覆写（原版优先级语义，HurtBy 目标让位）；</li>
+     *   <li>want 无效：不动运行中目标的锁定；清退仅在"无 TARGET 目标运行 +
+     *       当前目标已死/卸载"时执行，消除双写方对同一字段的拉锯。</li>
+     * </ul>
+     */
     private void syncHate() {
         // 不走 ServerPlayer#getServer（1.21.10+ 映射已移除该访问器），
         // Level#getServer 全支持版本签名稳定
@@ -69,7 +80,9 @@ public class WolfBrain extends PlayerBrainController {
         LivingEntity current = this.prowler.getTarget();
         if (owner == null || !owner.isAlive() || owner.level() != this.player.level()) {
             // 主人不在线/死亡/异维：无仇恨来源，只清理已失效的目标
-            if (current != null && (current.isRemoved() || !current.isAlive())) {
+            // （运行中的 TARGET 目标由其自身 canContinueToUse 管理，不代清）
+            if (!this.targetSelector.hasRunningFlag(PlayerGoal.Flag.TARGET)
+                    && current != null && (current.isRemoved() || !current.isAlive())) {
                 this.prowler.setTarget(null);
             }
             return;
@@ -83,8 +96,9 @@ public class WolfBrain extends PlayerBrainController {
         if (want != null) {
             // 主人的仇恨/攻击目标有效：锁定为扑咬目标
             this.prowler.setTarget(want);
-        } else if (current != null && (current.isRemoved() || !current.isAlive())) {
-            // 目标已死/卸载：清退，回跟随状态
+        } else if (!this.targetSelector.hasRunningFlag(PlayerGoal.Flag.TARGET)
+                && current != null && (current.isRemoved() || !current.isAlive())) {
+            // 目标已死/卸载且无 TARGET 目标运行：清退，回跟随状态
             this.prowler.setTarget(null);
         }
     }

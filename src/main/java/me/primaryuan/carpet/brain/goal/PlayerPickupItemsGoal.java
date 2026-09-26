@@ -41,8 +41,13 @@ public class PlayerPickupItemsGoal extends PlayerGoal {
         this.setInterval(10);
     }
 
-    /** Wiki：被玩家/生物攻击后 20 秒（400 tick）内不再尝试捡起物品 */
+    /** Wiki：被玩家/生物攻击后 20 秒（400 tick）内不再尝试捡起物品。
+     *  lastHurtByMobTimestamp 新实体默认 0，须先判 getLastHurtByMob() 非空，
+     *  否则猪灵开局 20 秒恒判"刚被打"不捡物 */
     private boolean recentlyHurt() {
+        if (this.mob.asLiving().getLastHurtByMob() == null) {
+            return false;
+        }
         int since = this.mob.asLiving().tickCount - this.mob.asLiving().getLastHurtByMobTimestamp();
         return since < 400;
     }
@@ -100,7 +105,8 @@ public class PlayerPickupItemsGoal extends PlayerGoal {
 
     @Override
     public void tick() {
-        // 每 tick 维持导航（物品可能被水流推动/他人移动）
+        // 每 tick 维持导航（物品可能被水流推动/他人移动）；
+        // 物品未换格时寻路器自动沿用现路径，不会每 tick 重算 A*
         if (this.targetItem != null && this.targetItem.isAlive()) {
             this.mob.getNavigation().moveTo(
                     this.targetItem.getX(), this.targetItem.getY(), this.targetItem.getZ(), 1.0);

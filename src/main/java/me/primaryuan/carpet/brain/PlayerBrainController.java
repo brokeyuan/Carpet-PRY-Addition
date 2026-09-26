@@ -52,6 +52,11 @@ public abstract class PlayerBrainController {
     public void tick() {
         this.targetSelector.tick();
         this.goalSelector.tick();
+        // 无 LOOK 旗标目标运行即清注视请求：goal 停止后残留的 wantPos 会让
+        // 假人持续扭头盯住旧坐标（如敌人死亡的位置）
+        if (!this.goalSelector.hasRunningFlag(PlayerGoal.Flag.LOOK)) {
+            this.prowler.getLookControl().clearLook();
+        }
         this.prowler.getNavigation().tick();
         this.prowler.getMoveControl().tick();
         this.prowler.getLookControl().tick();
@@ -77,6 +82,7 @@ public abstract class PlayerBrainController {
         this.targetSelector.removeAllGoals();
         this.prowler.setTarget(null);
         this.prowler.getNavigation().stop();
+        this.prowler.getLookControl().clearLook();
         this.player.zza = 0.0F;
         this.player.xxa = 0.0F;
         this.player.setSprinting(false);

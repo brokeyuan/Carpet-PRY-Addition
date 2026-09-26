@@ -47,6 +47,11 @@ public class PlayerLookControl {
         this.xRotSpeed = xRotSpeed;
     }
 
+    /** 清除注视请求：goal 停止后不清会继续朝旧坐标转头（如盯住敌人死亡的位置） */
+    public void clearLook() {
+        this.wantPos = null;
+    }
+
     /** 每 tick 推进：把当前位置按有限角速度转向目标点 */
     public void tick() {
         if (this.wantPos == null) {

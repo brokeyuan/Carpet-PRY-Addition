@@ -40,19 +40,15 @@ public class PlayerGoalSelector {
         this.goals.computeIfAbsent(goal, g -> new WrappedGoal(g)).setPriority(priority);
     }
 
-    /** 移除一个目标（若在激活中会先 stop） */
-    public void removeGoal(PlayerGoal goal) {
-        WrappedGoal wrapped = this.goals.remove(goal);
-        if (wrapped != null && wrapped.running) {
-            wrapped.goal.stop();
-            this.runningGoals.remove(wrapped);
-        }
-    }
-
     /** 是否有持有 MOVE 旗标的目标正在运行（移动控制粘滞保险的判定用） */
     public boolean hasRunningMoveGoal() {
+        return this.hasRunningFlag(PlayerGoal.Flag.MOVE);
+    }
+
+    /** 是否有持有指定旗标的目标正在运行（视线粘滞清理 / 目标仲裁用） */
+    public boolean hasRunningFlag(PlayerGoal.Flag flag) {
         for (WrappedGoal wrapped : this.runningGoals) {
-            if (wrapped.goal.getFlags().contains(PlayerGoal.Flag.MOVE)) {
+            if (wrapped.goal.getFlags().contains(flag)) {
                 return true;
             }
         }

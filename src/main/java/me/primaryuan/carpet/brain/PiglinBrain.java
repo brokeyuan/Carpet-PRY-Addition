@@ -93,8 +93,12 @@ public class PiglinBrain extends PlayerBrainController {
         if ((this.player.tickCount & 63) != 0) {
             return;
         }
-        // Wiki：被攻击后 20 秒（400 tick）内不再尝试捡起/装备
-        if (this.player.tickCount - this.player.getLastHurtByMobTimestamp() < 400) {
+        // Wiki：被攻击后 20 秒（400 tick）内不再尝试捡起/装备。
+        // lastHurtByMobTimestamp 新实体默认 0（仅 setLastHurtByMob/读档两处写点），
+        // 必须先判 getLastHurtByMob() 非空——否则出生后前 400 tick 恒判"刚被打"，
+        // 表现为猪灵开局 20 秒不捡物、不装备
+        if (this.player.getLastHurtByMob() != null
+                && this.player.tickCount - this.player.getLastHurtByMobTimestamp() < 400) {
             return;
         }
         Inventory inv = this.player.getInventory();
@@ -168,18 +172,29 @@ public class PiglinBrain extends PlayerBrainController {
         return golden;
     }
 
-    /** 从背包槽位取出物品并装备到指定槽（守恒转移；原持物退回背包） */
+    /** 从背包槽位取出物品并装备到指定槽（守恒转移；原持物退回背包，装不下的剩余走原生掉落） */
     private void equipFromInventory(int index, EquipmentSlot slot) {
         Inventory inv = this.player.getInventory();
         ItemStack picked = inv.removeItem(index, 1);
         if (picked.isEmpty()) {
             return;
         }
-        // 原槽位上的旧装备退回背包（背包满则掉在脚下——玩家原生 add 语义）
+        // 原槽位上的旧装备退回背包。Inventory.add 装不下的剩余栈留在传入对象里、
+        // 不会自动掉落——直接丢引用即物品消失，这里把剩余部分走玩家原生 drop
+        // （脚下 ItemEntity，含拾取延迟），与"背包满则掉在脚下"的注释契约一致
         ItemStack previous = this.player.getItemBySlot(slot);
         this.player.setItemSlot(slot, picked);
         if (!previous.isEmpty()) {
             inv.add(previous);
+            if (!previous.isEmpty()) {
+                //#if MC >= 260300
+                //$$ // 26.3：drop 收敛为三参（Prediction 控制客户端预测路径），
+                //$$ // 与原版调用点一致取 PREDICTED
+                //$$ this.player.drop(previous, false, net.minecraft.util.Prediction.PREDICTED);
+                //#else
+                this.player.drop(previous, false);
+                //#endif
+            }
         }
     }
 

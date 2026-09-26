@@ -49,6 +49,10 @@ package me.primaryuan.carpet.brain.goal;
 //$$     private int engageTime;      // 蓄力剩余 tick
 //$$     private int fleeTime;        // 后撤剩余 tick（超时保护）
 //$$     private Vec3 awayPos;        // 后撤目标点（null = 未选定）
+//$$     /** 接近段的重算路径倒计时（tick）：A* 每次最多 4096 次迭代，每 tick 全量
+//$$      *  重算会把多假人服务器的 tick 拖垮（与 {@link PlayerRangedAttackGoal} 同纪律；
+//$$      *  寻路器对"目标未换格"的重发会自动沿用现路径，此处约束的是移动目标的刷新节奏） */
+//$$     private int pathRecalcCooldown;
 //$$
 //$$     private enum Phase { APPROACH, ENGAGE, FLEE }
 //$$
@@ -109,7 +113,10 @@ package me.primaryuan.carpet.brain.goal;
 //$$         this.mob.getLookControl().setLookAt(target, 30.0F, 30.0F);
 //$$         switch (this.phase) {
 //$$             case APPROACH -> {
-//$$                 this.mob.getNavigation().moveTo(target, this.speedModifier);
+//$$                 if (--this.pathRecalcCooldown <= 0) {
+//$$                     this.mob.getNavigation().moveTo(target, this.speedModifier);
+//$$                     this.pathRecalcCooldown = 5;
+//$$                 }
 //$$                 if (this.mob.distanceToSqr(target.getX(), target.getY(), target.getZ())
 //$$                         <= ENGAGE_RANGE_SQ) {
 //$$                     // 进入交战：举矛蓄力（刺击伤害由 LivingEntity 在使用期间自动结算）
@@ -119,7 +126,9 @@ package me.primaryuan.carpet.brain.goal;
 //$$                 }
 //$$             }
 //$$             case ENGAGE -> {
-//$$                 // 蓄力期间持续全速冲向目标：动能武器的命中判定看冲刺状态
+//$$                 // 蓄力期间持续全速冲向目标：动能武器的命中判定看冲刺状态。
+//$$                 // 保持每 tick 重发（蓄力窗口短、命中精度优先）：
+//$$                 // 目标未换格时由寻路器沿用现路径，不会触发全量 A*
 //$$                 this.mob.getNavigation().moveTo(target, this.speedModifier);
 //$$                 this.engageTime--;
 //$$                 if (this.engageTime <= 0) {

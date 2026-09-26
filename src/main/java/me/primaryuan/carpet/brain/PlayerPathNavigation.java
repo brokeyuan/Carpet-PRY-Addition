@@ -72,12 +72,16 @@ public class PlayerPathNavigation {
     /** 走向目标实体（近战/远程追逐常用入口）：返回是否成功建立路径 */
     public boolean moveTo(LivingEntity target, double speed) {
         this.pathFollowSpeed = speed;
+        BlockPos dest = target.blockPosition();
+        if (this.isSameDestInProgress(dest)) {
+            return true; // 目标未换格且旧路径仍在走：沿用现路径（速度已生效）
+        }
         Path p = this.createPathToEntity(target, 0);
         if (p == null || p.isEmpty()) {
             this.path = null;
             return false;
         }
-        this.setPath(p, target.blockPosition());
+        this.setPath(p, dest);
         return true;
     }
 
@@ -89,6 +93,9 @@ public class PlayerPathNavigation {
     /** 走向坐标点 */
     public boolean moveTo(BlockPos pos, double speed) {
         this.pathFollowSpeed = speed;
+        if (this.isSameDestInProgress(pos)) {
+            return true; // 目标未变且旧路径仍在走：沿用现路径（速度已生效）
+        }
         Path p = this.computePath(pos);
         if (p == null || p.isEmpty()) {
             this.path = null;
@@ -167,7 +174,7 @@ public class PlayerPathNavigation {
         }
 
         Vec3 feet = this.player.position();
-        // 卡死检测：10 tick 内几乎没位移 → 重算（初始目标保留）
+        // 卡死检测：20 tick 内几乎没位移 → 重算（初始目标保留）
         if (this.lastTickPos != null && feet.distanceToSqr(this.lastTickPos) < 4.0E-4) {
             this.stuckTicks++;
         } else {
@@ -218,7 +225,6 @@ public class PlayerPathNavigation {
 
     /** 从后往前找直线可达的最远节点下标 */
     private int selectLookAhead(Vec3 feet) {
-        int best = this.nodeIndex;
         for (int i = this.path.nodes.size() - 1; i > this.nodeIndex; i--) {
             BlockPos n = this.path.nodes.get(i);
             double dx = n.getX() + 0.5 - feet.x;
@@ -230,10 +236,10 @@ public class PlayerPathNavigation {
                 continue; // 高度差太大不直走（避免隔着悬崖/高台直线冲刺）
             }
             if (this.isStraightWalkable(feet, n)) {
-                best = i;
+                return i; // 从远往近扫，首个直线可达的即最远可达节点
             }
         }
-        return best;
+        return this.nodeIndex;
     }
 
     /** 从 feet 直线步进到节点格，检查途经格子均可站（粗视野裁剪） */
@@ -295,6 +301,19 @@ public class PlayerPathNavigation {
         this.stuckTicks = 0;
         this.recomputeCount = 0;
         this.lastTickPos = null;
+    }
+
+    /**
+     * 请求目标与在走路径的终点相同、且路径尚未走完 → 沿用现路径。
+     *
+     * <p>拾取/跟随/长矛逼近等 Goal 会每 tick 重发 {@code moveTo}：若每次都放行，
+     * 等于每 tick 一次全量 A*（最多 4096 次迭代，多假人服务器直接拖垮 tick），
+     * 且 {@link #setPath} 重置卡死计数会让卡死检测永远无法触发（卡墙假人
+     * 顶着墙走到底、永不放弃）。目标换格或路径走完才真正重算；
+     * speed 不受影响，仍实时生效。</p>
+     */
+    private boolean isSameDestInProgress(BlockPos dest) {
+        return this.lastDest != null && this.lastDest.equals(dest) && !this.isDone();
     }
 
     /** A* 主循环：从玩家脚下到 goal 的最短可站路径 */
@@ -403,21 +422,27 @@ public class PlayerPathNavigation {
      * @return 附加代价；{@code -1} 表示该格禁行
      */
     private double hazardPenalty(int x, int y, int z) {
-        BlockPos pos = new BlockPos(x, y, z);
-        var state = this.level.getBlockState(pos);
-        // 身体/头部所在格是熔岩或火焰 → 禁行（两者的碰撞箱为空，
-        // 仅靠可站立判定会认为"能站"，必须显式排除）
-        if (state.is(net.minecraft.world.level.block.Blocks.LAVA)
-                || state.is(net.minecraft.world.level.block.Blocks.FIRE)
-                || state.is(net.minecraft.world.level.block.Blocks.SOUL_FIRE)) {
+        // 身体占两格：待选格与头顶格任一为熔岩/火焰 → 禁行（两者碰撞箱为空，
+        // 仅靠可站立判定会认为"能站"；此前只查待选格，头顶熔岩的格子会被
+        // 视为可走而生成"走进持续燃烧"的路径）
+        if (isHazardCell(x, y, z) || isHazardCell(x, y + 1, z)) {
             return -1;
         }
         // 铁轨（含充能/探测/激活铁轨，BlockTags.RAILS 全版本一致）：
         // 高代价软惩罚，绕行优先
-        if (state.is(net.minecraft.tags.BlockTags.RAILS)) {
+        BlockPos pos = new BlockPos(x, y, z);
+        if (this.level.getBlockState(pos).is(net.minecraft.tags.BlockTags.RAILS)) {
             return 8.0;
         }
         return 0.0;
+    }
+
+    /** 该格是否为熔岩/火焰/灵魂火（均无碰撞箱，可站立判定不会排除它们） */
+    private boolean isHazardCell(int x, int y, int z) {
+        var state = this.level.getBlockState(new BlockPos(x, y, z));
+        return state.is(net.minecraft.world.level.block.Blocks.LAVA)
+                || state.is(net.minecraft.world.level.block.Blocks.FIRE)
+                || state.is(net.minecraft.world.level.block.Blocks.SOUL_FIRE);
     }
 
     /** 曼哈顿启发（三轴），系数略大于 1 保证朝目标收敛且同分判定稳定 */
