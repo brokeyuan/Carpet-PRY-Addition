@@ -28,17 +28,26 @@ public class EntitiesRidingPlayersHandler {
     private static final Map<Permission, Map<String, Boolean>> permissions =
             new EnumMap<>(Map.of(Permission.RIDE, new HashMap<>(), Permission.PICKUP, new HashMap<>()));
 
+    /** 交互冷却 tick 数：一次骑乘/捡起交互被处理后，同一玩家需等待 N tick 才能再次交互 */
+    private static final int INTERACTION_COOLDOWN_TICKS = 10;
+
+    /** key=玩家名，value=可再次交互的 game time；仅服务器主线程访问，下线即清理 */
+    private static final Map<String, Long> interactionCooldowns = new HashMap<>();
+
     public static InteractionResult rideEntity(Player player, Entity targetEntity, Level level, InteractionHand hand) {
         if (preconditionsUnmet(player, targetEntity, level, hand)) {
             return InteractionResult.PASS;
         }
-        // 副手金胡萝卜 → 交给 pickup 路径处理
+        // 副手金胡萝卜 → 交给 pickup 路径处理（本次点击尚未被处理，不消耗冷却）
         if (player.getItemInHand(InteractionHand.OFF_HAND).is(Items.GOLDEN_CARROT)) {
             return InteractionResult.PASS;
         }
 
         Player targetPlayer = (Player) targetEntity;
-        if (denied(Permission.RIDE, player, targetPlayer, "carpetprimaryuan.command.ride.disallow_ride_subtitle")) {
+        boolean deniedRide = denied(Permission.RIDE, player, targetPlayer, "carpetprimaryuan.command.ride.disallow_ride_subtitle");
+        // 点击已被处理：无论放行、被拒还是失败都进入交互冷却（防连点刷字幕/高频重复交互）
+        markInteraction(player);
+        if (deniedRide) {
             return InteractionResult.PASS;
         }
 
@@ -58,7 +67,10 @@ public class EntitiesRidingPlayersHandler {
         }
 
         Player targetPlayer = (Player) targetEntity;
-        if (denied(Permission.PICKUP, player, targetPlayer, "carpetprimaryuan.command.ride.disallow_pickup_subtitle")) {
+        boolean deniedPickup = denied(Permission.PICKUP, player, targetPlayer, "carpetprimaryuan.command.ride.disallow_pickup_subtitle");
+        // 点击已被处理：无论放行、被拒还是失败都进入交互冷却
+        markInteraction(player);
+        if (deniedPickup) {
             return InteractionResult.PASS;
         }
 
@@ -68,11 +80,19 @@ public class EntitiesRidingPlayersHandler {
         return targetEntity.startRiding(vehicle) ? InteractionResult.SUCCESS : InteractionResult.FAIL;
     }
 
-    /** 公共前置校验：服务端 + 主手 + 目标为玩家 + 主手持不死图腾 */
+    /**
+     * 公共前置校验：服务端 + 主手 + 目标为玩家 + 双方非旁观者 + 不在交互冷却中 + 主手持不死图腾。
+     * 原版 startRiding 整条门禁链（couldAcceptPassenger/canSerialize/canRide/canAddPassenger）
+     * 都不含游戏模式检查，服务端 handleInteract 对到达的交互包也无游戏模式门禁，
+     * 旁观者只能骑乘与被骑乘的过滤必须在此显式完成
+     */
     private static boolean preconditionsUnmet(Player player, Entity targetEntity, Level level, InteractionHand hand) {
         return level.isClientSide()
                 || hand != InteractionHand.MAIN_HAND
                 || !(targetEntity instanceof Player)
+                || player.isSpectator()
+                || targetEntity.isSpectator()
+                || isOnInteractionCooldown(player)
                 || !player.getItemInHand(hand).is(Items.TOTEM_OF_UNDYING);
     }
 
@@ -112,9 +132,20 @@ public class EntitiesRidingPlayersHandler {
         return permissions.get(type).getOrDefault(playerName, true);
     }
 
-    /** 玩家下线时清理其全部许可（骑乘 + 捡起） */
+    private static boolean isOnInteractionCooldown(Player player) {
+        Long until = interactionCooldowns.get(player.getName().getString());
+        return until != null && player.level().getGameTime() < until;
+    }
+
+    private static void markInteraction(Player player) {
+        interactionCooldowns.put(player.getName().getString(),
+                player.level().getGameTime() + INTERACTION_COOLDOWN_TICKS);
+    }
+
+    /** 玩家下线时清理其全部许可（骑乘 + 捡起）与交互冷却 */
     public static void clearPermissions(String playerName) {
         permissions.values().forEach(m -> m.remove(playerName));
+        interactionCooldowns.remove(playerName);
     }
 
     /** 乘客变动后向被骑乘的玩家客户端同步乘客列表（原 onMount/onDismount 合并，两者逻辑完全相同） */
@@ -137,7 +168,12 @@ public class EntitiesRidingPlayersHandler {
     }
 
     public static void onGameModeChange(Player player, GameType gameMode) {
+        // 切入旁观：自己身上的乘客立即脱离（塔中段切换时上方玩家随之脱离）
         if (player.isVehicle() && (CarpetPrimaryuanSettings.ridingPlayersAutoDismount || gameMode == GameType.SPECTATOR))
             player.getFirstPassenger().stopRiding();
+        // 切入旁观：自己若正骑着玩家也立即下车——旁观者禁令在状态产生瞬间生效，
+        // 不再依赖每 tick 兜底；新骑乘关系则由 EntityMixin 在 startRiding 入口统一拒绝
+        if (gameMode == GameType.SPECTATOR && player.isPassenger() && player.getVehicle() instanceof Player)
+            player.stopRiding();
     }
 }
