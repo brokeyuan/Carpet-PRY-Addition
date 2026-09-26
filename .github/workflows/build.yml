@@ -31,6 +31,13 @@ jobs:
           cache-read-only: ${{ github.ref != 'refs/heads/master' }}
           build-scan-terms-of-use-agree: 'yes'
 
+      # carpet 26.3 正式版尚未同步到 masa maven，从 GitHub release 预下到 libs/（flatDir 兜底目录）
+      - name: Fetch carpet release jars missing from masa maven
+        run: |
+          mkdir -p libs
+          curl -sfL --retry 3 -o "libs/fabric-carpet-26.3+v260915.jar" \
+            "https://github.com/gnembon/fabric-carpet/releases/download/v26.3/fabric-carpet-26.3%2Bv260915.jar"
+
       - name: Build with gradle
         run: |
           chmod +x gradlew

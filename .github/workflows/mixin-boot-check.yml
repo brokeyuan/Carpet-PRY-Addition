@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ["1.21", "1.21.1", "1.21.3", "1.21.4", "1.21.5", "1.21.8", "1.21.10", "1.21.11", "26.1.2", "26.2"]
+        version: ["1.21", "1.21.1", "1.21.3", "1.21.4", "1.21.5", "1.21.8", "1.21.10", "1.21.11", "26.1.2", "26.2", "26.3"]
 
     steps:
       - uses: actions/checkout@v7
@@ -24,6 +24,14 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6.3.0
+
+      # carpet 26.3 正式版尚未同步到 masa maven，从 GitHub release 预下到 libs/（flatDir 兜底目录）
+      - name: Fetch carpet release jars missing from masa maven
+        if: matrix.version == '26.3'
+        run: |
+          mkdir -p libs
+          curl -sfL --retry 3 -o "libs/fabric-carpet-26.3+v260915.jar" \
+            "https://github.com/gnembon/fabric-carpet/releases/download/v26.3/fabric-carpet-26.3%2Bv260915.jar"
 
       - name: Boot server and check mixin application
         run: |

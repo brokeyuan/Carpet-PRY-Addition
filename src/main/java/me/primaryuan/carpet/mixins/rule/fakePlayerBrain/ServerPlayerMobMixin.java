@@ -96,7 +96,12 @@ public abstract class ServerPlayerMobMixin implements PryMob {
     @Override
     public boolean doHurtTarget(Entity target) {
         ((ServerPlayer) (Object) this).attack(target);
+        //#if MC >= 260300
+        //$$ // 26.3: swing(hand) 移除，三参 swing(hand, animation, sendToSelf)，false=仅广播观察者（等价旧语义）
+        //$$ ((ServerPlayer) (Object) this).swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, false);
+        //#else
         ((ServerPlayer) (Object) this).swing(InteractionHand.MAIN_HAND);
+        //#endif
         return true;
     }
 }

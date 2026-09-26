@@ -208,7 +208,12 @@ public final class DropSlotScheduler {
         if (current.isEmpty()) return 0;
         ItemStack stack = inv.removeItem(index, current.getCount());
         if (stack.isEmpty()) return 0;
+        //#if MC >= 260300
+        //$$ // 26.3: drop 第三参改 Prediction 枚举（dropAround 固定 false，暴露的布尔=includeThrower）
+        //$$ player.drop(stack, true, net.minecraft.util.Prediction.SERVER_ONLY);
+        //#else
         player.drop(stack, false, true);
+        //#endif
         return stack.getCount();
     }
 }

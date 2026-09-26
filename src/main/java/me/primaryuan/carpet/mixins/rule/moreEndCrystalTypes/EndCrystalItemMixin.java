@@ -89,7 +89,12 @@ public abstract class EndCrystalItemMixin {
                 crystal.setBeamTarget(pry$BEAM_TARGET);
             }
             if (mode == MoreEndCrystalTypesHelper.Mode.INVULNERABLE) {
+                //#if MC >= 260300
+                //$$ // 26.3: setInvulnerable 拆分为 setPermanentlyInvulnerable/setTemporarilyInvulnerable
+                //$$ crystal.setPermanentlyInvulnerable(true);
+                //#else
                 crystal.setInvulnerable(true);
+                //#endif
             }
         }
         return original.call(level, entity);

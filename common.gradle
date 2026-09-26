@@ -49,7 +49,7 @@ dependencies {
 	}
 
 	// 单元测试：仅最新版本子项目启用（测试覆盖根模板共享逻辑，跑一次即可）
-	if (mcVersion == 26_02_00) {
+	if (mcVersion == 26_03_00) {
 		testImplementation platform('org.junit:junit-bom:5.10.2')
 		testImplementation 'org.junit.jupiter:junit-jupiter'
 		testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -127,7 +127,7 @@ java {
 }
 
 // 单元测试随最新版本子项目的 build 一起执行（buildAndGather CI 会跑到）
-if (mcVersion == 26_02_00) {
+if (mcVersion == 26_03_00) {
 	test {
 		useJUnitPlatform()
 		testLogging {
