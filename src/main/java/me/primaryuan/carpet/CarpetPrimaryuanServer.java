@@ -16,6 +16,7 @@ import me.primaryuan.carpet.command.TppCommand;
 import me.primaryuan.carpet.handler.entitiesRidingPlayers.EntitiesRidingPlayersHandler;
 import me.primaryuan.carpet.handler.peacefulPlayers.PvpManager;
 import me.primaryuan.carpet.settings.CarpetRuleRegistrar;
+import me.primaryuan.carpet.util.MixinSanityCheck;
 import me.primaryuan.carpet.util.SendtoLinkManager;
 //#if MC < 12111
 //$$ import net.fabricmc.fabric.api.entity.event.v1.EntitySleepEvents;
@@ -91,6 +92,9 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         // 假人脑子（brain）：初始化会话周期扫描、停服清理与跨维度防御性重挂
         BrainManager.init();
 
+        // require=0 注入点自检：规则开启但注入被静默跳过时以 error 点名（MixinSanityCheck）
+        MixinSanityCheck.init();
+
         // 不按规则门控：onLogOut 除骑乘下车外还清理骑乘/捡起两张许可表，
         // 只开 pickupPlayers 的服务器同样需要下线清理，否则同名重进继承旧许可
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
@@ -131,6 +135,7 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
             if (COMMAND_VISIBILITY_RULES.contains(changedRule.name())) {
                 CommandHelper.notifyPlayersCommandsChanged(source.getServer());
             }
+            MixinSanityCheck.onRuleChanged(changedRule.name());
         });
     }
 
