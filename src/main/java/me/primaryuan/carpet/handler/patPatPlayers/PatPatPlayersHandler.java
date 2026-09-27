@@ -42,10 +42,10 @@ import java.util.Map;
  * 挥手纯叠加，本次右键的原版处理与其它模组的 UseEntityCallback 监听不受任何
  * 影响（fabric 事件链是非 PASS 即短路，消费交互会压掉后续监听器）。</p>
  *
- * <p>挥手必须服务端自己做：原版 dispatch 被跳过与否不再重要——客户端侧恒 PASS
- * 不会本地预测挥手，裸 INTERACT 的原版成功分支对玩家目标也永远 PASS。
- * {@code swing(hand, true)} 尾参 = sendToSelf，广播含发起者本人（1.21.x 为
- * broadcastAndSend，26.3 为 sendToTrackingPlayersAndSelf，字节码核实）。</p>
+ * <p>挥手必须服务端自己做：原版 dispatch 的成功挥手分支对本场景不生效（客户端
+ * 侧恒 PASS 不预测挥手），{@code swing(hand, true)} 尾参 = sendToSelf，广播含
+ * 发起者本人（1.21.x 为 broadcastAndSend，26.3 为 sendToTrackingPlayersAndSelf，
+ * 字节码核实）。</p>
  */
 public class PatPatPlayersHandler {
 

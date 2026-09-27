@@ -17,6 +17,7 @@ All notable changes to **Carpet-PRY-Addition** are documented in this file.
 - **更多种类的末地水晶**（`moreEndCrystalTypes`）：允许把末地水晶放在哭泣的黑曜石上。`true` = 放出的为普通水晶（不无敌）；`invulnerable` = 放出的为无敌水晶（`Invulnerable=1` 且显示底部板，与原版复活龙过程中推出柱子、打断复活得到的水晶相同）。两种模式放出的水晶光束均指向固定坐标 `(0,128,0)`。实现上仅把点击的哭泣黑曜石替换为黑曜石状态骗过原版基座校验，其余放置逻辑全部复用原版；客户端/服务端共用同一份逻辑，纯原版客户端在服务器上也可用。放在普通黑曜石/基岩上的水晶不受影响
 
 ### 修复
+- **摸摸头在 `pickupPlayers` 开启时不可达**：UseEntityCallback 共享监听中捡起分支无条件 return（PASS 也返回），pickupPlayers=true 的服务器上摸头逻辑永远执行不到（本地 E2E 因未开 pickup 未暴露，用户服务器探针日志定位）。改为仅非 PASS 时短路；另于文档补明摸头受原版 3 格交互距离限制（超出静默拒绝）
 - **`betterSnowball` 击退绕过无敌帧成倍叠加**：原实现无条件 `push`，多雪球同帧命中同一目标时，无敌帧拦下了重复伤害却拦不住击退位移，成倍叠加把人推飞。现仅在 `hurt` 真正生效（返回 true）时施加方向击退；无敌帧内重复命中或目标本身无敌（创造/旁观）一律不再 push
 - **`entitiesRidingPlayers` 旁观者可骑乘/被骑乘 + 交互连点刷屏**：原版 `startRiding` 整条门禁链（couldAcceptPassenger/canSerialize/canRide/canAddPassenger）与服务端交互包处理都不含游戏模式检查，旁观者可骑乘与被骑乘；现 handler 公共前置显式门禁旁观者（双向），并在 `startRiding` HEAD 事件驱动拦截兜底（`canSerialize` WrapOperation 放行"玩家载具"以保持玩家可被骑行为，1.21~1.21.8 双参/1.21.10+ 三参签名按宏分叉，26.2 覆盖同步）；交互新增 10 tick 冷却（无论放行/拒绝/失败都计），防连点刷字幕与高频重复交互
 - **假人脑子近战对假人零伤害（关键接口分派缺陷）**：`PryMob.doHurtTarget` 原为接口 default 方法——Mixin 的接口合并（`implements` 嫁接）环境下接口 default 体分派不可达，`Player#attack` 从未被执行，导致所有近战模式（zombie/babyzombie/irongolem/spider/wolf/enderman）对假人目标零伤害（对玩家/生物目标此前未验证，同样受影响）。本地 RCON 竞技场逐层插桩定位（attack 分支确认执行 → doHurtTarget 未达 → 接口 default 分派问题），现改为抽象方法由 `ServerPlayerMobMixin` 直接实现，方法体落在目标类上必然可达；实测鸡骑士骑鸡将目标假人砍至 9.3 血。附带发现：`ServerPlayer#hurt` 带 `spawnInvulnerableTime`（出生保护 60 tick）与 Fabric `ALLOW_DAMAGE` 事件（本模组 pvp 拦截）等正常关卡，均非本次根因

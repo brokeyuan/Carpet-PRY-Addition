@@ -383,7 +383,7 @@
 | **参考选项** | `false`, `true`, `sneak` |
 | **分类** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
 
-**工作原理**：复用 ridingPlayers 同款 Fabric `UseEntityCallback`（零 Mixin），挂在骑乘/捡起之后。触发判定只认**带命中坐标的交互包**——客户端 use 流程先发 `INTERACT_AT`（携带命中点，26.x 已合并为带坐标单包），其后补发的裸 `INTERACT` 包 `hitResult` 为 `null` 直接放行原版，因此每次右键天然只触发一次；命中点（实体碰撞箱表面交点）须落在目标碰撞箱顶部约 1/3（头部区域，随潜行/缩放按比例成立），双方非旁观者 + 10 tick 冷却通过后才生效。**恒返回 PASS（火后不管）**：Fabric 事件链是非 PASS 即短路，消费交互会同时压掉原版 dispatch 与后续监听器，摸头只做效果不拦截。
+**工作原理**：复用 ridingPlayers 同款 Fabric `UseEntityCallback`（零 Mixin），挂在骑乘/捡起之后。触发判定只认**带命中坐标的交互包**——客户端 use 流程先发 `INTERACT_AT`（携带命中点，26.x 已合并为带坐标单包），其后补发的裸 `INTERACT` 包 `hitResult` 为 `null` 直接放行原版，因此每次右键天然只触发一次；命中点（实体碰撞箱表面交点）须落在目标碰撞箱顶部约 1/3（头部区域，随潜行/缩放按比例成立），双方非旁观者 + 10 tick 冷却通过后才生效；另受**原版交互距离限制**（3 格，超出时原版在事件触发前静默拒绝，无任何反馈）。**恒返回 PASS（火后不管）**：Fabric 事件链是非 PASS 即短路，消费交互会同时压掉原版 dispatch 与后续监听器，摸头只做效果不拦截。
 
 **效果层（被摸者视角）**：头顶爱心给发起者与旁观者看；被摸者自己的"画面"由三件事构成——沿其视线前方半格生成的一颗爱心（第一人称必然入画）、只发给被摸者的更高音高贴耳音效（`ClientboundSoundPacket` 定向，其他人听广播版）、快捷栏上方提示。挥手由服务端显式发起（`swing(hand, true)` 尾参=发给自己，发起者与周围玩家均可见；1.21.x 为 `broadcastAndSend`，26.3 为 `sendToTrackingPlayersAndSelf`，三参签名 `swing(hand, SwingAnimation.DEFAULT, true)` 按宏分叉）。`sneak` 模式读的是交互包携带的潜行标志（dispatch 前已同步到发起者身上）。
 

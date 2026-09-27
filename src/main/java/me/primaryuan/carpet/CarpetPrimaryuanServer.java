@@ -114,7 +114,12 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
             }
 
             if (CarpetPrimaryuanSettings.pickupPlayers) {
-                return EntitiesRidingPlayersHandler.pickUpEntity(player, entity, level, hand);
+                InteractionResult pickupResult = EntitiesRidingPlayersHandler.pickUpEntity(player, entity, level, hand);
+                // 仅在真正处理了捡起（非 PASS）时短路；PASS 必须放行，
+                // 否则 pickupPlayers 开启时后续监听（摸摸头）永远不可达
+                if (pickupResult != InteractionResult.PASS) {
+                    return pickupResult;
+                }
             }
 
             // 摸摸头最后处理：只做效果、恒不消费交互（火后不管），原版行为与其它模组的
