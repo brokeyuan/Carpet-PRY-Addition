@@ -30,11 +30,13 @@ public abstract class EntityMixin {
         }
     }
 
-    // 原版 startRiding 服务端会用 EntityType.canSerialize() 拒绝"不可保存"的载具
-    // （PLAYER 注册时调用 noSave()，canSerialize() 恒 false），必须在此放行玩家作载具。
-    // 三参重载 1.21.10 起才出现，1.21~1.21.8 只有二参重载；此前单一三参 target 配合
-    // require=0 在旧版本静默失效，导致骑乘/捡起在 1.21~1.21.8 上整体不工作。
-    // 现按版本保留唯一存在的重载并去掉 require=0：门禁失配时让 mixin 响亮地失败
+    // 1.21.2 起，原版 startRiding 才用 EntityType.canSerialize() 拒绝"不可保存"的
+    // 载具（PLAYER 注册时调用 noSave()，canSerialize() 恒 false），须在此放行玩家
+    // 作载具。1.21/1.21.1 的 startRiding 没有这道门禁（canSerialize 调用只在
+    // getEncodeId()，字节码核实），vanilla 本就不拒绝玩家载具，无需注入——
+    // 对其强挂 target 会 require=1 响亮崩溃（boot check 实测）。
+    // 三参重载 1.21.10 起才出现，1.21.3~1.21.9 只有二参重载。按版本保留唯一
+    // 存在的 target 并去掉 require=0：门禁失配时让 mixin 响亮地失败。
     //#if MC >= 12110
     @WrapOperation(
             method = "startRiding(Lnet/minecraft/world/entity/Entity;ZZ)Z",
@@ -44,6 +46,7 @@ public abstract class EntityMixin {
         return pry$allowPlayerVehicles(instance, original);
     }
     //#else
+    //#if MC >= 12103
     //$$ @WrapOperation(
     //$$         method = "startRiding(Lnet/minecraft/world/entity/Entity;Z)Z",
     //$$         at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/EntityType;canSerialize()Z")
@@ -51,6 +54,9 @@ public abstract class EntityMixin {
     //$$ private boolean ridingPlayers$allowRidingPlayers(EntityType instance, Operation<Boolean> original) {
     //$$     return pry$allowPlayerVehicles(instance, original);
     //$$ }
+    //#else
+    //$$ // 1.21/1.21.1：无 canSerialize 门禁，本注入不需要
+    //#endif
     //#endif
 
     private boolean pry$allowPlayerVehicles(EntityType instance, Operation<Boolean> original) {
