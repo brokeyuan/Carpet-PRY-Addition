@@ -25,13 +25,24 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6.3.0
 
-      # carpet 26.3 正式版尚未同步到 masa maven，从 GitHub release 预下到 libs/（flatDir 兜底目录）
-      - name: Fetch carpet release jars missing from masa maven
-        if: matrix.version == '26.3'
+      # 预下载全部版本的 carpet 到 libs/（flatDir）：boot 阶段不再解析 masa maven，
+      # 其可用性波动曾导致 26.3 以外全矩阵 "Server failed to boot"（依赖解析快速失败）。
+      # 26.3 正式版未同步到 masa，走 GitHub release。
+      - name: Pre-fetch carpet jars into libs/
         run: |
           mkdir -p libs
-          curl -sfL --retry 3 -o "libs/fabric-carpet-26.3+v260915.jar" \
-            "https://github.com/gnembon/fabric-carpet/releases/download/v26.3/fabric-carpet-26.3%2Bv260915.jar"
+          for v in $(python -c "import json;print(' '.join(json.load(open('settings.json'))['versions']))"); do
+            cv=$(grep '^carpet_core_version=' "versions/$v/gradle.properties" | cut -d= -f2)
+            jar="libs/fabric-carpet-$cv.jar"
+            if [ ! -f "$jar" ]; then
+              url="https://masa.dy.fi/maven/carpet/fabric-carpet/$cv/fabric-carpet-$cv.jar"
+              if [ "$v" = "26.3" ]; then
+                url="https://github.com/gnembon/fabric-carpet/releases/download/v26.3/fabric-carpet-26.3%2Bv260915.jar"
+              fi
+              curl -sfL --retry 3 -o "$jar" "$url" || echo "::warning::carpet $cv 预下载失败：$url"
+            fi
+          done
+          ls -la libs/
 
       - name: Boot server and check mixin application
         run: |
@@ -52,3 +63,11 @@ jobs:
             exit 1
           fi
           echo "Mixin boot check passed for ${{ matrix.version }}"
+
+      - name: Upload boot.log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: boot-log-${{ matrix.version }}
+          path: boot.log
+          retention-days: 3
