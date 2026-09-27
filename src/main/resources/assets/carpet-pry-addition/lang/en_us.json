@@ -60,7 +60,12 @@
 
   "carpet.rule.fixEndCrystalSync.name": "Fix End Crystal Sync",
   "carpet.rule.fixEndCrystalSync.desc": "Fixes client-side position desync when end crystals are pushed by pistons. Cause: vanilla never streams position updates for end crystals and both sides simulate piston pushes independently, so any divergence never self-corrects (only a relog/restart recovers). When enabled, the server forces the vanilla position-sync branch whenever a tracked crystal's position changes, realigning clients within 1 tick; the spawn-order race on relogin is covered too",
+  "carpet.rule.patPatPlayers.name": "Pat Pat Players",
+  "carpet.rule.patPatPlayers.desc": "Pat other players' heads by right-clicking them: heart particles above their head and in front of their eyes, a soft sound (a slightly closer one just for the patted player), and an action-bar notice; works with any item in hand and never consumes the interaction, so vanilla behavior is untouched. true=pat freely; sneak=only while sneaking. Pure server-side, no client mod needed; fake players can be patted too",
+  "carpet.rule.patPatPlayersHeadBob.name": "Pat Pat Head Bob",
+  "carpet.rule.patPatPlayersHeadBob.desc": "An easter egg for the patted player: their camera gives a gentle downward nod and returns, as if their head was patted. Off by default; applies together with patPatPlayers",
 
+  "carpetprimaryuan.patPat.received": "§d%s patted your head",
   "carpetprimaryuan.command.support.player_not_found": "§cPlayer not found: %s",
   "carpetprimaryuan.command.support.missing_player": "§cMissing player argument",
 

@@ -173,4 +173,19 @@ public class CarpetPrimaryuanSettings {
             categories = {PRIMARYUAN, BUGFIX}
     )
     public static boolean fixEndCrystalSync = false;
+
+    // 摸摸头：右键其他玩家的头部摸摸头（爱心粒子+轻响+被摸提示），纯服务端实现；
+    // 不要求空手、恒不消费交互（火后不管，原版行为不受影响）
+    @Rule(
+            options = {"false", "true", "sneak"},
+            strict = false,
+            categories = {PRIMARYUAN, SURVIVAL, FEATURE}
+    )
+    public static String patPatPlayers = "false";
+
+    // 摸摸头镜头轻点：被摸者视角低头一下再复位（模拟头被按了一下，默认关）
+    @Rule(
+            categories = {PRIMARYUAN, SURVIVAL, FEATURE}
+    )
+    public static boolean patPatPlayersHeadBob = false;
 }

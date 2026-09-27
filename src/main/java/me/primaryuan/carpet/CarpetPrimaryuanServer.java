@@ -14,6 +14,7 @@ import me.primaryuan.carpet.command.RidingCommand;
 import me.primaryuan.carpet.command.ScaleCommand;
 import me.primaryuan.carpet.command.TppCommand;
 import me.primaryuan.carpet.handler.entitiesRidingPlayers.EntitiesRidingPlayersHandler;
+import me.primaryuan.carpet.handler.patPatPlayers.PatPatPlayersHandler;
 import me.primaryuan.carpet.handler.peacefulPlayers.PvpManager;
 import me.primaryuan.carpet.settings.CarpetRuleRegistrar;
 import me.primaryuan.carpet.util.MixinSanityCheck;
@@ -86,6 +87,9 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         // 骑乘/捡起许可表的下线清理兜底扫描（假人在默认配置下不触发 DISCONNECT）
         EntitiesRidingPlayersHandler.init();
 
+        // 摸摸头：过期冷却条目的周期清理
+        PatPatPlayersHandler.init();
+
         // 假人背包链接（sendto）：初始化 tick 转移调度、假人下线清理与服务器停止清空监听
         SendtoLinkManager.init();
 
@@ -112,6 +116,10 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
             if (CarpetPrimaryuanSettings.pickupPlayers) {
                 return EntitiesRidingPlayersHandler.pickUpEntity(player, entity, level, hand);
             }
+
+            // 摸摸头最后处理：只做效果、恒不消费交互（火后不管），原版行为与其它模组的
+            // 同名事件监听不受影响；骑乘/捡起在前面已按主手物品自然分流
+            PatPatPlayersHandler.patPlayer(player, level, hand, entity, hitResult);
 
             return InteractionResult.PASS;
         });

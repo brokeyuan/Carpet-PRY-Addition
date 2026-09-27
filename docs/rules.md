@@ -32,6 +32,8 @@
   - [ridingPlayersAutoDismount - 玩家骑乘更改模式下车](#ridingplayersautodismount---玩家骑乘更改模式下车)
   - [ridingPlayersClientInteract - 玩家骑乘时可交互（客户端）](#ridingplayersclientinteract---玩家骑乘时可交互客户端)
   - [peacefulPlayers - 和平的玩家](#peacefulplayers---和平的玩家)
+  - [patPatPlayers - 摸摸头](#patpatplayers---摸摸头)
+  - [patPatPlayersHeadBob - 摸摸头镜头轻点](#patpatplayersheadbob---摸摸头镜头轻点)
 - [生存功能](#生存功能)
   - [playerHat - 玩家帽子](#playerhat---玩家帽子)
   - [betterSnowball - 更好的雪球](#bettersnowball---更好的雪球)
@@ -367,6 +369,42 @@
 
 
 ---
+
+### patPatPlayers - 摸摸头
+
+右键点击其他玩家的头部摸摸头：对方头顶与眼前冒爱心、播放贴耳轻响，对方在快捷栏上方收到提示。参考 [PatPat](https://github.com/LopyMine/PatPat-Plugin) 模，但为纯服务端实现，原版客户端即可使用，假人同样可被摸。不要求空手，且永不消费交互——本次右键的原版行为与其它模组的处理不受任何影响。
+
+| 属性 | 值 |
+|------|-----|
+| **规则名** | `patPatPlayers` |
+| **描述** | 右键点击其他玩家的头部摸摸头：对方头顶与眼前冒爱心、贴耳轻响，对方在快捷栏上方收到提示；不要求空手、不改变任何原版交互。true=随手可摸；sneak=按下潜行键右键才摸。纯服务端实现，客户端无需安装，假人同样可以摸 |
+| **类型** | `string` |
+| **默认值** | `"false"` |
+| **参考选项** | `false`, `true`, `sneak` |
+| **分类** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
+
+**工作原理**：复用 ridingPlayers 同款 Fabric `UseEntityCallback`（零 Mixin），挂在骑乘/捡起之后。触发判定只认**带命中坐标的交互包**——客户端 use 流程先发 `INTERACT_AT`（携带命中点，26.x 已合并为带坐标单包），其后补发的裸 `INTERACT` 包 `hitResult` 为 `null` 直接放行原版，因此每次右键天然只触发一次；命中点（实体碰撞箱表面交点）须落在目标碰撞箱顶部约 1/3（头部区域，随潜行/缩放按比例成立），双方非旁观者 + 10 tick 冷却通过后才生效。**恒返回 PASS（火后不管）**：Fabric 事件链是非 PASS 即短路，消费交互会同时压掉原版 dispatch 与后续监听器，摸头只做效果不拦截。
+
+**效果层（被摸者视角）**：头顶爱心给发起者与旁观者看；被摸者自己的"画面"由三件事构成——沿其视线前方半格生成的一颗爱心（第一人称必然入画）、只发给被摸者的更高音高贴耳音效（`ClientboundSoundPacket` 定向，其他人听广播版）、快捷栏上方提示。挥手由服务端显式发起（`swing(hand, true)` 尾参=发给自己，发起者与周围玩家均可见；1.21.x 为 `broadcastAndSend`，26.3 为 `sendToTrackingPlayersAndSelf`，三参签名 `swing(hand, SwingAnimation.DEFAULT, true)` 按宏分叉）。`sneak` 模式读的是交互包携带的潜行标志（dispatch 前已同步到发起者身上）。
+
+### patPatPlayersHeadBob - 摸摸头镜头轻点
+
+被摸者视角的彩蛋：被摸到时镜头轻轻低头一下再复位，模拟头被按了一下。默认关闭。
+
+| 属性 | 值 |
+|------|-----|
+| **规则名** | `patPatPlayersHeadBob` |
+| **描述** | 被摸者视角的彩蛋：被摸到时镜头轻轻低头一下再复位，模拟头被按了一下。默认关闭；开启后与 patPatPlayers 一起生效 |
+| **类型** | `boolean` |
+| **默认值** | `false` |
+| **参考选项** | `false`, `true` |
+| **分类** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
+
+**工作原理**：向被摸者客户端发送旋转包——1.21/1.21.1 用 `ClientboundPlayerPositionPacket` 的相对旋转分量（原版 /tp 相对旋转同路径），1.21.3~26.2 用 `ClientboundPlayerRotationPacket` 绝对旋转，26.3 起该包支持相对模式直接发增量。低头 12° 后 2 tick 复位；复位发反向增量而非回到快照值，玩家在间隔内移动鼠标不会被拽回。纯原版包，无模组客户端可收。
+
+---
+
+## 生存功能---
 
 ## 生存功能
 

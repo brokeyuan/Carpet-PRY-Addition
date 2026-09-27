@@ -92,6 +92,8 @@ All rules are off by default except the client-side rule `ridingPlayersClientInt
 - `ridingPlayersAutoDismount`: passengers auto-dismount on game mode change
 - `ridingPlayersClientInteract`: keep interacting while carrying a passenger (requires client install)
 - `peacefulPlayers`: per-player `/pvp` toggles, `@a` as a server-wide switch
+- `patPatPlayers`: pat other players' heads by right-clicking them — heart particles above their head and before their eyes, a soft sound and an action-bar notice; works with any item in hand and never alters vanilla interactions (`true` = pat freely / `sneak` = only while sneaking; pure server-side, similar to PatPat)
+- `patPatPlayersHeadBob`: the patted player's camera gives a gentle nod (off by default)
 
 ### Survival Features
 

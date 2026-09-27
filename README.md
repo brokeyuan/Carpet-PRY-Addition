@@ -93,6 +93,8 @@
 - `ridingPlayersAutoDismount`：游戏模式变更时乘客自动下车
 - `ridingPlayersClientInteract`：头上有乘客时仍可交互方块/实体（需客户端安装）
 - `peacefulPlayers`：`/pvp` 按玩家开关 PVP，`@a` 为全服总开关
+- `patPatPlayers`：右键点击其他玩家的头部摸摸头，头顶与眼前爱心+贴耳轻响+被摸提示；不要求空手、不改变原版交互（`true` 随手摸 / `sneak` 潜行才摸；纯服务端实现，类似 PatPat）
+- `patPatPlayersHeadBob`：被摸者视角镜头轻轻点头一下（默认关）
 
 ### 生存功能
 
