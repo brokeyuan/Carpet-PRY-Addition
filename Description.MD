@@ -1,4 +1,4 @@
-Carpet PRY Addition is a server-side Fabric extension for the [fabric-carpet](https://github.com/gnembon/fabric-carpet) mod, developed for the **Primaryuan Server**. It adds 26 configurable Carpet rules and 7 new commands (plus `/player` extensions) covering bug fixes, fake player enhancements, player interaction, and survival gameplay expansion.
+Carpet PRY Addition is a server-side Fabric extension for the [fabric-carpet](https://github.com/gnembon/fabric-carpet) mod, developed for the **Primaryuan Server**. It adds 28 configurable Carpet rules and 8 new commands (plus `/player` extensions) covering bug fixes, fake player enhancements, player interaction, and survival gameplay expansion.
 
 ---
 
@@ -90,6 +90,9 @@ Additional related rules:
 
 Hold a **Totem of Undying** in your main hand and a **Golden Carrot** in your off-hand, then right-click another player to pick them up (they ride on your head). Players control whether others may pick them up via `/picking on|off`. Shares the same stack limit as riding (`ridingPlayersStackLimit`).
 
+### Pat Players (`patPatPlayers`)
+
+Pat other real players on the head, cat-petting style: each right-click is a stroking pulse — the target bobs down and up with the rhythm with hearts above their head, while the patted player gets a heart in front of their eyes, a soft directional sound and a soft directional sound and a per-player opt-out (`/patnod`, persisted in config/carpet-pry-patnod.json). Fake players are excluded; works with any item in hand and never consumes the interaction.
 ### Peaceful Players (`peacefulPlayers`)
 
 Enables the `/pvp` command: each player can turn their own PVP on or off. Players with PVP off cannot attack players and take no damage from players (self-inflicted damage unaffected); blocked attacks play a cue sound so the "poke" signal is preserved. Admins can toggle PVP for anyone or server-wide with `/pvp on|off @a`, and `/pvp list` shows everyone who currently has PVP off. States persist across restarts in `config/carpet-pry-pvp.json`.

@@ -33,7 +33,6 @@
   - [ridingPlayersClientInteract - Allow Interaction While Riding (Client)](#ridingplayersclientinteract---allow-interaction-while-riding-client)
   - [peacefulPlayers - Peaceful Players](#peacefulplayers---peaceful-players)
   - [patPatPlayers - Pat Pat Players](#patpatplayers---pat-pat-players)
-  - [patPatPlayersHeadBob - Pat Pat Head Bob](#patpatplayersheadbob---pat-pat-head-bob)
 - [Survival Features](#survival-features)
   - [playerHat - Player Hat](#playerhat---player-hat)
   - [betterSnowball - Better Snowball](#bettersnowball---better-snowball)
@@ -176,7 +175,7 @@ While attached, Carpet manual move/attack actions (`/player <name> move|attack|u
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `fakePlayerBrain` |
-| **Description** | Adds a brain sub-command to /player <name> injecting mob-style AI into fake players (server-side only, zero extra entities, no client mod; AI movement is translated into native player movement input, coordinates are never touched), 8 modes: zombie / skeleton / pillager / irongolem / spider / wolf / villager / enderman |
+| **Description** | Adds a brain sub-command to /player <name> injecting vanilla-style mob AI into fake players: 11 modes (zombie/skeleton/pillager/irongolem/spider/wolf/villager/enderman/babyzombie/pig/piglin). Pure server-side, zero extra entities, coordinates are never touched; unload with brain off or by disabling the rule. Per-mode behavior in the table above |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
@@ -371,37 +370,22 @@ Enables /pvp to toggle PVP per player: two-way protection, self-damage unaffecte
 
 ### patPatPlayers - Pat Pat Players
 
-Pat other players' heads by right-clicking them: heart particles above their head and in front of their eyes, a soft sound, and an action-bar notice for the patted player. Similar to the [PatPat](https://github.com/LopyMine/PatPat-Plugin) plugin but implemented purely server-side — vanilla clients work as-is, and fake players can be patted too. Works with any item in hand and never consumes the interaction, so vanilla behavior and other mods' handling are untouched.
+Pat other **real** players on the head, cat-petting style: each right-click is one stroking pulse — the target bobs down and up with the rhythm, hearts pop above their head, the actor swings; the patted player sees a heart in front of their eyes, hears a soft sound coming from the patter's direction, and gets a gentle camera nod. Similar to the [PatPat](https://github.com/LopyMine/PatPat-Plugin) plugin but purely server-side — vanilla clients work as-is. Works with any item in hand and never consumes the interaction. Carpet fake players are excluded at the entry and cannot be patted.
 
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `patPatPlayers` |
-| **Description** | Pat other players' heads by right-clicking them: heart particles above their head and in front of their eyes, a soft sound (a slightly closer one just for the patted player), and an action-bar notice; works with any item in hand and never consumes the interaction, so vanilla behavior is untouched. true=pat freely; sneak=only while sneaking. Pure server-side, no client mod needed; fake players can be patted too |
+| **Description** | Pat other players on the head, cat-petting style: the target bobs down and up with the rhythm with hearts above their head; the patted player gets a heart in front of their eyes, a soft sound, a gentle camera nod and a one-time action-bar notice. Works with any item in hand and never consumes the interaction. true=pat freely; sneak=only while sneaking. Pure server-side, real players only (fake players excluded) |
 | **Type** | `string` |
 | **Default Value** | `"false"` |
 | **Suggested Options** | `false`, `true`, `sneak` |
 | **Categories** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
 
-**How it works**: reuses the same Fabric `UseEntityCallback` as ridingPlayers (zero mixins), registered after riding/pickup. Only interaction packets **carrying a hit position** count — the client's use flow sends `INTERACT_AT` first (with the hit location; 26.x merged this into a single located packet), while the follow-up bare `INTERACT` packet has a `null` `hitResult` and falls through to vanilla, so each right-click triggers exactly once. The hit point (an intersection on the target's bounding box) must be within the top ~1/3 of the box (the head zone; holds proportionally for sneaking/scaled players); neither party may be a spectator, and a 10-tick cooldown applies. The vanilla interaction range (3 blocks; silently rejected beyond it before the event fires) also applies. **Always returns PASS (fire-and-forget)**: the Fabric event chain short-circuits on the first non-PASS return, so consuming the interaction would suppress both the vanilla dispatch and later listeners — patting only adds effects and never blocks.
+**How it works**: reuses the same Fabric `UseEntityCallback` as ridingPlayers (zero mixins), registered after riding/pickup. Only interaction packets **carrying a hit position** count — the client use flow sends `INTERACT_AT` first (with the hit location; 26.x merged this into a single located packet), while the follow-up bare `INTERACT` packet has a `null` `hitResult` and falls through to vanilla, so each right-click triggers exactly once. The hit point must be within the top ~1/3 of the target bounding box (the head zone; holds proportionally for sneaking/scaled players), the target must be a **real** player (carpet fake players are excluded at the entry), neither party may be a spectator, and a combo-accelerating cooldown applies (slow taps fire once per 10 ticks; each hit while comboing reduces the cooldown by 2 ticks down to a 3-tick floor ≈ 6.6 strokes/second; idle for 20 ticks resets it); the vanilla interaction range (3 blocks, silently rejected beyond it before the event fires) also applies. **Always returns PASS (fire-and-forget)**: the Fabric event chain short-circuits on the first non-PASS return, so consuming the interaction would suppress both the vanilla dispatch and later listeners — patting only adds effects and never blocks.
 
-**Effects (the patted player's view)**: the hearts above their head are for the patting player and bystanders; the patted player's own feedback consists of a heart spawned half a block along their look vector (always in first-person view), a targeted higher-pitched sound sent only to them via `ClientboundSoundPacket` (everyone else hears the broadcast version), and the action-bar notice. The arm swing is server-initiated (`swing(hand, true)` with the trailing flag = send-to-self, visible to the patting player and everyone nearby; `broadcastAndSend` on 1.21.x, `sendToTrackingPlayersAndSelf` on 26.3, with the three-arg 26.3 signature `swing(hand, SwingAnimation.DEFAULT, true)` selected by preprocessor). The `sneak` mode reads the sneak flag carried by the interaction packet (synced to the actor before dispatch).
+**Effects (per stroke)**: the actor swings (`swing(hand, true)` with the trailing flag = send-to-self, visible to the patting player and everyone nearby; `broadcastAndSend` on 1.21.x, `sendToTrackingPlayersAndSelf` on 26.3, the three-arg 26.3 signature `swing(hand, SwingAnimation.DEFAULT, true)` selected by preprocessor); one heart above the target head; a visible crouch bob on the target (see below); the soft sound (`ClientboundSoundPacket` higher-pitched version sent only to the patted player **originating from the patter position** — turn your head to see who patted you, everyone else hears the broadcast); a heart in front of the patted player eyes (spawned 0.75 blocks along their **horizontal** look, 0.05 above eye level — always rises through the center of their view, never inside the target model); a gentle camera nod (-2°×2 steps down, hold 2 ticks, +2°×2 steps back up, each step applied relative to the current view so mouse movement is never yanked back).
 
-### patPatPlayersHeadBob - Pat Pat Head Bob
-
-An easter egg for the patted player: when patted, their camera gives a gentle downward nod and returns, as if their head was patted. Off by default.
-
-| Property | Value |
-|----------|-------|
-| **Rule Name** | `patPatPlayersHeadBob` |
-| **Description** | An easter egg for the patted player: their camera gives a gentle downward nod and returns, as if their head was patted. Off by default; applies together with patPatPlayers |
-| **Type** | `boolean` |
-| **Default Value** | `false` |
-| **Suggested Options** | `false`, `true` |
-| **Categories** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
-
-**How it works**: sends a rotation packet to the patted player's client — on 1.21/1.21.1 via the rotation-only relative `ClientboundPlayerPositionPacket` (the same path as vanilla relative /tp rotation), on 1.21.3–26.2 via the absolute `ClientboundPlayerRotationPacket`, and from 26.3 the packet supports relative mode directly. The camera nods 12° down and returns after 2 ticks; the restore sends an inverse delta rather than a snapshot, so mouse movement in between is never yanked back. Vanilla packets only — received fine by mod-free clients.
-
----
+**Crouch-pulse state machine (the press-down petting feel)**: each stroke checks how the target is sneaking — if the target **holds shift themselves**, the stroke skips crouching (they stay down, never popping up); if the target is **standing**, the server force-crouches them for 3 ticks then releases, so their model bobs down and up with the stroking rhythm. States migrate freely while petting: releasing shift returns to bobbing, pressing shift stops it; when petting stops the forced crouch expires automatically and full control returns. The bob is a server-side entity flag sync — bystanders see it, the patted player sees nothing themselves, and their client overrides the flag on their own shift changes (documented as-is). Real players only (carpet fake players are excluded at the entry).
 
 ## Survival Features---
 

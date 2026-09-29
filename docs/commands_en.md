@@ -622,3 +622,34 @@ Toggle PVP per player: players with PVP off cannot attack players and take no da
 - Lifting force-overrides and restores PVP for all players
 - Player PVP states persist across server restarts
 
+---
+
+## /patnod - Pat Interaction Toggle
+
+> **Rule**: `patPatPlayers`
+
+Toggles the per-player preference for accepting pats: declined players cannot be patted at all (pats have no effect on them). The state is persisted per player name in config/carpet-pry-patnod.json and survives restarts.
+
+### Syntax
+
+- `/patnod`: show your current status
+- `/patnod on`: accept being patted
+- `/patnod off`: decline being patted
+
+### Permission
+
+- Server players only (the console has no own state)
+- The whole command tree is hidden while the `patPatPlayers` rule is disabled
+
+### Related Rules
+
+- `patPatPlayers`: the main pat rule
+
+### Examples
+
+```
+/patnod          # status: Pat interactions: accepted
+/patnod off      # declined: players cannot pat you
+/patnod on       # accept again
+```
+

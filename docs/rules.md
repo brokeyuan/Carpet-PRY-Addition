@@ -33,7 +33,6 @@
   - [ridingPlayersClientInteract - 玩家骑乘时可交互（客户端）](#ridingplayersclientinteract---玩家骑乘时可交互客户端)
   - [peacefulPlayers - 和平的玩家](#peacefulplayers---和平的玩家)
   - [patPatPlayers - 摸摸头](#patpatplayers---摸摸头)
-  - [patPatPlayersHeadBob - 摸摸头镜头轻点](#patpatplayersheadbob---摸摸头镜头轻点)
 - [生存功能](#生存功能)
   - [playerHat - 玩家帽子](#playerhat---玩家帽子)
   - [betterSnowball - 更好的雪球](#bettersnowball---更好的雪球)
@@ -176,7 +175,7 @@
 | 属性 | 值 |
 |------|-----|
 | **规则名** | `fakePlayerBrain` |
-| **描述** | 给 /player <name> 追加 brain 子命令，为假人注入生物 AI（纯服务端、零额外实体、无需客户端模组；AI 移动全部折算为玩家原生按键输入，绝不直接改坐标），8 种模式：zombie / skeleton / pillager / irongolem / spider / wolf / villager / enderman |
+| **描述** | 给 /player <name> 追加 brain 子命令，为假人注入原版生物式 AI：zombie/skeleton/pillager/irongolem/spider/wolf/villager/enderman/babyzombie/pig/piglin 11 种模式，纯服务端、零额外实体、不直接改坐标；brain off 或关闭规则即卸载。各模式行为见下表 |
 | **类型** | `boolean` |
 | **默认值** | `false` |
 | **参考选项** | `false`, `true` |
@@ -372,37 +371,22 @@
 
 ### patPatPlayers - 摸摸头
 
-右键点击其他玩家的头部摸摸头：对方头顶与眼前冒爱心、播放贴耳轻响，对方在快捷栏上方收到提示。参考 [PatPat](https://github.com/LopyMine/PatPat-Plugin) 模，但为纯服务端实现，原版客户端即可使用，假人同样可被摸。不要求空手，且永不消费交互——本次右键的原版行为与其它模组的处理不受任何影响。
+右键点击其他**真人**玩家的头部像撸猫一样抚摸：每次右键一次抚摸脉冲——目标随节奏往复蹲起、头顶冒爱心，发起者挥手；被摸者屏幕内眼前冒爱心、贴耳轻响（从发起者方向传来）、镜头柔和点头。参考 [PatPat](https://github.com/LopyMine/PatPat-Plugin) 模，但为纯服务端实现，原版客户端即可使用。不要求空手，且永不消费交互——本次右键的原版行为与其它模组的处理不受任何影响。carpet 假人在入口即被排除，无法被摸。
 
 | 属性 | 值 |
 |------|-----|
 | **规则名** | `patPatPlayers` |
-| **描述** | 右键点击其他玩家的头部摸摸头：对方头顶与眼前冒爱心、贴耳轻响，对方在快捷栏上方收到提示；不要求空手、不改变任何原版交互。true=随手可摸；sneak=按下潜行键右键才摸。纯服务端实现，客户端无需安装，假人同样可以摸 |
+| **描述** | 右键点击其他玩家的头部像撸猫一样抚摸：目标随节奏往复蹲起、头顶冒爱心；被摸者眼前冒爱心、贴耳轻响、镜头柔和点头。不要求空手、不改变任何原版交互。true=随手可摸；sneak=按下潜行键右键才摸。纯服务端实现，仅对真人生成（假人排除） |
 | **类型** | `string` |
 | **默认值** | `"false"` |
 | **参考选项** | `false`, `true`, `sneak` |
 | **分类** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
 
-**工作原理**：复用 ridingPlayers 同款 Fabric `UseEntityCallback`（零 Mixin），挂在骑乘/捡起之后。触发判定只认**带命中坐标的交互包**——客户端 use 流程先发 `INTERACT_AT`（携带命中点，26.x 已合并为带坐标单包），其后补发的裸 `INTERACT` 包 `hitResult` 为 `null` 直接放行原版，因此每次右键天然只触发一次；命中点（实体碰撞箱表面交点）须落在目标碰撞箱顶部约 1/3（头部区域，随潜行/缩放按比例成立），双方非旁观者 + 10 tick 冷却通过后才生效；另受**原版交互距离限制**（3 格，超出时原版在事件触发前静默拒绝，无任何反馈）。**恒返回 PASS（火后不管）**：Fabric 事件链是非 PASS 即短路，消费交互会同时压掉原版 dispatch 与后续监听器，摸头只做效果不拦截。
+**工作原理**：复用 ridingPlayers 同款 Fabric `UseEntityCallback`（零 Mixin），挂在骑乘/捡起之后。触发判定只认**带命中坐标的交互包**——客户端 use 流程先发 `INTERACT_AT`（携带命中点，26.x 已合并为带坐标单包），其后补发的裸 `INTERACT` 包 `hitResult` 为 `null` 直接放行原版，因此每次右键天然只触发一次；命中点（实体碰撞箱表面交点）须落在目标碰撞箱顶部约 1/3（头部区域，随潜行/缩放按比例成立），目标须为**真人**（carpet 假人在入口即排除）+ 双方非旁观者 + 连点加速冷却通过后才生效（慢速点击 10 tick 一次；连点每命中一次冷却递减 2 tick、下限 3 tick ≈ 6.6 次脉冲/秒；停手 20 tick 重置）；另受**原版交互距离限制**（3 格，超出时原版在事件触发前静默拒绝，无任何反馈）。**恒返回 PASS（火后不管）**：Fabric 事件链是非 PASS 即短路，消费交互会同时压掉原版 dispatch 与后续监听器，摸头只做效果不拦截。
 
-**效果层（被摸者视角）**：头顶爱心给发起者与旁观者看；被摸者自己的"画面"由三件事构成——沿其视线前方半格生成的一颗爱心（第一人称必然入画）、只发给被摸者的更高音高贴耳音效（`ClientboundSoundPacket` 定向，其他人听广播版）、快捷栏上方提示。挥手由服务端显式发起（`swing(hand, true)` 尾参=发给自己，发起者与周围玩家均可见；1.21.x 为 `broadcastAndSend`，26.3 为 `sendToTrackingPlayersAndSelf`，三参签名 `swing(hand, SwingAnimation.DEFAULT, true)` 按宏分叉）。`sneak` 模式读的是交互包携带的潜行标志（dispatch 前已同步到发起者身上）。
+**效果层（每次脉冲）**：发起者挥手（`swing(hand, true)` 尾参=发给自己，1.21.x 为 `broadcastAndSend`，26.3 为 `sendToTrackingPlayersAndSelf`，三参签名 `swing(hand, SwingAnimation.DEFAULT, true)` 按宏分叉）；目标头顶 1 颗爱心；目标可见的蹲起动作（见下）；贴耳轻响（`ClientboundSoundPacket` 定向高音版只发被摸者且**发声点在发起者位置**——转头即知谁在摸你，其他人听广播版）；被摸者眼前爱心（沿其视线**水平**前方 0.75 格、眼位上方 0.05 生成——任意俯仰都在画面中部升起，不钻进目标模型）；被摸者镜头柔和点头（-2°×2 步低头、保持 2 tick、+2°×2 步回正，各步按当前视角叠加增量，动鼠标不被拽回）。
 
-### patPatPlayersHeadBob - 摸摸头镜头轻点
-
-被摸者视角的彩蛋：被摸到时镜头轻轻低头一下再复位，模拟头被按了一下。默认关闭。
-
-| 属性 | 值 |
-|------|-----|
-| **规则名** | `patPatPlayersHeadBob` |
-| **描述** | 被摸者视角的彩蛋：被摸到时镜头轻轻低头一下再复位，模拟头被按了一下。默认关闭；开启后与 patPatPlayers 一起生效 |
-| **类型** | `boolean` |
-| **默认值** | `false` |
-| **参考选项** | `false`, `true` |
-| **分类** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
-
-**工作原理**：向被摸者客户端发送旋转包——1.21/1.21.1 用 `ClientboundPlayerPositionPacket` 的相对旋转分量（原版 /tp 相对旋转同路径），1.21.3~26.2 用 `ClientboundPlayerRotationPacket` 绝对旋转，26.3 起该包支持相对模式直接发增量。低头 12° 后 2 tick 复位；复位发反向增量而非回到快照值，玩家在间隔内移动鼠标不会被拽回。纯原版包，无模组客户端可收。
-
----
+**蹲下脉冲状态机（撸猫的按头手感）**：每次脉冲检查目标当前潜行来源——目标**自己按着 shift** 则跳过蹲下操作（保持蹲、不弹起）；目标**未潜行**则服务端强制蹲 3 tick 后解除，模型随抚摸节奏往复蹲起。抚摸进行中状态自由迁移：潜行中松开 shift 恢复往复，站立中按下 shift 停止往复；抚摸停止（停止点击）强制蹲到期自动解除，完全交还自主。蹲起为服务端实体标志同步——周围玩家可见其蹲起，被摸者本人画面无蹲感，其客户端在自身 shift 变化时会覆盖标志（如实注明）。仅真人可被摸（carpet 假人在入口即排除）。
 
 ## 生存功能---
 

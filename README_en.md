@@ -11,7 +11,7 @@
 
 ## Introduction
 
-**Carpet-PRY-Addition** is a server-side Fabric extension for [Fabric Carpet](https://github.com/gnembon/fabric-carpet), developed for the **Primaryuan Server**; it also enhances the experience when installed client-side. It adds **27** configurable Carpet rules and **7** commands, covering fake player enhancements, player scaling, server management, mod compatibility fixes, ported features, player interactions, and survival gameplay expansion.
+**Carpet-PRY-Addition** is a server-side Fabric extension for [Fabric Carpet](https://github.com/gnembon/fabric-carpet), developed for the **Primaryuan Server**; it also enhances the experience when installed client-side. It adds **28** configurable Carpet rules and **8** commands, covering fake player enhancements, player scaling, server management, mod compatibility fixes, ported features, player interactions, and survival gameplay expansion.
 
 All rules are off by default except the client-side rule `ridingPlayersClientInteract`; enable what you need.
 
@@ -92,8 +92,7 @@ All rules are off by default except the client-side rule `ridingPlayersClientInt
 - `ridingPlayersAutoDismount`: passengers auto-dismount on game mode change
 - `ridingPlayersClientInteract`: keep interacting while carrying a passenger (requires client install)
 - `peacefulPlayers`: per-player `/pvp` toggles, `@a` as a server-wide switch
-- `patPatPlayers`: pat other players' heads by right-clicking them — heart particles above their head and before their eyes, a soft sound and an action-bar notice; works with any item in hand and never alters vanilla interactions (`true` = pat freely / `sneak` = only while sneaking; pure server-side, similar to PatPat)
-- `patPatPlayersHeadBob`: the patted player's camera gives a gentle nod (off by default)
+- `patPatPlayers`: pat other players' heads cat-petting style — the target bobs down and up with the rhythm with hearts above their head, while the patted player sees a heart before their eyes and hears a soft sound coming from the patter's direction; works with any item in hand and never alters vanilla interactions (`true` = pat freely / `sneak` = only while sneaking; pure server-side, similar to PatPat)
 
 ### Survival Features
 
