@@ -10,6 +10,7 @@ import com.google.gson.JsonParser;
 import me.primaryuan.carpet.brain.BrainManager;
 import me.primaryuan.carpet.command.HatCommand;
 import me.primaryuan.carpet.command.PvpCommand;
+import me.primaryuan.carpet.command.PatNodCommand;
 import me.primaryuan.carpet.command.RidingCommand;
 import me.primaryuan.carpet.command.ScaleCommand;
 import me.primaryuan.carpet.command.TppCommand;
@@ -54,6 +55,7 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
             "fakePlayerSendto",               // /player <name> sendto
             "fakePlayerBrain",                // /player <name> brain
             "playerScale",                    // /scale
+            "patPatPlayers",                  // /patnod
             "peacefulPlayers"                 // /pvp
     );
 
@@ -80,6 +82,7 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         RidingCommand.register();
         ScaleCommand.register();
         PvpCommand.register();
+        PatNodCommand.register();
 
         // 和平的玩家（pvp）：加载持久化状态、注册 PVP 伤害拦截与玩家加入登记
         PvpManager.init();
@@ -93,7 +96,8 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         // 假人背包链接（sendto）：初始化 tick 转移调度、假人下线清理与服务器停止清空监听
         SendtoLinkManager.init();
 
-        // 假人脑子（brain）：初始化会话周期扫描、停服清理与跨维度防御性重挂
+        // 假人脑子（brain）：初始化会话周期扫描与停服清理
+        // （跨维度不在此处重挂——由 MobFields 检测维度变化重建寻路器并作废旧路径）
         BrainManager.init();
 
         // require=0 注入点自检：规则开启但注入被静默跳过时以 error 点名（MixinSanityCheck）

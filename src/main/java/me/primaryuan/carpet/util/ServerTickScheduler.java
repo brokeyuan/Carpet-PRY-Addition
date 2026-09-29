@@ -41,6 +41,24 @@ public final class ServerTickScheduler {
         return () -> TASKS.remove(task);
     }
 
+    /**
+     * 注册延迟一次性任务：delayTicks 个 tick 后执行一次并自动注销。
+     * delayTicks=0 表示当前 tick 末尾执行。
+     */
+    public static synchronized void registerDelayed(int delayTicks, TickTask task) {
+        if (delayTicks <= 0) {
+            register(task);
+            return;
+        }
+        int[] left = {delayTicks};
+        register(server -> {
+            if (--left[0] > 0) {
+                return true;
+            }
+            return task.tick(server);
+        });
+    }
+
     private static void ensureRegistered() {
         if (registered) return;
         registered = true;

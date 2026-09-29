@@ -39,7 +39,7 @@
   "carpet.rule.fakePlayerSendto.desc": "Adds a sendto sub-command to /player <name> creating one-way inventory item flow between fake players (one stack per trigger, default every tick, round-robin across targets, source buffers when a target is full) with adjustable pace; sendto stop removes all links, links do not survive restarts",
 
   "carpet.rule.fakePlayerBrain.name": "Fake Player Brain",
-  "carpet.rule.fakePlayerBrain.desc": "Adds a brain sub-command to /player <name> injecting mob-style AI into fake players (server-side only, zero extra entities, no client mod; all AI movement is translated into native player movement input, coordinates are never touched): zombie=melee-chases the nearest player and swings with the vanilla player attack(); skeleton/pillager=ranged attacks with a bow/crossbow in main hand plus kiting (native item-use consumes real arrows from the inventory); irongolem=attacks hostile mobs (except creepers) and hostile fake players (also retaliates against its attackers); spider=neutral in daylight, hostile at night; wolf=follows its owner and syncs aggro (bites whoever hurts the owner); villager=random strolling and flees from zombies; enderman=provoked by being stared at, then sprints at the starer; babyzombie=faster melee pursuit; pig=fully neutral, flees when hurt; piglin=hostile to players without gold armor, instantly hostile to wither skeletons within 16 blocks, no player aggro on Peaceful (sword melee / crossbow ranged without strafing / spear charge on 26.1.2+, auto-switched by held weapon; avoids zombified piglins). While attached, Carpet manual move/attack actions are suppressed (actionPack); detached on brain off, mode switch, rule toggle-off, fake player logoff or death",
+  "carpet.rule.fakePlayerBrain.desc": "Adds a brain sub-command to /player <name> injecting vanilla-style mob AI into fake players",
 
   "carpet.rule.playerScale.name": "Player Scale",
   "carpet.rule.playerScale.desc": "Registers the minecraft:scale attribute for Player and enables /scale set|reset|info; value only needs to be greater than 0, bounded by playerScaleMin/Max. false=hide command; self=adjust self only; true=adjust self, admins adjust anyone; everyone=anyone adjusts anyone. FOV compensation requires client install",
@@ -61,11 +61,12 @@
   "carpet.rule.fixEndCrystalSync.name": "Fix End Crystal Sync",
   "carpet.rule.fixEndCrystalSync.desc": "Fixes client-side position desync when end crystals are pushed by pistons. Cause: vanilla never streams position updates for end crystals and both sides simulate piston pushes independently, so any divergence never self-corrects (only a relog/restart recovers). When enabled, the server forces the vanilla position-sync branch whenever a tracked crystal's position changes, realigning clients within 1 tick; the spawn-order race on relogin is covered too",
   "carpet.rule.patPatPlayers.name": "Pat Pat Players",
-  "carpet.rule.patPatPlayers.desc": "Pat other players' heads by right-clicking them: heart particles above their head and in front of their eyes, a soft sound (a slightly closer one just for the patted player), and an action-bar notice; works with any item in hand and never consumes the interaction, so vanilla behavior is untouched. true=pat freely; sneak=only while sneaking. Pure server-side, no client mod needed; fake players can be patted too",
-  "carpet.rule.patPatPlayersHeadBob.name": "Pat Pat Head Bob",
-  "carpet.rule.patPatPlayersHeadBob.desc": "An easter egg for the patted player: their camera gives a gentle downward nod and returns, as if their head was patted. Off by default; applies together with patPatPlayers",
+  "carpet.rule.patPatPlayers.desc": "Pat other players' heads by right-clicking them: heart particles above their head and in front of their eyes, a soft sound coming from the patter direction (turn your head to see who patted you); works with any item in hand and never consumes the interaction, so vanilla behavior is untouched. true=pat freely; sneak=only while sneaking. Pure server-side, no client mod needed; the patted player bobs down and up with each stroke (sneaking players stay down)",
 
-  "carpetprimaryuan.patPat.received": "§d%s patted your head",
+  "carpetprimaryuan.command.patnod.status_on": "Pat interactions: accepted (players can pat you)",
+  "carpetprimaryuan.command.patnod.status_off": "Pat interactions: declined (players cannot pat you)",
+  "carpetprimaryuan.command.patnod.on": "Pat interactions accepted",
+  "carpetprimaryuan.command.patnod.off": "Pat interactions declined",
   "carpetprimaryuan.command.support.player_not_found": "§cPlayer not found: %s",
   "carpetprimaryuan.command.support.missing_player": "§cMissing player argument",
 

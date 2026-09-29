@@ -183,9 +183,4 @@ public class CarpetPrimaryuanSettings {
     )
     public static String patPatPlayers = "false";
 
-    // 摸摸头镜头轻点：被摸者视角低头一下再复位（模拟头被按了一下，默认关）
-    @Rule(
-            categories = {PRIMARYUAN, SURVIVAL, FEATURE}
-    )
-    public static boolean patPatPlayersHeadBob = false;
 }
