@@ -87,7 +87,7 @@ All rules are off by default except the client-side rule `ridingPlayersClientInt
 
 ### Player Interaction
 
-- `ridingPlayers` / `pickupPlayers`: ride / pick up other players (Totem of Undying triggered)
+- `ridingPlayers` / `pickupPlayers`: right-click another player with a Totem of Undying — head = ride on top, legs = pick them up onto your head (torso does nothing; fake players excluded)
 - `ridingPlayersStackLimit`: shared player stack size limit for riding and pickup
 - `ridingPlayersAutoDismount`: passengers auto-dismount on game mode change
 - `ridingPlayersClientInteract`: keep interacting while carrying a passenger (requires client install)

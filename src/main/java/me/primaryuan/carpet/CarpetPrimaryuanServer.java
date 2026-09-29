@@ -110,24 +110,18 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         });
 
         UseEntityCallback.EVENT.register((player, level, hand, entity, hitResult) -> {
-            if (CarpetPrimaryuanSettings.ridingPlayers) {
-                InteractionResult rideResult = EntitiesRidingPlayersHandler.rideEntity(player, entity, level, hand);
+            if (CarpetPrimaryuanSettings.ridingPlayers || CarpetPrimaryuanSettings.pickupPlayers) {
+                InteractionResult rideResult =
+                        EntitiesRidingPlayersHandler.rideOrPickUp(player, entity, level, hand, hitResult);
+                // 仅在真正处理了交互（非 PASS）时短路；PASS 必须放行，
+                // 否则任一规则开启时后续监听（摸摸头）永远不可达
                 if (rideResult != InteractionResult.PASS) {
                     return rideResult;
                 }
             }
 
-            if (CarpetPrimaryuanSettings.pickupPlayers) {
-                InteractionResult pickupResult = EntitiesRidingPlayersHandler.pickUpEntity(player, entity, level, hand);
-                // 仅在真正处理了捡起（非 PASS）时短路；PASS 必须放行，
-                // 否则 pickupPlayers 开启时后续监听（摸摸头）永远不可达
-                if (pickupResult != InteractionResult.PASS) {
-                    return pickupResult;
-                }
-            }
-
             // 摸摸头最后处理：只做效果、恒不消费交互（火后不管），原版行为与其它模组的
-            // 同名事件监听不受影响；骑乘/捡起在前面已按主手物品自然分流
+            // 同名事件监听不受影响；骑乘/捡起在前面已按点击部位（头/腿脚/躯干）自然分流
             PatPatPlayersHandler.patPlayer(player, level, hand, entity, hitResult);
 
             return InteractionResult.PASS;

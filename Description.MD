@@ -77,7 +77,7 @@ Wear any main-hand item on your head with the `/hat` command. When a **Totem of 
 
 ![](https://cdn.modrinth.com/data/cached_images/ecc7060b3e5779c1a804d393023aa142c32562d1_0.webp)
 
-Hold a **Totem of Undying** in your main hand and right-click another player to ride on top of them. Players can control whether others may ride them via `/riding on|off`. Up to `ridingPlayersStackLimit` (default 16) players can stack in one tower.
+Hold a **Totem of Undying** in your main hand and right-click another player's **head** to ride on top of them. Players can control whether others may ride them via `/riding on|off`. Up to `ridingPlayersStackLimit` (default 16) players can stack in one tower.
 
 Additional related rules:
 
@@ -88,7 +88,7 @@ Additional related rules:
 
 ![](https://cdn.modrinth.com/data/cached_images/50d6326b0c7b954962bf9998dc395036dca932b6_0.webp)
 
-Hold a **Totem of Undying** in your main hand and a **Golden Carrot** in your off-hand, then right-click another player to pick them up (they ride on your head). Players control whether others may pick them up via `/picking on|off`. Shares the same stack limit as riding (`ridingPlayersStackLimit`).
+Hold a **Totem of Undying** in your main hand and right-click another player's **legs** to pick them up (they ride on your head). Torso clicks do nothing, and fake players don't participate. Players control whether others may pick them up via `/picking on|off`. Shares the same stack limit as riding (`ridingPlayersStackLimit`).
 
 ### Pat Players (`patPatPlayers`)
 

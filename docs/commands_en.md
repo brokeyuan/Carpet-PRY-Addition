@@ -534,11 +534,11 @@ Current mode: self (everyone can only adjust themselves)
 
 #### Description
 
-Set whether other players are allowed to ride you. When you set it to `on`, other players holding a **Totem of Undying** in their main hand can right-click you to ride on your head.
+Set whether other players are allowed to ride you. When you set it to `on`, other players holding a **Totem of Undying** in their main hand can right-click your **head** to ride on top (torso/leg clicks do not trigger riding; fake players excluded).
 
 #### Interaction Conditions
 
-- Rider (the person on top): must hold a **Totem of Undying** in main hand
+- Rider (the person on top): must hold a **Totem of Undying** in main hand and right-click your **head**
 - Mount (the person below): must execute `/riding on` to allow it
 - Stack limit is controlled by the `ridingPlayersStackLimit` rule (default: 16)
 - When `ridingPlayersAutoDismount` is enabled, game mode changes force passengers to dismount
@@ -574,11 +574,11 @@ Set whether other players are allowed to ride you. When you set it to `on`, othe
 
 #### Description
 
-Set whether other players are allowed to pick you up (make you ride on their head). When you set it to `on`, other players holding a **Totem of Undying** in their main hand and a **Golden Carrot** in their off-hand can right-click you to pick you up.
+Set whether other players are allowed to pick you up (make you ride on their head). When you set it to `on`, other players holding a **Totem of Undying** in their main hand can right-click your **legs** to pick you up (head clicks are riding, torso does nothing; fake players excluded).
 
 #### Interaction Conditions
 
-- Picker (the person below): must hold a **Totem of Undying** in main hand + **Golden Carrot** in off-hand
+- Picker (the person below): must hold a **Totem of Undying** in main hand and right-click your **legs**
 - Pickee (the person on top): must execute `/picking on` to allow it
 - Stack limit is controlled by the `ridingPlayersStackLimit` rule (default: 16), shared with riding
 

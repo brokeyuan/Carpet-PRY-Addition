@@ -280,12 +280,12 @@ Allows the use of non-ASCII characters in command arguments (Chinese, Japanese, 
 
 ### ridingPlayers - Riding Players
 
-When holding a Totem of Undying in the main hand, you can ride other players.
+While holding a Totem of Undying, right-click a player's head to ride on top of them (torso does nothing; fake players excluded).
 
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `ridingPlayers` |
-| **Description** | When holding a Totem of Undying in the main hand, you can ride other players |
+| **Description** | While holding a Totem of Undying, right-click a player's head to ride on top of them (torso does nothing; fake players excluded) |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
@@ -295,12 +295,12 @@ When holding a Totem of Undying in the main hand, you can ride other players.
 
 ### pickupPlayers - Picking Up Players
 
-When holding a Totem of Undying in the main hand and a Golden Carrot in the off-hand, you can pick up other players (have them ride on you).
+While holding a Totem of Undying, right-click a player's legs to pick them up onto your head (torso does nothing; fake players excluded).
 
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `pickupPlayers` |
-| **Description** | When holding a Totem of Undying in the main hand and a Golden Carrot in the off-hand, you can pick up other players (have them ride on you) |
+| **Description** | While holding a Totem of Undying, right-click a player's legs to pick them up onto your head (torso does nothing; fake players excluded) |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |

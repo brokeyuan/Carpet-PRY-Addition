@@ -88,7 +88,7 @@
 
 ### 玩家交互
 
-- `ridingPlayers` / `pickupPlayers`：骑乘 / 捡起其他玩家（主手持不死图腾触发）
+- `ridingPlayers` / `pickupPlayers`：主手持不死图腾右键其他玩家——点头部骑到对方头上 / 点腿脚把对方捡起骑到自己头上（点躯干无反应，假人不参与）
 - `ridingPlayersStackLimit`：骑乘与捡起共用的堆叠人数上限
 - `ridingPlayersAutoDismount`：游戏模式变更时乘客自动下车
 - `ridingPlayersClientInteract`：头上有乘客时仍可交互方块/实体（需客户端安装）
