@@ -101,7 +101,6 @@ public class PiglinBrain extends PlayerBrainController {
                 && this.player.tickCount - this.player.getLastHurtByMobTimestamp() < 400) {
             return;
         }
-        Inventory inv = this.player.getInventory();
 
         // 1) 副手盾牌
         if (this.player.getItemBySlot(EquipmentSlot.OFFHAND).isEmpty()) {

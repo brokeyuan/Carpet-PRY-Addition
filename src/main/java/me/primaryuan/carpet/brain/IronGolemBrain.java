@@ -4,7 +4,6 @@ import me.primaryuan.carpet.brain.goal.PlayerMeleeAttackGoal;
 import me.primaryuan.carpet.brain.goal.PlayerNearestAttackableTargetGoal;
 import me.primaryuan.carpet.brain.goal.PlayerRandomStrollGoal;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.Monster;
 

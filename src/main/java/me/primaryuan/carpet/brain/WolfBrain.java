@@ -6,6 +6,7 @@ import me.primaryuan.carpet.brain.goal.PlayerMeleeAttackGoal;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 
 import java.util.UUID;
 
@@ -103,12 +104,20 @@ public class WolfBrain extends PlayerBrainController {
         }
     }
 
-    /** 扑咬候选校验：存活、同维度、不是狼自己也不是主人；合格返回原引用，否则 null */
+    /**
+     * 扑咬候选校验：存活、同维度、不是狼自己也不是主人；创造/旁观玩家不可选——
+     * 与 {@link PlayerHurtByTargetGoal} 同口径，对齐原版
+     * {@code TargetingConditions} 的 canBeSeenAsEnemy 语义（invulnerable 恒排除，
+     * 原版狼不会把创造玩家锁成目标）。合格返回原引用，否则 null。
+     */
     private LivingEntity biteable(ServerPlayer owner, LivingEntity target) {
         if (target == null || !target.isAlive()
                 || target.level() != this.player.level()
                 || target == this.player
                 || target == owner) {
+            return null;
+        }
+        if (target instanceof Player p && (p.isSpectator() || p.isCreative())) {
             return null;
         }
         return target;

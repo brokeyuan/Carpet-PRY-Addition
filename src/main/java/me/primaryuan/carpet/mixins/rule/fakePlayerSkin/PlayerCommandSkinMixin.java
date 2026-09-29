@@ -8,6 +8,8 @@ import com.mojang.brigadier.context.CommandContext;
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.level.ServerPlayer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -29,6 +31,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  */
 @Mixin(PlayerCommand.class)
 public class PlayerCommandSkinMixin {
+
+    private static final Logger LOGGER = LogManager.getLogger("CarpetPrimaryuan");
 
     @Inject(
             method = "spawn",
@@ -90,6 +94,7 @@ public class PlayerCommandSkinMixin {
             applySkinToFakePlayerReflection(server, fakePlayer.getGameProfile(), skinTargetName);
 
         } catch (Exception e) {
+            LOGGER.error("[FakePlayerSkin] Failed to apply skin on fake player spawn", e);
         }
     }
 
@@ -108,7 +113,10 @@ public class PlayerCommandSkinMixin {
             java.lang.reflect.Method setSkinAsyncMethod = skinServiceClass.getMethod("setSkinAsync", net.minecraft.server.MinecraftServer.class, java.util.Collection.class, skinProviderContextClass, boolean.class);
             setSkinAsyncMethod.invoke(null, server, java.util.Collections.singletonList(targetProfile), context, false);
         } catch (ClassNotFoundException e) {
+            // skinrestorer 未安装（可选依赖）：非 default 皮肤模式下功能不生效，给出可见提示而非静默
+            LOGGER.warn("[FakePlayerSkin] SkinRestorer not installed, skip applying skin (set fakePlayerSkinMode=default or install skinrestorer)");
         } catch (Exception e) {
+            LOGGER.error("[FakePlayerSkin] Failed to apply skin via reflection", e);
         }
     }
 

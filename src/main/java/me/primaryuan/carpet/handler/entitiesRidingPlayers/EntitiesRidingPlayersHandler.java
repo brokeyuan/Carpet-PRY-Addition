@@ -41,12 +41,12 @@ public class EntitiesRidingPlayersHandler {
     private static boolean sweepRegistered = false;
 
     /**
-     * 注册下线清理的兜底兜底扫描（CarpetPrimaryuanServer.onGameStarted 调用）。
+     * 注册下线清理的兜底扫描（CarpetPrimaryuanServer.onGameStarted 调用）。
      *
      * <p>DISCONNECT 快路径只覆盖真人 + fixBlueMap=true 的假人；默认配置下假人
      * 被 kill 不会触发该事件，按名记录的许可/冷却条目会残留并被同名重召的
-     * 假人继承（违背"下线即清理"契约）。此处每 20 tick 把不在在线名单里的
-     * 条目清掉——真人下线本就清过，此扫描对真人无感。</p>
+     * 假人继承（违背"下线即清理"契约）。只要存在条目就每 tick 扫一次在线
+     * 名单，把不在名单里的条目清掉——真人下线本就清过，此扫描对真人无感。</p>
      */
     public static void init() {
         if (sweepRegistered) return;

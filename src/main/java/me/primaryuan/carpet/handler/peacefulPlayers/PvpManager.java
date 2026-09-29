@@ -220,19 +220,25 @@ public final class PvpManager {
                 return;
             }
 
-            playerStates.clear();
+            // 临时结构全部解析成功后再原子提交内存态（模式同 TppConfigManager）：
+            // 坏文件（如手改 JSON 类型错误）在中途抛异常时不清空现有状态，
+            // 避免之后任意一次 save() 把空玩家表写回磁盘
+            String parsedDefault = defaultState;
             if (json.has("default") && isValidState(json.get("default").getAsString())) {
-                defaultState = json.get("default").getAsString();
+                parsedDefault = json.get("default").getAsString();
             }
-
+            Map<String, String> parsedStates = new HashMap<>();
             JsonElement playersElem = json.get("players");
             if (playersElem != null && playersElem.isJsonObject()) {
                 for (Map.Entry<String, JsonElement> entry : playersElem.getAsJsonObject().entrySet()) {
                     if (entry.getValue().isJsonPrimitive() && isValidState(entry.getValue().getAsString())) {
-                        playerStates.put(entry.getKey(), entry.getValue().getAsString());
+                        parsedStates.put(entry.getKey(), entry.getValue().getAsString());
                     }
                 }
             }
+            defaultState = parsedDefault;
+            playerStates.clear();
+            playerStates.putAll(parsedStates);
         } catch (Exception e) {
             LOGGER.error("[PVP] Failed to load state file", e);
         }
