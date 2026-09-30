@@ -97,10 +97,13 @@ public class BabyZombieBrain extends PlayerBrainController {
             }
             // 把追击意图喂给鸡的原生导航器（鸡自己的 AI 负责执行）。
             // 必须每 tick 强制喂：鸡自己的漫步/恐慌 goal 也在抢占导航器，
-            // 仅在空闲时喂会被漫步带偏（实测鸡骑士被漫步目标拐去角落）
+            // 仅在空闲时喂会被漫步带偏（实测鸡骑士被漫步目标拐去角落）。
+            // 无目标时必须停：只喂不停会让鸡继续走向上一次目标的旧位置
             var target = this.prowler.getTarget();
             if (target != null && target.isAlive()) {
                 chicken.getNavigation().moveTo(target, 1.2);
+            } else {
+                chicken.getNavigation().stop();
             }
             return;
         }

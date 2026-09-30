@@ -164,7 +164,7 @@ Available modes (`/player <name> brain <mode>`, `off` detaches; on 26.1.2+ the z
 | `pillager` | Same as skeleton but with a crossbow (25-tick charge) |
 | `irongolem` | Attacks nearby hostile mobs (`Monster`, creepers excluded, matching vanilla iron golems) and hostile fake players (fake players in hostile AI modes, plus retaliating against whoever attacked it) |
 | `spider` | Neutral in daylight, hostile at night (matching vanilla spiders); sprints in pursuit at night |
-| `wolf` | Follows its owner (the command executor) and syncs aggro: bites whoever hurts the owner |
+| `wolf` | Follows its owner (the command executor) and syncs aggro: bites whoever hurts the owner; no vanilla >12-block teleport follow (coordinates are never touched, it walks back) |
 | `villager` | No aggro: random strolling, panics when attacked, flees from zombies (vanilla `PanicGoal`/`AvoidEntityGoal` semantics) |
 | `enderman` | Provoked by being stared at (vanilla `isStaredAt` dot-product algorithm), locks the starer and sprints via `setSprinting(true)` |
 | `babyzombie` | Baby zombie: faster melee pursuit (1.25 sprint) |

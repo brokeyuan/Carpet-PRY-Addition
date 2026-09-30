@@ -445,10 +445,15 @@ public class PlayerPathNavigation {
                 || state.is(net.minecraft.world.level.block.Blocks.SOUL_FIRE);
     }
 
-    /** 曼哈顿启发（三轴），系数略大于 1 保证朝目标收敛且同分判定稳定 */
+    /**
+     * 启发函数：水平 Chebyshev 距离 × 1.001。
+     * 展开是八方向且对角线代价 1.0——曼哈顿启发会把对角位移的剩余代价高估近一倍
+     * （记 2.0、实耗 1.0），路径系统性绕远；Chebyshev 是该展开下的可采纳下界。
+     * y 项刻意不纳入：展开允许"水平对角+爬/降一格"合并成一步（代价 1.0~1.75），
+     * 任何非零 y 权重都会让 h 超过真实剩余代价。0.1% 的贪心偏置仅用于同分收敛。
+     */
     private static double heuristic(BlockPos from, BlockPos goal) {
-        return (Math.abs(from.getX() - goal.getX()) + Math.abs(from.getY() - goal.getY())
-                + Math.abs(from.getZ() - goal.getZ())) * 1.001;
+        return Math.max(Math.abs(from.getX() - goal.getX()), Math.abs(from.getZ() - goal.getZ())) * 1.001;
     }
 
     /** 是否已到目标：同格或 1 格内 */

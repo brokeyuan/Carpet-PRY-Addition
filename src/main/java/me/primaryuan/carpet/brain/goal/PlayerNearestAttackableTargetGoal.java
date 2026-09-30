@@ -2,7 +2,9 @@ package me.primaryuan.carpet.brain.goal;
 
 import me.primaryuan.carpet.brain.PlayerGoal;
 import me.primaryuan.carpet.brain.PryMob;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 
 import java.util.EnumSet;
@@ -168,9 +170,17 @@ public class PlayerNearestAttackableTargetGoal<T extends LivingEntity> extends P
         return this.mob.distanceToSqr(target) <= this.searchRange * this.searchRange;
     }
 
-    /** 类型化谓词复核（运行期目标可能是父类型引用） */
+    /**
+     * 类型化谓词复核（运行期目标可能是父类型引用）。
+     * 和平难度排除玩家目标——对齐原版 {@code LivingEntity.canAttack} 的门禁
+     * （1.21.11 字节码：目标为玩家且 difficulty==PEACEFUL → false，敌对生物
+     * 和平难度不索敌玩家）；对怪物的目标不受影响（原版生物互斗与难度无关）。
+     */
     @SuppressWarnings("unchecked")
     private boolean acceptsTarget(LivingEntity target) {
+        if (target instanceof Player && this.mob.level().getDifficulty() == Difficulty.PEACEFUL) {
+            return false;
+        }
         return this.targetType.isInstance(target) && this.selector.test((T) target);
     }
 }

@@ -58,7 +58,7 @@ public class PlayerGoalSelector {
     /** 清空全部目标并 stop 所有激活中的目标（挂载/卸载脑时先调） */
     public void removeAllGoals() {
         for (WrappedGoal wrapped : this.runningGoals) {
-            wrapped.goal.stop();
+            wrapped.stop();
         }
         this.runningGoals.clear();
         this.goals.clear();
@@ -73,7 +73,7 @@ public class PlayerGoalSelector {
             if (wrapped.goal.canContinueToUse()) {
                 wrapped.goal.tick();
             } else {
-                wrapped.goal.stop();
+                wrapped.stop();
                 it.remove();
             }
         }
@@ -119,13 +119,11 @@ public class PlayerGoalSelector {
         }
         if (preempted != null) {
             for (WrappedGoal running : preempted) {
-                running.goal.stop();
-                running.running = false;
+                running.stop();
                 this.runningGoals.remove(running);
             }
         }
-        candidate.goal.start();
-        candidate.running = true;
+        candidate.start();
         this.runningGoals.add(candidate);
         return true;
     }
@@ -140,7 +138,12 @@ public class PlayerGoalSelector {
         return false;
     }
 
-    /** 目标包装：priority + running 状态（对齐原版 WrappedGoal 的最小形态） */
+    /**
+     * 目标包装：priority + running 状态（对齐原版 WrappedGoal 的最小形态）。
+     * start/stop 统一走这里的钩子——原版同样把 running 标志封装在包装层，
+     * 任何停止路径漏复位都会让候选过滤（!running）把该 Goal 永久排除，
+     * 表现为"每个 Goal 一次会话只能自然结束一次"（战斗/跟随/漫步全部一次性）。
+     */
     private static final class WrappedGoal {
         final PlayerGoal goal;
         int priority;
@@ -152,6 +155,16 @@ public class PlayerGoalSelector {
 
         void setPriority(int priority) {
             this.priority = priority;
+        }
+
+        void start() {
+            this.running = true;
+            this.goal.start();
+        }
+
+        void stop() {
+            this.running = false;
+            this.goal.stop();
         }
     }
 }

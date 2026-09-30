@@ -217,7 +217,9 @@ public class PiglinBrain extends PlayerBrainController {
                 this.prowler, WitherSkeleton.class, 16.0, 10, true,
                 w -> w.isAlive()));
         // 行为：
-        // pri 0 远离僵尸猪灵（非敌对态的天敌规避；战斗激活时被更高优先级抢占）
+        // pri 0 远离僵尸猪灵（Wiki 明文：成年猪灵远离 12 格内的僵尸猪灵，无战斗
+        // 例外；原版猪灵为 Brain 系统驱动、GoalSelector 优先级无法 1:1 对照，
+        // 故恒以最高优先级规避——战斗中僵尸猪灵逼近同样脱离逃跑）
         this.goalSelector.addGoal(0, new PlayerAvoidEntityGoal<>(
                 this.prowler, ZombifiedPiglin.class, 12.0F, 0.9, 1.35));
         // pri 1 金矛冲锋（26.1.2+；Wiki：金矛的冲锋攻击，拉开距离后再冲）

@@ -2,6 +2,7 @@ package me.primaryuan.carpet.brain.goal;
 
 import me.primaryuan.carpet.brain.PlayerGoal;
 import me.primaryuan.carpet.brain.PryMob;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
@@ -42,7 +43,8 @@ public class PlayerStareAggroGoal extends PlayerGoal {
         for (Player looker : this.mob.level().getEntitiesOfClass(Player.class,
                 this.mob.getBoundingBox().inflate(RANGE, 4.0, RANGE))) {
             if (looker == this.mob.asPlayer() || !looker.isAlive()
-                    || looker.isSpectator() || looker.isCreative()) {
+                    || looker.isSpectator() || looker.isCreative()
+                    || this.mob.level().getDifficulty() == Difficulty.PEACEFUL) {
                 continue;
             }
             if (this.isStaredAt(looker)) {

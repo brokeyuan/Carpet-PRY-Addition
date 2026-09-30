@@ -5,6 +5,7 @@ import me.primaryuan.carpet.brain.goal.PlayerHurtByTargetGoal;
 import me.primaryuan.carpet.brain.goal.PlayerMeleeAttackGoal;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 
@@ -105,8 +106,8 @@ public class WolfBrain extends PlayerBrainController {
     }
 
     /**
-     * 扑咬候选校验：存活、同维度、不是狼自己也不是主人；创造/旁观玩家不可选——
-     * 与 {@link PlayerHurtByTargetGoal} 同口径，对齐原版
+     * 扑咬候选校验：存活、同维度、不是狼自己也不是主人；创造/旁观/和平难度
+     * 玩家不可选——与 {@link PlayerHurtByTargetGoal} 同口径，对齐原版
      * {@code TargetingConditions} 的 canBeSeenAsEnemy 语义（invulnerable 恒排除，
      * 原版狼不会把创造玩家锁成目标）。合格返回原引用，否则 null。
      */
@@ -117,7 +118,8 @@ public class WolfBrain extends PlayerBrainController {
                 || target == owner) {
             return null;
         }
-        if (target instanceof Player p && (p.isSpectator() || p.isCreative())) {
+        if (target instanceof Player p && (p.isSpectator() || p.isCreative()
+                || p.level().getDifficulty() == Difficulty.PEACEFUL)) {
             return null;
         }
         return target;

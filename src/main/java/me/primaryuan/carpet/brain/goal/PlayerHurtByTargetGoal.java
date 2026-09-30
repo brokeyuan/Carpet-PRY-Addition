@@ -2,6 +2,7 @@ package me.primaryuan.carpet.brain.goal;
 
 import me.primaryuan.carpet.brain.PlayerGoal;
 import me.primaryuan.carpet.brain.PryMob;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 
@@ -18,7 +19,7 @@ import java.util.UUID;
  *
  * <ul>
  *   <li>反击对象 = {@code getLastHurtByMob()}（近期伤害来源），须存活、同维度、
- *       非自己；攻击者为真人玩家时沿用全局攻击可见性（旁观/创造不可选）；</li>
+ *       非自己；攻击者为真人玩家时沿用全局攻击可见性（旁观/创造/和平难度不可选）；</li>
  *   <li>锁定持续到对方死亡（原版仇恨语义），期间 TARGET 旗标互斥压制
  *       常规索敌目标；</li>
  *   <li>可传入豁免对象（狼模式用它豁免主人——主人误伤不还手，与原版
@@ -48,7 +49,9 @@ public class PlayerHurtByTargetGoal extends PlayerGoal {
                 || (this.ignored != null && attacker.getUUID().equals(this.ignored))) {
             return false;
         }
-        if (attacker instanceof Player p && (p.isSpectator() || p.isCreative())) {
+        // 旁观/创造不可选 + 和平难度不与玩家敌对（原版 LivingEntity.canAttack 门禁语义）
+        if (attacker instanceof Player p && (p.isSpectator() || p.isCreative()
+                || this.mob.level().getDifficulty() == Difficulty.PEACEFUL)) {
             return false;
         }
         this.pendingTarget = attacker;
