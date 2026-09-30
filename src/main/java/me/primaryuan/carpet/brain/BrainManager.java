@@ -356,18 +356,14 @@ public final class BrainManager {
         if (team == null) {
             team = scoreboard.addPlayerTeam(TEAM_PREFIX + mode + "_" + player.getUUID());
         }
-        // 队后缀/颜色每次挂载都刷新：三语显示名随 carpet 语言切换即时生效
+        // 队后缀每次挂载都刷新：颜色挂在后缀组件自己身上（不设队色——队色会把
+        // 假人名字一起染色，需求是"名字颜色不变、只有后缀变色"）；三语显示名随
+        // carpet 语言切换即时生效
         team.setPlayerSuffix(Component.literal(
-                "[" + ServerI18n.tr("carpetprimaryuan.command.brain.mode_" + mode).getString() + "]"));
+                "[" + ServerI18n.tr("carpetprimaryuan.command.brain.mode_" + mode).getString() + "]")
+                .withStyle(categoryColor(mode)));
         // 原队伍前缀随挂载保留（引用只读共享；卸载整队删除，原队属性不受影响）
         team.setPlayerPrefix(previous != null ? previous.getPlayerPrefix() : Component.empty());
-        ChatFormatting color = categoryColor(mode);
-        //#if MC >= 260200
-        //$$ // 26.2 起队伍颜色改枚举包装（javap：setColor(ChatFormatting) → setColor(Optional<TeamColor>)）
-        //$$ team.setColor(java.util.Optional.of(net.minecraft.world.scores.TeamColor.valueOf(color.name())));
-        //#else
-        team.setColor(color);
-        //#endif
         scoreboard.addPlayerToTeam(name, team);
     }
 

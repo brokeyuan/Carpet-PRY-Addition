@@ -146,9 +146,9 @@ public final class PlayerBrainCommand {
                 source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.brain.unknown_mode", raw));
                 return 0;
             }
-            // 状态展示靠头顶名牌后缀（[僵尸] 等，颜色按敌对/中立/敌对），回执不复述模式名
+            // 状态展示靠头顶名牌后缀（[僵尸] 等，颜色按敌对/中立/不敌对），回执一行带执行者
             source.sendSuccess(() -> ServerI18n.tr(
-                    "carpetprimaryuan.command.brain.attached", name), true);
+                    "carpetprimaryuan.command.brain.attached", source.getTextName(), name), true);
             // 创造模式的假人不会被任何 AI 索敌、也无法索敌玩家（与原版生物的
             // 目标可见性一致）——最常见的"挂了脑子没反应"原因，主动提示
             if (player.isCreative()) {

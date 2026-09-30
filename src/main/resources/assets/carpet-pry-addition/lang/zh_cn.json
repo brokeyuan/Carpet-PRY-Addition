@@ -168,7 +168,7 @@
   "carpetprimaryuan.command.brain.no_brain": "§e%s 当前没有挂载脑子",
   "carpetprimaryuan.command.brain.unknown_mode": "未知 AI 模式: %s（可用: zombie / babyzombie / skeleton / witherskeleton / drowned / zombiepiglin / pillager / vindicator / irongolem / spider / piglin / piglinbrute / slime / magmacube / fish / enderman / wolf / villager / pig / off）",
   "carpetprimaryuan.command.brain.need_owner_player": "§c狼模式需要一名真人玩家作为主人（请以玩家身份执行该命令）",
-  "carpetprimaryuan.command.brain.attached": "已为 %s 挂载脑子，Carpet 手动指令已屏蔽（brain off 或关闭规则后恢复）；状态见头顶名牌后缀",
+  "carpetprimaryuan.command.brain.attached": "%s 为 %s 安装了脑子",
   "carpetprimaryuan.command.brain.creative_hint": "§e提示：%s 当前为创造模式，AI 不会索敌玩家也不会被玩家类目标选中（与原版生物一致）；需要战斗请切换到生存模式",
 
   "carpetprimaryuan.command.scale.set_self": "§a你的大小已设为 %sx",
