@@ -1,6 +1,7 @@
 package me.primaryuan.carpet.brain;
 
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
 
 /**
  * 假人"脑子"会话基类（策略模式；原 {@code FakePlayerBrain} 重构而来）。
@@ -74,6 +75,14 @@ public abstract class PlayerBrainController {
         this.targetSelector.removeAllGoals();
         this.prowler.setTarget(null);
         this.assemble();
+    }
+
+    /**
+     * 群体仇恨广播的落点：直写攻击目标字段（原版 {@code alertOther} 的
+     * {@code setTarget} 语义）——同伴的近战/远程 Goal 读到非空目标即接管追击。
+     */
+    void alertAnger(LivingEntity attacker) {
+        this.prowler.setTarget(attacker);
     }
 
     /** 卸载钩子：清空目标/移动输入，假人恢复静止木桩，无任何残留 */

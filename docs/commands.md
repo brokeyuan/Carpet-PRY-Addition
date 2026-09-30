@@ -353,12 +353,15 @@
 通过 Mixin 在 Carpet 自带的 `/player <name>` 命令树下追加独立的 `brain` 子命令，为假人挂载/卸载生物式 AI：
 
 ```text
-/player <name> brain [zombie|babyzombie|skeleton|pillager|irongolem|spider|piglin|wolf|villager|pig|enderman|off]
+/player <name> brain [zombie|babyzombie|skeleton|witherskeleton|drowned|zombiepiglin|pillager|vindicator|irongolem|spider|piglin|piglinbrute|slime|magmacube|fish|enderman|wolf|villager|pig|off] [keep]
 ```
+
+模式名跟随 `/carpet language`：语言为中文（zh_cn/zh_tw）时补全与输入用中文（如 `brain 僵尸`），英文键恒可用；两种写法均可加 `keep`。
 
 | 参数 | 行为 |
 |------|------|
 | (无参数) | 查询当前 AI 模式 |
+| `<模式> keep` | 保持脑子：假人下线重上后自动恢复同一模式（含狼的主人）；`brain off` 清除 |
 | `zombie` | 僵尸模式：近战追击最近玩家，原生 `attack()` 挥砍 |
 | `skeleton` | 骷髅模式：主手持弓时远程射击 + 风筝走位，原生拉弓消耗背包箭矢 |
 | `pillager` | 掠夺者模式：同骷髅但持弩（上弦 25 tick） |
@@ -368,6 +371,16 @@
 | `villager` | 村民模式：随机漫步、被攻击恐慌、遇僵尸反向逃跑 |
 | `enderman` | 末影人模式：被凝视激怒后疾跑扑击 |
 | `babyzombie` | 小僵尸模式：更快的近战追击 |
+| `witherskeleton` | 凋灵骷髅模式：近战追击玩家/铁傀儡与猪灵类，规避狼 |
+| `drowned` | 溺尸模式：持三叉戟远程投掷 + 空手近战，群体仇恨广播 |
+| `zombiepiglin` | 僵尸猪灵模式：中立，被打才反击并唤醒同类 |
+| `vindicator` | 卫道士模式：近战追击玩家/村民/铁傀儡 |
+| `piglinbrute` | 猪灵蛮兵模式：恒敌对近战，无视金装 |
+| `slime` | 史莱姆模式：跳行移动 + 跳行追击 |
+| `magmacube` | 岩浆怪模式：同史莱姆 |
+| `fish` | 鱼模式：水中游动/避人、离水扑腾、海豚式换气 |
+| `pig` | 猪模式：纯中立，被打恐慌逃跑 |
+| `piglin` | 猪灵模式：敌视不穿金装者，武器决定战斗方式，捡拾装备 |
 | `off` | 卸载脑子，恢复 Carpet 手动控制 |
 
 ### 权限

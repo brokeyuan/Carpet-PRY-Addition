@@ -51,7 +51,9 @@ public class PlayerAvoidEntityGoal<T extends LivingEntity> extends PlayerGoal {
         double bestSq = this.maxDist * this.maxDist;
         for (T candidate : this.mob.level().getEntitiesOfClass(this.avoidClass,
                 this.mob.getBoundingBox().inflate(this.maxDist, 3.0, this.maxDist),
-                e -> e.isAlive() && !e.isRemoved())) {
+                // 排除自身：鱼类规避玩家时 avoidClass=Player 会扫到假人本体
+                // （把自己当威胁追着逃），任何规避都不应包含自身
+                e -> e != this.mob.asLiving() && e.isAlive() && !e.isRemoved())) {
             double sq = candidate.distanceToSqr(sx, sy, sz);
             if (sq < bestSq) {
                 bestSq = sq;

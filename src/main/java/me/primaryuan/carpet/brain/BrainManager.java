@@ -4,14 +4,24 @@ import carpet.fakes.ServerPlayerInterface;
 import carpet.patches.EntityPlayerMPFake;
 import me.primaryuan.carpet.CarpetPrimaryuanServer;
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
+import me.primaryuan.carpet.i18n.ServerI18n;
 import me.primaryuan.carpet.util.ServerTickScheduler;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Difficulty;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.scores.PlayerTeam;
+import net.minecraft.world.scores.Scoreboard;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -43,6 +53,19 @@ public final class BrainManager {
 
     /** 假人 UUID → 挂载中的脑子（策略对象；字段注入在玩家实体上的 MobFields 中） */
     private static final Map<UUID, PlayerBrainController> BRAINS = new HashMap<>();
+
+    /** keep 记录：模式 + 狼模式主人（owner 可为 null）。假人下线重上后由 sweep 自动恢复 */
+    private record KeepRecord(String mode, UUID owner) {}
+
+    /** 带 keep 选项的脑子（UUID → 记录）；brain off 清除，服务器关闭随 JVM 消亡 */
+    private static final Map<UUID, KeepRecord> KEEP = new HashMap<>();
+
+    /** 挂载前假人原属的计分板队伍（卸载时恢复，不破坏原有队伍归属） */
+    private static final Map<UUID, String> ORIGINAL_TEAM = new HashMap<>();
+
+    /** 本模组脑队伍名前缀（每模式一队，后缀 = [模式名]） */
+    private static final String TEAM_PREFIX = "pry_brain_";
+
     private static boolean registered = false;
 
     private BrainManager() {}
@@ -81,14 +104,22 @@ public final class BrainManager {
 
     /**
      * 该假人是否处于"敌对"AI 模式（铁傀儡脑的目标选择用：
-     * 敌对假人在铁傀儡眼里等同怪物）。敌对 = 会主动攻击玩家的模式：
-     * zombie / babyzombie / skeleton / pillager / spider / piglin / enderman。
+     * 敌对假人在铁傀儡眼里等同怪物）。口径 = 原版 {@code Enemy} 标记接口
+     * （26.3 字节码：{@code Monster implements Enemy}，铁傀儡目标谓词
+     * {@code instanceof Enemy}）：敌对与中立敌对模式的生物均实现 Enemy——
+     * zombie / babyzombie / drowned / skeleton / witherskeleton / zombiepiglin /
+     * pillager / vindicator / spider / slime / magmacube / piglin / piglinbrute /
+     * enderman。
      */
     public static boolean isHostileFake(ServerPlayer player) {
         String mode = getModeKey(player);
         return "zombie".equals(mode) || "babyzombie".equals(mode) || "skeleton".equals(mode)
                 || "pillager".equals(mode) || "spider".equals(mode)
-                || "piglin".equals(mode) || "enderman".equals(mode);
+                || "piglin".equals(mode) || "enderman".equals(mode)
+                || "drowned".equals(mode) || "zombiepiglin".equals(mode)
+                || "witherskeleton".equals(mode) || "vindicator".equals(mode)
+                || "piglinbrute".equals(mode)
+                || "slime".equals(mode) || "magmacube".equals(mode);
     }
 
     /**
@@ -98,6 +129,16 @@ public final class BrainManager {
      * @return 挂载成功后的脑子的模式标识；非假人/未知模式/狼模式缺主人返回 null
      */
     public static String attach(ServerPlayer player, String mode, UUID ownerUuid) {
+        return attach(player, mode, ownerUuid, false);
+    }
+
+    /**
+     * 挂载（或切换）脑子，可选 keep 保持。
+     *
+     * @param keep true 时记入 KEEP 表：假人下线重上后由 sweep 自动恢复同一脑子；
+     *             false 时清除该假人的 keep 记录（显式重挂不带 keep 即撤回保持）
+     */
+    public static String attach(ServerPlayer player, String mode, UUID ownerUuid, boolean keep) {
         if (!(player instanceof EntityPlayerMPFake)) {
             return null;
         }
@@ -113,26 +154,55 @@ public final class BrainManager {
             case "babyzombie" -> new BabyZombieBrain(player);
             case "pig" -> new PigBrain(player);
             case "piglin" -> new PiglinBrain(player);
+            case "drowned" -> new DrownedBrain(player);
+            case "zombiepiglin" -> new ZombiePiglinBrain(player);
+            case "witherskeleton" -> new WitherSkeletonBrain(player);
+            case "vindicator" -> new VindicatorBrain(player);
+            case "piglinbrute" -> new PiglinBruteBrain(player);
+            case "slime" -> new SlimeBrain(player, "slime");
+            case "magmacube" -> new MagmaCubeBrain(player);
+            case "fish" -> new FishBrain(player);
             default -> null;
         };
         if (brain == null) {
             return null;
         }
-        detach(player);
+        detach(player, false);
+        // keep 记录在 detach 之后写：模式切换/撤回保持都由本次 attach 语义决定
+        if (keep) {
+            KEEP.put(player.getUUID(), new KeepRecord(mode, ownerUuid));
+        } else {
+            KEEP.remove(player.getUUID());
+        }
         // 屏蔽 Carpet 手动指令：清空已排队的计划任务（移动/攻击/使用等）
         ((ServerPlayerInterface) player).getActionPack().stopAll();
         BRAINS.put(player.getUUID(), brain);
         brain.onAttach();
+        applyTeam(player, mode);
         return brain.modeKey();
     }
 
-    /** 卸载脑子；恢复身体静止输入。返回是否确有脑子被卸载 */
+    /** 卸载脑子并清除 keep（brain off 语义）。返回是否确有脑子被卸载 */
     public static boolean detach(ServerPlayer player) {
+        return detach(player, true);
+    }
+
+    /**
+     * 卸载脑子；恢复身体静止输入与原计分板队伍。
+     *
+     * @param clearKeep true 时同时清除 keep 记录（brain off）；下线/规则切换等
+     *                  自动卸载传 false——keep 语义要求下线重上后自动恢复
+     */
+    public static boolean detach(ServerPlayer player, boolean clearKeep) {
         PlayerBrainController brain = BRAINS.remove(player.getUUID());
         if (brain == null) {
             return false;
         }
         brain.onDetach();
+        restoreTeam(player);
+        if (clearKeep) {
+            KEEP.remove(player.getUUID());
+        }
         if (!player.isRemoved() && !player.hasDisconnected()) {
             // 归还控制权时把身体停在原地（避免残留最后一次的移动输入导致"滑行"）
             player.zza = 0.0F;
@@ -142,10 +212,47 @@ public final class BrainManager {
         return true;
     }
 
-    /** 停服清理：卸载全部脑子 */
+    /** 停服清理：卸载全部脑子（keep 表随服务器实例一起作废——重启后假人需重新 spawn，届时自动恢复） */
     public static void detachAll() {
         BRAINS.values().forEach(PlayerBrainController::onDetach);
         BRAINS.clear();
+        KEEP.clear();
+        ORIGINAL_TEAM.clear();
+    }
+
+    /**
+     * 群体仇恨广播（{@code PlayerGroupHurtByTargetGoal} 的后端）：把攻击者
+     * 告知范围内指定脑模式的同伴假人。范围 20 格水平 / 10 格垂直（原版
+     * {@code HurtByTargetGoal.alertOthers} 为跟随距离×10，移植版统一取常规
+     * 索敌半径）；只唤醒当前无攻击目标的同伴（原版跳过已锁定个体）；玩家类
+     * 攻击者沿用全局门禁（创造/旁观/和平难度不传播）。零额外实体：仅写
+     * 同伴脑子的目标字段。
+     */
+    public static void alertOthers(PryMob source, LivingEntity attacker, Set<String> modes) {
+        LivingEntity self = source.asLiving();
+        if (!attacker.isAlive() || attacker.level() != self.level() || attacker == self) {
+            return;
+        }
+        if (attacker instanceof Player p && (p.isSpectator() || p.isCreative()
+                || self.level().getDifficulty() == Difficulty.PEACEFUL)) {
+            return;
+        }
+        List<ServerPlayer> nearby = self.level().getEntitiesOfClass(ServerPlayer.class,
+                self.getBoundingBox().inflate(20.0, 10.0, 20.0));
+        for (ServerPlayer p : nearby) {
+            if (p == self || p == attacker) {
+                continue;
+            }
+            PlayerBrainController brain = BRAINS.get(p.getUUID());
+            // brain.player != p：Carpet 影子假人与真人同 UUID，须确认为挂脑本体
+            if (brain == null || brain.player != p || !modes.contains(brain.modeKey())) {
+                continue;
+            }
+            if (brain.prowler.getTarget() != null) {
+                continue; // 原版语义：已有目标的同伴不覆盖
+            }
+            brain.alertAnger(attacker);
+        }
     }
 
     /**
@@ -161,9 +268,10 @@ public final class BrainManager {
         if (brain == null) {
             return;
         }
-        // 规则被关掉：立即自动卸载，Carpet 手动指令随之恢复
+        // 规则被关掉：立即自动卸载，Carpet 手动指令随之恢复（keep 记录保留，
+        // 规则重新开启且假人在线时由 sweep 自动恢复脑子）
         if (!CarpetPrimaryuanSettings.fakePlayerBrain) {
-            detach(player);
+            detach(player, false);
             return;
         }
         // 假人死亡/断开：只停动作，会话由周期扫描回收（死亡到移除仍会 tick 若干次）
@@ -182,9 +290,9 @@ public final class BrainManager {
         }
     }
 
-    /** 周期扫描：移除已下线/失效假人的会话（tick 驱动无法触达的残留） */
+    /** 周期扫描：清理死会话 + keep 补挂（下线重上的假人自动恢复脑子与名字后缀） */
     private static void sweep(MinecraftServer server) {
-        if (BRAINS.isEmpty()) {
+        if (BRAINS.isEmpty() && KEEP.isEmpty()) {
             return;
         }
         Iterator<Map.Entry<UUID, PlayerBrainController>> it = BRAINS.entrySet().iterator();
@@ -195,7 +303,89 @@ public final class BrainManager {
                     || player.isRemoved()
                     || player.hasDisconnected()) {
                 entry.getValue().onDetach();
+                // 死会话的队伍残留一并清掉：队伍按玩家名记录，同名真人后来加入
+                // 会继承假人的后缀
+                if (player != null) {
+                    restoreTeam(player);
+                }
+                ORIGINAL_TEAM.remove(entry.getKey());
                 it.remove();
+            }
+        }
+        // keep 补挂：在线、无脑子、有记录、规则开启——下线重上（重新 spawn 的
+        // 同名假人 UUID 相同）1 秒内自动恢复；模式失效时记录保留、下轮重试
+        if (!KEEP.isEmpty() && CarpetPrimaryuanSettings.fakePlayerBrain) {
+            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                if (!(player instanceof EntityPlayerMPFake) || BRAINS.containsKey(player.getUUID())) {
+                    continue;
+                }
+                KeepRecord record = KEEP.get(player.getUUID());
+                if (record != null) {
+                    attach(player, record.mode(), record.owner(), true);
+                }
+            }
+        }
+    }
+
+    // ==================== 名字后缀（计分板队伍） ====================
+
+    /**
+     * 模式 → 名字后缀颜色：敌对红 / 中立蓝 / 不敌对绿。
+     * 红 = 见面即打玩家；蓝 = 被打/激怒/条件触发才敌对（蜘蛛昼伏夜击、末影人
+     * 凝视激怒、猪灵看装行事、僵尸猪灵被打反击、狼护主）；绿 = 不主动打玩家
+     * （铁傀儡守卫、村民/猪/鱼被动）。口径独立于 {@link #isHostileFake}
+     * （那是铁傀儡索敌用的 Enemy 标记口径，含中立敌对）。
+     */
+    private static ChatFormatting categoryColor(String mode) {
+        return switch (mode) {
+            case "zombie", "babyzombie", "skeleton", "witherskeleton", "drowned",
+                    "pillager", "vindicator", "piglinbrute", "slime", "magmacube" -> ChatFormatting.RED;
+            case "zombiepiglin", "piglin", "enderman", "spider", "wolf" -> ChatFormatting.BLUE;
+            default -> ChatFormatting.GREEN;
+        };
+    }
+
+    /** 挂载后把假人加入本模式的计分板队伍（头顶名牌/Tab 显示 [模式名] 后缀） */
+    private static void applyTeam(ServerPlayer player, String mode) {
+        Scoreboard scoreboard = player.level().getServer().getScoreboard();
+        String name = player.getScoreboardName();
+        PlayerTeam previous = scoreboard.getPlayersTeam(name);
+        ORIGINAL_TEAM.put(player.getUUID(), previous != null ? previous.getName() : null);
+        // 每假人一队：原队伍前缀要"接"到头顶，共享队会让同模式假人互相泄漏前缀
+        PlayerTeam team = scoreboard.getPlayerTeam(TEAM_PREFIX + mode + "_" + player.getUUID());
+        if (team == null) {
+            team = scoreboard.addPlayerTeam(TEAM_PREFIX + mode + "_" + player.getUUID());
+        }
+        // 队后缀/颜色每次挂载都刷新：三语显示名随 carpet 语言切换即时生效
+        team.setPlayerSuffix(Component.literal(
+                "[" + ServerI18n.tr("carpetprimaryuan.command.brain.mode_" + mode).getString() + "]"));
+        // 原队伍前缀随挂载保留（引用只读共享；卸载整队删除，原队属性不受影响）
+        team.setPlayerPrefix(previous != null ? previous.getPlayerPrefix() : Component.empty());
+        ChatFormatting color = categoryColor(mode);
+        //#if MC >= 260200
+        //$$ // 26.2 起队伍颜色改枚举包装（javap：setColor(ChatFormatting) → setColor(Optional<TeamColor>)）
+        //$$ team.setColor(java.util.Optional.of(net.minecraft.world.scores.TeamColor.valueOf(color.name())));
+        //#else
+        team.setColor(color);
+        //#endif
+        scoreboard.addPlayerToTeam(name, team);
+    }
+
+    /** 卸载后把假人移出本模组队伍（整队删除）并恢复挂载前的原队伍 */
+    private static void restoreTeam(ServerPlayer player) {
+        Scoreboard scoreboard = player.level().getServer().getScoreboard();
+        String name = player.getScoreboardName();
+        PlayerTeam current = scoreboard.getPlayersTeam(name);
+        if (current != null && current.getName().startsWith(TEAM_PREFIX)) {
+            scoreboard.removePlayerFromTeam(name, current);
+            scoreboard.removePlayerTeam(current); // 每假人一队：随卸载删除，不残留
+        }
+        String previous = ORIGINAL_TEAM.remove(player.getUUID());
+        if (previous != null) {
+            // getPlayerTeam=按队伍名查（getPlayersTeam 是按玩家名查所属队伍，勿混用）
+            PlayerTeam team = scoreboard.getPlayerTeam(previous);
+            if (team != null) {
+                scoreboard.addPlayerToTeam(name, team);
             }
         }
     }

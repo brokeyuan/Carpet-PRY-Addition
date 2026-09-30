@@ -153,9 +153,9 @@ Adds a sendto sub-command to /player <name> creating one-way inventory item flow
 
 ### fakePlayerBrain - Fake Player Brain
 
-Adds a brain sub-command to `/player <name>` attaching vanilla-mob-style AI to fake players (11 modes). Core design: **swap the brain, keep the body, zero extra entities** — the fake player always stays a `ServerPlayer` with native health/attack/inventory/interactions; every AI movement command is translated into native player movement input (`zza/xxa` + rate-limited turning + native jumping) and executed by the player's native `travel()` physics, never by directly writing coordinates or velocity. Pathfinding is a self-contained compact A* (vanilla `MobNavigation` is hard-bound to a `Mob` instance in its constructor; to honor the zero-extra-entity rule, node advancement and stuck-recompute semantics are faithfully re-implemented on the block grid). Architecture is strategy pattern: a mixin grafts the `PryMob` facade interface onto `ServerPlayer` at init (navigation/move-control/look-control/dual goal selectors are lazily attached, zero cost for real players); each mode assembles ported Goals into the dual selectors. Purely server-side, no client mod required.
+Adds a brain sub-command to `/player <name>` attaching vanilla-mob-style AI to fake players (19 modes). Core design: **swap the brain, keep the body, zero extra entities** — the fake player always stays a `ServerPlayer` with native health/attack/inventory/interactions; every AI movement command is translated into native player movement input (`zza/xxa` + rate-limited turning + native jumping) and executed by the player's native `travel()` physics, never by directly writing coordinates or velocity. Pathfinding is a self-contained compact A* (vanilla `MobNavigation` is hard-bound to a `Mob` instance in its constructor; to honor the zero-extra-entity rule, node advancement and stuck-recompute semantics are faithfully re-implemented on the block grid). Architecture is strategy pattern: a mixin grafts the `PryMob` facade interface onto `ServerPlayer` at init (navigation/move-control/look-control/dual goal selectors are lazily attached, zero cost for real players); each mode assembles ported Goals into the dual selectors. Purely server-side, no client mod required.
 
-Available modes (`/player <name> brain <mode>`, `off` detaches; on 26.1.2+ the zombie mode additionally supports vanilla spears: with a spear in main hand a ported `SpearUseGoal` takes over — approach, draw, sprint-stab via vanilla kinetic-weapon damage, then retreat; 1.21.x has no spear items and is unaffected):
+Available modes (`/player <name> brain <mode>`, `off` detaches; on 26.1.2+ the zombie/zombified-piglin modes additionally support vanilla spears: with a spear in main hand a ported `SpearUseGoal` takes over — approach, draw, sprint-stab via vanilla kinetic-weapon damage, then retreat; 1.21.x has no spear items and is unaffected):
 
 | Mode | Behavior |
 |------|----------|
@@ -168,14 +168,26 @@ Available modes (`/player <name> brain <mode>`, `off` detaches; on 26.1.2+ the z
 | `villager` | No aggro: random strolling, panics when attacked, flees from zombies (vanilla `PanicGoal`/`AvoidEntityGoal` semantics) |
 | `enderman` | Provoked by being stared at (vanilla `isStaredAt` dot-product algorithm), locks the starer and sprints via `setSprinting(true)` |
 | `babyzombie` | Baby zombie: faster melee pursuit (1.25 sprint) |
+| `witherskeleton` | Wither skeleton: melee-chases players/iron golems and piglins (real piglins + piglin-brain fakes), avoids wolves; hits apply no Wither effect (body-side effect, red-lined out) |
+| `drowned` | Drowned: ranged trident throws while holding one (10-tick charge, native throw — loyalty/durability all vanilla) + bare-hand melee; getting hurt alerts nearby drowned/zombified-piglin-brain fakes |
+| `zombiepiglin` | Zombified piglin: neutral; retaliates when hurt and broadcasts group anger to nearby same-mode fakes (vanilla anger-broadcast semantics) |
+| `vindicator` | Vindicator: melee-chases players/villagers/iron golems |
+| `piglinbrute` | Piglin brute: always-hostile melee, ignores gold armor |
+| `slime` | Slime: hop-based movement — no pathfinding, constant idle hopping, straight-line hop pursuit (matching vanilla) |
+| `magmacube` | Magma cube: same as slime (vanilla inherits the assembly, attributes differ) |
+| `fish` | Fish (cod/salmon/tropical fish share one AI): swims in water, flees when hurt, avoids players within 8 blocks; flops when beached (never walks away); dolphin-style surfacing — automatically rises for air when breath runs low (the fake player's body has player lungs; no body data is touched). Upward swimming is translated by the move-control's swim layer into the vanilla jump input (effective for ALL modes: any brain can swim across rivers) |
+| `pig` | Pig: fully neutral, panics when attacked, strolls when idle |
+| `piglin` | Piglin: hostile to players not wearing gold, weapon decides combat style (golden sword melee / crossbow / 26.1.2+ golden spear charge), picks up and equips gear |
 | `off` | Detaches the brain, restoring Carpet manual control |
 
 While attached, Carpet manual move/attack actions (`/player <name> move|attack|use` etc.) are suppressed (actionPack suspended) and restored immediately on `brain off` or disabling the rule; rule toggle-off, mode switch, fake player logoff or death all detach automatically. Visual sync (walking/sprinting/swing/bow draw/looking) is driven entirely by vanilla entity synchronization — zero client dependency.
 
+**Name suffix & keep**: when attached, the fake player's name tag (and the Tab list) gains a `[mode]` suffix, colored by hostility — red (always hostile: zombie/skeleton/drowned/vindicator etc.), blue (neutral: spider/enderman/piglin/zombified piglin/wolf), green (non-hostile: iron golem/villager/pig/fish); the suffix text follows `/carpet language` ([僵尸]/[Zombie]/[殭屍]). Implemented as one scoreboard team per fake (`pry_brain_<mode>_<uuid>`): the original team's **prefix is carried onto the name tag while attached** (rank-style prefixes don't disappear), the original team is remembered on attach and restored on detach, and this mod's team is deleted on detach — the original team's settings are never touched. `brain <mode> keep` keeps the brain: after the fake relogs (respawn), the same mode and suffix (original prefix included) are automatically restored within a second; `brain off` clears it; respawning after a server restart restores too. With a Chinese carpet language, mode names accept Chinese input directly (`brain 僵尸`); English keys always work.
+
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `fakePlayerBrain` |
-| **Description** | Adds a brain sub-command to /player <name> injecting vanilla-style mob AI into fake players: 11 modes (zombie/skeleton/pillager/irongolem/spider/wolf/villager/enderman/babyzombie/pig/piglin). Pure server-side, zero extra entities, coordinates are never touched; unload with brain off or by disabling the rule. Per-mode behavior in the table above |
+| **Description** | Adds a brain sub-command to /player <name> injecting vanilla-style mob AI into fake players: 19 modes (zombie/babyzombie/skeleton/witherskeleton/drowned/zombiepiglin/pillager/vindicator/irongolem/spider/piglin/piglinbrute/slime/magmacube/fish/enderman/wolf/villager/pig). Pure server-side, zero extra entities, coordinates are never touched; unload with brain off or by disabling the rule. Per-mode behavior in the table above |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |

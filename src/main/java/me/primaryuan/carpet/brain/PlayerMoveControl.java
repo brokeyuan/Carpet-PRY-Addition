@@ -77,6 +77,10 @@ public class PlayerMoveControl {
 
     /** 每 tick 推进：把当前操作翻译成玩家原生移动输入 */
     public void tick() {
+        // 跳跃输入标志先复位（原版 aiStep 消费 jumping：水中 = 上浮推力、
+        // 陆地站立 = 原生起跳——残留 true 会导致假人持续上浮/连跳）；
+        // MOVE_TO 的水中分支按需重新置起
+        this.player.setJumping(false);
         switch (this.operation) {
             case MOVE_TO -> this.tickMoveTo();
             case STRAFE -> this.tickStrafe();
@@ -119,9 +123,18 @@ public class PlayerMoveControl {
         // 否则假人保持疾跑状态/动画直到本条移动指令结束（原实现只置不复位）
         this.player.setSprinting(this.speedModifier >= 1.2);
 
-        // 3) 跳跃：目标点明显高于脚下（台阶/田埂）且横向贴近 → 原生跳跃；
+        // 3) 跳跃/上浮：
+        //    水中 → 目标点高于脚下时置跳跃输入：原版 aiStep 在水里消费 jumping
+        //    走 jumpInLiquid(WATER) 上浮路径（26.3/1.21.11 字节码核实，假人身上
+        //    无任何 vanilla 写点竞争）——等价真人按住跳跃键游泳，绝不
+        //    setDeltaMovement；下潜交给原版自然沉降（不给输入即下沉）
+        //    陆地 → 目标点明显高于脚下（台阶/田埂）且横向贴近 → 原生跳跃；
         //    撞墙兜底：水平碰撞且在地面 → 也跳一下（原版 MoveControl 的撞墙跳）
-        if (this.wantedY - this.player.getY() > 0.5
+        if (this.player.isInWater()) {
+            if (this.wantedY - this.player.getY() > 0.3) {
+                this.player.setJumping(true);
+            }
+        } else if (this.wantedY - this.player.getY() > 0.5
                 && horizontalSq < 1.0 && this.player.onGround()) {
             this.player.jumpFromGround();
         } else if (this.player.horizontalCollision && this.player.onGround()) {

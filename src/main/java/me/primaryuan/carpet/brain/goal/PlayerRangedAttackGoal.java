@@ -44,7 +44,7 @@ public class PlayerRangedAttackGoal extends PlayerGoal {
     /** 满蓄力所需 tick */
     private final int chargeTime;
 
-    private int attackTime = -1;    // 射击冷却倒计时（>0 时不许开弓）
+    protected int attackTime = -1;  // 射击冷却倒计时（>0 时不许开弓）；三叉戟子类在 use() 拒绝时延长
     private int seeTime;            // 视线连续可见计数（负值为丢失累计）
     private boolean strafingClockwise;
     private boolean strafingBackwards;
@@ -89,6 +89,14 @@ public class PlayerRangedAttackGoal extends PlayerGoal {
     /** 是否手持认可武器（原版 isHoldingBow：主手或副手均可） */
     protected boolean isHoldingWeapon() {
         return this.mob.isHolding(stack -> stack.is(this.weapon));
+    }
+
+    /**
+     * 开弓前的弹药门（子类可覆写）：弓/弩从背包取真箭，
+     * 三叉戟无独立弹药、以耐久完好为准——见 {@link PlayerTridentAttackGoal}。
+     */
+    protected boolean hasAmmo(ItemStack weapon) {
+        return !this.mob.asPlayer().getProjectile(weapon).isEmpty();
     }
 
     @Override
@@ -193,9 +201,12 @@ public class PlayerRangedAttackGoal extends PlayerGoal {
                 weapon.getItem().use(this.mob.asPlayer().level(), this.mob.asPlayer(),
                         InteractionHand.MAIN_HAND);
                 this.attackTime = SHOOT_COOLDOWN;
-            } else if (weapon.is(this.weapon)
-                    && !this.mob.asPlayer().getProjectile(weapon).isEmpty()) {
-                this.mob.startUsingItem(InteractionHand.MAIN_HAND); // 拉弦/上弦
+            } else if (weapon.is(this.weapon) && this.hasAmmo(weapon)) {
+                this.mob.startUsingItem(InteractionHand.MAIN_HAND); // 拉弦/上弦/举矛蓄力
+                if (!this.mob.isUsingItem()) {
+                    // use() 拒绝（激流三叉戟在陆地等）：进入冷却等条件满足，不空转
+                    this.attackTime = 40;
+                }
             } else {
                 this.attackTime = 10; // 无弹药/武器不符：稍后再试，避免每 tick 空转空查
             }

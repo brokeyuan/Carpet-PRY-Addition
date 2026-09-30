@@ -78,21 +78,24 @@ public class PlayerMeleeAttackGoal extends PlayerGoal {
         return !(target instanceof Player player) || (!player.isSpectator() && !player.isCreative());
     }
 
+    /**
+     * 对齐原版 {@code MeleeAttackGoal.stop()}：只停导航与攻击姿态，<b>不清攻击目标</b>——
+     * 目标生命周期归 TARGET 旗标 Goal（HurtBy/Nearest 的 stop 统一清）。
+     * 曾在此多写 {@code setTarget(null)}：视线被地形遮挡时 melee 停 → 清目标 →
+     * HurtBy 的 canContinueToUse 见空目标也停 → 冷却后重启 → 每 2 tick 闪断，
+     * 表现为"被打完全不反击"。
+     */
+    @Override
+    public void stop() {
+        this.mob.setAggressive(false);
+        this.mob.getNavigation().stop();
+    }
+
     @Override
     public void start() {
         this.mob.setAggressive(true);
         this.ticksUntilNextPathRecalculation = 0;
         this.ticksUntilNextAttack = 0;
-    }
-
-    @Override
-    public void stop() {
-        LivingEntity target = this.mob.getTarget();
-        if (target != null && !this.mob.getSensing().hasLineOfSight(target)) {
-            this.mob.setTarget(null); // 目标完全看不见了：清目标，回待机
-        }
-        this.mob.setAggressive(false);
-        this.mob.getNavigation().stop();
     }
 
     @Override

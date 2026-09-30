@@ -352,12 +352,15 @@ Adds a sendto sub-command under Carpet's built-in `/player <name>` command tree,
 Adds a standalone `brain` sub-command under Carpet's `/player <name>` command tree via a Mixin, attaching/detaching mob-style AI to fake players:
 
 ```text
-/player <name> brain [zombie|babyzombie|skeleton|pillager|irongolem|spider|piglin|wolf|villager|pig|enderman|off]
+/player <name> brain [zombie|babyzombie|skeleton|witherskeleton|drowned|zombiepiglin|pillager|vindicator|irongolem|spider|piglin|piglinbrute|slime|magmacube|fish|enderman|wolf|villager|pig|off] [keep]
 ```
+
+Mode names follow `/carpet language`: with a Chinese language (zh_cn/zh_tw) completion and input use Chinese names (e.g. `brain 僵尸`); English keys always work. `keep` can be appended to either.
 
 | Argument | Behavior |
 |----------|----------|
 | (none) | Query the current AI mode |
+| `<mode> keep` | Keep the brain: automatically restored when the fake player relogs (owner included for wolf); `brain off` clears it |
 | `zombie` | Zombie mode: melee-chases the nearest player, swings via native `attack()` |
 | `skeleton` | Skeleton mode: ranged attacks + kiting while holding a bow, native bow draw consumes inventory arrows |
 | `pillager` | Pillager mode: same as skeleton but with a crossbow (25-tick charge) |
@@ -367,6 +370,16 @@ Adds a standalone `brain` sub-command under Carpet's `/player <name>` command tr
 | `villager` | Villager mode: random strolling, panics when attacked, flees from zombies |
 | `enderman` | Enderman mode: provoked by being stared at, then sprints at the starer |
 | `babyzombie` | Baby zombie mode: faster melee pursuit |
+| `witherskeleton` | Wither skeleton mode: melee-chases players/iron golems and piglins, avoids wolves |
+| `drowned` | Drowned mode: ranged trident throws + bare-hand melee, group anger broadcast |
+| `zombiepiglin` | Zombified piglin mode: neutral; retaliates when hurt and alerts same-mode fakes |
+| `vindicator` | Vindicator mode: melee-chases players/villagers/iron golems |
+| `piglinbrute` | Piglin brute mode: always-hostile melee, ignores gold armor |
+| `slime` | Slime mode: hop-based movement and hop pursuit |
+| `magmacube` | Magma cube mode: same as slime |
+| `fish` | Fish mode: swims and avoids players in water, flops when beached, surfaces for air |
+| `pig` | Pig mode: fully neutral, panics when attacked |
+| `piglin` | Piglin mode: hostile to players without gold armor, weapon decides combat style, picks up gear |
 | `off` | Detaches the brain, restoring Carpet manual control |
 
 ### Permission

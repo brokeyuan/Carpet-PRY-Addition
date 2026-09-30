@@ -28,10 +28,11 @@ import java.util.UUID;
  */
 public class PlayerHurtByTargetGoal extends PlayerGoal {
 
-    private final PryMob mob;
+    protected final PryMob mob;
     /** 豁免对象（狼模式 = 主人 UUID；可为 null） */
     private final UUID ignored;
-    private LivingEntity pendingTarget;
+    /** 本周期锁定的攻击者（protected：群体警报子类在 start 时取用） */
+    protected LivingEntity pendingTarget;
 
     public PlayerHurtByTargetGoal(PryMob mob, UUID ignored) {
         this.mob = mob;
