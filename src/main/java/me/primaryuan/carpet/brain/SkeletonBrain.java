@@ -1,9 +1,22 @@
 package me.primaryuan.carpet.brain;
 
+import me.primaryuan.carpet.brain.goal.PlayerAvoidEntityGoal;
 import me.primaryuan.carpet.brain.goal.PlayerHurtByTargetGoal;
 import me.primaryuan.carpet.brain.goal.PlayerNearestAttackableTargetGoal;
 import me.primaryuan.carpet.brain.goal.PlayerRandomStrollGoal;
 import me.primaryuan.carpet.brain.goal.PlayerRangedAttackGoal;
+//#if MC >= 12105
+import net.minecraft.world.entity.animal.wolf.Wolf;
+//#else
+//$$ import net.minecraft.world.entity.animal.Wolf;
+//#endif
+//#if MC >= 12111
+import net.minecraft.world.entity.animal.golem.IronGolem;
+import net.minecraft.world.entity.animal.turtle.Turtle;
+//#else
+//$$ import net.minecraft.world.entity.animal.IronGolem;
+//$$ import net.minecraft.world.entity.animal.Turtle;
+//#endif
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Items;
@@ -48,9 +61,21 @@ public class SkeletonBrain extends PlayerBrainController {
                 this.prowler, Player.class, 24.0, 10, true,
                 p -> p != this.player && p.isAlive() && !p.isSpectator() && !p.isCreative()
                         && this.prowler.isHolding(s -> s.is(Items.BOW))));
+        // pri 3 铁傀儡与幼年海龟（原版 AbstractSkeleton 目标链基座，26.3 字节码：
+        // NearestAttackableTarget<IronGolem>(mustSee) / <Turtle>(10, mustSee)）
+        this.targetSelector.addGoal(3, new PlayerNearestAttackableTargetGoal<>(
+                this.prowler, IronGolem.class, 20.0, 10, true,
+                g -> g.isAlive()));
+        this.targetSelector.addGoal(3, new PlayerNearestAttackableTargetGoal<>(
+                this.prowler, Turtle.class, 20.0, 10, true,
+                t -> t.isBaby()));
         // 行为：原版远程 Goal（速度 1.0、最短射击间隔 20 tick、攻击半径 8 格）
         // ★ 射箭零凭空造物：满弦后 releaseUsingItem() → 原生 BowItem.releaseUsing 射出 ★
         this.goalSelector.addGoal(1, new PlayerRangedAttackGoal(this.prowler, 1.0, 20, 8.0F));
+        // 规避狼（原版骷髅基座同款）：原版基座 avoid pri3 压过 reassess 的武器 Goal
+        // pri4——骷髅见狼是逃不是射；移植版远程在 pri1，规避置 pri0 等效压过
+        this.goalSelector.addGoal(0, new PlayerAvoidEntityGoal<>(
+                this.prowler, Wolf.class, 6.0F, 1.0, 1.2));
         // 空闲漫游（原版骷髅同样挂 RandomStrollGoal）
         this.goalSelector.addGoal(2, new PlayerRandomStrollGoal(this.prowler, 1.0));
     }

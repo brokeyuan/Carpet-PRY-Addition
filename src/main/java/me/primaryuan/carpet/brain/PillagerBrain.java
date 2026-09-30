@@ -4,6 +4,13 @@ import me.primaryuan.carpet.brain.goal.PlayerHurtByTargetGoal;
 import me.primaryuan.carpet.brain.goal.PlayerNearestAttackableTargetGoal;
 import me.primaryuan.carpet.brain.goal.PlayerRandomStrollGoal;
 import me.primaryuan.carpet.brain.goal.PlayerRangedAttackGoal;
+//#if MC >= 12111
+import net.minecraft.world.entity.animal.golem.IronGolem;
+import net.minecraft.world.entity.npc.villager.AbstractVillager;
+//#else
+//$$ import net.minecraft.world.entity.animal.IronGolem;
+//$$ import net.minecraft.world.entity.npc.AbstractVillager;
+//#endif
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Items;
@@ -42,6 +49,14 @@ public class PillagerBrain extends PlayerBrainController {
                 this.prowler, Player.class, 24.0, 10, true,
                 p -> p != this.player && p.isAlive() && !p.isSpectator() && !p.isCreative()
                         && this.prowler.isHolding(s -> s.is(Items.CROSSBOW))));
+        // pri 3 村民（透墙）与铁傀儡（原版 Pillager 目标链，26.3 字节码：
+        // NearestAttackableTarget<AbstractVillager>(mustSee=false) / <IronGolem>(mustSee)）
+        this.targetSelector.addGoal(3, new PlayerNearestAttackableTargetGoal<>(
+                this.prowler, AbstractVillager.class, 20.0, 10, false,
+                v -> v.isAlive()));
+        this.targetSelector.addGoal(3, new PlayerNearestAttackableTargetGoal<>(
+                this.prowler, IronGolem.class, 20.0, 10, true,
+                g -> g.isAlive()));
         // 行为：原版远程 Goal（弩：上弦 25 tick、射击间隔 20 tick、射程 8 格）
         // ★ 零凭空造物：releaseUsingItem → 原生 CrossbowItem.releaseUsing 射出背包箭矢 ★
         this.goalSelector.addGoal(1, new PlayerRangedAttackGoal(
