@@ -2,6 +2,7 @@ package me.primaryuan.carpet.handler.entitiesRidingPlayers;
 
 import carpet.patches.EntityPlayerMPFake;
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
+import me.primaryuan.carpet.handler.patPatPlayers.PatPatPlayersHandler;
 import me.primaryuan.carpet.i18n.ServerI18n;
 import me.primaryuan.carpet.util.ServerTickScheduler;
 import net.minecraft.network.chat.Component;
@@ -111,6 +112,10 @@ public class EntitiesRidingPlayersHandler {
         if (deniedRide) {
             return InteractionResult.PASS;
         }
+        // 释放发起者与被骑者身上未结束的摸头强制蹲脉冲：蹲着的玩家进入骑乘关系
+        // 会触发载具侧蹲下卸客/乘客侧原版潜行下车，把刚建立的塔拆掉
+        PatPatPlayersHandler.releaseCrouchPulse(player);
+        PatPatPlayersHandler.releaseCrouchPulse(targetPlayer);
         Entity vehicle = getHighestOrSelf(targetPlayer, player, CarpetPrimaryuanSettings.ridingPlayersStackLimit);
         if (vehicle == null) return InteractionResult.FAIL;
         return player.startRiding(vehicle) ? InteractionResult.SUCCESS : InteractionResult.FAIL;
@@ -124,6 +129,9 @@ public class EntitiesRidingPlayersHandler {
         if (deniedPickup) {
             return InteractionResult.PASS;
         }
+        // 同 ride：先清掉双方在飞的摸头蹲脉冲，防挂塔即下车
+        PatPatPlayersHandler.releaseCrouchPulse(player);
+        PatPatPlayersHandler.releaseCrouchPulse(targetPlayer);
         Entity vehicle = getHighestOrSelf(player, targetPlayer, CarpetPrimaryuanSettings.ridingPlayersStackLimit);
         if (vehicle == null) return InteractionResult.FAIL;
         return targetPlayer.startRiding(vehicle) ? InteractionResult.SUCCESS : InteractionResult.FAIL;

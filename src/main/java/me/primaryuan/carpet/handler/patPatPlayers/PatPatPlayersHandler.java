@@ -17,6 +17,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -63,7 +64,10 @@ import java.util.Set;
  * 否则服务端强制蹲 {@link #CROUCH_HOLD_TICKS} tick 后解除——站立目标随抚摸节奏
  * 往复蹲起，目标自行松开 shift 即恢复往复，抚摸停止即交还自主。蹲起为服务端
  * 实体标志同步（周围玩家可见其蹲起，本人画面无变化，其客户端在自身 shift
- * 变化时会覆盖标志）。仅真人可被摸：carpet 假人（EntityPlayerMPFake）在入口
+ * 变化时会覆盖标志）。目标卷入玩家骑乘（作为载具或乘客）时跳过蹲下脉冲：
+ * 强制蹲会触发骑乘系统的蹲下卸客/原版潜行下车，把骑乘塔拆掉（与
+ * ridingPlayers/pickupPlayers 的冲突修复点），其余抚摸效果不受影响。
+ * 仅真人可被摸：carpet 假人（EntityPlayerMPFake）在入口
  * 即被排除；玩家可用 /patnod on|off 开关接不接受被摸（拒绝时摸头对其完全不
  * 生效，状态持久化于 config/carpet-pry-patnod.json）。</p>
  */
@@ -92,6 +96,9 @@ public class PatPatPlayersHandler {
 
     /** 已拒绝被摸的玩家名（缺省 = 接受）；仅服务器主线程访问 */
     private static final Set<String> patDeclined = new HashSet<>();
+
+    /** 正处于强制蹲脉冲中的目标名（脉冲飞完自清；骑乘/捡起挂塔前据此提前释放） */
+    private static final Set<String> forcedCrouch = new HashSet<>();
 
     /**
      * 头部区域：命中点（实体碰撞箱表面 raycast 交点）距脚底的高度占碰撞箱高度
@@ -124,7 +131,8 @@ public class PatPatPlayersHandler {
      * 抚摸入口（UseEntityCallback 最后一个监听位，火后不管）。
      * 触发条件：服务端 + 规则开启（sneak 模式需按下潜行）+ 带命中坐标的交互包 +
      * 目标为其他真人玩家（carpet 假人排除）+ 目标未拒绝被摸 + 双方非旁观者 +
-     * 不在冷却中 + 命中点位于头部区域。
+     * 不在冷却中 + 命中点位于头部区域 + 主手未持图腾（骑乘/捡起开启时图腾是
+     * 骑乘手势，主手点击已由骑乘系统消费，此处对副手跟随包整体让路）。
      */
     public static void patPlayer(Player player, Level level, InteractionHand hand, Entity entity, EntityHitResult hitResult) {
         if (level.isClientSide()
@@ -136,6 +144,14 @@ public class PatPatPlayersHandler {
             return;
         }
         if (player.isSpectator() || entity.isSpectator()) {
+            return;
+        }
+        // 图腾是骑乘/捡起的手势物品：主手点击已由骑乘系统消费，但客户端预测为
+        // PASS 仍会补发副手跟随包（带命中坐标）——在此整体让路，否则骑着别人的
+        // 同时摸头效果叠加（副手包命中头部区，蹲下脉冲落到刚成为载具的目标上，
+        // 修复前表现为"上了一下头立马被下"）。图腾换到副手即可正常摸头
+        if ((CarpetPrimaryuanSettings.ridingPlayers || CarpetPrimaryuanSettings.pickupPlayers)
+                && player.getMainHandItem().is(Items.TOTEM_OF_UNDYING)) {
             return;
         }
         Player target = (Player) entity;
@@ -180,12 +196,17 @@ public class PatPatPlayersHandler {
                 target.getX(), target.getEyeY() + 0.2, target.getZ(),
                 1, 0.15, 0.15, 0.15, 0.0);
 
-        // 蹲下脉冲：目标自己按着 shift 则跳过（保持蹲、不弹起），否则强制蹲后按时解除
-        if (!target.isShiftKeyDown()) {
+        // 蹲下脉冲：目标自己按着 shift 则跳过（保持蹲、不弹起），否则强制蹲后按时解除。
+        // 目标卷入玩家骑乘（作为载具或乘客）时同样跳过——强制蹲会触发骑乘系统的
+        // 两处蹲下语义，把骑乘塔拆了：载具侧 onPlayerTick 的"蹲下卸客"会踹掉头上
+        // 的乘客，乘客侧触发原版"潜行下车"；其余抚摸效果不受影响
+        if (!target.isShiftKeyDown() && !target.isVehicle() && !target.isPassenger()) {
             target.setShiftKeyDown(true);
+            forcedCrouch.add(target.getName().getString());
             ServerTickScheduler.registerDelayed(CROUCH_HOLD_TICKS,
                     server -> {
                         target.setShiftKeyDown(false);
+                        forcedCrouch.remove(target.getName().getString());
                         return false;
                     });
         }
@@ -227,6 +248,18 @@ public class PatPatPlayersHandler {
     /** 目标是否接受被摸（默认接受；/patnod off 后拒绝） */
     public static boolean acceptsPat(Player target) {
         return !patDeclined.contains(target.getName().getString());
+    }
+
+    /**
+     * 提前释放目标身上未结束的强制蹲脉冲（骑乘/捡起挂塔前调用）。
+     * 蹲着的玩家被挂进骑乘塔会立即触发原版"乘客潜行下车"——连点抚摸把目标
+     * 长期压在蹲姿时，pickup 会一直失败；挂塔前清一次蹲标志即可（脉冲的
+     * 延迟回调随后再清一次是无害的重复）。
+     */
+    public static void releaseCrouchPulse(Player target) {
+        if (forcedCrouch.remove(target.getName().getString())) {
+            target.setShiftKeyDown(false);
+        }
     }
 
     /** /patnod on|off：设置目标玩家的被摸接受状态并持久化 */
