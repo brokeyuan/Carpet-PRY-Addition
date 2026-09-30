@@ -1,6 +1,6 @@
 package me.primaryuan.carpet.command;
 
-import carpet.CarpetServer;
+import carpet.CarpetSettings;
 import carpet.patches.EntityPlayerMPFake;
 import carpet.utils.Translations;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -195,13 +195,9 @@ public final class PlayerBrainCommand {
         String remaining = builder.getRemainingLowerCase();
         int space = remaining.indexOf(' ');
         if (space < 0) {
-            boolean chinese = false;
-            try {
-                chinese = CarpetServer.settingsManager.getRule("language")
-                        .getAsString().startsWith("zh");
-            } catch (Throwable ignored) {
-                // 语言规则读取失败按英文键补全
-            }
+            // carpet 语言规则字段直读（getRule/getAsString 在 1.21.x carpet 已标记移除，
+            // 字段读法 1.21~26.3 一致）
+            boolean chinese = CarpetSettings.language.startsWith("zh");
             for (String mode : MODES) {
                 String suggestion = mode;
                 if (chinese) {
