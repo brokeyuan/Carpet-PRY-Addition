@@ -1,8 +1,13 @@
 package me.primaryuan.carpet.util;
 
+import carpet.patches.EntityPlayerMPFake;
+import com.mojang.authlib.GameProfile;
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ClientInformation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -57,8 +62,12 @@ public final class MixinSanityCheck {
     /** 规则变更时回调（只需关心本类核验涉及的规则名） */
     public static void onRuleChanged(String ruleName) {
         if (ruleName.equals("playerHat") || ruleName.equals("ridingPlayers")
-                || ruleName.equals("ridingPlayersClientInteract") || ruleName.equals("fixXaeroLib")) {
+                || ruleName.equals("ridingPlayersClientInteract") || ruleName.equals("fixXaeroLib")
+                || ruleName.equals("fakePlayerSkinMode") || ruleName.equals("fakePlayerSkinSet")) {
             checkAll();
+        }
+        if (ruleName.equals("fakePlayerSkinMode") || ruleName.equals("fakePlayerSkinSet")) {
+            FakePlayerSkinManager.onRuleChanged();
         }
     }
 
@@ -66,6 +75,7 @@ public final class MixinSanityCheck {
         checkPlayerHat();
         checkRidingClientInteract();
         checkFixXaeroLib();
+        checkFakePlayerSkin();
     }
 
     /** playerHat：LivingEntity.isEquippableInSlot(ItemStack, EquipmentSlot)Z（实例方法） */
@@ -134,6 +144,54 @@ public final class MixinSanityCheck {
                 LOGGER.error("[pry] fixXaeroLib 规则无效：xaero.lib 的 handle 方法缺失或非静态，"
                         + "注入被静默跳过，请向模组作者反馈");
             }
+        }
+    }
+
+    /**
+     * fakePlayerSkin：两处 require=0 注入点——
+     * <ul>
+     *   <li>Carpet EntityPlayerMPFake 构造器（出生前注入皮肤）：缺失时退化为出生后
+     *       换肤（有闪皮），规则失效报 error；</li>
+     *   <li>SkinRestorer SkinService.applySkin 三参静态（压制存储皮覆盖）：未安装
+     *       属"未安装"而非失效，降为 warn；已安装但方法漂移同样降为 warn（换肤
+     *       主链路仍可用，仅历史落库残留可能盖回注入皮肤）。</li>
+     * </ul>
+     */
+    private static void checkFakePlayerSkin() {
+        if ("default".equals(CarpetPrimaryuanSettings.fakePlayerSkinMode)) {
+            return;
+        }
+        try {
+            EntityPlayerMPFake.class.getDeclaredConstructor(
+                    MinecraftServer.class, ServerLevel.class, GameProfile.class,
+                    ClientInformation.class, boolean.class);
+        } catch (NoSuchMethodException e) {
+            if (reported.add("fakePlayerSkin:ctor")) {
+                LOGGER.error("[pry] fakePlayerSkinMode 规则无效：Carpet EntityPlayerMPFake 构造器签名漂移，"
+                        + "出生前注入被静默跳过（退化为出生后换肤），请向模组作者反馈");
+            }
+        }
+        Class<?> skinService;
+        try {
+            skinService = Class.forName("net.lionarius.skinrestorer.skin.SkinService",
+                    false, MixinSanityCheck.class.getClassLoader());
+        } catch (ClassNotFoundException e) {
+            if (reported.add("fakePlayerSkin:absent")) {
+                LOGGER.warn("[pry] fakePlayerSkinMode 已开启但未检测到 skinrestorer（未安装时本规则不起作用）");
+            }
+            return;
+        }
+        boolean applySkinFound = false;
+        for (Method m : skinService.getDeclaredMethods()) {
+            if (m.getName().equals("applySkin") && m.getParameterCount() == 3
+                    && Modifier.isStatic(m.getModifiers())) {
+                applySkinFound = true;
+                break;
+            }
+        }
+        if (!applySkinFound && reported.add("fakePlayerSkin:applySkin")) {
+            LOGGER.warn("[pry] fakePlayerSkinMode 规则：skinrestorer 的 SkinService.applySkin 签名漂移，"
+                    + "存储皮覆盖压制失效（历史落库残留可能盖回注入皮肤），请向模组作者反馈");
         }
     }
 

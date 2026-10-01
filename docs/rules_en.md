@@ -81,7 +81,7 @@ Customize the fake player list suggested by /player. Use ',' to separate each na
 
 ### fakePlayerSkinMode - Fake Player Skin Setting
 
-After installing the [skinrestorer](https://modrinth.com/mod/skinrestorer) dependency, you can set the skin of fake players. default=no change to fake player skin, summon=fake player uses the summoner's skin, same_skin=fake player uses a unified skin. Skins apply to the fake player's session only and are never persisted to skinrestorer's storage, so real players sharing the name are never affected.
+After installing the [skinrestorer](https://modrinth.com/mod/skinrestorer) dependency, you can set the skin of fake players. default=no change to fake player skin, summon=fake player uses the summoner's skin, same_skin=fake player uses a unified skin. Applies only to fakes whose name is not a real player: fakes sharing a real player's name keep that player's own skin (real identity is decided by UUID version — Mojang accounts are v4, offline synthetic names are v3). The skin ships with the fake player's spawn packet, so observers never see a flash from the old skin to the new one; nothing is persisted to skinrestorer's storage and real players are never affected.
 
 | Property | Value |
 |----------|-------|
@@ -100,9 +100,11 @@ After installing the [skinrestorer](https://modrinth.com/mod/skinrestorer) depen
 | `summon` | Fake player uses the summoner's skin |
 | `same_skin` | Fake player uses a unified skin |
 
+> Both modes only affect fakes not named after a real player. `summon` copies the summoner's skin texture directly from their live profile (no network request); `same_skin` is pre-resolved through skinrestorer's mojang provider at startup and cached. If the same_skin skin is not ready yet, that spawn falls back to a post-spawn skin swap (the fake briefly shows the default skin).
+
 > Skins apply to the fake player's current session only and are never persisted to skinrestorer's storage: a fake player shares the UUID of a real player with the same name (when the name is in the server's user cache, or on offline-mode servers), so persisting would reskin that player on their next join, overriding even a skin they set via `/skin`. Fake player skins are therefore never saved, and real players' skins are never touched.
 
-> If [Carpet TIS Addition](https://modrinth.com/mod/carpet-tis-addition) is installed, its `/player <name> rejoin` (respawning the fake player where it logged off) applies these skins as well: rejoin internally reuses Carpet's vanilla spawn logic, where this mod's skin hook sits at the tail — behavior is identical to a plain spawn (`summon` mode uses the skin of whoever ran the rejoin command).
+> If [Carpet TIS Addition](https://modrinth.com/mod/carpet-tis-addition) is installed, its `/player <name> rejoin` (respawning the fake player where it logged off) applies these skins as well: rejoin internally reuses Carpet's vanilla spawn logic and the fake player creation path — behavior is identical to a plain spawn (`summon` mode uses the skin of whoever ran the rejoin command).
 
 ---
 

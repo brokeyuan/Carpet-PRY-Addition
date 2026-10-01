@@ -3,9 +3,13 @@ package me.primaryuan.carpet.mixins.rule.fakePlayerSkin;
 import carpet.commands.PlayerCommand;
 import carpet.patches.EntityPlayerMPFake;
 import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.properties.Property;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import com.google.common.collect.Iterables;
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
+import me.primaryuan.carpet.util.FakePlayerSkinManager;
+import me.primaryuan.carpet.util.ServerTickScheduler;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.level.ServerPlayer;
 import org.apache.logging.log4j.LogManager;
@@ -13,21 +17,22 @@ import org.apache.logging.log4j.Logger;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * PlayerCommandSkinMixin - 皮肤应用（≤1.21.11 全版本的唯一实现）。
+ * PlayerCommandSkinMixin - 皮肤来源入队与兜底（全版本唯一实现）。
  *
- * <p>旧版 SkinRestorer 的 setSkinAsync 集合元素为 GameProfile，与本实现的
- * 传参一致；name 访问器差异（1.21.10+ record {@code name()} / 早期
- * {@code getName()}）由内联预处理分叉处理，同一份源码服务全部 ≤1.21.11 版本。</p>
+ * <p>spawn HEAD（TIS Addition 的 rejoin @Shadow 复用本方法，同样生效）按假人名入队
+ * 皮肤来源：summon=召唤者在线 profile 的纹理快照（内存直拷，零网络）；same_skin=
+ * fakePlayerSkinSet（SkinRestorer provider 后台预热）。实际注入由
+ * EntityPlayerMPFakeSkinMixin 在假人构造器 HEAD 完成，出生包直接带目标皮肤。</p>
  *
- * <p><b>26.1.2+ 由 versions/26.1.2 的覆盖副本接管</b>（26.x 配套的新版
- * SkinRestorer 走 SkinTarget/refreshPlayer 路径）——两份实现是按 SkinRestorer
- * 版本划分的，改皮肤逻辑时务必同步评估另一份，勿只改其一。</p>
- *
- * <p>save=false：仅对假人当前会话生效，不写入 SkinRestorer 持久存储——
- * 假人 UUID 与同名真人相同，落库会导致真人上线被换肤。</p>
+ * <p>真人身份（UUID v4）不入队：真人名假人保持该玩家真实长相。构造器注入未发生
+ * （spawn 失败 / same_skin 预热未就绪 / 构造器注入点漂移）时 TAIL 安装下 tick 兜底：
+ * 等假人上线后走 SkinRestorer setSkinAsync(save=false) 后置换肤，观感同旧行为。
+ * save=false 不写入 SkinRestorer 持久存储——假人 UUID 与同名真人相同时落库会导致
+ * 真人上线被换肤。</p>
  */
 @Mixin(PlayerCommand.class)
 public class PlayerCommandSkinMixin {
@@ -36,88 +41,97 @@ public class PlayerCommandSkinMixin {
 
     @Inject(
             method = "spawn",
+            at = @At("HEAD"),
+            remap = false
+    )
+    private static void beforeSpawn(CommandContext<CommandSourceStack> context, CallbackInfoReturnable<Integer> cir) {
+        String mode = CarpetPrimaryuanSettings.fakePlayerSkinMode;
+        if ("default".equals(mode)) {
+            return;
+        }
+        try {
+            String fakeName = StringArgumentType.getString(context, "player");
+            if ("summon".equals(mode)) {
+                ServerPlayer summoner = null;
+                try {
+                    summoner = context.getSource().getPlayerOrException();
+                } catch (Exception ignored) {
+                    // 命令可能由控制台执行：无召唤者皮肤来源，假人保持本来长相
+                }
+                if (summoner == null) {
+                    return;
+                }
+                //#if MC >= 12110
+                Property skin = Iterables.getFirst(summoner.getGameProfile().properties().get("textures"), null);
+                //#else
+                //$$ Property skin = Iterables.getFirst(summoner.getGameProfile().getProperties().get("textures"), null);
+                //#endif
+                if (skin == null) {
+                    return;
+                }
+                String summonerName;
+                //#if MC >= 12110
+                summonerName = summoner.getGameProfile().name();
+                //#else
+                //$$ summonerName = summoner.getGameProfile().getName();
+                //#endif
+                FakePlayerSkinManager.enqueue(fakeName, skin, null, summonerName);
+            } else if ("same_skin".equals(mode)) {
+                String skinName = CarpetPrimaryuanSettings.fakePlayerSkinSet;
+                if (skinName == null || skinName.isEmpty()) {
+                    return;
+                }
+                FakePlayerSkinManager.enqueue(fakeName, null, skinName, skinName);
+            }
+        } catch (Exception e) {
+            LOGGER.error("[FakePlayerSkin] Failed to enqueue fake player skin source", e);
+        }
+    }
+
+    @Inject(
+            method = "spawn",
             at = @At("TAIL"),
             remap = false
     )
     private static void afterSpawn(CommandContext<CommandSourceStack> context, CallbackInfoReturnable<Integer> cir) {
         String mode = CarpetPrimaryuanSettings.fakePlayerSkinMode;
-
         if ("default".equals(mode)) {
             return;
         }
-
         try {
-            // 获取召唤者（执行命令的玩家）
-            ServerPlayer summoner = null;
-            try {
-                summoner = context.getSource().getPlayerOrException();
-            } catch (Exception ignored) {
-                // 命令可能由非玩家执行（如控制台）
-            }
-
-            var server = context.getSource().getServer();
-            // 按命令参数定位本次生成的假人；spawn 失败（名字被占用）时查到的不是假人，直接跳过
             String fakeName = StringArgumentType.getString(context, "player");
-            ServerPlayer spawned = server.getPlayerList().getPlayerByName(fakeName);
-            if (!(spawned instanceof EntityPlayerMPFake fakePlayer)) {
+            FakePlayerSkinManager.PendingSkin entry = FakePlayerSkinManager.peek(fakeName);
+            if (entry == null) {
                 return;
             }
-
-            // 根据模式解析皮肤目标玩家名（summon/same_skin 仅来源不同，复用同一套逻辑）
-            String skinTargetName = null;
-
-            switch (mode) {
-                case "summon" -> {
-                    // 使用召唤者的皮肤。根模板被 1.21.11（rootNode）不经预处理地
-                    // 直接编译，fork 的活动分支必须是 1.21.11 形态（name()）
-                    if (summoner == null) return;
-                    skinTargetName = summoner.getGameProfile()
-                            //#if MC >= 12110
-                            .name()
-                            //#else
-                            //$$ .getName()
-                            //#endif
-                            ;
+            // 构造器注入发生在 profile 异步拉取完成后（晚于本 TAIL）：兜底循环等构造器
+            // 给出终态——注入成功或真人名则直接清理；无皮肤来源才后置换肤
+            final String name = fakeName;
+            final FakePlayerSkinManager.PendingSkin entryRef = entry;
+            final int[] waited = {0};
+            ServerTickScheduler.register(server -> {
+                if (entryRef.injected || entryRef.skipped) {
+                    // 构造器注入成功 / 真人名：无需兜底，清理退出
+                    FakePlayerSkinManager.remove(name);
+                    return false;
                 }
-                case "same_skin" -> {
-                    // 使用 fakePlayerSkinSet 配置的玩家皮肤
-                    skinTargetName = CarpetPrimaryuanSettings.fakePlayerSkinSet;
-                    if (skinTargetName == null || skinTargetName.isEmpty()) {
-                        return;
+                ServerPlayer spawned = server.getPlayerList().getPlayerByName(name);
+                if (spawned instanceof EntityPlayerMPFake fake) {
+                    if (fake.getUUID().version() != 4) {
+                        FakePlayerSkinManager.applyPostSpawn(server, fake, entryRef.fallbackName);
                     }
+                    FakePlayerSkinManager.remove(name);
+                    return false;
                 }
-                default -> {
-                    return;
+                // spawn 失败（名字被占用等）时假人不会上线，超时放弃
+                if (++waited[0] >= 100) {
+                    FakePlayerSkinManager.remove(name);
+                    return false;
                 }
-            }
-
-            applySkinToFakePlayerReflection(server, fakePlayer.getGameProfile(), skinTargetName);
-
+                return true;
+            });
         } catch (Exception e) {
-            LOGGER.error("[FakePlayerSkin] Failed to apply skin on fake player spawn", e);
+            LOGGER.error("[FakePlayerSkin] Failed to schedule fake player skin fallback", e);
         }
     }
-
-    private static void applySkinToFakePlayerReflection(net.minecraft.server.MinecraftServer server,
-                                                        GameProfile targetProfile,
-                                                        String skinPlayerName) {
-        try {
-            Class<?> skinProviderContextClass = Class.forName("net.lionarius.skinrestorer.skin.provider.SkinProviderContext");
-            Class<?> skinVariantClass = Class.forName("net.lionarius.skinrestorer.skin.SkinVariant");
-            Class<?> skinServiceClass = Class.forName("net.lionarius.skinrestorer.skin.SkinService");
-
-            Object slimVariant = skinVariantClass.getField("SLIM").get(null);
-            java.lang.reflect.Constructor<?> contextConstructor = skinProviderContextClass.getConstructor(String.class, String.class, skinVariantClass);
-            Object context = contextConstructor.newInstance("mojang", skinPlayerName, slimVariant);
-
-            java.lang.reflect.Method setSkinAsyncMethod = skinServiceClass.getMethod("setSkinAsync", net.minecraft.server.MinecraftServer.class, java.util.Collection.class, skinProviderContextClass, boolean.class);
-            setSkinAsyncMethod.invoke(null, server, java.util.Collections.singletonList(targetProfile), context, false);
-        } catch (ClassNotFoundException e) {
-            // skinrestorer 未安装（可选依赖）：非 default 皮肤模式下功能不生效，给出可见提示而非静默
-            LOGGER.warn("[FakePlayerSkin] SkinRestorer not installed, skip applying skin (set fakePlayerSkinMode=default or install skinrestorer)");
-        } catch (Exception e) {
-            LOGGER.error("[FakePlayerSkin] Failed to apply skin via reflection", e);
-        }
-    }
-
 }
