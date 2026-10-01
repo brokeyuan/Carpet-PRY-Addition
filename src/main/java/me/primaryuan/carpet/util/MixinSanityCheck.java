@@ -8,6 +8,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -62,6 +63,7 @@ public final class MixinSanityCheck {
     /** 规则变更时回调（只需关心本类核验涉及的规则名） */
     public static void onRuleChanged(String ruleName) {
         if (ruleName.equals("playerHat") || ruleName.equals("ridingPlayers")
+                || ruleName.equals("pickupPlayers")
                 || ruleName.equals("ridingPlayersClientInteract") || ruleName.equals("fixXaeroLib")
                 || ruleName.equals("fakePlayerSkinMode") || ruleName.equals("fakePlayerSkinSet")) {
             checkAll();
@@ -74,6 +76,7 @@ public final class MixinSanityCheck {
     private static void checkAll() {
         checkPlayerHat();
         checkRidingClientInteract();
+        checkTowerCrossDimensionCarry();
         checkFixXaeroLib();
         checkFakePlayerSkin();
     }
@@ -109,6 +112,34 @@ public final class MixinSanityCheck {
         if (reported.add("ridingPlayersClientInteract")) {
             LOGGER.error("[pry] ridingPlayers 规则的客户端交互修正无效：ProjectileUtil.getEntityHitResult "
                     + "签名漂移，注入被静默跳过，请向模组作者反馈");
+        }
+    }
+
+    /**
+     * ridingPlayers/pickupPlayers：玩家塔跨维度跟随（ServerPlayerMixin 两段 require=0 注入）——
+     * 跨维度分流入口 ServerPlayer.teleport(TeleportTransition)（1.21.3+）或
+     * ServerPlayer.changeDimension(DimensionTransition)（1.21/1.21.1）。两段注入共用同一
+     * 目标方法，方法缺失时成对跳过。载具落位重组点的 @At INVOKE（ServerLevel.addDuringTeleport）
+     * 与 addPlayer 等同形状方法无法按参数形状区分，与 @Local 深漂移同列静态不可检出。
+     */
+    private static void checkTowerCrossDimensionCarry() {
+        if (!CarpetPrimaryuanSettings.ridingPlayers && !CarpetPrimaryuanSettings.pickupPlayers) {
+            return;
+        }
+        boolean entryExists;
+        //#if MC >= 12103
+        entryExists = methodExists(ServerPlayer.class,
+                new Class<?>[]{net.minecraft.world.level.portal.TeleportTransition.class}, false);
+        //#else
+        //$$ entryExists = methodExists(ServerPlayer.class,
+        //$$         new Class<?>[]{net.minecraft.world.level.portal.DimensionTransition.class}, false);
+        //#endif
+        if (entryExists) {
+            return;
+        }
+        if (reported.add("ridingPlayers:crossDimCarry")) {
+            LOGGER.error("[pry] ridingPlayers/pickupPlayers 规则的玩家塔跨维度跟随无效："
+                    + "ServerPlayer 跨维度传送入口签名漂移，注入被静默跳过（塔会被甩在原维度），请向模组作者反馈");
         }
     }
 
