@@ -89,9 +89,12 @@ public final class BrainManager {
     /** sweep 的 20 tick 分频计数器 */
     private static int sweepCounter = 0;
 
-    /** 该假人是否处于 AI 接管状态（供 ActionPack 取消 mixin 查询） */
+    /** 该假人是否处于 AI 接管状态（供 ActionPack 取消 mixin 查询）。
+     *  须校验会话归属：keep 假人死后立即重生命名相同 UUID 相同，sweep 补挂前的
+     *  一个周期内 BRAINS 里挂的是死对象的旧会话，不算数 */
     public static boolean hasBrain(ServerPlayer player) {
-        return BRAINS.containsKey(player.getUUID());
+        PlayerBrainController brain = BRAINS.get(player.getUUID());
+        return brain != null && brain.player == player;
     }
 
     /** 当前挂载的脑子模式标识（无脑子返回 null，供命令状态查询）。
@@ -265,7 +268,9 @@ public final class BrainManager {
             return; // 真人：无脑子、零开销早退
         }
         PlayerBrainController brain = BRAINS.get(player.getUUID());
-        if (brain == null) {
+        if (brain == null || brain.player != player) {
+            // null = 无脑子；brain.player != player = keep 同 UUID 重生竞态留下的
+            // 死对象旧会话（tick 驱动不得打在新假人身上，由 sweep 统一换血）
             return;
         }
         // 规则被关掉：立即自动卸载，Carpet 手动指令随之恢复（keep 记录保留，
@@ -290,7 +295,16 @@ public final class BrainManager {
         }
     }
 
-    /** 周期扫描：清理死会话 + keep 补挂（下线重上的假人自动恢复脑子与名字后缀） */
+    /**
+     * 周期扫描：清理死会话与重生竞态的旧会话 + keep 补挂（下线重上的假人自动
+     * 恢复脑子与名字后缀）。
+     *
+     * <p><b>同 UUID 重生竞态</b>：keep 假人死亡后立即重生命名/UUID 相同（皮肤
+     * 缓存时 join 快于一个 sweep 周期），此时 BRAINS 里挂着死对象的旧会话——
+     * 按 UUID 查到的"在线玩家"已是新假人，旧会话既不该继续 tick 也不能算作
+     * 已挂载：统一按"会话归属不符"换血（旧会话按其自带玩家的名字清队伍、
+     * 移出 BRAINS），随后 keep 补挂给新假人重建。</p>
+     */
     private static void sweep(MinecraftServer server) {
         if (BRAINS.isEmpty() && KEEP.isEmpty()) {
             return;
@@ -298,25 +312,31 @@ public final class BrainManager {
         Iterator<Map.Entry<UUID, PlayerBrainController>> it = BRAINS.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<UUID, PlayerBrainController> entry = it.next();
+            PlayerBrainController brain = entry.getValue();
             ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
-            if (!(player instanceof EntityPlayerMPFake)
+            boolean gone = !(player instanceof EntityPlayerMPFake)
                     || player.isRemoved()
-                    || player.hasDisconnected()) {
-                entry.getValue().onDetach();
-                // 死会话的队伍残留一并清掉：队伍按玩家名记录，同名真人后来加入
-                // 会继承假人的后缀
-                if (player != null) {
-                    restoreTeam(player);
-                }
+                    || player.hasDisconnected();
+            boolean stale = !gone && brain.player != player;
+            if (gone || stale) {
+                brain.onDetach();
+                // 队伍按玩家名记录：优先按在线新假人清（重生竞态），对象已不在
+                // 世界则用会话自带玩家的名字清（对象移除后名字仍可读）——
+                // 否则同名真人后来加入会继承假人的后缀
+                restoreTeam(player != null ? player : brain.player);
                 ORIGINAL_TEAM.remove(entry.getKey());
                 it.remove();
             }
         }
-        // keep 补挂：在线、无脑子、有记录、规则开启——下线重上（重新 spawn 的
+        // keep 补挂：在线、无有效会话、有记录、规则开启——下线重上（重新 spawn 的
         // 同名假人 UUID 相同）1 秒内自动恢复；模式失效时记录保留、下轮重试
         if (!KEEP.isEmpty() && CarpetPrimaryuanSettings.fakePlayerBrain) {
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-                if (!(player instanceof EntityPlayerMPFake) || BRAINS.containsKey(player.getUUID())) {
+                if (!(player instanceof EntityPlayerMPFake)) {
+                    continue;
+                }
+                PlayerBrainController brain = BRAINS.get(player.getUUID());
+                if (brain != null && brain.player == player) {
                     continue;
                 }
                 KeepRecord record = KEEP.get(player.getUUID());
