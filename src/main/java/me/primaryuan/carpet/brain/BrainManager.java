@@ -57,7 +57,11 @@ public final class BrainManager {
     /** keep 记录：模式 + 狼模式主人（owner 可为 null）。假人下线重上后由 sweep 自动恢复 */
     private record KeepRecord(String mode, UUID owner) {}
 
-    /** 带 keep 选项的脑子（UUID → 记录）；brain off 清除，服务器关闭随 JVM 消亡 */
+    /**
+     * 带 keep 选项的脑子（UUID → 记录）。语义 = <b>本次服务器运行内</b>有效：
+     * 假人下线重上自动恢复，服务器重启随会话表一起作废（重生的假人需重新挂载）。
+     * brain off 立即清除。
+     */
     private static final Map<UUID, KeepRecord> KEEP = new HashMap<>();
 
     /** 挂载前假人原属的计分板队伍（卸载时恢复，不破坏原有队伍归属） */
@@ -215,7 +219,7 @@ public final class BrainManager {
         return true;
     }
 
-    /** 停服清理：卸载全部脑子（keep 表随服务器实例一起作废——重启后假人需重新 spawn，届时自动恢复） */
+    /** 停服清理：卸载全部脑子。keep 语义 = 本次服务器运行内有效，随停服一并作废 */
     public static void detachAll() {
         BRAINS.values().forEach(PlayerBrainController::onDetach);
         BRAINS.clear();
@@ -329,7 +333,8 @@ public final class BrainManager {
             }
         }
         // keep 补挂：在线、无有效会话、有记录、规则开启——下线重上（重新 spawn 的
-        // 同名假人 UUID 相同）1 秒内自动恢复；模式失效时记录保留、下轮重试
+        // 同名假人 UUID 相同）1 秒内自动恢复；模式失效时记录保留、下轮重试。
+        // 逐假人 try/catch：单个假人补挂异常不允许打断本轮，连累其余 keep 假人
         if (!KEEP.isEmpty() && CarpetPrimaryuanSettings.fakePlayerBrain) {
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
                 if (!(player instanceof EntityPlayerMPFake)) {
@@ -340,12 +345,20 @@ public final class BrainManager {
                     continue;
                 }
                 KeepRecord record = KEEP.get(player.getUUID());
-                if (record != null) {
+                if (record == null) {
+                    continue;
+                }
+                try {
                     attach(player, record.mode(), record.owner(), true);
+                } catch (Throwable t) {
+                    CarpetPrimaryuanServer.LOGGER.error(
+                            "keep re-attach failed for {} ({}), will retry next sweep",
+                            player.getName().getString(), record.mode(), t);
                 }
             }
         }
     }
+
 
     // ==================== 名字后缀（计分板队伍） ====================
 
