@@ -36,7 +36,7 @@ Customize the appearance of carpet fake players by integrating with the optional
 - **`summon` mode** — the fake player uses the skin of the player who summoned it.
 - **`same_skin` mode** — all fake players share a unified skin, specified by `fakePlayerSkinSet` (default: `Brokeyuan`).
 - Skins apply to the fake player's session only — nothing is persisted to skinrestorer's storage, so real players sharing the same name (same UUID on offline-mode servers) never get reskinned.
-- Fakes named after a real player keep that player's own skin; custom skins apply to synthetic names only. The skin is injected before the spawn packet is sent, so observers never see a flash from the old skin to the new one.
+- Every fake player (including ones named after real players) wears its target skin from the first frame — the skin is injected before the spawn packet is sent, so observers never see a flash from the old skin to the new one. Real players themselves are never affected.
 - With [Carpet TIS Addition](https://modrinth.com/mod/carpet-tis-addition) installed, `/player <name> rejoin` gets the same skin treatment — rejoin reuses Carpet's spawn logic, where the skin hook applies.
 
 ### Fake Player Name Suggestions (`fakePlayerNameSuggestions`)

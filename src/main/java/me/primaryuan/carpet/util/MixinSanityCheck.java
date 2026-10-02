@@ -12,6 +12,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
@@ -69,7 +70,7 @@ public final class MixinSanityCheck {
             checkAll();
         }
         if (ruleName.equals("fakePlayerSkinMode") || ruleName.equals("fakePlayerSkinSet")) {
-            FakePlayerSkinManager.onRuleChanged();
+            FakePlayerSkinManager.onRuleChanged(ruleName);
         }
     }
 
@@ -201,6 +202,18 @@ public final class MixinSanityCheck {
                 LOGGER.error("[pry] fakePlayerSkinMode 规则无效：Carpet EntityPlayerMPFake 构造器签名漂移，"
                         + "出生前注入被静默跳过（退化为出生后换肤），请向模组作者反馈");
             }
+        }
+        // Player.gameProfile 字段（accessor 替换目标）：按类型形状匹配，不依赖运行时字段名
+        boolean profileFieldFound = false;
+        for (java.lang.reflect.Field f : Player.class.getDeclaredFields()) {
+            if (f.getType() == GameProfile.class) {
+                profileFieldFound = true;
+                break;
+            }
+        }
+        if (!profileFieldFound && reported.add("fakePlayerSkin:field")) {
+            LOGGER.error("[pry] fakePlayerSkinMode 规则无效：Player.gameProfile 字段漂移，"
+                    + "出生前注入被静默跳过（退化为出生后换肤），请向模组作者反馈");
         }
         Class<?> skinService;
         try {

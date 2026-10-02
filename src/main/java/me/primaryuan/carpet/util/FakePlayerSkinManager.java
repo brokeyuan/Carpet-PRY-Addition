@@ -21,25 +21,26 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 假人皮肤管理器：fakePlayerSkinMode 的出生前注入状态与 SkinRestorer 会话压制。
  *
- * <p>语义（凡真人身份的假人一律不换肤）：真人判定 = profile UUID 版本号
- * （Mojang 正版为 v4，离线合成名为 v3）。v4 假人保持该玩家的真实长相，
- * summon/same_skin 不生效；v3 合成名假人（含 /tpp 的"名字_站点"）出生前注入目标皮肤。</p>
+ * <p>语义（所有假人出生即穿配置皮肤）：真人名与合成名假人一视同仁；真人玩家的
+ * 保护是双保险——皮肤从不写入 SkinRestorer 持久存储（save=false），且 SkinRestorer
+ * join 压制仅对在线的 EntityPlayerMPFake 实例生效（真人 join 不是假人实例）。</p>
  *
  * <p>注入链路（无闪皮）：
  * <ol>
  *   <li>PlayerCommandSkinMixin 在 /player spawn HEAD 按假人名入队皮肤来源
  *       （TIS Addition 的 rejoin 复用 Carpet 的 spawn 方法，同样覆盖）；</li>
- *   <li>EntityPlayerMPFakeSkinMixin 在假人构造器 HEAD 消费——Carpet createFake
+ *   <li>EntityPlayerMPFakeSkinMixin 在假人构造器 RETURN 消费——Carpet createFake
  *       为两段式（异步拉取 profile 后回调构造实体），构造器收到的 profile 就是
- *       placeNewPlayer 出生包所带 profile，此处就地替换 textures 属性，观战者
- *       首帧即目标皮肤；</li>
+ *       placeNewPlayer 出生包所带 profile；新 authlib 属性表不可变，故复制重组后
+ *       经 accessor 整体替换实体 gameProfile 字段，观战者首帧即目标皮肤；</li>
  *   <li>SkinRestorerGuardMixin 压制 SkinRestorer join 钩子对已注入假人的存储皮
  *       覆盖（防历史 save=true 时代落库残留），真人玩家不受影响。</li>
  * </ol></p>
  *
- * <p>summon 模式的皮肤取召唤者在线 profile 的纹理快照（内存直拷，零网络）；
- * same_skin 经 SkinRestorer 的 mojang provider 后台预热到内存缓存（不落库），
- * 缓存未就绪的生成降级为出生后换肤（TAIL 兜底，观感同旧行为闪一次）。</p>
+ * <p>summon 模式的皮肤优先取召唤者在线 profile 的纹理快照（内存直拷，零网络），
+ * 快照缺失（离线服真人 profile 无纹理）时由兜底按召唤者名走 provider 解析；
+ * same_skin 经 SkinRestorer 的 mojang provider 后台预热到内存缓存（不落库）。
+ * 任何来源未就绪的生成都降级为出生后换肤兜底（观感为闪一次），全部路径有日志。</p>
  */
 public final class FakePlayerSkinManager {
 
@@ -52,7 +53,6 @@ public final class FakePlayerSkinManager {
         /** 兜底后置换肤用的目标玩家名（summon=召唤者名；same_skin=规则值） */
         public final String fallbackName;
         public volatile boolean injected;
-        public volatile boolean skipped;
 
         PendingSkin(Property summonerSkin, String sameSkinName, String fallbackName) {
             this.summonerSkin = summonerSkin;
@@ -63,13 +63,9 @@ public final class FakePlayerSkinManager {
         public void markInjected() {
             this.injected = true;
         }
-
-        public void markSkipped() {
-            this.skipped = true;
-        }
     }
 
-    /** 假人名(小写) → 进行中的皮肤来源（spawn HEAD 入队，构造器消费，TAIL 取走） */
+    /** 假人名(小写) → 进行中的皮肤来源（spawn HEAD 入队，构造器打标，兜底循环终态时移除） */
     private static final Map<String, PendingSkin> PENDING = new ConcurrentHashMap<>();
     /** 已成功注入皮肤的假人 UUID：SkinRestorer join 钩子对这些假人跳过存储皮应用 */
     private static final Set<UUID> PROTECTED = ConcurrentHashMap.newKeySet();
@@ -104,7 +100,7 @@ public final class FakePlayerSkinManager {
     }
 
     /**
-     * 假人构造器 HEAD / spawn TAIL：按假人名读取皮肤来源。
+     * 假人构造器 RETURN / spawn TAIL：按假人名读取皮肤来源。
      * 构造器（异步拉取 profile 后、晚于 spawn TAIL）只打标记不移除；
      * 移除统一由 TAIL 兜底循环在终态时完成（{@link #remove}）。
      */
@@ -112,15 +108,21 @@ public final class FakePlayerSkinManager {
         return PENDING.get(key(fakeName));
     }
 
-    /** 兜底循环终态（已注入 / 真人名 / 无皮肤来源已兜底 / 超时）时移除条目 */
+    /** 兜底循环终态（已注入 / 已兜底后置换肤 / 超时）时移除条目 */
     public static void remove(String fakeName) {
         PENDING.remove(key(fakeName));
     }
 
-    /** 解析条目对应的目标纹理：召唤者快照直取；same_skin 只读预热缓存，绝不主线程网络 */
+    /**
+     * 解析条目对应的目标纹理：召唤者快照直取；same_skin 只读预热缓存，绝不主线程网络。
+     * summon 空快照（sameSkinName 为 null，离线服场景）返回 null，由兜底按名走 provider。
+     */
     public static Property pickProperty(PendingSkin entry) {
         if (entry.summonerSkin != null) {
             return entry.summonerSkin;
+        }
+        if (entry.sameSkinName == null) {
+            return null;
         }
         String cacheKey = key(entry.sameSkinName);
         Property cached = SKIN_CACHE.get(cacheKey);
@@ -138,9 +140,12 @@ public final class FakePlayerSkinManager {
         return PROTECTED.contains(uuid);
     }
 
-    /** 规则变更：清缓存，运行中且 same_skin 时按新值重新预热 */
-    public static void onRuleChanged() {
-        SKIN_CACHE.clear();
+    /** 规则变更：仅统一皮肤名变更时清缓存（模式切换保留缓存，控制台回退可立即命中）；
+     *  运行中且 same_skin 时按新值预热 */
+    public static void onRuleChanged(String ruleName) {
+        if ("fakePlayerSkinSet".equals(ruleName)) {
+            SKIN_CACHE.clear();
+        }
         if (currentServer != null && isSameSkinMode()) {
             warmup(CarpetPrimaryuanSettings.fakePlayerSkinSet);
         }
@@ -213,6 +218,8 @@ public final class FakePlayerSkinManager {
      */
     public static void applyPostSpawn(MinecraftServer server, ServerPlayer fakePlayer, String skinName) {
         try {
+            LOGGER.info("[pry] fakePlayerSkin: 后置换肤 {} -> {} (save=false，仅本次会话)",
+                    fakePlayer.getUUID(), skinName);
             Class<?> contextClass = Class.forName("net.lionarius.skinrestorer.skin.provider.SkinProviderContext");
             Class<?> variantClass = Class.forName("net.lionarius.skinrestorer.skin.SkinVariant");
             Class<?> serviceClass = Class.forName("net.lionarius.skinrestorer.skin.SkinService");
@@ -224,9 +231,9 @@ public final class FakePlayerSkinManager {
                     contextClass, boolean.class).invoke(null,
                     server, Collections.singletonList(target), context, false);
         } catch (ClassNotFoundException e) {
-            LOGGER.warn("[FakePlayerSkin] SkinRestorer not installed, skip applying skin (set fakePlayerSkinMode=default or install skinrestorer)");
+            LOGGER.warn("[pry] fakePlayerSkin: skinrestorer 未安装，无法换肤（可安装 skinrestorer 或设 fakePlayerSkinMode=default）");
         } catch (Exception e) {
-            LOGGER.error("[FakePlayerSkin] Failed to apply skin via reflection", e);
+            LOGGER.error("[pry] fakePlayerSkin: 后置换肤失败", e);
         }
     }
 
@@ -237,7 +244,7 @@ public final class FakePlayerSkinManager {
         } catch (ClassNotFoundException | NoSuchMethodException e) {
             return player.getGameProfile();
         } catch (Exception e) {
-            LOGGER.warn("[FakePlayerSkin] SkinTarget.of 包装失败，回退直接传实体: {}", e.toString());
+            LOGGER.warn("[pry] fakePlayerSkin: SkinTarget.of 包装失败，回退直接传实体: {}", e.toString());
             return player.getGameProfile();
         }
     }

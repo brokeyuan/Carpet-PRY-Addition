@@ -4,7 +4,7 @@
   "carpet.rule.fakePlayerNameSuggestions.name": "Fake Player Name Suggestions",
   "carpet.rule.fakePlayerNameSuggestions.desc": "Customize the fake player names suggested by the /player command, separated by ','",
   "carpet.rule.fakePlayerSkinMode.name": "Fake Player Skin Mode",
-  "carpet.rule.fakePlayerSkinMode.desc": "Set fake player skins with the skinrestorer dependency: default=keep as-is; summon=use the summoner's skin; same_skin=use the skin of the player set in fakePlayerSkinSet. Applies only to fakes not named after a real player; fakes sharing a real player's name keep that player's own skin. The skin ships with the spawn packet and is never persisted to skinrestorer's storage",
+  "carpet.rule.fakePlayerSkinMode.desc": "Set fake player skins with the skinrestorer dependency: default=keep as-is; summon=use the summoner's skin; same_skin=use the skin of the player set in fakePlayerSkinSet. Every fake wears its target skin from the first frame, never persisted to skinrestorer's storage, real players never affected",
   "carpet.rule.fakePlayerSkinSet.name": "Fake Player Uniform Skin",
   "carpet.rule.fakePlayerSkinSet.desc": "When fakePlayerSkinMode is same_skin, the player name whose skin is used for fake players",
   "carpet.rule.fixXaeroLib.name": "XaeroLib Compatibility Patch",

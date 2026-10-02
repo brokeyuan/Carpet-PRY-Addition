@@ -81,7 +81,7 @@ Customize the fake player list suggested by /player. Use ',' to separate each na
 
 ### fakePlayerSkinMode - Fake Player Skin Setting
 
-After installing the [skinrestorer](https://modrinth.com/mod/skinrestorer) dependency, you can set the skin of fake players. default=no change to fake player skin, summon=fake player uses the summoner's skin, same_skin=fake player uses a unified skin. Applies only to fakes whose name is not a real player: fakes sharing a real player's name keep that player's own skin (real identity is decided by UUID version — Mojang accounts are v4, offline synthetic names are v3). The skin ships with the fake player's spawn packet, so observers never see a flash from the old skin to the new one; nothing is persisted to skinrestorer's storage and real players are never affected.
+After installing the [skinrestorer](https://modrinth.com/mod/skinrestorer) dependency, you can set the skin of fake players. default=no change to fake player skin, summon=fake player uses the summoner's skin, same_skin=fake player uses a unified skin. Every fake player (including ones named after real players) wears its target skin from the first frame, so observers never see a flash from the old skin to the new one; nothing is persisted to skinrestorer's storage and real players are never affected.
 
 | Property | Value |
 |----------|-------|
@@ -100,7 +100,7 @@ After installing the [skinrestorer](https://modrinth.com/mod/skinrestorer) depen
 | `summon` | Fake player uses the summoner's skin |
 | `same_skin` | Fake player uses a unified skin |
 
-> Both modes only affect fakes not named after a real player. `summon` copies the summoner's skin texture directly from their live profile (no network request); `same_skin` is pre-resolved through skinrestorer's mojang provider at startup and cached. If the same_skin skin is not ready yet, that spawn falls back to a post-spawn skin swap (the fake briefly shows the default skin).
+> `summon` copies the summoner's skin texture directly from their live profile (no network request); if the summoner's profile carries no textures (common on offline-mode servers, where real players' skins are applied by skinrestorer on join), it falls back to resolving the skin by the summoner's name through the provider; when run from console/command blocks, it falls back to the `fakePlayerSkinSet` unified skin. `same_skin` is pre-resolved through skinrestorer's mojang provider at startup and cached. If the skin source is not ready yet, that spawn falls back to a post-spawn skin swap (the fake briefly shows the default skin); every fallback is logged.
 
 > Skins apply to the fake player's current session only and are never persisted to skinrestorer's storage: a fake player shares the UUID of a real player with the same name (when the name is in the server's user cache, or on offline-mode servers), so persisting would reskin that player on their next join, overriding even a skin they set via `/skin`. Fake player skins are therefore never saved, and real players' skins are never touched.
 

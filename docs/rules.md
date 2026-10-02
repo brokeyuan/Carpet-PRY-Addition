@@ -81,7 +81,7 @@
 
 ### fakePlayerSkinMode - 假人皮肤设置
 
-安装前置 [skinrestorer](https://modrinth.com/mod/skinrestorer) 后，可以设置假人的皮肤。default=不更改假人皮肤，summon=假人使用召唤者的皮肤，same_skin=假人使用统一皮肤。仅对非真人名的假人生效：与真人同名的假人保持该玩家的本来皮肤（真人判定按 UUID，Mojang 正版为 v4、离线合成名为 v3）。皮肤在假人出生包内生效，观战者不会看到先旧后新的闪变；不写入 skinrestorer 的持久存储，真人玩家的皮肤不受任何影响。
+安装前置 [skinrestorer](https://modrinth.com/mod/skinrestorer) 后，可以设置假人的皮肤。default=不更改假人皮肤，summon=假人使用召唤者的皮肤，same_skin=假人使用统一皮肤。所有假人（含真人名）出生即穿目标皮肤，观战者不会看到先旧后新的闪变；不写入 skinrestorer 的持久存储，真人玩家的皮肤不受任何影响。
 
 | 属性 | 值 |
 |------|-----|
@@ -100,7 +100,7 @@
 | `summon` | 假人使用召唤者的皮肤 |
 | `same_skin` | 假人使用统一皮肤 |
 
-> 两种模式均只作用于非真人名的假人；`summon` 模式直接复制召唤者在线 profile 的皮肤纹理（无网络请求），`same_skin` 模式经 skinrestorer 的 mojang provider 启动时预解析并缓存。same_skin 皮肤未就绪时本次生成退化为出生后换肤（假人先显示默认皮肤再切换）。
+> `summon` 模式优先直接复制召唤者在线 profile 的皮肤纹理（无网络请求）；召唤者 profile 无纹理时（离线服常见，真人皮肤由 skinrestorer 在 join 时换上）自动回退为按召唤者名向 provider 解析；控制台/命令方块执行时回退 `fakePlayerSkinSet` 统一皮肤。`same_skin` 模式经 skinrestorer 的 mojang provider 启动时预解析并缓存。皮肤来源未就绪时本次生成退化为出生后换肤（假人先显示默认皮肤再切换），所有回退均记录日志。
 
 > 皮肤仅应用到假人当前会话，不写入 skinrestorer 的持久存储：假人与同名真人玩家共用 UUID（服务器用户缓存命中或离线服场景下），一旦持久化，真人玩家上线时会被换肤，自行通过 `/skin` 设置的皮肤也会被覆盖。因此本规则从不持久化皮肤，真人玩家的皮肤不受任何影响。
 

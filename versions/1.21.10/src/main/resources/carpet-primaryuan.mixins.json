@@ -10,6 +10,7 @@
     "rule.entitiesRidingPlayers.ServerPlayerMixin",
     "rule.fakePlayerNameSuggestions.PlayerCommandMixin",
     "rule.fakePlayerSkin.EntityPlayerMPFakeSkinMixin",
+    "rule.fakePlayerSkin.PlayerGameProfileAccessor",
     "rule.fakePlayerSkin.PlayerCommandSkinMixin",
     "rule.fakePlayerSkin.SkinRestorerGuardMixin",
     "rule.sleepingDuringTheDay.MixinPlayerBase",
