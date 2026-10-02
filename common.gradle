@@ -43,6 +43,13 @@ dependencies {
 	autoImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	autoImplementation ("net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}")
 	autoImplementation ("carpet:fabric-carpet:${project.carpet_core_version}") { exclude group: "net.fabricmc.fabric-api" }
+	// 捆绑 MixinExtras 0.5.5：loader ≤0.19.3 捆绑的 0.5.4 扫描 @Redirect 注解时按单个
+	// AnnotationNode 强转，而 1.21.11+ 的 sponge-mixin 里 Redirect.at() 已是 At[]（解析为
+	// ArrayList），排队到同一目标类的任意 @Redirect 都会 CCE 炸掉整个类的 mixin 转换。
+	// jij 后 loader 取进程内最高版本，旧 loader 环境一并修复；io.github.llamalad7 坐标
+	// 自 Maven Central 解析（旧专用 maven maven.llamalad7.dev 已不可达）。
+	autoImplementation "io.github.llamalad7:mixinextras-fabric:0.5.5"
+	include "io.github.llamalad7:mixinextras-fabric:0.5.5"
 	// skinrestorer: 仅在未禁用时引入（26.1.2 暂无对应 JAR）
 	if (!project.skinrestorer_name.startsWith('_disabled_')) {
 		autoImplementation(name: project.skinrestorer_name)
