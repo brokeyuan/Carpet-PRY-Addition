@@ -50,9 +50,9 @@ public final class TextAnimationHandler {
 
     /** 默认字色 #ffffff（白） */
     static final int DEFAULT_COLOR = 0xFFFFFF;
-    /** 感叹号整句增益：尾部每连发一个 ×1.12，封顶 ×1.5 */
-    static final float BANG_GAIN_STEP = 0.12f;
-    static final float BANG_GAIN_MAX = 1.5f;
+    /** 感叹号整句增益：尾部每连发一个 +0.3，封顶 ×2.5 */
+    static final float BANG_GAIN_STEP = 0.3f;
+    static final float BANG_GAIN_MAX = 2.5f;
     /** spacing 自动派生系数（×最终 scale），防放大后字符重叠 */
     static final float SPACING_PER_SCALE = 0.15f;
     /** ASCII 字宽（宽度单位） */
@@ -228,7 +228,7 @@ public final class TextAnimationHandler {
 
     /**
      * 尾部连续感叹号计数（ASCII ! 与全角 ！）：& 色码解析后对可见字符统计，
-     * 中间被其他字符打断即止——"好!!!" 计 3，"好!!?" 计 0。
+     * 末尾空白跳过，被其他字符打断即止——"好!!!" 计 3，"好!!?" 计 0，"好!! " 计 2。
      */
     static int countTrailingBangs(List<Segment> segments) {
         int count = 0;
@@ -236,6 +236,8 @@ public final class TextAnimationHandler {
             char c = segments.get(i).c;
             if (c == '!' || c == '！') {
                 count++;
+            } else if (c == ' ' || c == '　' || c == '\t') {
+                continue;
             } else {
                 break;
             }

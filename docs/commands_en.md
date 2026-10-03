@@ -704,7 +704,7 @@ Use `||` for a literal `|`; legacy color codes use `&` (e.g. `&c`), `&&` for a l
 ### Behavior Details
 
 - Pop-in: 1 char/tick, each with a random ±45° tilt, 1.8x scale settling and a random y jitter, plus a click sound (volume 1.0 / pitch 1.2)
-- **Exclamation gain**: the more trailing `!`/`！`, the bigger the whole sentence — ×1.12 each, capped at ×1.5 (e.g. `done!!` → ×1.24); interrupted runs don't count
+- **Exclamation gain**: the more trailing `!`/`！`, the bigger the whole sentence — +0.3 each, capped at ×2.5 (`!`=×1.3, `!!`=×1.6, `!!!`=×1.9, `!!!!`=×2.2); trailing spaces don't interrupt, other characters do
 - Default color white (#FFFFFF), use `&` codes to change
 - Drop: gravity 0.03/tick², drag 0.99, one 0.28 bounce on landing, a one-shot random tumble; fading from tick 24 of the drop at -8 opacity/tick
 - Grouping: ≤25 characters per group, break point pushed to a punctuation mark within 10 characters ahead; non-final groups get a " - " connector; the next group starts as the previous one drops, with a random ±22.5° yaw and height jitter between groups
