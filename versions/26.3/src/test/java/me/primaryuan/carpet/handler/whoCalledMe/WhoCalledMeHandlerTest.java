@@ -7,7 +7,7 @@ import java.util.Locale;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** {@link WhoCalledMeHandler#mentionsName} 的词边界契约：大小写不敏感、不误伤子串 */
+/** {@link WhoCalledMeHandler#mentionsName} 的子串匹配契约：大小写不敏感、紧邻字母数字同样命中 */
 class WhoCalledMeHandlerTest {
 
     private static boolean match(String content, String name) {
@@ -24,16 +24,17 @@ class WhoCalledMeHandlerTest {
     }
 
     @Test
-    void substringInsideOtherNameDoesNotMention() {
-        assertFalse(match("timy 来一下", "Tim"));
-        assertFalse(match("steve_alice", "steve"));
-        assertFalse(match("steve_alice", "alice"));
+    void substringInsideOtherNameAlsoMentions() {
+        assertTrue(match("timy 来一下", "Tim"));
+        assertTrue(match("steve_alice", "steve"));
+        assertTrue(match("steve_alice", "alice"));
     }
 
     @Test
-    void underscoreIsNameChar() {
-        assertTrue(match("steve_ 来一下", "steve_"));
-        assertFalse(match("a steve_alice", "steve_"));
+    void adjacentLettersAndDigitsMention() {
+        assertTrue(match("Brokeyuan1", "Brokeyuan"));
+        assertTrue(match("abcBrokeyuan", "Brokeyuan"));
+        assertTrue(match("steve_ 来一下", "steve"));
     }
 
     @Test

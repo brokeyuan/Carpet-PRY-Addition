@@ -25,10 +25,9 @@ import java.util.Locale;
  *
  * <p>纯服务端实现，零 Mixin：挂在 Fabric ServerMessageEvents.CHAT_MESSAGE——
  * 注入点在 PlayerManager.broadcast(SignedMessage, …) 的 HEAD，签名与非签名
- * 聊天共同汇聚于此，离线服的未签名聊天同样触发。名字匹配大小写不敏感，
- * 并按玩家名字符集（字母/数字/下划线，离线服中文名同为字母）取词边界，
- * 避免名字是另一玩家名字子串时被误伤；自己发消息提到自己与 carpet 假人
- * （作为被点名者）的区分——真人含发送者本人均提醒，仅排除假人。</p>
+ * 聊天共同汇聚于此，离线服的未签名聊天同样触发。名字匹配大小写不敏感的
+ * 纯子串（只要对话出现名字即提醒，名字紧邻字母/数字同样命中；接受同名字
+ * 前缀玩家间的误伤，不漏报优先）；自己发消息提到自己也提醒，仅排除假人。</p>
  *
  * <p>提示音为 ClientboundSoundPacket 定向单发（发声点在被听者头顶，仅本人
  * 可闻），首声当 tick 末尾、其余按间隔经 ServerTickScheduler 排出；title
@@ -85,34 +84,19 @@ public class WhoCalledMeHandler {
         }
     }
 
-    /** 词边界匹配：返回第一个命中的起始下标，未命中 -1（包可见供单测） */
+    /** 子串匹配（大小写不敏感）：返回第一个命中的起始下标，未命中 -1（包可见供单测）。
+     * 只要对话里出现名字即提醒，不做词边界——名字紧邻字母/数字（如 Brokeyuan1）同样命中；
+     * 接受误伤（服内同时有 Tim/Timy 时 "timy" 也会提醒 Tim），不漏报优先 */
     static int mentionIndex(String loweredContent, String loweredName) {
         if (loweredName.isEmpty()) {
             return -1;
         }
-        int from = 0;
-        int idx;
-        while ((idx = loweredContent.indexOf(loweredName, from)) >= 0) {
-            int end = idx + loweredName.length();
-            boolean leftOk = idx == 0 || !isNameChar(loweredContent.charAt(idx - 1));
-            boolean rightOk = end == loweredContent.length() || !isNameChar(loweredContent.charAt(end));
-            if (leftOk && rightOk) {
-                return idx;
-            }
-            from = idx + 1;
-        }
-        return -1;
+        return loweredContent.indexOf(loweredName);
     }
 
-    /** 词边界匹配：命中即 true（包可见供单测） */
+    /** 子串匹配：命中即 true（包可见供单测） */
     static boolean mentionsName(String loweredContent, String loweredName) {
         return mentionIndex(loweredContent, loweredName) >= 0;
-    }
-
-    /** 玩家名字符集：原版名即 a-zA-Z0-9_。只按 ASCII 取词边界——中文无空格分词，
-     * 名字与汉字粘连（"来一下Alex"/"小明哥"）是点名意图而非子串，不挡命中 */
-    private static boolean isNameChar(char c) {
-        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_';
     }
 
     /** 名字高亮色：原版金 */
