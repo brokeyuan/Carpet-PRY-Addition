@@ -36,6 +36,7 @@
 - [/pvp - Peaceful Players](#pvp---peaceful-players)
 - [/patnod - Pat Interaction Toggle](#patnod---pat-interaction-toggle)
 - [/text - MiSide Subtitles](#text---miside-subtitles)
+- [/redpacket - Red Packet](#redpacket---red-packet)
   - [Command Syntax](#command-syntax)
   - [Permission Modes (peacefulPlayers values)](#permission-modes-peacefulplayers-values)
   - [Server-wide Switch Behavior](#server-wide-switch-behavior)
@@ -718,3 +719,47 @@ Quote `text` if it contains spaces; legacy color codes use `&` (e.g. `&c`), `&&`
 /text "Glowing" glow=true sound=false                 # glow, no sound
 ```
 
+---
+
+## /redpacket - Red Packet
+
+> **Related rule**: `redPacket`
+
+Sends a red packet: share count + blessing message -> type selection -> put in items -> a clickable chat broadcast. Four distribution types: Lucky (random split, total conserved), Normal (even split with random remainder placement), Exclusive (chosen player only, items given whole, share count forced to 1), Password (claim by typing the password in chat, split like Lucky).
+
+### Syntax
+
+- `/redpacket <count> <message>`: count 1-100, message 1-32 characters (spaces allowed, § and line breaks stripped)
+- `/redpacket claim <id>`: claim from the chat link (internal, delivered with every broadcast)
+
+### Permission
+
+- Available to all players
+- The whole command tree is hidden while the `redPacket` rule is disabled
+
+### GUI Flow
+
+1. **Type selection** (title "Red Packet"): 4 red shulker box icons — Lucky / Normal / Exclusive / Password
+2. **Item input** (6-row chest): slots 0-44 for items, 45 cancel, 49 confirm, 53 clear (items returned); sending requires at least one item; closing without confirming returns everything to your inventory (overflow drops at your feet); after confirming the items belong to the packet
+3. **Exclusive**: first an online-player head list (excluding yourself; clicking a head twice selects and confirms), then the item input; other players clicking the broadcast see "This packet is exclusively for xxx"
+4. **Password**: after confirming the items an anvil opens to set the password (1-32 characters, no XP cost); closing without setting it returns the items
+
+### Claiming & Validity
+
+- Click the bright-red `[Red Packet: message]` link in chat to claim; validation order: exists -> not expired -> shares left -> not your own -> not claimed yet -> exclusive check -> password check
+- One claim per player per packet; a packet ends immediately when fully claimed; validity is 3 minutes, unclaimed shares return to the sender on expiry, stored while offline and re-delivered on the next join (overflow drops at feet)
+- Hover shows message/type/shares left/time left; feedback covers already-claimed, own packet, fully claimed and expired
+
+### Guards & Limits
+
+- Count 1-100 (Brigadier bounds), message 1-32 characters
+- 10-tick claim-click debounce; 10-second send cooldown; at most 3 unfinished packets per player
+- Running packets and offline refund storage are in-memory and cleared on server restart (documented restart semantics)
+
+### Examples
+
+```
+/redpacket 1 Happy New Year                # 1 share
+/redpacket 10 Good luck                    # 10 shares, split by the chosen type
+/redpacket claim 3                         # claim packet #3 (usually via chat click)
+```

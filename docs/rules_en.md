@@ -40,6 +40,7 @@
   - [invisibleInTallGrass - Invisibility Grass](#invisibleintallgrass---invisibility-grass)
   - [moreEndCrystalTypes - More End Crystal Types](#moreendcrystaltypes---more-end-crystal-types)
   - [textAnimation - MiSide Subtitles](#textanimation---miside-subtitles)
+  - [redPacket - Red Packet](#redpacket---red-packet)
 - [Player Scaling](#player-scaling)
   - [playerScale - Player Scale](#playerscale---player-scale)
   - [playerScaleMin - Player Scale Min](#playerscalemin---player-scale-min)
@@ -502,6 +503,21 @@ Allows placing end crystals on crying obsidian. In vanilla, end crystals can onl
 **How it works**: command syntax and parameters are documented under `/text` in the commands doc. Timeline: character-by-character pop-in (1 char/tick, one vanilla text_display entity per character, spawned with a random ±45° tilt at 1.8x scale that tweens to the final state over 10 client-side transformation interpolation ticks, plus a click sound per character) → hold for 40 ticks → drop (server-side physics: gravity 0.03/tick², drag 0.99, one 0.28 bounce on landing, a one-shot random tumble at drop start, and fading from tick 24 of the drop at -8 opacity/tick; entities are removed once played out). Long texts are split into groups at punctuation (≤25 characters per group, with the break point pushed to a punctuation mark within 10 characters ahead); non-final groups get a " - " connector, the next group starts typing as soon as the previous one starts dropping, and groups get a random ±22.5° yaw and height jitter. The spawn point is the executor's feet + view direction × distance, at feet +1.3; the default color is MiSide yellow #FFFF55, and legacy & color codes are supported (&c etc., && for a literal &, color codes reset style flags like vanilla §). Guards: ≤128 characters per sentence, ≤8 concurrent sessions server-wide, and the target chunk must be ENTITY_TICKING (always true for player executors; an empty-server console gets a clear error — vanilla writes entities added to non-entity-ticking chunks back to the chunk as UNLOADED_TO_CHUNK, verified by local E2E). Vanilla never offered a programmatic interface for display entities (text/transformation/interpolation/opacity setters are all private; signatures verified identical on 1.21/1.21.11/26.3 via javap), so two @Invoker mixin accessors drive them; entity tag reads were renamed to entityTags in 26.1.2 and entity type constants moved to EntityTypes (plural) in 26.2, handled by preprocessor forks. Orphan entities left by crashes/kills carry the `pry_textanim` tag and are swept at server start plus every 100 ticks (skipped while sessions are active, so playing glyphs are never swept — a sweep-kills-live-glyphs bug was reproduced and fixed locally).
 
 ---
+
+### redPacket - Red Packet
+
+/redpacket sends a red packet (lucky/normal/exclusive/password types) broadcast in chat with a clickable claim link; unclaimed shares are refunded on expiry.
+
+| Property | Value |
+|----------|-------|
+| **Rule Name** | `redPacket` |
+| **Description** | /redpacket sends a red packet (lucky/normal/targeted/password types) broadcast in chat with a clickable claim link; unclaimed shares are refunded on expiry; server-side vanilla GUI, no client install needed |
+| **Type** | `boolean` |
+| **Default Value** | `false` |
+| **Suggested Options** | `false`, `true` |
+| **Categories** | `PRIMARYUAN`, `FEATURE`, `COMMAND` |
+
+**How it works**: command syntax, the four distribution rules and GUI slots are documented under `/redpacket` in the commands doc. The whole flow runs on server-side vanilla container menus (chest/anvil); button and head slots are protected at the container level (nothing can be taken out or placed onto them) and clicks are turned into callbacks, with client-side prediction ghosts corrected by the next broadcastChanges. The chat broadcast is a bright-red clickable component (RUN_COMMAND opening `/redpacket claim <id>`); password packets are claimed by typing the exact password in chat (reusing ServerMessageEvents.CHAT_MESSAGE). Shares are split once at send time per type with guaranteed conservation (stars-and-bars random composition / random remainder placement, covered by JUnit contract tests); validity is 3 minutes, unclaimed shares are returned to the sender on expiry, stored while they are offline and re-delivered on their next join; a packet ends immediately once fully claimed. Abuse guards: 10-tick claim-click debounce, 10-second send cooldown, at most 3 unfinished packets per player. Player heads use the PROFILE component resolved asynchronously by name (ResolvableProfile factory since 1.21.10, record constructor on 1.21-1.21.8, javap-verified fork); since 26.2 dyed item constants live in ColorCollection picked by DyeColor. **Restart semantics**: running packets, offline refund storage, cooldowns and debounce state are in-memory only and cleared on server restart (same documented behavior as fake player brain keep).
 
 ---
 

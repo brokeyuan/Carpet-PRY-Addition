@@ -103,6 +103,7 @@
 - `betterSnowball`：雪球对玩家造成击退与伤害
 - `invisibleInTallGrass`：头部位于高草丛时自动隐身
 - `textAnimation`：`/text` 在执行者眼前逐字弹出对话文本，停留后整句坠落消散（米塔字幕，原版客户端即用）
+- `redPacket`：`/redpacket` 发红包（拼手气/普通/专属/口令），聊天框广播点击领取，过期退回（原版客户端即用）
 
 
 ## 致谢
