@@ -4,7 +4,9 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.MinecraftServer;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -62,9 +64,33 @@ public final class ServerTickScheduler {
     private static void ensureRegistered() {
         if (registered) return;
         registered = true;
-        ServerTickEvents.END_SERVER_TICK.register(server -> {
-            if (TASKS.isEmpty()) return;
-            TASKS.removeIf(task -> !task.tick(server));
-        });
+        ServerTickEvents.END_SERVER_TICK.register(ServerTickScheduler::runTasks);
+    }
+
+    /**
+     * 单 tick 的任务循环：快照遍历 + 集中删除。
+     *
+     * <p>不能直接 TASKS.removeIf：JDK 默认 removeIf 在遍历阶段逐个执行任务且不检查
+     * modCount，任务执行体内再调 register/registerDelayed（如红包确认 → 下一 tick 关
+     * 菜单）会把元素 add 进 TASKS，删除阶段 LinkedHashIterator 检测到 modCount 变化
+     * 即抛 ConcurrentModificationException 崩服（2026-10-03 正式服红包实崩实证）。
+     * 快照方案下任务内注册的新任务进入 TASKS 但不在本 tick 快照中，下一 tick 执行，
+     * registerDelayed(1) 的"下一 tick 末尾"语义保持。</p>
+     */
+    static void runTasks(MinecraftServer server) {
+        if (TASKS.isEmpty()) return;
+        List<TickTask> snapshot = new ArrayList<>(TASKS);
+        List<TickTask> dead = null;
+        for (TickTask task : snapshot) {
+            if (!task.tick(server)) {
+                if (dead == null) {
+                    dead = new ArrayList<>();
+                }
+                dead.add(task);
+            }
+        }
+        if (dead != null) {
+            TASKS.removeAll(dead);
+        }
     }
 }
