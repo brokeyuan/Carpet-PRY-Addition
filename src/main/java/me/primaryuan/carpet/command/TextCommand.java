@@ -70,9 +70,9 @@ public final class TextCommand {
                     TextAnimationHandler.MAX_CHARS));
         } else if (groups == -3) {
             source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.text.busy",
-                    TextAnimationHandler.MAX_SESSIONS));
+                    TextAnimationHandler.MAX_BROADCASTS));
         } else if (groups == -5) {
-            source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.text.chunk_not_loaded"));
+            source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.text.no_player"));
         } else {
             source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.text.empty"));
         }

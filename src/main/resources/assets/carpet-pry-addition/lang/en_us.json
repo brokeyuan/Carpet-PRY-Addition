@@ -192,13 +192,12 @@
  "carpetprimaryuan.command.pvp.global_state_off": "OFF",
  "carpetprimaryuan.command.pvp.console_hint": "§eOnly players can view/switch their own status. Subcommands: /pvp list, /pvp on|off [player|@a]",
  "carpet.rule.textAnimation.name": "MiSide Subtitles",
- "carpet.rule.textAnimation.desc": "/text pops up dialogue text character by character in front of the executor, holds, then lets the whole sentence drop and fade (MiSide-style text effect); one vanilla text_display entity per character, removed after play, pure server-side",
+ "carpet.rule.textAnimation.desc": "/text pops up dialogue text character by character in front of every online player (fake players excluded), holds, then lets the whole sentence drop and fade (MiSide-style text effect); one vanilla text_display entity per character, removed after play, pure server-side",
  "carpetprimaryuan.command.text.success": "MiSide subtitle: started (%s group(s))",
  "carpetprimaryuan.command.text.empty": "Text is empty",
  "carpetprimaryuan.command.text.too_long": "Text too long: max %s characters",
  "carpetprimaryuan.command.text.busy": "Too many subtitles playing at once (max %s), try again later",
  "carpetprimaryuan.command.text.bad_option": "Invalid option %s (available: %s)",
- "carpetprimaryuan.command.text.chunk_not_loaded": "The target chunk is not loaded (needs a nearby player or ticking chunk)",
  "carpet.rule.redPacket.name": "Red Packet",
  "carpet.rule.redPacket.desc": "/redpacket sends a red packet (lucky/normal/targeted/password types) broadcast in chat with a clickable claim link; unclaimed shares are refunded on expiry; server-side vanilla GUI, no client install needed",
  "carpetprimaryuan.redpacket.type.lucky": "Lucky Packet",
@@ -236,5 +235,6 @@
  "carpetprimaryuan.redpacket.msg.refund": "The red packet expired, unclaimed shares were returned: %s",
  "carpetprimaryuan.redpacket.msg.offline_refund": "Refunds from red packets while you were offline: %s",
  "carpetprimaryuan.redpacket.msg.target_none": "No other players online, cannot send an exclusive packet",
- "carpetprimaryuan.redpacket.msg.item_sep": ", "
+ "carpetprimaryuan.redpacket.msg.item_sep": ", ",
+ "carpetprimaryuan.command.text.no_player": "No online players can receive subtitles right now"
 }

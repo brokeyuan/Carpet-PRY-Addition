@@ -9,6 +9,7 @@ import net.minecraft.network.chat.TextColor;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.FullChunkStatus;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -16,27 +17,30 @@ import net.minecraft.world.entity.EntityType;
 //$$ // 26.2 起实体类型常量迁入 EntityTypes（复数）
 //$$ import net.minecraft.world.entity.EntityTypes;
 //#endif
+import carpet.patches.EntityPlayerMPFake;
 import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
- * 米塔字幕（textAnimation）：/text 在执行者眼前逐字弹出对话文本，
- * 停留后整句坠落消散——米塔游戏的文字显示效果，纯服务端实现。
+ * 米塔字幕（textAnimation）：/text 向所有在线真人玩家（carpet 假人除外）广播
+ * 逐字弹出对话文本，停留后整句坠落消散——米塔游戏的文字显示效果，聊天形式，
+ * 纯服务端实现，控制台/命令方块同样可用。
  *
  * <p>每字一个原版 text_display 实体（不注册新实体类型，播完即删），变换、
  * 插值、透明度经 {@code TextDisplayInvoker}/{@code DisplayInvoker} 驱动
- * （原版无程序化接口，成员签名 1.21~26.3 一致）。出生点 = 执行者脚部 +
- * 视线方向 × distance、高度脚部 +1.3，与参考实现（maplegrove-misidechat）
- * 一致；坠落物理服务端自算（重力/阻力/地面反弹）。</p>
+ * （原版无程序化接口，成员签名 1.21~26.3 一致）。每名玩家一份独立会话，
+ * 生成点 = 该玩家脚部 + 视线方向 × distance、高度脚部 +1.3（与参考实现
+ * maplegrove-misidechat 一致）；坠落物理服务端自算（重力/阻力/地面反弹）。</p>
  *
- * <p>防滥用护栏：单句字数上限、全局并发会话上限；实体带 {@link #ENTITY_TAG}
+ * <p>防滥用护栏：单句字数上限、全局并发广播上限；实体带 {@link #ENTITY_TAG}
  * 标记，服务器启动时清扫上次崩溃残留的孤儿实体，停服时清空进行中的会话。</p>
  */
 public final class TextAnimationHandler {
@@ -60,13 +64,14 @@ public final class TextAnimationHandler {
     private static final String SPLIT_CHARS = " ,.，。;；:：、！？!?…";
     /** 单句字数上限 */
     public static final int MAX_CHARS = 128;
-    /** 全局并发会话上限 */
-    public static final int MAX_SESSIONS = 8;
+    /** 全局并发广播上限（每次 /text 一条广播，广播内每名在线玩家一个会话） */
+    public static final int MAX_BROADCASTS = 8;
 
     /** 周期清扫间隔（tick）：孤儿实体随区块懒加载出现，SERVER_STARTED 时未必可见 */
     private static final int SWEEP_INTERVAL_TICKS = 100;
 
-    private static final Set<TextSession> SESSIONS = new HashSet<>();
+    private static final Set<Broadcast> ACTIVE_BROADCASTS = new HashSet<>();
+    private static final Map<TextSession, Broadcast> SESSION_TO_BROADCAST = new HashMap<>();
     private static boolean registered = false;
 
     /** 26.2 起实体类型常量从 EntityType 迁入 EntityTypes（复数），此处统一收敛为一个字段 */
@@ -92,7 +97,7 @@ public final class TextAnimationHandler {
             }
             // 有活跃会话时跳过：会话持有并自行管理自己的实体，
             // 此时清扫会把正在播放的字形当孤儿误杀
-            if (!SESSIONS.isEmpty()) {
+            if (!SESSION_TO_BROADCAST.isEmpty()) {
                 return true;
             }
             sweepOrphans(server);
@@ -121,21 +126,23 @@ public final class TextAnimationHandler {
     }
 
     private static void stopAll() {
-        for (TextSession session : new ArrayList<>(SESSIONS)) {
+        for (TextSession session : new ArrayList<>(SESSION_TO_BROADCAST.keySet())) {
             session.killAll();
         }
-        SESSIONS.clear();
+        SESSION_TO_BROADCAST.clear();
+        ACTIVE_BROADCASTS.clear();
     }
 
     /**
-     * 播放一条字幕。
+     * 向所有在线真人玩家广播一条字幕（聊天形式：每人各自眼前弹出，carpet 假人除外；
+     * 控制台/命令方块同样可用）。每个玩家一份独立会话（以该玩家的位置与朝向为基准）。
      *
-     * @return 组数（≥1）；-1 文本为空；-2 超长（{@link #MAX_CHARS}）；-3 并发已满（{@link #MAX_SESSIONS}）；
-     *         -5 生成点区块未加载（控制台/命令方块在无玩家加载区域执行——原版区块系统会把
+     * @return 组数（≥1）；-1 文本为空；-2 超长（{@link #MAX_CHARS}）；-3 并发已满（{@link #MAX_BROADCASTS}）；
+     *         -5 当前没有可接收字幕的在线真人（生成点区块未加载的玩家被跳过——原版区块系统会把
      *         加进非 ENTITY_TICKING 区块的实体按 UNLOADED_TO_CHUNK 写回区块，本地 E2E 实证）
      */
     public static int play(CommandSourceStack source, String rawText, TextOptions options) {
-        if (SESSIONS.size() >= MAX_SESSIONS) {
+        if (ACTIVE_BROADCASTS.size() >= MAX_BROADCASTS) {
             return -3;
         }
         List<Segment> segments = parseText(rawText);
@@ -145,21 +152,32 @@ public final class TextAnimationHandler {
         if (segments.size() > MAX_CHARS) {
             return -2;
         }
-        ServerLevel level = source.getLevel();
-        Vec3 origin = source.getPosition();
-        Vec2 rotation = source.getRotation();
-        if (!chunkReadyFor(level, origin, rotation.y, rotation.x, options)) {
+        MinecraftServer server = source.getLevel().getServer();
+        List<Group> template = buildGroups(segments);
+
+        Broadcast broadcast = new Broadcast();
+        for (ServerPlayer target : server.getPlayerList().getPlayers()) {
+            if (target instanceof EntityPlayerMPFake) {
+                continue;
+            }
+            Vec3 origin = target.position();
+            if (!chunkReadyFor(target.level(), origin, target.getYRot(), target.getXRot(), options)) {
+                continue;
+            }
+            TextSession session = new TextSession(target.level(), origin,
+                    target.getYRot(), target.getXRot(), copyGroups(template), options);
+            broadcast.sessions.add(session);
+            SESSION_TO_BROADCAST.put(session, broadcast);
+            ServerTickScheduler.register(session);
+        }
+        if (broadcast.sessions.isEmpty()) {
             return -5;
         }
-        List<Group> groups = buildGroups(segments);
-
-        TextSession session = new TextSession(level, origin, rotation.y, rotation.x, groups, options);
-        SESSIONS.add(session);
-        ServerTickScheduler.register(session);
-        return groups.size();
+        ACTIVE_BROADCASTS.add(broadcast);
+        return template.size();
     }
 
-    /** 首组生成点区块必须处于 ENTITY_TICKING（玩家执行时恒成立；index=0 无随机抖动，位置确定） */
+    /** 首组生成点区块必须处于 ENTITY_TICKING（真人在线时其周围区块由玩家 ticket 保证） */
     private static boolean chunkReadyFor(ServerLevel level, Vec3 origin, float yaw, float pitch,
                                          TextOptions options) {
         Vec3 view = Vec3.directionFromRotation(pitch, yaw);
@@ -169,9 +187,29 @@ public final class TextAnimationHandler {
         return chunk != null && chunk.getFullStatus() == FullChunkStatus.ENTITY_TICKING;
     }
 
-    /** 会话自然结束（或停服清理）时从活动集移除 */
+    /** 会话自然结束（或停服清理）时从广播中摘除；广播内全部会话结束后销毁广播 */
     static void onSessionEnded(TextSession session) {
-        SESSIONS.remove(session);
+        Broadcast broadcast = SESSION_TO_BROADCAST.remove(session);
+        if (broadcast != null) {
+            broadcast.sessions.remove(session);
+            if (broadcast.sessions.isEmpty()) {
+                ACTIVE_BROADCASTS.remove(broadcast);
+            }
+        }
+    }
+
+    /** 一次 /text 广播：同一文本在每名在线玩家面前的独立会话集合 */
+    private static final class Broadcast {
+        final List<TextSession> sessions = new ArrayList<>();
+    }
+
+    /** 每名玩家一份组副本：Group 含逐会话可变状态（typed/holdLeft/生成点），segments 只读共享 */
+    private static List<Group> copyGroups(List<Group> template) {
+        List<Group> copy = new ArrayList<>(template.size());
+        for (Group group : template) {
+            copy.add(new Group(group.index, group.segments));
+        }
+        return copy;
     }
 
     /**

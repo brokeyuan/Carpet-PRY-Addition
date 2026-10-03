@@ -192,13 +192,12 @@
  "carpetprimaryuan.command.pvp.global_state_off": "關閉",
  "carpetprimaryuan.command.pvp.console_hint": "§e僅玩家可查詢/切換自身狀態。可用子指令：/pvp list、/pvp on|off [玩家|@a]",
  "carpet.rule.textAnimation.name": "米塔字幕",
- "carpet.rule.textAnimation.desc": "/text 在執行者眼前逐字彈出對話文字，停留後整句墜落消散（米塔遊戲的文字顯示效果）；每字一個原版文字展示實體，播完即刪，純伺服器端實現，用戶端無需安裝",
+ "carpet.rule.textAnimation.desc": "/text 向所有在線玩家（假人除外）各自眼前逐字彈出對話文字，停留後整句墜落消散（米塔遊戲的文字顯示效果）；每字一個原版文字展示實體，播完即刪，純伺服器端實現，用戶端無需安裝",
  "carpetprimaryuan.command.text.success": "米塔字幕：開始播放（共 %s 組）",
  "carpetprimaryuan.command.text.empty": "文字為空",
  "carpetprimaryuan.command.text.too_long": "文字過長：最多 %s 字",
  "carpetprimaryuan.command.text.busy": "同時播放的字幕過多（上限 %s 條），稍後再試",
  "carpetprimaryuan.command.text.bad_option": "非法選項 %s（可用：%s）",
- "carpetprimaryuan.command.text.chunk_not_loaded": "目標位置的區塊未加載（附近需有玩家或正在執行的命令區塊）",
  "carpet.rule.redPacket.name": "紅包",
  "carpet.rule.redPacket.desc": "/redpacket 發紅包（拼手氣/普通/專屬/口令四類），聊天框廣播可點擊領取，過期未領退回；伺服器端原版容器 GUI，用戶端無需安裝",
  "carpetprimaryuan.redpacket.type.lucky": "拼手氣紅包",
@@ -236,5 +235,6 @@
  "carpetprimaryuan.redpacket.msg.refund": "紅包已過期，未領取部分已退回：%s",
  "carpetprimaryuan.redpacket.msg.offline_refund": "你離線期間的紅包退回已補發：%s",
  "carpetprimaryuan.redpacket.msg.target_none": "當前沒有其他在線玩家，無法發專屬紅包",
- "carpetprimaryuan.redpacket.msg.item_sep": "、"
+ "carpetprimaryuan.redpacket.msg.item_sep": "、",
+ "carpetprimaryuan.command.text.no_player": "當前沒有可接收字幕的在線玩家"
 }

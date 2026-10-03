@@ -26,7 +26,8 @@ import java.util.Locale;
  * 注入点在 PlayerManager.broadcast(SignedMessage, …) 的 HEAD，签名与非签名
  * 聊天共同汇聚于此，离线服的未签名聊天同样触发。名字匹配大小写不敏感，
  * 并按玩家名字符集（字母/数字/下划线，离线服中文名同为字母）取词边界，
- * 避免名字是另一玩家名字子串时被误伤；点自己名字与 carpet 假人不提醒。</p>
+ * 避免名字是另一玩家名字子串时被误伤；自己发消息提到自己与 carpet 假人
+ * （作为被点名者）的区分——真人含发送者本人均提醒，仅排除假人。</p>
  *
  * <p>提示音为 ClientboundSoundPacket 定向单发（发声点在被听者头顶，仅本人
  * 可闻），首声当 tick 末尾、其余按间隔经 ServerTickScheduler 排出；title
@@ -72,7 +73,8 @@ public class WhoCalledMeHandler {
         String lowered = content.toLowerCase(Locale.ROOT);
         MinecraftServer server = sender.level().getServer();
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            if (player == sender || player instanceof EntityPlayerMPFake) {
+            // 自己发消息提到自己同样提醒；carpet 假人（作为被点名者）不提醒
+            if (player instanceof EntityPlayerMPFake) {
                 continue;
             }
             if (mentionsName(lowered, player.getName().getString().toLowerCase(Locale.ROOT))) {
@@ -110,17 +112,23 @@ public class WhoCalledMeHandler {
         player.connection.send(new ClientboundSetTitlesAnimationPacket(
                 TITLE_FADE_IN_TICKS, TITLE_STAY_TICKS, TITLE_FADE_OUT_TICKS));
         player.connection.send(new ClientboundSetTitleTextPacket(Component.literal(content)));
-        for (int i = 0; i < DING_COUNT; i++) {
+        // 首声同步发（不依赖调度），其余按间隔排出
+        sendDing(player);
+        for (int i = 1; i < DING_COUNT; i++) {
             ServerTickScheduler.registerDelayed(i * DING_INTERVAL_TICKS, server -> {
                 if (player.hasDisconnected()) {
                     return false;
                 }
-                player.connection.send(new ClientboundSoundPacket(
-                        Holder.direct(SoundEvents.AMETHYST_BLOCK_CHIME), SoundSource.PLAYERS,
-                        player.getX(), player.getY(), player.getZ(),
-                        1.0F, 2.0F, player.getRandom().nextLong()));
+                sendDing(player);
                 return false;
             });
         }
+    }
+
+    private static void sendDing(ServerPlayer player) {
+        player.connection.send(new ClientboundSoundPacket(
+                Holder.direct(SoundEvents.AMETHYST_BLOCK_CHIME), SoundSource.PLAYERS,
+                player.getX(), player.getY(), player.getZ(),
+                1.0F, 2.0F, player.getRandom().nextLong()));
     }
 }

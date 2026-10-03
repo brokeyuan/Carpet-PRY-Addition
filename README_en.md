@@ -98,7 +98,7 @@ All rules are off by default except the client-side rule `ridingPlayersClientInt
 ### Survival Features
 
 - `sleepingDuringTheDay`: sleep during daytime, wake to night
-- `textAnimation`: `/text` pops up MiSide-style animated subtitles in front of the executor — characters pop in one by one, hold, then the sentence drops and fades (works on vanilla clients)
+- `textAnimation`: `/text` pops up MiSide-style animated subtitles in front of every online player (fake players excluded) — characters pop in one by one, hold, then the sentence drops and fades (works on vanilla clients)
 - `redPacket`: `/redpacket` sends red packets (lucky/normal/exclusive/password) claimed via a clickable chat broadcast, unclaimed shares refunded on expiry (works on vanilla clients)
 - `playerHat`: `/hat` to wear items on head, Totem of Undying in head slot triggers death protection
 - `betterSnowball`: snowballs deal knockback and damage to players

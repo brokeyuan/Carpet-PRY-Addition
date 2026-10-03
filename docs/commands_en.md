@@ -675,7 +675,7 @@ Toggles the per-player preference for accepting pats: declined players cannot be
 
 > **Related rule**: `textAnimation`
 
-Pops up dialogue text character by character in front of the executor, holds, then lets the whole sentence drop and fade (the text display effect from the game MiSide). One vanilla text_display entity per character, removed after play; long texts are split into groups at punctuation and played sequentially.
+Pops up dialogue text character by character in front of every online player (fake players excluded), holds, then lets the whole sentence drop and fade (the text display effect from the game MiSide). One vanilla text_display entity per character, removed after play; long texts are split into groups at punctuation and played sequentially. The console and command blocks work too.
 
 ### Syntax
 
@@ -706,8 +706,8 @@ Quote `text` if it contains spaces; legacy color codes use `&` (e.g. `&c`), `&&`
 - Pop-in: 1 char/tick, each with a random ±45° tilt, 1.8x scale settling and a random y jitter, plus a click sound (volume 1.0 / pitch 1.2)
 - Drop: gravity 0.03/tick², drag 0.99, one 0.28 bounce on landing, a one-shot random tumble; fading from tick 24 of the drop at -8 opacity/tick
 - Grouping: ≤25 characters per group, break point pushed to a punctuation mark within 10 characters ahead; non-final groups get a " - " connector; the next group starts as the previous one drops, with a random ±22.5° yaw and height jitter between groups
-- Spawn point: executor's feet + view direction × distance, at feet +1.3
-- Guards: ≤128 characters per sentence, ≤8 concurrent sessions server-wide; the target chunk must be ENTITY_TICKING (always true for player executors), otherwise a "chunk not loaded" error is returned
+- Spawn point: each online player's feet + view direction × distance, at feet +1.3 (one independent copy per player, based on their own position and view)
+- Guards: ≤128 characters per sentence, ≤8 concurrent broadcasts server-wide; "no online players can receive subtitles" when no humans are online, players with unloaded chunks are skipped
 
 ### Examples
 
