@@ -61,6 +61,21 @@ class WhoCalledMeHandlerTest {
     }
 
     @Test
+    void decorationRangesKeepLongestNonOverlapping() {
+        // tim(0,3)/timy(0,4) 重叠取最长 timy；tim(5,8) 独立保留
+        List<int[]> ranges = WhoCalledMeHandler.nonOverlappingLongestFirst(List.of(
+                new int[]{0, 3}, new int[]{0, 4}, new int[]{5, 8}));
+        assertEquals(2, ranges.size());
+        assertEquals(0, ranges.get(0)[0]);
+        assertEquals(4, ranges.get(0)[1]);
+        assertEquals(5, ranges.get(1)[0]);
+        assertEquals(8, ranges.get(1)[1]);
+        // 相邻不重叠都保留
+        assertEquals(2, WhoCalledMeHandler.nonOverlappingLongestFirst(List.of(
+                new int[]{0, 3}, new int[]{3, 6})).size());
+    }
+
+    @Test
     void emptyNameNeverMatches() {
         assertEquals(-1, index("anything", "", "anything"));
         assertFalse(match("anything", ""));

@@ -32,6 +32,7 @@
     "rule.fakePlayerBrain.ServerPlayerBrainMixin",
     "rule.fakePlayerBrain.EntityPlayerActionPackBrainMixin",
     "rule.fakePlayerBrain.ServerPlayerMobMixin",
+    "rule.whoCalledMe.MinecraftServerMixin",
     "rule.textAnimation.DisplayInvoker",
     "rule.textAnimation.TextDisplayInvoker"
   ],

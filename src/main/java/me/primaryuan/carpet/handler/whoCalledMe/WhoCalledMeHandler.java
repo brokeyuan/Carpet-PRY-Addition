@@ -4,10 +4,13 @@ import carpet.patches.EntityPlayerMPFake;
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import me.primaryuan.carpet.util.ServerTickScheduler;
 import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.core.Holder;
 import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.ChatDecorator;
 import net.minecraft.network.chat.ChatType;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.PlayerChatMessage;
 import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
@@ -59,6 +62,9 @@ public class WhoCalledMeHandler {
         }
         registered = true;
         ServerMessageEvents.CHAT_MESSAGE.register(WhoCalledMeHandler::onChatMessage);
+        // 聊天装饰需要服务器实例（在线玩家名集合）；停服置空防悬挂引用
+        ServerLifecycleEvents.SERVER_STARTED.register(server -> decoratedServer = server);
+        ServerLifecycleEvents.SERVER_STOPPING.register(server -> decoratedServer = null);
     }
 
     private static void onChatMessage(PlayerChatMessage message, ServerPlayer sender, ChatType.Bound parameters) {
@@ -149,8 +155,80 @@ public class WhoCalledMeHandler {
         return !loweredName.isEmpty() && loweredContent.contains(loweredName);
     }
 
-    /** 名字高亮色：原版金 */
-    private static final int NAME_GOLD = 0xFFAA00;
+    // ==================== 聊天名字高亮（ChatDecorator） ====================
+
+    /** 聊天名字高亮色：原版金（与 title 高亮一致） */
+    private static final ChatFormatting NAME_HIGHLIGHT = ChatFormatting.GOLD;
+    private static final ChatDecorator MENTION_DECORATOR = WhoCalledMeHandler::decorateChat;
+    private static MinecraftServer decoratedServer;
+
+    /** MinecraftServerMixin 调用：返回接管后的聊天装饰器（始终接管，规则开关在装饰器内部判定） */
+    public static ChatDecorator wrapChatDecorator(ChatDecorator original) {
+        return MENTION_DECORATOR;
+    }
+
+    /**
+     * 聊天装饰：消息文本中出现的在线玩家名渲染为金色（贪心最长优先的非重叠区间，
+     * 与提醒同一套名字集），其余文本保留原样式；无命中或规则关闭时原样透传。
+     */
+    private static Component decorateChat(ServerPlayer sender, Component message) {
+        if (!CarpetPrimaryuanSettings.whoCalledMe || decoratedServer == null) {
+            return message;
+        }
+        String text = message.getString();
+        if (text.isEmpty()) {
+            return message;
+        }
+        List<String> allNames = new ArrayList<>();
+        for (ServerPlayer online : decoratedServer.getPlayerList().getPlayers()) {
+            if (!(online instanceof EntityPlayerMPFake)) {
+                allNames.add(online.getName().getString().toLowerCase(Locale.ROOT));
+            }
+        }
+        String lowered = text.toLowerCase(Locale.ROOT);
+        List<int[]> ranges = new ArrayList<>();
+        for (String name : allNames) {
+            int from = 0;
+            int idx;
+            while ((idx = lowered.indexOf(name, from)) >= 0) {
+                ranges.add(new int[]{idx, idx + name.length()});
+                from = idx + 1;
+            }
+        }
+        ranges = nonOverlappingLongestFirst(ranges);
+        if (ranges.isEmpty()) {
+            return message;
+        }
+        // 逐段构建：非名字段保留原样式，名字段金色（样式基线取原文）
+        MutableComponent out = Component.empty().setStyle(message.getStyle());
+        int cursor = 0;
+        for (int[] range : ranges) {
+            if (range[0] > cursor) {
+                out.append(Component.literal(text.substring(cursor, range[0])).setStyle(message.getStyle()));
+            }
+            out.append(Component.literal(text.substring(range[0], range[1])).withStyle(NAME_HIGHLIGHT));
+            cursor = range[1];
+        }
+        if (cursor < text.length()) {
+            out.append(Component.literal(text.substring(cursor)).setStyle(message.getStyle()));
+        }
+        return out;
+    }
+
+    /** 贪心选区间：起点排序、长者优先，丢弃与已选重叠的（"timy tim"→各自独立命中、同位重叠取最长） */
+    static List<int[]> nonOverlappingLongestFirst(List<int[]> ranges) {
+        List<int[]> sorted = new ArrayList<>(ranges);
+        sorted.sort((a, b) -> a[0] != b[0] ? Integer.compare(a[0], b[0]) : Integer.compare(b[1], a[1]));
+        List<int[]> out = new ArrayList<>();
+        int lastEnd = -1;
+        for (int[] range : sorted) {
+            if (range[0] >= lastEnd) {
+                out.add(range);
+                lastEnd = range[1];
+            }
+        }
+        return out;
+    }
 
     private static void notifyMentioned(ServerPlayer player, String content, String nameLower, int hitIndex) {
         player.connection.send(new ClientboundSetTitlesAnimationPacket(
