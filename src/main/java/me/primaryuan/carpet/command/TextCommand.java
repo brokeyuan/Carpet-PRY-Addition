@@ -14,13 +14,13 @@ import net.minecraft.commands.Commands;
 import java.util.Locale;
 
 /**
- * /text 命令：在执行者眼前播放米塔风格的对话字幕（规则 textAnimation 控制可用性）。
+ * /text 命令：向所有在线真人玩家（假人除外）广播米塔风格字幕（规则 textAnimation 控制可用性）。
  *
- * 结构：
- *   text <text>                    按默认参数播放
- *   text <text> <options>          options 为 k=v;k=v 串（见 docs/commands.md）
+ * 结构（单 greedy 参数，消息空格自由、无需引号）：
+ *   /text <文本内容>                整行作为消息，按默认参数播放
+ *   /text <文本内容>|<options>      行内 | 分隔，后半为 k=v;k=v 串（如 scale=2.5;hold=60）
  *
- * text 含空格时需加引号；色码用 &（&c 等），字面 & 写 &&。
+ * 文本内字面 | 写 ||；色码用 &（&c 等），字面 & 写 &&。
  */
 public final class TextCommand {
 
@@ -33,25 +33,23 @@ public final class TextCommand {
             LiteralArgumentBuilder<CommandSourceStack> text = Commands.literal("text")
                     // 主规则 = false 时整棵命令树不可见
                     .requires(source -> !"false".equals(CarpetPrimaryuanSettings.textAnimation))
-                    .executes(ctx -> failure(ctx, "carpetprimaryuan.command.text.empty"))
-                    .then(Commands.argument("text", StringArgumentType.string())
-                            .executes(ctx -> play(ctx, null))
-                            .then(Commands.argument("options", StringArgumentType.greedyString())
-                                    .executes(ctx -> play(ctx, StringArgumentType.getString(ctx, "options")))));
+                    .then(Commands.argument("text", StringArgumentType.greedyString())
+                            .executes(ctx -> play(ctx, StringArgumentType.getString(ctx, "text"))));
             dispatcher.register(text);
         });
     }
 
     // ==================== 执行 ====================
 
-    private static int play(CommandContext<CommandSourceStack> context, String optionsRaw) {
+    private static int play(CommandContext<CommandSourceStack> context, String raw) {
         CommandSourceStack source = context.getSource();
-        String raw = StringArgumentType.getString(context, "text");
+        String[] parts = splitPipe(raw);
+        String message = parts[0];
 
         TextOptions options = TextOptions.defaults();
-        if (optionsRaw != null && !optionsRaw.isBlank()) {
+        if (!parts[1].isBlank()) {
             try {
-                options = parseOptions(optionsRaw);
+                options = parseOptions(parts[1]);
             } catch (IllegalArgumentException e) {
                 source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.text.bad_option",
                         e.getMessage(),
@@ -60,7 +58,7 @@ public final class TextCommand {
             }
         }
 
-        int groups = TextAnimationHandler.play(source, raw, options);
+        int groups = TextAnimationHandler.play(source, message, options);
         if (groups > 0) {
             source.sendSuccess(() -> ServerI18n.tr("carpetprimaryuan.command.text.success", groups), false);
             return groups;
@@ -80,9 +78,33 @@ public final class TextCommand {
     }
 
     /**
+     * 行内 |（含全角｜）拆分：首个未转义分隔符右侧整体为 options；|| /「｜｜」为字面 |（仅消息段）。
+     *
+     * @return [消息, options 串（可能为空）]
+     */
+    static String[] splitPipe(String raw) {
+        StringBuilder message = new StringBuilder(raw.length());
+        for (int i = 0; i < raw.length(); i++) {
+            char c = raw.charAt(i);
+            boolean pipe = c == '|' || c == '｜';
+            if (!pipe) {
+                message.append(c);
+                continue;
+            }
+            if (i + 1 < raw.length() && (raw.charAt(i + 1) == '|' || raw.charAt(i + 1) == '｜')) {
+                message.append('|');
+                i++;
+                continue;
+            }
+            return new String[]{message.toString(), raw.substring(i + 1)};
+        }
+        return new String[]{message.toString(), ""};
+    }
+
+    /**
      * options 串 k=v;k=v 解析；非法键或非法值抛 IllegalArgumentException（消息 = 键名）。
      */
-    private static TextOptions parseOptions(String raw) {
+    static TextOptions parseOptions(String raw) {
         double distance = TextOptions.defaults().distance;
         Float scale = null;
         Float spacing = null;
@@ -125,10 +147,5 @@ public final class TextCommand {
             return false;
         }
         throw new NumberFormatException(value);
-    }
-
-    private static int failure(CommandContext<CommandSourceStack> context, String key) {
-        context.getSource().sendFailure(ServerI18n.tr(key));
-        return 0;
     }
 }

@@ -104,7 +104,7 @@ When a chat message contains another player's name, the mentioned player gets th
 
 ### MiSide Subtitles (`textAnimation`)
 
-The `/text` command plays dialogue text in front of every online player (fake players excluded) with the text display effect from the game MiSide: characters pop in one by one (random tilt, scale settling, click sounds), hold, then the whole sentence drops with server-side gravity/bounce physics while fading out. Long texts are split into groups at punctuation and played sequentially. One vanilla text_display entity per character, removed after play; default MiSide yellow with legacy color code support; pure server-side — works on vanilla clients.
+The `/text` command plays dialogue text in front of every online player (fake players excluded) with the text display effect from the game MiSide (the more trailing exclamation marks, the bigger the whole sentence): characters pop in one by one (random tilt, scale settling, click sounds), hold, then the whole sentence drops with server-side gravity/bounce physics while fading out. Long texts are split into groups at punctuation and played sequentially. One vanilla text_display entity per character, removed after play; default MiSide yellow with legacy color code support; pure server-side — works on vanilla clients.
 
 ### Red Packet (`redPacket`)
 

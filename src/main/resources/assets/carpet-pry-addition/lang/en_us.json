@@ -192,7 +192,7 @@
  "carpetprimaryuan.command.pvp.global_state_off": "OFF",
  "carpetprimaryuan.command.pvp.console_hint": "§eOnly players can view/switch their own status. Subcommands: /pvp list, /pvp on|off [player|@a]",
  "carpet.rule.textAnimation.name": "MiSide Subtitles",
- "carpet.rule.textAnimation.desc": "/text pops up dialogue text character by character in front of every online player (fake players excluded), holds, then lets the whole sentence drop and fade (MiSide-style text effect); one vanilla text_display entity per character, removed after play, pure server-side",
+ "carpet.rule.textAnimation.desc": "/text pops up dialogue text character by character in front of every online player (fake players excluded), holds, then lets the whole sentence drop and fade (MiSide-style text effect); the more trailing exclamation marks, the bigger the whole sentence; see the commands doc for options; pure server-side",
  "carpetprimaryuan.command.text.success": "MiSide subtitle: started (%s group(s))",
  "carpetprimaryuan.command.text.empty": "Text is empty",
  "carpetprimaryuan.command.text.too_long": "Text too long: max %s characters",

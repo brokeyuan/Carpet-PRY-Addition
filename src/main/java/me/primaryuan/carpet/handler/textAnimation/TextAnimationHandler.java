@@ -48,8 +48,13 @@ public final class TextAnimationHandler {
     /** 会话实体标记：孤儿清扫依据 */
     public static final String ENTITY_TAG = "pry_textanim";
 
-    /** 默认字色 #ffff55（米塔黄） */
-    static final int DEFAULT_COLOR = 0xFFFF55;
+    /** 默认字色 #ffffff（白） */
+    static final int DEFAULT_COLOR = 0xFFFFFF;
+    /** 感叹号整句增益：尾部每连发一个 ×1.12，封顶 ×1.5 */
+    static final float BANG_GAIN_STEP = 0.12f;
+    static final float BANG_GAIN_MAX = 1.5f;
+    /** spacing 自动派生系数（×最终 scale），防放大后字符重叠 */
+    static final float SPACING_PER_SCALE = 0.15f;
     /** ASCII 字宽（宽度单位） */
     static final float NARROW_WIDTH = 1.15f;
     /** 全宽字宽（中日韩等，宽度单位） */
@@ -152,6 +157,15 @@ public final class TextAnimationHandler {
         if (segments.size() > MAX_CHARS) {
             return -2;
         }
+        // 感叹号整句增益 + spacing 自动派生（与最终 scale 等比，防字符重叠）
+        int bangs = countTrailingBangs(segments);
+        float gain = Math.min(1.0f + BANG_GAIN_STEP * bangs, BANG_GAIN_MAX);
+        float effectiveScale = options.scale * gain;
+        float effectiveSpacing = options.spacing == TextOptions.SPACING_AUTO
+                ? SPACING_PER_SCALE * effectiveScale : options.spacing;
+        options = TextOptions.with(options, options.distance, effectiveScale, effectiveSpacing,
+                null, null, null, null);
+
         MinecraftServer server = source.getLevel().getServer();
         List<Group> template = buildGroups(segments);
 
@@ -210,6 +224,23 @@ public final class TextAnimationHandler {
             copy.add(new Group(group.index, group.segments));
         }
         return copy;
+    }
+
+    /**
+     * 尾部连续感叹号计数（ASCII ! 与全角 ！）：& 色码解析后对可见字符统计，
+     * 中间被其他字符打断即止——"好!!!" 计 3，"好!!?" 计 0。
+     */
+    static int countTrailingBangs(List<Segment> segments) {
+        int count = 0;
+        for (int i = segments.size() - 1; i >= 0; i--) {
+            char c = segments.get(i).c;
+            if (c == '!' || c == '！') {
+                count++;
+            } else {
+                break;
+            }
+        }
+        return count;
     }
 
     /**

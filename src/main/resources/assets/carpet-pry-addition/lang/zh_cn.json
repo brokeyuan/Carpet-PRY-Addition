@@ -192,7 +192,7 @@
  "carpetprimaryuan.command.pvp.global_state_off": "关闭",
  "carpetprimaryuan.command.pvp.console_hint": "§e仅玩家可查询/切换自身状态。可用子命令：/pvp list、/pvp on|off [玩家|@a]",
  "carpet.rule.textAnimation.name": "米塔字幕",
- "carpet.rule.textAnimation.desc": "/text 向所有在线玩家（假人除外）各自眼前逐字弹出对话文本，停留后整句坠落消散（米塔游戏的文字显示效果）；每字一个原版文本展示实体，播完即删，纯服务端实现，客户端无需安装",
+ "carpet.rule.textAnimation.desc": "/text 向所有在线玩家（假人除外）各自眼前逐字弹出对话文本，停留后整句坠落消散（米塔游戏的文字显示效果）；结尾感叹号越多整句越大，调参见命令文档；纯服务端实现，客户端无需安装",
  "carpetprimaryuan.command.text.success": "米塔字幕：开始播放（共 %s 组）",
  "carpetprimaryuan.command.text.empty": "文本为空",
  "carpetprimaryuan.command.text.too_long": "文本过长：最多 %s 字",

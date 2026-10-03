@@ -679,23 +679,23 @@ Pops up dialogue text character by character in front of every online player (fa
 
 ### Syntax
 
-- `/text <text>`: play with default parameters
-- `/text <text> <options>`: options is a `k=v;k=v` string
+- `/text <message>`: the whole line is the message (spaces free, no quotes needed)
+- `/text <message>|<options>`: an inline `|` splits the message from a `k=v;k=v` options string
 
-Quote `text` if it contains spaces; legacy color codes use `&` (e.g. `&c`), `&&` for a literal `&`, and color codes reset style flags like vanilla `§`.
+Use `||` for a literal `|`; legacy color codes use `&` (e.g. `&c`), `&&` for a literal `&`, and color codes reset style flags like vanilla `§`.
 
 ### Permission
 
-- Available to all players
+- Available to all players (console and command blocks included)
 - The whole command tree is hidden while the `textAnimation` rule is disabled
 
 ### Options
 
 | Key | Type | Default | Description |
 |------|------|------|------|
-| `distance` | float | `5.0` | Spawn distance from the executor (blocks) |
-| `scale` | float | `1.2` | Character scale (final pop state) |
-| `spacing` | float | `0.175` | Letter spacing unit (blocks per width unit) |
+| `distance` | float | `2.5` | Spawn distance from each player's view direction (blocks) |
+| `scale` | float | `2.2` | Character scale (final pop state) |
+| `spacing` | float | auto (0.15×scale) | Letter spacing unit (blocks per width unit) |
 | `hold` | int | `40` | Hold between typing and the drop (ticks) |
 | `glow` | true/false | `false` | Glowing outline on characters |
 | `sound` | true/false | `true` | Click sound per character |
@@ -704,6 +704,8 @@ Quote `text` if it contains spaces; legacy color codes use `&` (e.g. `&c`), `&&`
 ### Behavior Details
 
 - Pop-in: 1 char/tick, each with a random ±45° tilt, 1.8x scale settling and a random y jitter, plus a click sound (volume 1.0 / pitch 1.2)
+- **Exclamation gain**: the more trailing `!`/`！`, the bigger the whole sentence — ×1.12 each, capped at ×1.5 (e.g. `done!!` → ×1.24); interrupted runs don't count
+- Default color white (#FFFFFF), use `&` codes to change
 - Drop: gravity 0.03/tick², drag 0.99, one 0.28 bounce on landing, a one-shot random tumble; fading from tick 24 of the drop at -8 opacity/tick
 - Grouping: ≤25 characters per group, break point pushed to a punctuation mark within 10 characters ahead; non-final groups get a " - " connector; the next group starts as the previous one drops, with a random ±22.5° yaw and height jitter between groups
 - Spawn point: each online player's feet + view direction × distance, at feet +1.3 (one independent copy per player, based on their own position and view)
@@ -712,14 +714,13 @@ Quote `text` if it contains spaces; legacy color codes use `&` (e.g. `&c`), `&&`
 ### Examples
 
 ```
-/text "Hello there"                                   # defaults
-/text "&cRed&eYellow&B"                               # & color codes
-/text "Long line one, long line two" distance=3 hold=60
-/text "Static text" drop=false                        # fade in place, no drop
-/text "Glowing" glow=true sound=false                 # glow, no sound
+/text Hello there                         # spaces free, no quotes
+/text done!!!                             # exclamation gain enlarges the sentence
+/text &cRed&eYellow&B                     # & color codes
+/text Hi|scale=3;hold=60                  # inline options
+/text Static text|drop=false              # fade in place, no drop
+/text Glowing|glow=true;sound=false       # glow, no sound
 ```
-
----
 
 ## /redpacket - Red Packet
 

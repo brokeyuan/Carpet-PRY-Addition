@@ -5,6 +5,7 @@ import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import me.primaryuan.carpet.util.ServerTickScheduler;
 import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
 import net.minecraft.core.Holder;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.ChatType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.PlayerChatMessage;
@@ -77,16 +78,17 @@ public class WhoCalledMeHandler {
             if (player instanceof EntityPlayerMPFake) {
                 continue;
             }
-            if (mentionsName(lowered, player.getName().getString().toLowerCase(Locale.ROOT))) {
-                notifyMentioned(player, content);
+            String nameLower = player.getName().getString().toLowerCase(Locale.ROOT);
+            if (mentionIndex(lowered, nameLower) >= 0) {
+                notifyMentioned(player, content, nameLower);
             }
         }
     }
 
-    /** 词边界匹配：命中处紧邻字符不再构成玩家名的一部分才算点名（包可见供单测） */
-    static boolean mentionsName(String loweredContent, String loweredName) {
+    /** 词边界匹配：返回第一个命中的起始下标，未命中 -1（包可见供单测） */
+    static int mentionIndex(String loweredContent, String loweredName) {
         if (loweredName.isEmpty()) {
-            return false;
+            return -1;
         }
         int from = 0;
         int idx;
@@ -95,11 +97,16 @@ public class WhoCalledMeHandler {
             boolean leftOk = idx == 0 || !isNameChar(loweredContent.charAt(idx - 1));
             boolean rightOk = end == loweredContent.length() || !isNameChar(loweredContent.charAt(end));
             if (leftOk && rightOk) {
-                return true;
+                return idx;
             }
             from = idx + 1;
         }
-        return false;
+        return -1;
+    }
+
+    /** 词边界匹配：命中即 true（包可见供单测） */
+    static boolean mentionsName(String loweredContent, String loweredName) {
+        return mentionIndex(loweredContent, loweredName) >= 0;
     }
 
     /** 玩家名字符集：原版名即 a-zA-Z0-9_。只按 ASCII 取词边界——中文无空格分词，
@@ -108,27 +115,48 @@ public class WhoCalledMeHandler {
         return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_';
     }
 
-    private static void notifyMentioned(ServerPlayer player, String content) {
+    /** 名字高亮色：原版金 */
+    private static final int NAME_GOLD = 0xFFAA00;
+
+    private static void notifyMentioned(ServerPlayer player, String content, String nameLower) {
         player.connection.send(new ClientboundSetTitlesAnimationPacket(
                 TITLE_FADE_IN_TICKS, TITLE_STAY_TICKS, TITLE_FADE_OUT_TICKS));
-        player.connection.send(new ClientboundSetTitleTextPacket(Component.literal(content)));
+        player.connection.send(new ClientboundSetTitleTextPacket(buildTitle(content, nameLower)));
         // 首声同步发（不依赖调度），其余按间隔排出
-        sendDing(player);
+        sendDing(player, DING_PITCHES[0]);
         for (int i = 1; i < DING_COUNT; i++) {
-            ServerTickScheduler.registerDelayed(i * DING_INTERVAL_TICKS, server -> {
+            final float pitch = DING_PITCHES[i];
+            final int delay = i * DING_INTERVAL_TICKS;
+            ServerTickScheduler.registerDelayed(delay, server -> {
                 if (player.hasDisconnected()) {
                     return false;
                 }
-                sendDing(player);
+                sendDing(player, pitch);
                 return false;
             });
         }
     }
 
-    private static void sendDing(ServerPlayer player) {
+    /** title 分色：被点名者自己的名字金黄加粗、正文白——一眼看到是谁在叫 */
+    private static Component buildTitle(String content, String nameLower) {
+        int idx = mentionIndex(content.toLowerCase(Locale.ROOT), nameLower);
+        if (idx < 0) {
+            return Component.literal(content);
+        }
+        int end = idx + nameLower.length();
+        return Component.literal(content.substring(0, idx)).withStyle(ChatFormatting.WHITE)
+                .append(Component.literal(content.substring(idx, end))
+                        .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))
+                .append(Component.literal(content.substring(end)).withStyle(ChatFormatting.WHITE));
+    }
+
+    /** 三声叮的音高阶梯（递进感，对齐摸摸头已验证可听的音效配方） */
+    private static final float[] DING_PITCHES = {1.2f, 1.6f, 2.0f};
+
+    private static void sendDing(ServerPlayer player, float pitch) {
         player.connection.send(new ClientboundSoundPacket(
-                Holder.direct(SoundEvents.AMETHYST_BLOCK_CHIME), SoundSource.PLAYERS,
+                Holder.direct(SoundEvents.EXPERIENCE_ORB_PICKUP), SoundSource.PLAYERS,
                 player.getX(), player.getY(), player.getZ(),
-                1.0F, 2.0F, player.getRandom().nextLong()));
+                0.8F, pitch, player.getRandom().nextLong()));
     }
 }
