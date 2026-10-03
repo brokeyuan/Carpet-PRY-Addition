@@ -9,6 +9,7 @@ import me.primaryuan.carpet.handler.textAnimation.TextAnimationHandler.Segment;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Brightness;
@@ -56,6 +57,7 @@ final class TextSession implements ServerTickScheduler.TickTask {
     /** 单字坠落兜底清除（tick） */
     private static final int DROP_FAILSAFE = 100;
 
+    private final ServerPlayer target;
     private final ServerLevel level;
     private final Vec3 origin;
     private final float pitch;
@@ -66,12 +68,13 @@ final class TextSession implements ServerTickScheduler.TickTask {
     private final Random random = new Random();
     private Group current;
 
-    TextSession(ServerLevel level, Vec3 origin, float yaw, float pitch,
-                List<Group> groups, TextOptions options) {
-        this.level = level;
-        this.origin = origin;
-        this.yaw = yaw;
-        this.pitch = pitch;
+    TextSession(ServerPlayer target, List<Group> groups, TextOptions options,
+                TextAnimationHandler.Broadcast broadcast) {
+        this.target = target;
+        this.level = target.level();
+        this.origin = target.position();
+        this.yaw = target.getYRot();
+        this.pitch = target.getXRot();
         this.options = options;
         this.pending = new ArrayDeque<>(groups);
         this.falling = new ArrayList<>();
@@ -79,6 +82,11 @@ final class TextSession implements ServerTickScheduler.TickTask {
 
     @Override
     public boolean tick(MinecraftServer server) {
+        // 玩家断线/死亡/换维度即终止：字幕以发起时的位置与维度为基准，跟随已无意义
+        if (target.hasDisconnected() || target.isDeadOrDying() || target.level() != level) {
+            TextAnimationHandler.onSessionEnded(this);
+            return false;
+        }
         if (current == null && pending.isEmpty() && falling.isEmpty()) {
             TextAnimationHandler.onSessionEnded(this);
             return false;
@@ -225,7 +233,10 @@ final class TextSession implements ServerTickScheduler.TickTask {
                     glyph.landed = true;
                 }
             }
-            glyph.entity.setPos(glyph.x, glyph.y, glyph.z);
+            // 同步降频：posRotInterp=2 下每 2 tick 一次 setPos，多人场景包量减半
+            if (glyph.age % 2 == 0) {
+                glyph.entity.setPos(glyph.x, glyph.y, glyph.z);
+            }
         }
 
         // 坠落起手一次性随机翻滚（对齐 maplegrove-misidechat 的 tumbling 配方）

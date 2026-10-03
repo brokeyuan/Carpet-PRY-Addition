@@ -183,11 +183,30 @@ public class CarpetPrimaryuanSettings {
     )
     public static String patPatPlayers = "false";
 
-    // 谁在叫我：聊天里出现其他玩家的名字时，被点名的玩家连响三声提示音并弹出 title 显示消息原文
+    // 谁在叫我：聊天里出现玩家名字时提醒被点名者（连响三声+title）；
+    // true=子串匹配（最长名优先），mention=仅 @名字 触发
     @Rule(
+            options = {"false", "true", "mention"},
+            strict = false,
             categories = {PRIMARYUAN, SURVIVAL, FEATURE}
     )
-    public static boolean whoCalledMe = false;
+    public static String whoCalledMe = "false";
+
+    // 谁在叫我音效开关（title 与聊天高亮不受影响）
+    @Rule(
+            options = {"true", "false"},
+            strict = false,
+            categories = {PRIMARYUAN, SURVIVAL, FEATURE}
+    )
+    public static boolean whoCalledMeSound = true;
+
+    // 谁在叫我名字高亮色（title 与聊天框一致）；none=不高亮
+    @Rule(
+            options = {"gold", "yellow", "aqua", "green", "red", "none"},
+            strict = false,
+            categories = {PRIMARYUAN, SURVIVAL, FEATURE}
+    )
+    public static String whoCalledMeHighlight = "gold";
 
     // 米塔字幕：/text 在执行者眼前逐字弹出对话文本，停留后整句坠落消散（米塔游戏的文字显示效果）；
     // 原版 text_display 实体逐字驱动，纯服务端实现，客户端无需安装任何模组

@@ -56,7 +56,7 @@
  "carpet.rule.patPatPlayers.name": "Pat Pat Players",
  "carpet.rule.patPatPlayers.desc": "Pat other players' heads by right-clicking them: heart particles above their head and in front of their eyes, a soft sound coming from the patter direction (turn your head to see who patted you); works with any item in hand and never consumes the interaction, so vanilla behavior is untouched. true=pat freely; sneak=only while sneaking. Pure server-side, no client mod needed; the patted player bobs down and up with each stroke (sneaking players stay down)",
  "carpet.rule.whoCalledMe.name": "Who Called Me",
- "carpet.rule.whoCalledMe.desc": "When a chat message contains another player's name, the mentioned player gets three notification dings and a title showing the message text",
+ "carpet.rule.whoCalledMe.desc": "when a player's name appears in chat, the mentioned player gets three dings and a title showing the message (name highlighted); true=substring matching (longest name wins), mention=only @name triggers",
  "carpetprimaryuan.command.patnod.status_on": "Pat interactions: accepted (players can pat you)",
  "carpetprimaryuan.command.patnod.status_off": "Pat interactions: declined (players cannot pat you)",
  "carpetprimaryuan.command.patnod.on": "Pat interactions accepted",
@@ -236,5 +236,12 @@
  "carpetprimaryuan.redpacket.msg.offline_refund": "Refunds from red packets while you were offline: %s",
  "carpetprimaryuan.redpacket.msg.target_none": "No other players online, cannot send an exclusive packet",
  "carpetprimaryuan.redpacket.msg.item_sep": ", ",
- "carpetprimaryuan.command.text.no_player": "No online players can receive subtitles right now"
+ "carpetprimaryuan.command.text.no_player": "No online players can receive subtitles right now",
+ "carpet.rule.whoCalledMeSound.name": "Who Called Me Sound",
+ "carpet.rule.whoCalledMeSound.desc": "the three-ding sound of Who Called Me; title and chat highlight are unaffected",
+ "carpet.rule.whoCalledMeHighlight.name": "Who Called Me Highlight",
+ "carpet.rule.whoCalledMeHighlight.desc": "highlight color of the mentioned player's name in chat and title; none=no highlight",
+ "carpetprimaryuan.redpacket.msg.done_broadcast": "%s's red packet has been fully claimed",
+ "carpetprimaryuan.redpacket.msg.expired_broadcast": "%s's red packet has expired",
+ "carpetprimaryuan.redpacket.msg.password_wrong": "Wrong password"
 }

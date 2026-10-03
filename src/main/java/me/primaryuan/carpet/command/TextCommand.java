@@ -136,6 +136,18 @@ public final class TextCommand {
                 throw new IllegalArgumentException(key, e);
             }
         }
+        // clamp：防滥用（巨型字符/脑后生成/长占广播上限），正常使用不受影响；
+        // spacing/hold 未显式传入时保持 null（走默认/自动派生路径），clamp 仅作用于显式值
+        distance = Math.clamp(distance, 1.0, 10.0);
+        if (scale != null) {
+            scale = Math.clamp(scale, 0.5f, 4.0f);
+        }
+        if (spacing != null) {
+            spacing = Math.clamp(spacing, 0.05f, 2.0f);
+        }
+        if (hold != null) {
+            hold = Math.clamp(hold, 20, 600);
+        }
         return TextOptions.with(TextOptions.defaults(), distance, scale, spacing, hold, glow, sound, drop);
     }
 

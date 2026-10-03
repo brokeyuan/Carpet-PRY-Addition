@@ -56,7 +56,7 @@
  "carpet.rule.patPatPlayers.name": "摸摸头",
  "carpet.rule.patPatPlayers.desc": "右键点击其他玩家的头部摸摸头：对方头顶与眼前冒爱心，轻响从发起者方向传来（转头即知谁在摸你）；不要求空手、不改变任何原版交互。true=随手可摸；sneak=按下潜行键右键才摸。纯服务端实现，客户端无需安装；被摸者会随抚摸节奏往复蹲起（按住潜行则保持蹲）",
  "carpet.rule.whoCalledMe.name": "谁在叫我",
- "carpet.rule.whoCalledMe.desc": "聊天消息中出现其他玩家的名字时，被点名的玩家连响三声提示音并弹出 title 显示消息原文",
+ "carpet.rule.whoCalledMe.desc": "聊天里出现玩家名字时，被点名的玩家连响三声提示音并弹出 title 显示消息原文（名字金色高亮）；true=子串匹配（最长名优先），mention=仅 @名字 触发",
  "carpetprimaryuan.command.patnod.status_on": "摸头互动：接受（其他玩家可以摸你）",
  "carpetprimaryuan.command.patnod.status_off": "摸头互动：不接受（其他玩家无法摸你）",
  "carpetprimaryuan.command.patnod.on": "已接受摸头互动",
@@ -236,5 +236,12 @@
  "carpetprimaryuan.redpacket.msg.offline_refund": "你离线期间的红包退回已补发：%s",
  "carpetprimaryuan.redpacket.msg.target_none": "当前没有其他在线玩家，无法发专属红包",
  "carpetprimaryuan.redpacket.msg.item_sep": "、",
- "carpetprimaryuan.command.text.no_player": "当前没有可接收字幕的在线玩家"
+ "carpetprimaryuan.command.text.no_player": "当前没有可接收字幕的在线玩家",
+ "carpet.rule.whoCalledMeSound.name": "谁在叫我音效",
+ "carpet.rule.whoCalledMeSound.desc": "谁在叫我规则的三声提示音开关，title 与聊天高亮不受影响",
+ "carpet.rule.whoCalledMeHighlight.name": "谁在叫我高亮色",
+ "carpet.rule.whoCalledMeHighlight.desc": "聊天框与 title 中被点名玩家名字的高亮色，none=不高亮",
+ "carpetprimaryuan.redpacket.msg.done_broadcast": "%s 的红包已被领完",
+ "carpetprimaryuan.redpacket.msg.expired_broadcast": "%s 的红包已过期",
+ "carpetprimaryuan.redpacket.msg.password_wrong": "口令不正确"
 }

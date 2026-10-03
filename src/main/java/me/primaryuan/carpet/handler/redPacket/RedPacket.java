@@ -43,6 +43,8 @@ public final class RedPacket {
     public final Set<UUID> claimed = new HashSet<>();
     /** 过期标记：仅保留用于"已过期"提示，不再可领 */
     public boolean expired;
+    /** 领完标记：保留一段时间供"已被领完"提示，清理同过期 */
+    public boolean done;
 
     public RedPacket(int id, UUID senderId, String senderName, Type type, String message,
                      List<List<ItemStack>> shares, UUID target, String targetName, long expireTick) {

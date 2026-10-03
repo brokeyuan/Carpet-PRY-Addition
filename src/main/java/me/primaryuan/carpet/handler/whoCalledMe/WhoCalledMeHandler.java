@@ -68,9 +68,11 @@ public class WhoCalledMeHandler {
     }
 
     private static void onChatMessage(PlayerChatMessage message, ServerPlayer sender, ChatType.Bound parameters) {
-        if (!CarpetPrimaryuanSettings.whoCalledMe) {
+        String mode = CarpetPrimaryuanSettings.whoCalledMe;
+        if ("false".equals(mode)) {
             return;
         }
+        boolean mentionMode = "mention".equals(mode);
         String content = message.signedContent();
         if (content == null || content.isBlank()) {
             Component unsigned = message.unsignedContent();
@@ -94,9 +96,14 @@ public class WhoCalledMeHandler {
                 continue;
             }
             String nameLower = player.getName().getString().toLowerCase(Locale.ROOT);
-            int idx = mentionIndex(lowered, nameLower, allNames);
+            // mention 模式：仅 @名字 触发（needle 含 @）；true 模式：子串 + 最长名优先
+            String needle = mentionMode ? "@" + nameLower : nameLower;
+            List<String> allNeedles = mentionMode
+                    ? allNames.stream().map(n -> "@" + n).toList() : allNames;
+            int idx = mentionIndex(lowered, needle, allNeedles);
             if (idx >= 0) {
-                notifyMentioned(player, content, nameLower, idx);
+                // @ 命中下标指向 @ 字符，高亮从名字本体开始
+                notifyMentioned(player, content, nameLower, mentionMode ? idx + 1 : idx);
             }
         }
     }
@@ -157,8 +164,6 @@ public class WhoCalledMeHandler {
 
     // ==================== 聊天名字高亮（ChatDecorator） ====================
 
-    /** 聊天名字高亮色：原版金（与 title 高亮一致） */
-    private static final ChatFormatting NAME_HIGHLIGHT = ChatFormatting.GOLD;
     private static final ChatDecorator MENTION_DECORATOR = WhoCalledMeHandler::decorateChat;
     private static MinecraftServer decoratedServer;
 
@@ -172,9 +177,12 @@ public class WhoCalledMeHandler {
      * 与提醒同一套名字集），其余文本保留原样式；无命中或规则关闭时原样透传。
      */
     private static Component decorateChat(ServerPlayer sender, Component message) {
-        if (!CarpetPrimaryuanSettings.whoCalledMe || decoratedServer == null) {
+        String mode = CarpetPrimaryuanSettings.whoCalledMe;
+        if ("false".equals(mode) || "none".equals(CarpetPrimaryuanSettings.whoCalledMeHighlight)
+                || decoratedServer == null) {
             return message;
         }
+        boolean mentionMode = "mention".equals(mode);
         String text = message.getString();
         if (text.isEmpty()) {
             return message;
@@ -188,15 +196,21 @@ public class WhoCalledMeHandler {
         String lowered = text.toLowerCase(Locale.ROOT);
         List<int[]> ranges = new ArrayList<>();
         for (String name : allNames) {
+            // mention 模式高亮 @+名字 整体；true 模式只高亮名字本体
+            String needle = mentionMode ? "@" + name : name;
             int from = 0;
             int idx;
-            while ((idx = lowered.indexOf(name, from)) >= 0) {
-                ranges.add(new int[]{idx, idx + name.length()});
+            while ((idx = lowered.indexOf(needle, from)) >= 0) {
+                ranges.add(new int[]{idx, idx + needle.length()});
                 from = idx + 1;
             }
         }
         ranges = nonOverlappingLongestFirst(ranges);
         if (ranges.isEmpty()) {
+            return message;
+        }
+        ChatFormatting highlight = highlightColor();
+        if (highlight == null) {
             return message;
         }
         // 逐段构建：非名字段保留原样式，名字段金色（样式基线取原文）
@@ -206,7 +220,7 @@ public class WhoCalledMeHandler {
             if (range[0] > cursor) {
                 out.append(Component.literal(text.substring(cursor, range[0])).setStyle(message.getStyle()));
             }
-            out.append(Component.literal(text.substring(range[0], range[1])).withStyle(NAME_HIGHLIGHT));
+            out.append(Component.literal(text.substring(range[0], range[1])).withStyle(highlight));
             cursor = range[1];
         }
         if (cursor < text.length()) {
@@ -234,6 +248,9 @@ public class WhoCalledMeHandler {
         player.connection.send(new ClientboundSetTitlesAnimationPacket(
                 TITLE_FADE_IN_TICKS, TITLE_STAY_TICKS, TITLE_FADE_OUT_TICKS));
         player.connection.send(new ClientboundSetTitleTextPacket(buildTitle(content, nameLower, hitIndex)));
+        if (!CarpetPrimaryuanSettings.whoCalledMeSound) {
+            return;
+        }
         // 首声同步发（不依赖调度），其余按间隔排出
         sendDing(player, DING_PITCHES[0]);
         for (int i = 1; i < DING_COUNT; i++) {
@@ -249,16 +266,32 @@ public class WhoCalledMeHandler {
         }
     }
 
-    /** title 分色：被点名者自己的名字金黄加粗、正文白——一眼看到是谁在叫 */
+    /** 高亮色映射；none 返回 null（不高亮，title 全白） */
+    static ChatFormatting highlightColor() {
+        return switch (CarpetPrimaryuanSettings.whoCalledMeHighlight) {
+            case "yellow" -> ChatFormatting.YELLOW;
+            case "aqua" -> ChatFormatting.AQUA;
+            case "green" -> ChatFormatting.GREEN;
+            case "red" -> ChatFormatting.RED;
+            case "none" -> null;
+            default -> ChatFormatting.GOLD;
+        };
+    }
+
+    /** title 分色：被点名者自己的名字按规则色加粗、正文白——一眼看到是谁在叫 */
     private static Component buildTitle(String content, String nameLower, int hitIndex) {
         if (hitIndex < 0 || hitIndex + nameLower.length() > content.length()) {
             return Component.literal(content);
+        }
+        ChatFormatting highlight = highlightColor();
+        if (highlight == null) {
+            return Component.literal(content).withStyle(ChatFormatting.WHITE);
         }
         int idx = hitIndex;
         int end = idx + nameLower.length();
         return Component.literal(content.substring(0, idx)).withStyle(ChatFormatting.WHITE)
                 .append(Component.literal(content.substring(idx, end))
-                        .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))
+                        .withStyle(highlight, ChatFormatting.BOLD))
                 .append(Component.literal(content.substring(end)).withStyle(ChatFormatting.WHITE));
     }
 

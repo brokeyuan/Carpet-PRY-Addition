@@ -46,6 +46,10 @@ public final class RedPacketManager {
     private static final Map<UUID, GuiSession> SESSIONS = new HashMap<>();
     private static final Map<UUID, Long> LAST_SEND = new HashMap<>();
     private static final Map<UUID, Long> LAST_CLAIM = new HashMap<>();
+    /** 点击口令红包链接的痕迹（uuid → [tick, packetId]）：口令对错提示仅在其后短窗口内给出 */
+    private static final Map<UUID, long[]> LAST_HINT = new HashMap<>();
+    /** 口令对错提示的窗口（tick，60 秒） */
+    private static final long HINT_WINDOW_TICKS = 60 * 20L;
     private static final Random RANDOM = new Random();
     private static boolean registered = false;
     private static int nextId = 1;
@@ -69,6 +73,20 @@ public final class RedPacketManager {
         // 离线暂存退回：上线补发
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
                 deliverOfflineRefunds(handler.player));
+        // 断线时投放 GUI 里的物品进离线暂存（重进补发）——菜单不触发 removed，
+        // 会话在下次发红包时才被覆盖，物品会凭空蒸发（生产实证）
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, sender) -> {
+            java.util.UUID uuid = handler.player.getUUID();
+            GuiSession session = SESSIONS.remove(uuid);
+            if (session != null && session.itemInputOpen) {
+                List<ItemStack> remaining = session.drainContainer(45);
+                if (!remaining.isEmpty()) {
+                    OFFLINE_REFUNDS.computeIfAbsent(uuid, k -> new ArrayList<>()).addAll(remaining);
+                }
+            }
+            LAST_SEND.remove(uuid);
+            LAST_CLAIM.remove(uuid);
+        });
         // 停服：开放中的 GUI 会话原样退回（内存态红包/暂存不跨重启，文档如实注明）
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
             for (GuiSession session : new ArrayList<>(SESSIONS.values())) {
@@ -92,8 +110,10 @@ public final class RedPacketManager {
                 if (!packet.expired && now >= packet.expireTick) {
                     packet.expired = true;
                     refundUnclaimed(packet, true);
+                    broadcastStatus(server, ServerI18n.tr(
+                            "carpetprimaryuan.redpacket.msg.expired_broadcast", packet.senderName));
                 }
-                if (packet.expired && now >= packet.expireTick + EXPIRED_KEEP_TICKS) {
+                if ((packet.expired || packet.done) && now >= packet.expireTick + EXPIRED_KEEP_TICKS) {
                     expired.add(packet.id);
                 }
             }
@@ -119,6 +139,8 @@ public final class RedPacketManager {
         UUID targetId;
         String targetName;
         boolean awaitingPassword;
+        /** 物品投放菜单打开中（断线/停服时仅此菜单的 0-44 玩家区需要退回） */
+        boolean itemInputOpen;
 
         GuiSession(ServerPlayer player, RedPacket.Type type, int count, String message) {
             this.player = player;
@@ -140,19 +162,26 @@ public final class RedPacketManager {
             return payload;
         }
 
-        void returnContainerItems() {
-            if (container == null) {
-                return;
-            }
+        /** 取走容器 [0, slotLimit) 的物品（图标槽不参与退回——那是服务端注入的 UI 物品） */
+        List<ItemStack> drainContainer(int slotLimit) {
             List<ItemStack> remaining = new ArrayList<>();
-            for (int slot = 0; slot < container.getContainerSize(); slot++) {
+            if (container == null) {
+                return remaining;
+            }
+            for (int slot = 0; slot < slotLimit && slot < container.getContainerSize(); slot++) {
                 ItemStack stack = container.getItem(slot);
                 if (!stack.isEmpty()) {
                     remaining.add(stack);
                     container.forceSet(slot, ItemStack.EMPTY);
                 }
             }
-            giveItems(player, remaining);
+            return remaining;
+        }
+
+        void returnContainerItems() {
+            if (itemInputOpen) {
+                giveItems(player, drainContainer(45));
+            }
         }
     }
 
@@ -209,6 +238,7 @@ public final class RedPacketManager {
         ServerPlayer player = session.player;
         // 关闭（含取消/直接 ESC）：把 0-44 槽剩余物品原样退回（giveItems 放不下的掉脚下）
         Runnable onRemoved = () -> {
+            session.itemInputOpen = false;
             RedPacketGui.RedPacketContainer container = session.container;
             if (container == null) {
                 return;
@@ -229,6 +259,7 @@ public final class RedPacketManager {
                 SESSIONS.remove(player.getUUID());
             }
         };
+        session.itemInputOpen = true;
         session.container = RedPacketGui.openItemInput(player,
                 ServerI18n.tr("carpetprimaryuan.redpacket.gui.items"),
                 RedPacketGui.icon(net.minecraft.world.item.Items.BARRIER,
@@ -373,7 +404,7 @@ public final class RedPacketManager {
         }
         int active = 0;
         for (RedPacket packet : PACKETS.values()) {
-            if (!packet.expired && packet.senderId.equals(player.getUUID())) {
+            if (!packet.expired && !packet.done && packet.senderId.equals(player.getUUID())) {
                 active++;
             }
         }
@@ -397,6 +428,7 @@ public final class RedPacketManager {
         PACKETS.put(packet.id, packet);
         LAST_SEND.put(player.getUUID(), now);
         SESSIONS.remove(player.getUUID());
+        playDing(player, 1.2f);
         closeNextTick(player);
         broadcast(server, packet);
     }
@@ -427,7 +459,7 @@ public final class RedPacketManager {
                 .append(ServerI18n.tr("carpetprimaryuan.redpacket.hover.time"))
                 .append("\n")
                 .append(ServerI18n.tr("carpetprimaryuan.redpacket.hover.claim"));
-        MutableComponent clickable = Component.literal(
+        MutableComponent clickable = me.primaryuan.carpet.util.ColorText.build(
                 ServerI18n.tr("carpetprimaryuan.redpacket.clickable", packet.message).getString());
         clickable.setStyle(RedPacketGui.claimStyle(command, hover));
         MutableComponent line = Component.literal(packet.senderName)
@@ -448,7 +480,7 @@ public final class RedPacketManager {
             player.sendSystemMessage(ServerI18n.tr("carpetprimaryuan.redpacket.msg.expired", packet.senderName));
             return;
         }
-        if (packet.sharesLeft() <= 0) {
+        if (packet.done || packet.sharesLeft() <= 0) {
             player.sendSystemMessage(ServerI18n.tr("carpetprimaryuan.redpacket.msg.done", packet.senderName));
             return;
         }
@@ -471,6 +503,7 @@ public final class RedPacketManager {
             return;
         }
         if (packet.type == RedPacket.Type.PASSWORD && packet.password != null) {
+            LAST_HINT.put(player.getUUID(), new long[]{now, packet.id});
             player.sendSystemMessage(ServerI18n.tr("carpetprimaryuan.redpacket.msg.password_hint"));
             return;
         }
@@ -490,12 +523,16 @@ public final class RedPacketManager {
             return;
         }
         RedPacket matched = null;
-        boolean matchedClaimed = false;
+        RedPacket matchedUnavailable = null;
         boolean matchedOwn = false;
         for (RedPacket packet : PACKETS.values()) {
-            if (packet.expired || packet.type != RedPacket.Type.PASSWORD
-                    || packet.password == null || packet.sharesLeft() <= 0
+            if (packet.type != RedPacket.Type.PASSWORD
+                    || packet.password == null
                     || !packet.password.equals(text)) {
+                continue;
+            }
+            if (packet.expired || packet.done || packet.sharesLeft() <= 0) {
+                matchedUnavailable = packet;
                 continue;
             }
             if (packet.senderId.equals(sender.getUUID())) {
@@ -503,7 +540,7 @@ public final class RedPacketManager {
                 continue;
             }
             if (packet.claimed.contains(sender.getUUID())) {
-                matchedClaimed = true;
+                matchedUnavailable = packet;
                 continue;
             }
             matched = packet;
@@ -511,10 +548,29 @@ public final class RedPacketManager {
         }
         if (matched != null) {
             finishClaim(sender, matched);
-        } else if (matchedOwn) {
+            return;
+        }
+        if (matchedOwn) {
             sender.sendSystemMessage(ServerI18n.tr("carpetprimaryuan.redpacket.msg.own"));
-        } else if (matchedClaimed) {
-            sender.sendSystemMessage(ServerI18n.tr("carpetprimaryuan.redpacket.msg.claimed"));
+            return;
+        }
+        if (matchedUnavailable != null) {
+            sender.sendSystemMessage(ServerI18n.tr(
+                    matchedUnavailable.expired ? "carpetprimaryuan.redpacket.msg.expired"
+                            : "carpetprimaryuan.redpacket.msg.done",
+                    matchedUnavailable.senderName));
+            return;
+        }
+        // 口令错误提示：仅在玩家近期点过某个口令红包链接（明确在试口令）时给出，
+        // 避免普通聊天被误判刷屏
+        long[] hint = LAST_HINT.get(sender.getUUID());
+        if (hint != null) {
+            long now = sender.level().getServer().getTickCount();
+            if (now - hint[0] < HINT_WINDOW_TICKS && PACKETS.containsKey((int) hint[1])) {
+                sender.sendSystemMessage(ServerI18n.tr("carpetprimaryuan.redpacket.msg.password_wrong"));
+            } else {
+                LAST_HINT.remove(sender.getUUID());
+            }
         }
     }
 
@@ -522,12 +578,32 @@ public final class RedPacketManager {
     private static void finishClaim(ServerPlayer player, RedPacket packet) {
         List<ItemStack> share = packet.takeShare(player.getUUID());
         giveItems(player, share);
+        playDing(player, 1.6f);
         player.sendSystemMessage(ServerI18n.tr("carpetprimaryuan.redpacket.msg.claim_success",
                 packet.senderName, itemsDescription(share)));
         if (packet.sharesLeft() <= 0) {
-            // 领完立即结束
-            PACKETS.remove(packet.id);
+            // 领完：标记保留一段时间（后续点击仍能看到"已被领完"），到期由 tick 清理
+            packet.done = true;
+            broadcastStatus(currentServer, ServerI18n.tr(
+                    "carpetprimaryuan.redpacket.msg.done_broadcast", packet.senderName));
         }
+    }
+
+    /** 全服灰色状态广播（领完/过期），斜体弱化 */
+    private static void broadcastStatus(MinecraftServer server, net.minecraft.network.chat.Component message) {
+        if (server != null) {
+            server.getPlayerList().broadcastSystemMessage(
+                    message.copy().withStyle(net.minecraft.ChatFormatting.GRAY), false);
+        }
+    }
+
+    /** 提示音（经验球音，与摸摸头已验证可听配方同源） */
+    private static void playDing(ServerPlayer player, float pitch) {
+        player.connection.send(new net.minecraft.network.protocol.game.ClientboundSoundPacket(
+                net.minecraft.core.Holder.direct(net.minecraft.sounds.SoundEvents.EXPERIENCE_ORB_PICKUP),
+                net.minecraft.sounds.SoundSource.PLAYERS,
+                player.getX(), player.getY(), player.getZ(),
+                0.8F, pitch, player.getRandom().nextLong()));
     }
 
     // ==================== 退回 ====================

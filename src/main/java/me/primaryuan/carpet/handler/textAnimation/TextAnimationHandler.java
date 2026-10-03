@@ -48,8 +48,6 @@ public final class TextAnimationHandler {
     /** 会话实体标记：孤儿清扫依据 */
     public static final String ENTITY_TAG = "pry_textanim";
 
-    /** 默认字色 #ffffff（白） */
-    static final int DEFAULT_COLOR = 0xFFFFFF;
     /** 感叹号整句增益：尾部每连发一个 +0.3，封顶 ×2.5 */
     static final float BANG_GAIN_STEP = 0.3f;
     static final float BANG_GAIN_MAX = 2.5f;
@@ -71,6 +69,8 @@ public final class TextAnimationHandler {
     public static final int MAX_CHARS = 128;
     /** 全局并发广播上限（每次 /text 一条广播，广播内每名在线玩家一个会话） */
     public static final int MAX_BROADCASTS = 8;
+    /** 单条广播直接生成字幕的玩家数上限，超出改用 actionbar 打字机（大服防实体爆炸） */
+    static final int MAX_DIRECT_PLAYERS = 12;
 
     /** 周期清扫间隔（tick）：孤儿实体随区块懒加载出现，SERVER_STARTED 时未必可见 */
     private static final int SWEEP_INTERVAL_TICKS = 100;
@@ -102,7 +102,7 @@ public final class TextAnimationHandler {
             }
             // 有活跃会话时跳过：会话持有并自行管理自己的实体，
             // 此时清扫会把正在播放的字形当孤儿误杀
-            if (!SESSION_TO_BROADCAST.isEmpty()) {
+            if (!ACTIVE_BROADCASTS.isEmpty()) {
                 return true;
             }
             sweepOrphans(server);
@@ -169,7 +169,8 @@ public final class TextAnimationHandler {
         MinecraftServer server = source.getLevel().getServer();
         List<Group> template = buildGroups(segments);
 
-        Broadcast broadcast = new Broadcast();
+        List<ServerPlayer> direct = new ArrayList<>();
+        List<ServerPlayer> degraded = new ArrayList<>();
         for (ServerPlayer target : server.getPlayerList().getPlayers()) {
             if (target instanceof EntityPlayerMPFake) {
                 continue;
@@ -178,14 +179,25 @@ public final class TextAnimationHandler {
             if (!chunkReadyFor(target.level(), origin, target.getYRot(), target.getXRot(), options)) {
                 continue;
             }
-            TextSession session = new TextSession(target.level(), origin,
-                    target.getYRot(), target.getXRot(), copyGroups(template), options);
-            broadcast.sessions.add(session);
+            // 大服降级：直接字幕会话超过上限后，其余玩家改用 actionbar 打字机（零实体）
+            if (direct.size() < MAX_DIRECT_PLAYERS) {
+                direct.add(target);
+            } else {
+                degraded.add(target);
+            }
+        }
+        if (direct.isEmpty() && degraded.isEmpty()) {
+            return -5;
+        }
+        Broadcast broadcast = new Broadcast();
+        broadcast.remaining = direct.size() + (degraded.isEmpty() ? 0 : 1);
+        for (ServerPlayer target : direct) {
+            TextSession session = new TextSession(target, copyGroups(template), options, broadcast);
             SESSION_TO_BROADCAST.put(session, broadcast);
             ServerTickScheduler.register(session);
         }
-        if (broadcast.sessions.isEmpty()) {
-            return -5;
+        if (!degraded.isEmpty()) {
+            ServerTickScheduler.register(new ActionbarSession(degraded, segments, broadcast, options.hold));
         }
         ACTIVE_BROADCASTS.add(broadcast);
         return template.size();
@@ -201,20 +213,24 @@ public final class TextAnimationHandler {
         return chunk != null && chunk.getFullStatus() == FullChunkStatus.ENTITY_TICKING;
     }
 
-    /** 会话自然结束（或停服清理）时从广播中摘除；广播内全部会话结束后销毁广播 */
+    /** 会话自然结束（或停服清理）时通知广播；全部部分结束即销毁广播 */
     static void onSessionEnded(TextSession session) {
         Broadcast broadcast = SESSION_TO_BROADCAST.remove(session);
         if (broadcast != null) {
-            broadcast.sessions.remove(session);
-            if (broadcast.sessions.isEmpty()) {
+            broadcast.partFinished();
+            if (broadcast.remaining <= 0) {
                 ACTIVE_BROADCASTS.remove(broadcast);
             }
         }
     }
 
-    /** 一次 /text 广播：同一文本在每名在线玩家面前的独立会话集合 */
-    private static final class Broadcast {
-        final List<TextSession> sessions = new ArrayList<>();
+    /** 一次 /text 广播：直接字幕会话 + 可选降级 actionbar 会话，全部结束即销毁 */
+    static final class Broadcast {
+        int remaining;
+
+        void partFinished() {
+            remaining--;
+        }
     }
 
     /** 每名玩家一份组副本：Group 含逐会话可变状态（typed/holdLeft/生成点），segments 只读共享 */
@@ -246,81 +262,19 @@ public final class TextAnimationHandler {
     }
 
     /**
-     * & 色码解析：&0~&f 颜色、&l/&o/&n/&m/&k 样式、&r 复位、&& 字面 &。
-     * 色码按原版 § 语义重置已积累的样式标志。
+     * & 色码解析：&0~&f 颜色、&l/&o/&n/&m/&k 样式、&r 复位、&& 字面 &（解析在 {@code ColorText}，
+     * 多规则共用）。
      */
     static List<Segment> parseText(String raw) {
-        List<Segment> out = new ArrayList<>();
-        int color = DEFAULT_COLOR;
-        boolean bold = false;
-        boolean italic = false;
-        boolean underlined = false;
-        boolean strikethrough = false;
-        boolean obfuscated = false;
-
-        for (int i = 0; i < raw.length(); i++) {
-            char c = raw.charAt(i);
-            if (c == '&' && i + 1 < raw.length()) {
-                char code = Character.toLowerCase(raw.charAt(i + 1));
-                if (code == '&') {
-                    out.add(new Segment('&', styleOf(color, bold, italic, underlined, strikethrough, obfuscated)));
-                    i++;
-                    continue;
-                }
-                ChatFormatting format = ChatFormatting.getByCode(code);
-                if (format != null) {
-                    // 颜色判定走 TextColor.fromLegacyFormat（26.2 起 ChatFormatting
-                    // 自身的 isColor/getColor 被移除，而此方法全版本可用）
-                    TextColor legacy = TextColor.fromLegacyFormat(format);
-                    if (legacy != null) {
-                        color = legacy.getValue();
-                        bold = italic = underlined = strikethrough = obfuscated = false;
-                    } else if (format == ChatFormatting.RESET) {
-                        color = DEFAULT_COLOR;
-                        bold = italic = underlined = strikethrough = obfuscated = false;
-                    } else if (format == ChatFormatting.BOLD) {
-                        bold = true;
-                    } else if (format == ChatFormatting.ITALIC) {
-                        italic = true;
-                    } else if (format == ChatFormatting.UNDERLINE) {
-                        underlined = true;
-                    } else if (format == ChatFormatting.STRIKETHROUGH) {
-                        strikethrough = true;
-                    } else if (format == ChatFormatting.OBFUSCATED) {
-                        obfuscated = true;
-                    }
-                    i++;
-                    continue;
-                }
-                // 非法码：按字面 & 处理，下一个字符照常解析
-                out.add(new Segment('&', styleOf(color, bold, italic, underlined, strikethrough, obfuscated)));
-                continue;
-            }
-            out.add(new Segment(c, styleOf(color, bold, italic, underlined, strikethrough, obfuscated)));
+        List<me.primaryuan.carpet.util.ColorText.Char> parsed =
+                me.primaryuan.carpet.util.ColorText.parse(raw);
+        List<Segment> out = new ArrayList<>(parsed.size());
+        for (var ch : parsed) {
+            out.add(new Segment(ch.c(), ch.style()));
         }
         return out;
     }
 
-    private static Style styleOf(int color, boolean bold, boolean italic, boolean underlined,
-                                 boolean strikethrough, boolean obfuscated) {
-        Style style = Style.EMPTY.withColor(TextColor.fromRgb(color));
-        if (bold) {
-            style = style.withBold(true);
-        }
-        if (italic) {
-            style = style.withItalic(true);
-        }
-        if (underlined) {
-            style = style.withUnderlined(true);
-        }
-        if (strikethrough) {
-            style = style.withStrikethrough(true);
-        }
-        if (obfuscated) {
-            style = style.withObfuscated(true);
-        }
-        return style;
-    }
 
     /** 长文本按标点断组（≤25 字/组，断点向后 lookahead 找标点），非末组追加 " - " 连接符 */
     private static List<Group> buildGroups(List<Segment> segments) {
@@ -340,7 +294,7 @@ public final class TextAnimationHandler {
             List<Segment> parts = new ArrayList<>(segments.subList(start, end));
             if (end < segments.size()) {
                 for (char c : GROUP_CONNECTOR.toCharArray()) {
-                    parts.add(new Segment(c, Style.EMPTY.withColor(TextColor.fromRgb(DEFAULT_COLOR))));
+                    parts.add(new Segment(c, Style.EMPTY.withColor(TextColor.fromRgb(me.primaryuan.carpet.util.ColorText.DEFAULT_COLOR))));
                 }
             }
             groups.add(new Group(groups.size(), parts));

@@ -414,13 +414,15 @@
 | 属性 | 值 |
 |------|-----|
 | **规则名** | `whoCalledMe` |
-| **描述** | 聊天消息中出现其他玩家的名字时，被点名的玩家连响三声提示音并弹出 title 显示消息原文 |
-| **类型** | `boolean` |
+| **描述** | 聊天里出现玩家名字时，被点名的玩家连响三声提示音并弹出 title 显示消息原文（名字金色高亮）；true=子串匹配（最长名优先），mention=仅 @名字 触发 |
+| **类型** | `string` |
 | **默认值** | `false` |
-| **参考选项** | `false`, `true` |
+| **参考选项** | `false`, `true`, `mention` |
 | **分类** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
 
-**工作原理**：挂在 Fabric `ServerMessageEvents.CHAT_MESSAGE`（注入点为 `PlayerManager.broadcast` 的 HEAD——签名与非签名聊天共同汇聚点，离线服未签名聊天同样触发），零 Mixin 纯服务端。名字匹配为大小写不敏感的**子串 + 最长名优先**——只要对话里出现名字就提醒，名字紧邻字母/数字（"Brokeyuan1"/"abcBrokeyuan"）同样命中；命中若被更长玩家名完整覆盖则不提醒（服内同时有 Tim/Timy 时 "timy 来一下" 只提醒 Timy，而 "timy tim" 中独立的 "tim" 仍提醒 Tim），优先完整的名字。自己发消息提到自己同样提醒，carpet 假人（作为被点名者）不提醒。提示音为紫水晶叮声定向单发（发声点在被听者头顶，仅本人可闻，pitch 2.0），首声立即同步发、余下每 6 tick（300ms）一声共三声；title 固定 0.25s 淡入 / 3s 停留 / 0.5s 淡出，文本即聊天框打出的原文——被点名者自己的名字以金黄加粗高亮、正文白色，一眼看到是谁在叫。
+**工作原理**：挂在 Fabric `ServerMessageEvents.CHAT_MESSAGE`（注入点为 `PlayerManager.broadcast` 的 HEAD——签名与非签名聊天共同汇聚点，离线服未签名聊天同样触发），零 Mixin 纯服务端。名字匹配为大小写不敏感的**子串 + 最长名优先**——只要对话里出现名字就提醒，名字紧邻字母/数字（"Brokeyuan1"/"abcBrokeyuan"）同样命中；命中若被更长玩家名完整覆盖则不提醒（服内同时有 Tim/Timy 时 "timy 来一下" 只提醒 Timy，而 "timy tim" 中独立的 "tim" 仍提醒 Tim），优先完整的名字。`mention` 模式仅 `@名字` 触发（高亮 @+名字 整体），适合公屏名字高频的服务器降噪。
+
+**配套子规则**：`whoCalledMeSound`（boolean，默认 true）控制三声提示音开关（title 与聊天高亮不受影响）；`whoCalledMeHighlight`（string，默认 `gold`，可选 `yellow`/`aqua`/`green`/`red`/`none`）控制聊天框与 title 中被点名名字的高亮色，`none` 时不高亮且聊天装饰器整体透传。自己发消息提到自己同样提醒，carpet 假人（作为被点名者）不提醒。提示音为紫水晶叮声定向单发（发声点在被听者头顶，仅本人可闻，pitch 2.0），首声立即同步发、余下每 6 tick（300ms）一声共三声；title 固定 0.25s 淡入 / 3s 停留 / 0.5s 淡出，文本即聊天框打出的原文——被点名者自己的名字以金黄加粗高亮、正文白色，一眼看到是谁在叫。
 
 **聊天框名字高亮**：经原版 `ChatDecorator` 官方扩展点（@Inject 接管 `MinecraftServer.getChatDecorator`，调用点 `handleChat`，三版本签名一致 javap 核实）把消息文本中出现的在线玩家名渲染为金色——发送一条 "xxx来一下"，所有玩家在聊天框都能看到 xxx 变金色。区间为贪心最长优先的非重叠选择（"timy tim" 各自高亮、同位重叠取最长名），其余文本保留原样式；仅玩家聊天走装饰器（/say、加入/退出等系统消息不受影响），规则关闭或消息无玩家名时原样透传。正版签名环境下装饰内容会带"无法验证"标记（离线服无签名，不受影响）。
 
@@ -520,7 +522,7 @@
 | **参考选项** | `false`, `true` |
 | **分类** | `PRIMARYUAN`, `FEATURE`, `COMMAND` |
 
-**工作原理**：命令语法、四类分配规则与 GUI 槽位见命令文档 `/redpacket`。全程服务端原版容器菜单（箱子/铁砧）实现，按钮与头颅槽经容器层拦截保护（不可取出/放入），点击转回调，客户端预测的 ghost 由下一次 broadcastChanges 纠正；聊天广播为亮红可点击组件（RUN_COMMAND 打开 `/redpacket claim <id>`），口令红包经聊天框逐字匹配领取（复用 ServerMessageEvents.CHAT_MESSAGE）。份额在发出时按类型一次性切好，总量守恒（星与条随机组成/余数随机落份，JUnit 契约测试覆盖）；有效期 3 分钟，过期未领份额原样退回发送者，离线暂存上线补发；领完立即结束。防滥用：领取点击防抖 10 tick、发送冷却 10 秒、每人同时最多 3 个未结束红包。玩家头颅经 PROFILE 组件按名字异步解析（1.21.10 起为 ResolvableProfile 工厂方法，1.21~1.21.8 为 record 构造，javap 核实分叉）；26.2 起染色物品常量并入 ColorCollection 按 pick(DyeColor) 取值。**重启失效语义**：进行中的红包、离线退回暂存、冷却与防抖状态均为内存态，服务器重启即清空（与假人脑 keep 同款如实注明）。
+**工作原理**：命令语法、四类分配规则与 GUI 槽位见命令文档 `/redpacket`。领完/过期时对全服广播灰色状态行（后续点击也有"已被领完/已过期"反馈，不再静默）；断线时投放 GUI 内的物品自动进离线暂存（重进补发）。全程服务端自定义菜单（Slot 层保护：保护格 mayPlace/mayPickup=false、removeItem 返空、set 空操作，clicked 对保护格只放行左键转回调、shift-click/数字键交换/拖拽/扔出/克隆整体屏蔽——Container 层拦截会被 quickMoveStack/moveItemStackTo/doClick SWAP 绕过造成图标复制与玩家物品蒸发，生产实证）；发出与领取有提示音（经验球音，与摸摸头同款配方）；聊天广播为亮红可点击组件（RUN_COMMAND 打开 `/redpacket claim <id>`），口令红包经聊天框逐字匹配领取（复用 ServerMessageEvents.CHAT_MESSAGE）。份额在发出时按类型一次性切好，总量守恒（星与条随机组成/余数随机落份，JUnit 契约测试覆盖）；有效期 3 分钟，过期未领份额原样退回发送者，离线暂存上线补发；领完立即结束。防滥用：领取点击防抖 10 tick、发送冷却 10 秒、每人同时最多 3 个未结束红包。玩家头颅经 PROFILE 组件按名字异步解析（1.21.10 起为 ResolvableProfile 工厂方法，1.21~1.21.8 为 record 构造，javap 核实分叉）；26.2 起染色物品常量并入 ColorCollection 按 pick(DyeColor) 取值。**重启失效语义**：进行中的红包、离线退回暂存、冷却与防抖状态均为内存态，服务器重启即清空（与假人脑 keep 同款如实注明）。
 
 ---
 
