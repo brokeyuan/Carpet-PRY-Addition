@@ -2,7 +2,7 @@
 
 > Mod ID: `carpet-pry-addition` | Version: `1.2.0`
 >
-> Total: **27 rules**
+> Total: **29 rules**
 >
 > **Tip: Use `Ctrl+F` to quickly find the rule you want**
 
@@ -33,11 +33,13 @@
   - [ridingPlayersClientInteract - Allow Interaction While Riding (Client)](#ridingplayersclientinteract---allow-interaction-while-riding-client)
   - [peacefulPlayers - Peaceful Players](#peacefulplayers---peaceful-players)
   - [patPatPlayers - Pat Pat Players](#patpatplayers---pat-pat-players)
+  - [whoCalledMe - Who Called Me](#whocalledme---who-called-me)
 - [Survival Features](#survival-features)
   - [playerHat - Player Hat](#playerhat---player-hat)
   - [betterSnowball - Better Snowball](#bettersnowball---better-snowball)
   - [invisibleInTallGrass - Invisibility Grass](#invisibleintallgrass---invisibility-grass)
   - [moreEndCrystalTypes - More End Crystal Types](#moreendcrystaltypes---more-end-crystal-types)
+  - [textAnimation - MiSide Subtitles](#textanimation---miside-subtitles)
 - [Player Scaling](#player-scaling)
   - [playerScale - Player Scale](#playerscale---player-scale)
   - [playerScaleMin - Player Scale Min](#playerscalemin---player-scale-min)
@@ -401,6 +403,23 @@ Pat other **real** players on the head, cat-petting style: each right-click is o
 
 **Crouch-pulse state machine (the press-down petting feel)**: each stroke checks how the target is sneaking — if the target **holds shift themselves**, the stroke skips crouching (they stay down, never popping up); if the target is **standing**, the server force-crouches them for 3 ticks then releases, so their model bobs down and up with the stroking rhythm. States migrate freely while petting: releasing shift returns to bobbing, pressing shift stops it; when petting stops the forced crouch expires automatically and full control returns. The bob is a server-side entity flag sync — bystanders see it, the patted player sees nothing themselves, and their client overrides the flag on their own shift changes (documented as-is). Real players only (carpet fake players are excluded at the entry). When the target is involved in player riding (as a vehicle or a passenger) the crouch pulse is skipped — a forced crouch would trigger the riding side's sneak-eject / the vanilla passenger sneak-dismount and break the tower; ride/pick-up also release any in-flight crouch pulse before mounting, so a crouched target never dismounts the moment it gets mounted.
 
+---
+
+### whoCalledMe - Who Called Me
+
+When a chat message contains another player's name, the mentioned player gets a reminder: three notification dings in a row plus a title showing the message text.
+
+| Property | Value |
+|----------|-------|
+| **Rule Name** | `whoCalledMe` |
+| **Description** | When a chat message contains another player's name, the mentioned player gets three notification dings and a title showing the message text |
+| **Type** | `boolean` |
+| **Default Value** | `false` |
+| **Suggested Options** | `false`, `true` |
+| **Categories** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
+
+**How it works**: hooks Fabric `ServerMessageEvents.CHAT_MESSAGE` (injected at the HEAD of `PlayerManager.broadcast` — the common funnel for both signed and unsigned chat, so unsigned chat on offline-mode servers triggers too), zero mixins, pure server-side. Name matching is case-insensitive with word boundaries based on the ASCII player-name charset (letters/digits/underscore) — a name that is a substring of another name never triggers for the wrong player ("Tim" is not pinged inside "Timy"); names glued to CJK text count as mentions ("来一下Alex", "小明哥" — Chinese has no space-separated words). Mentioning yourself and carpet fake players (as receivers) is ignored. The ding is an amethyst chime sent as a directed packet (originating at the receiver's own position, audible only to them, pitch 2.0); the first ding lands at the end of the current tick, the rest follow every 6 ticks (300 ms), three in total. The title uses a fixed 0.25 s fade-in / 3 s stay / 0.5 s fade-out, with the typed message text as its content.
+
 ## Survival Features---
 
 ## Survival Features
@@ -464,6 +483,25 @@ Allows placing end crystals on crying obsidian. In vanilla, end crystals can onl
 | **Categories** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
 
 **How it works**: vanilla `EndCrystalItem.useOn` only accepts obsidian/bedrock as the base; when the rule is enabled, the clicked crying obsidian is swapped for an obsidian state to pass the check, and all remaining placement logic (space check, entity collision check, spawning, item consumption) is reused from vanilla. The spawned crystal gets its beam target set to `(0, 128, 0)`; in invulnerable mode it is additionally set `Invulnerable` (immune to attacks/explosions, still pushable by pistons and breakable in creative) and renders its bottom slab. The same `useOn` runs on both client and server, so the local prediction matches the server; vanilla clients on a dedicated server work too (1.19+ clients send the interaction packet before the local prediction).
+
+---
+
+### textAnimation - MiSide Subtitles
+
+/text pops up dialogue text character by character in front of the executor, holds, then lets the whole sentence drop and fade — the text display effect from the game MiSide.
+
+| Property | Value |
+|----------|-------|
+| **Rule Name** | `textAnimation` |
+| **Description** | /text pops up dialogue text character by character in front of the executor, holds, then lets the whole sentence drop and fade (MiSide-style text effect); one vanilla text_display entity per character, removed after play, pure server-side |
+| **Type** | `boolean` |
+| **Default Value** | `false` |
+| **Suggested Options** | `false`, `true` |
+| **Categories** | `PRIMARYUAN`, `FEATURE`, `COMMAND` |
+
+**How it works**: command syntax and parameters are documented under `/text` in the commands doc. Timeline: character-by-character pop-in (1 char/tick, one vanilla text_display entity per character, spawned with a random ±45° tilt at 1.8x scale that tweens to the final state over 10 client-side transformation interpolation ticks, plus a click sound per character) → hold for 40 ticks → drop (server-side physics: gravity 0.03/tick², drag 0.99, one 0.28 bounce on landing, a one-shot random tumble at drop start, and fading from tick 24 of the drop at -8 opacity/tick; entities are removed once played out). Long texts are split into groups at punctuation (≤25 characters per group, with the break point pushed to a punctuation mark within 10 characters ahead); non-final groups get a " - " connector, the next group starts typing as soon as the previous one starts dropping, and groups get a random ±22.5° yaw and height jitter. The spawn point is the executor's feet + view direction × distance, at feet +1.3; the default color is MiSide yellow #FFFF55, and legacy & color codes are supported (&c etc., && for a literal &, color codes reset style flags like vanilla §). Guards: ≤128 characters per sentence, ≤8 concurrent sessions server-wide, and the target chunk must be ENTITY_TICKING (always true for player executors; an empty-server console gets a clear error — vanilla writes entities added to non-entity-ticking chunks back to the chunk as UNLOADED_TO_CHUNK, verified by local E2E). Vanilla never offered a programmatic interface for display entities (text/transformation/interpolation/opacity setters are all private; signatures verified identical on 1.21/1.21.11/26.3 via javap), so two @Invoker mixin accessors drive them; entity tag reads were renamed to entityTags in 26.1.2 and entity type constants moved to EntityTypes (plural) in 26.2, handled by preprocessor forks. Orphan entities left by crashes/kills carry the `pry_textanim` tag and are swept at server start plus every 100 ticks (skipped while sessions are active, so playing glyphs are never swept — a sweep-kills-live-glyphs bug was reproduced and fixed locally).
+
+---
 
 ---
 

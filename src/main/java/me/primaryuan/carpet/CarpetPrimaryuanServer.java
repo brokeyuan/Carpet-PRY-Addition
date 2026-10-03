@@ -13,10 +13,13 @@ import me.primaryuan.carpet.command.PvpCommand;
 import me.primaryuan.carpet.command.PatNodCommand;
 import me.primaryuan.carpet.command.RidingCommand;
 import me.primaryuan.carpet.command.ScaleCommand;
+import me.primaryuan.carpet.command.TextCommand;
 import me.primaryuan.carpet.command.TppCommand;
 import me.primaryuan.carpet.handler.entitiesRidingPlayers.EntitiesRidingPlayersHandler;
 import me.primaryuan.carpet.handler.patPatPlayers.PatPatPlayersHandler;
 import me.primaryuan.carpet.handler.peacefulPlayers.PvpManager;
+import me.primaryuan.carpet.handler.textAnimation.TextAnimationHandler;
+import me.primaryuan.carpet.handler.whoCalledMe.WhoCalledMeHandler;
 import me.primaryuan.carpet.settings.CarpetRuleRegistrar;
 import me.primaryuan.carpet.util.MixinSanityCheck;
 import me.primaryuan.carpet.util.SendtoLinkManager;
@@ -56,7 +59,8 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
             "fakePlayerBrain",                // /player <name> brain
             "playerScale",                    // /scale
             "patPatPlayers",                  // /patnod
-            "peacefulPlayers"                 // /pvp
+            "peacefulPlayers",                // /pvp
+            "textAnimation"                   // /text
     );
 
     @Override
@@ -83,6 +87,7 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         ScaleCommand.register();
         PvpCommand.register();
         PatNodCommand.register();
+        TextCommand.register();
 
         // 和平的玩家（pvp）：加载持久化状态、注册 PVP 伤害拦截与玩家加入登记
         PvpManager.init();
@@ -92,6 +97,12 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
 
         // 摸摸头：过期冷却条目的周期清理
         PatPatPlayersHandler.init();
+
+        // 谁在叫我：注册聊天监听（聊天中出现其他玩家名字时提示音+title 点名）
+        WhoCalledMeHandler.init();
+
+        // 米塔字幕：孤儿实体清扫（启动）与停服清理
+        TextAnimationHandler.init();
 
         // 假人背包链接（sendto）：初始化 tick 转移调度、假人下线清理与服务器停止清空监听
         SendtoLinkManager.init();

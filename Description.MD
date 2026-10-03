@@ -1,4 +1,4 @@
-Carpet PRY Addition is a server-side Fabric extension for the [fabric-carpet](https://github.com/gnembon/fabric-carpet) mod, developed for the **Primaryuan Server**. It adds 28 configurable Carpet rules and 8 new commands (plus `/player` extensions) covering bug fixes, fake player enhancements, player interaction, and survival gameplay expansion.
+Carpet PRY Addition is a server-side Fabric extension for the [fabric-carpet](https://github.com/gnembon/fabric-carpet) mod, developed for the **Primaryuan Server**. It adds 30 configurable Carpet rules and 9 new commands (plus `/player` extensions) covering bug fixes, fake player enhancements, player interaction, and survival gameplay expansion.
 
 ---
 
@@ -97,6 +97,14 @@ Pat other real players on the head, cat-petting style: each right-click is a str
 ### Peaceful Players (`peacefulPlayers`)
 
 Enables the `/pvp` command: each player can turn their own PVP on or off. Players with PVP off cannot attack players and take no damage from players (self-inflicted damage unaffected); blocked attacks play a cue sound so the "poke" signal is preserved. Admins can toggle PVP for anyone or server-wide with `/pvp on|off @a`, and `/pvp list` shows everyone who currently has PVP off. States persist across restarts in `config/carpet-pry-pvp.json`.
+
+### Who Called Me (`whoCalledMe`)
+
+When a chat message contains another player's name, the mentioned player gets three notification dings and a title showing the message text. Name matching is case-insensitive with word boundaries, so substrings never trigger for the wrong player; mentioning yourself and fake players (as receivers) is ignored. Purely server-side — works on vanilla clients.
+
+### MiSide Subtitles (`textAnimation`)
+
+The `/text` command plays dialogue text in front of the executor with the text display effect from the game MiSide: characters pop in one by one (random tilt, scale settling, click sounds), hold, then the whole sentence drops with server-side gravity/bounce physics while fading out. Long texts are split into groups at punctuation and played sequentially. One vanilla text_display entity per character, removed after play; default MiSide yellow with legacy color code support; pure server-side — works on vanilla clients.
 
 ---
 

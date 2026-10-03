@@ -11,7 +11,7 @@
 
 ## Introduction
 
-**Carpet-PRY-Addition** is a server-side Fabric extension for [Fabric Carpet](https://github.com/gnembon/fabric-carpet), developed for the **Primaryuan Server**; it also enhances the experience when installed client-side. It adds **28** configurable Carpet rules and **8** commands, covering fake player enhancements, player scaling, server management, mod compatibility fixes, ported features, player interactions, and survival gameplay expansion.
+**Carpet-PRY-Addition** is a server-side Fabric extension for [Fabric Carpet](https://github.com/gnembon/fabric-carpet), developed for the **Primaryuan Server**; it also enhances the experience when installed client-side. It adds **30** configurable Carpet rules and **9** commands, covering fake player enhancements, player scaling, server management, mod compatibility fixes, ported features, player interactions, and survival gameplay expansion.
 
 All rules are off by default except the client-side rule `ridingPlayersClientInteract`; enable what you need.
 
@@ -93,10 +93,12 @@ All rules are off by default except the client-side rule `ridingPlayersClientInt
 - `ridingPlayersClientInteract`: keep interacting while carrying a passenger (requires client install)
 - `peacefulPlayers`: per-player `/pvp` toggles, `@a` as a server-wide switch
 - `patPatPlayers`: pat other players' heads cat-petting style — the target bobs down and up with the rhythm with hearts above their head, while the patted player sees a heart before their eyes and hears a soft sound coming from the patter's direction; works with any item in hand and never alters vanilla interactions (`true` = pat freely / `sneak` = only while sneaking; pure server-side, similar to PatPat)
+- `whoCalledMe`: when a chat message contains another player's name, the mentioned player gets three notification dings and a title showing the message text (word-boundary matching, fake players excluded)
 
 ### Survival Features
 
 - `sleepingDuringTheDay`: sleep during daytime, wake to night
+- `textAnimation`: `/text` pops up MiSide-style animated subtitles in front of the executor — characters pop in one by one, hold, then the sentence drops and fades (works on vanilla clients)
 - `playerHat`: `/hat` to wear items on head, Totem of Undying in head slot triggers death protection
 - `betterSnowball`: snowballs deal knockback and damage to players
 - `invisibleInTallGrass`: auto-invisibility when head is inside tall grass

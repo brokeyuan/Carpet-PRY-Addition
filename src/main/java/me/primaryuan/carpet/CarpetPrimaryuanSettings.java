@@ -183,4 +183,17 @@ public class CarpetPrimaryuanSettings {
     )
     public static String patPatPlayers = "false";
 
+    // 谁在叫我：聊天里出现其他玩家的名字时，被点名的玩家连响三声提示音并弹出 title 显示消息原文
+    @Rule(
+            categories = {PRIMARYUAN, SURVIVAL, FEATURE}
+    )
+    public static boolean whoCalledMe = false;
+
+    // 米塔字幕：/text 在执行者眼前逐字弹出对话文本，停留后整句坠落消散（米塔游戏的文字显示效果）；
+    // 原版 text_display 实体逐字驱动，纯服务端实现，客户端无需安装任何模组
+    @Rule(
+            categories = {PRIMARYUAN, FEATURE, COMMAND}
+    )
+    public static boolean textAnimation = false;
+
 }

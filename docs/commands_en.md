@@ -34,6 +34,8 @@
   - [/riding - Riding Permission Management](#riding---riding-permission-management)
   - [/picking - Pickup Permission Management](#picking---pickup-permission-management)
 - [/pvp - Peaceful Players](#pvp---peaceful-players)
+- [/patnod - Pat Interaction Toggle](#patnod---pat-interaction-toggle)
+- [/text - MiSide Subtitles](#text---miside-subtitles)
   - [Command Syntax](#command-syntax)
   - [Permission Modes (peacefulPlayers values)](#permission-modes-peacefulplayers-values)
   - [Server-wide Switch Behavior](#server-wide-switch-behavior)
@@ -664,5 +666,55 @@ Toggles the per-player preference for accepting pats: declined players cannot be
 /patnod          # status: Pat interactions: accepted
 /patnod off      # declined: players cannot pat you
 /patnod on       # accept again
+```
+
+---
+
+## /text - MiSide Subtitles
+
+> **Related rule**: `textAnimation`
+
+Pops up dialogue text character by character in front of the executor, holds, then lets the whole sentence drop and fade (the text display effect from the game MiSide). One vanilla text_display entity per character, removed after play; long texts are split into groups at punctuation and played sequentially.
+
+### Syntax
+
+- `/text <text>`: play with default parameters
+- `/text <text> <options>`: options is a `k=v;k=v` string
+
+Quote `text` if it contains spaces; legacy color codes use `&` (e.g. `&c`), `&&` for a literal `&`, and color codes reset style flags like vanilla `§`.
+
+### Permission
+
+- Available to all players
+- The whole command tree is hidden while the `textAnimation` rule is disabled
+
+### Options
+
+| Key | Type | Default | Description |
+|------|------|------|------|
+| `distance` | float | `5.0` | Spawn distance from the executor (blocks) |
+| `scale` | float | `1.2` | Character scale (final pop state) |
+| `spacing` | float | `0.175` | Letter spacing unit (blocks per width unit) |
+| `hold` | int | `40` | Hold between typing and the drop (ticks) |
+| `glow` | true/false | `false` | Glowing outline on characters |
+| `sound` | true/false | `true` | Click sound per character |
+| `drop` | true/false | `true` | Drop after holding (false = fade in place) |
+
+### Behavior Details
+
+- Pop-in: 1 char/tick, each with a random ±45° tilt, 1.8x scale settling and a random y jitter, plus a click sound (volume 1.0 / pitch 1.2)
+- Drop: gravity 0.03/tick², drag 0.99, one 0.28 bounce on landing, a one-shot random tumble; fading from tick 24 of the drop at -8 opacity/tick
+- Grouping: ≤25 characters per group, break point pushed to a punctuation mark within 10 characters ahead; non-final groups get a " - " connector; the next group starts as the previous one drops, with a random ±22.5° yaw and height jitter between groups
+- Spawn point: executor's feet + view direction × distance, at feet +1.3
+- Guards: ≤128 characters per sentence, ≤8 concurrent sessions server-wide; the target chunk must be ENTITY_TICKING (always true for player executors), otherwise a "chunk not loaded" error is returned
+
+### Examples
+
+```
+/text "Hello there"                                   # defaults
+/text "&cRed&eYellow&B"                               # & color codes
+/text "Long line one, long line two" distance=3 hold=60
+/text "Static text" drop=false                        # fade in place, no drop
+/text "Glowing" glow=true sound=false                 # glow, no sound
 ```
 
