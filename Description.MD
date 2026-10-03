@@ -100,7 +100,7 @@ Enables the `/pvp` command: each player can turn their own PVP on or off. Player
 
 ### Who Called Me (`whoCalledMe`)
 
-When a chat message contains another player's name, the mentioned player gets three notification dings and a title showing the message text. Name matching is case-insensitive with word boundaries, so substrings never trigger for the wrong player; mentioning yourself and fake players (as receivers) is ignored. Purely server-side — works on vanilla clients.
+When a chat message contains another player's name, the mentioned player gets three notification dings and a title showing the message text; names appearing in chat are also rendered gold for everyone via the vanilla chat decorator. Name matching is case-insensitive with word boundaries, so substrings never trigger for the wrong player; mentioning yourself and fake players (as receivers) is ignored. Purely server-side — works on vanilla clients.
 
 ### MiSide Subtitles (`textAnimation`)
 

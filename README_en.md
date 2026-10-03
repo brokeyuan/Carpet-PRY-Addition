@@ -93,7 +93,7 @@ All rules are off by default except the client-side rule `ridingPlayersClientInt
 - `ridingPlayersClientInteract`: keep interacting while carrying a passenger (requires client install)
 - `peacefulPlayers`: per-player `/pvp` toggles, `@a` as a server-wide switch
 - `patPatPlayers`: pat other players' heads cat-petting style — the target bobs down and up with the rhythm with hearts above their head, while the patted player sees a heart before their eyes and hears a soft sound coming from the patter's direction; works with any item in hand and never alters vanilla interactions (`true` = pat freely / `sneak` = only while sneaking; pure server-side, similar to PatPat)
-- `whoCalledMe`: when a chat message contains a player's name (substring with longest-name-wins, glued letters/digits count), the mentioned player gets three notification dings and a title showing the message text with their name highlighted in gold (mentioning yourself works too, fake players excluded)
+- `whoCalledMe`: when a chat message contains a player's name (substring with longest-name-wins, glued letters/digits count), the mentioned player gets three notification dings and a title showing the message text; player names appearing in chat are rendered gold (mentioning yourself works too, fake players excluded)
 
 ### Survival Features
 
