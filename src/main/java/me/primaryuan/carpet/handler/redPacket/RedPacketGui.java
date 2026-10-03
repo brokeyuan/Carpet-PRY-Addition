@@ -11,10 +11,17 @@ import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.AnvilMenu;
-import net.minecraft.world.inventory.ChestMenu;
+//#if MC < 260102
+import net.minecraft.world.inventory.ClickType;
+//#else
+//$$ // 26.1.2 起点击类型枚举改名 ContainerInput
+//$$ import net.minecraft.world.inventory.ContainerInput;
+//#endif
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -30,10 +37,13 @@ import java.util.function.IntPredicate;
 
 /**
  * 红包全部服务端 GUI：类型选择（3 行）、物品投放（6 行）、专属对象选择（6 行玩家头）、
- * 口令铁砧。全部使用原版菜单类型，原版客户端即用。
+ * 口令铁砧。全部使用原版菜单类型（客户端用原版箱子界面预测），原版客户端即用。
  *
- * <p>按钮/头颅槽经 {@link RedPacketContainer} 保护（不可取出、不可覆盖、不可放入），
- * 点击经 removeItem 拦截转为回调（客户端预测产生的 ghost 由下一次 broadcastChanges 纠正）。
+ * <p>保护在 Slot 层与菜单层双重实现：保护格 {@code mayPlace/mayPickup=false}、
+ * {@code removeItem} 返回空、{@code set} 空操作；{@link RedPacketMenu#clicked} 对保护格
+ * 只放行 PICKUP 转回调、其余点击类型（shift-click/数字键交换/拖拽/扔出/克隆）整体屏蔽——
+ * Container 层拦截不足以覆盖菜单交互（quickMoveStack/moveItemStackTo/doClick SWAP
+ * 在 Slot 层直接读写，绕过 Container 拦截造成图标复制与玩家物品蒸发，生产实证）。
  * 物品投放菜单关闭时把 0-44 槽剩余物品交还回调——未点确认即关闭的原样退回语义。</p>
  */
 public final class RedPacketGui {
@@ -54,7 +64,7 @@ public final class RedPacketGui {
     // ==================== 物品构造 ====================
 
     /** 26.2 起染色物品常量并入 ColorCollection，按颜色取值 */
-    static Item redShulkerBox() {
+    public static Item redShulkerBox() {
         //#if MC >= 260200
         //$$ return Items.DYED_SHULKER_BOX.pick(net.minecraft.world.item.DyeColor.RED);
         //#else
@@ -62,7 +72,7 @@ public final class RedPacketGui {
         //#endif
     }
 
-    static Item limeDye() {
+    public static Item limeDye() {
         //#if MC >= 260200
         //$$ return Items.DYE.pick(net.minecraft.world.item.DyeColor.LIME);
         //#else
@@ -119,79 +129,149 @@ public final class RedPacketGui {
         //#endif
     }
 
-    // ==================== 受保护容器 ====================
+    // ==================== 菜单 ====================
 
-    /**
-     * 红包容器：受保护槽不可取/不可放/不可覆盖，点击经 removeItem 拦截转为回调。
-     */
+    /** 红包自简容器：纯数据（图标注入 forceSet），全部保护在菜单 Slot 层 */
     public static final class RedPacketContainer extends SimpleContainer {
-        private final IntPredicate protectedSlots;
-        private final IntConsumer clickAction;
 
-        RedPacketContainer(int size, IntPredicate protectedSlots, IntConsumer clickAction) {
+        RedPacketContainer(int size) {
             super(size);
-            this.protectedSlots = protectedSlots;
-            this.clickAction = clickAction;
         }
 
-        /** 绕过保护直接写槽（选中高亮更新用） */
+        /** 直接写槽（图标注入/选中高亮/收集清空用） */
         public void forceSet(int slot, ItemStack stack) {
             super.setItem(slot, stack);
         }
-
-        @Override
-        public ItemStack removeItem(int slot, int amount) {
-            if (amount > 0 && protectedSlots.test(slot)) {
-                clickAction.accept(slot);
-                return ItemStack.EMPTY;
-            }
-            return super.removeItem(slot, amount);
-        }
-
-        @Override
-        public ItemStack removeItemNoUpdate(int slot) {
-            return protectedSlots.test(slot) ? ItemStack.EMPTY : super.removeItemNoUpdate(slot);
-        }
-
-        @Override
-        public void setItem(int slot, ItemStack stack) {
-            if (protectedSlots.test(slot)) {
-                return;
-            }
-            super.setItem(slot, stack);
-        }
-
-        @Override
-        public boolean canPlaceItem(int slot, ItemStack stack) {
-            return !protectedSlots.test(slot) && super.canPlaceItem(slot, stack);
-        }
     }
 
-    // ==================== 菜单 ====================
+    /**
+     * 红包自定义菜单：保护格经 ProtectedSlot + clicked 全拦实现零复制零蒸发；
+     * onRemoved 在菜单关闭时回调（物品投放的退回语义用）。
+     */
+    public static final class RedPacketMenu extends AbstractContainerMenu {
+        private final IntPredicate protectedSlots;
+        private final IntConsumer onButton;
+        private final Runnable onRemoved;
 
-    /** 物品投放菜单：关闭时把 0-44 槽剩余物品交还回调（未确认即关闭的原样退回语义） */
-    public static final class ItemInputMenu extends ChestMenu {
-        private final RedPacketContainer container;
-        private final Consumer<List<ItemStack>> onClosed;
+        RedPacketMenu(MenuType<?> type, int id, Inventory playerInventory,
+                      net.minecraft.world.Container container, int rows,
+                      IntPredicate protectedSlots, IntConsumer onButton, Runnable onRemoved) {
+            super(type, id);
+            this.protectedSlots = protectedSlots;
+            this.onButton = onButton;
+            this.onRemoved = onRemoved;
+            int containerSlots = rows * 9;
+            for (int index = 0; index < containerSlots; index++) {
+                int row = index / 9;
+                int col = index % 9;
+                if (protectedSlots.test(index)) {
+                    this.addSlot(new Slot(container, index, 8 + col * 18, 18 + row * 18) {
+                        @Override
+                        public boolean mayPlace(ItemStack stack) {
+                            return false;
+                        }
 
-        ItemInputMenu(int id, Inventory playerInventory, RedPacketContainer container,
-                      Consumer<List<ItemStack>> onClosed) {
-            super(MenuType.GENERIC_9x6, id, playerInventory, container, 6);
-            this.container = container;
-            this.onClosed = onClosed;
+                        @Override
+                        public boolean mayPickup(Player player) {
+                            return false;
+                        }
+
+                        @Override
+                        public ItemStack remove(int amount) {
+                            // 点击识别统一由 clicked 触发回调；此处返回空使一切拿取无效
+                            return ItemStack.EMPTY;
+                        }
+
+                        @Override
+                        public void set(ItemStack stack) {
+                            // 数字键交换等直接写槽的路径防线：保护格永不改变
+                        }
+
+                        @Override
+                        public void setByPlayer(ItemStack oldStack, ItemStack newStack) {
+                            // 同上
+                        }
+                    });
+                } else {
+                    this.addSlot(new Slot(container, index, 8 + col * 18, 18 + row * 18));
+                }
+            }
+            for (int row = 0; row < 3; row++) {
+                for (int col = 0; col < 9; col++) {
+                    this.addSlot(new Slot(playerInventory, 9 + row * 9 + col,
+                            8 + col * 18, 18 + containerSlots + 14 + row * 18));
+                }
+            }
+            for (int col = 0; col < 9; col++) {
+                this.addSlot(new Slot(playerInventory, col,
+                        8 + col * 18, 76 + containerSlots + 14));
+            }
+        }
+
+        @Override
+        public ItemStack quickMoveStack(Player player, int index) {
+            Slot slot = this.slots.get(index);
+            if (!slot.hasItem() || protectedSlots.test(index)) {
+                return ItemStack.EMPTY;
+            }
+            // 玩家背包格 shift-click：仅可进入非保护容器格（mayPlace=false 的格会被
+            // moveItemStackTo 自动跳过，物品不会消失）；容器格 shift-click：收进玩家背包
+            ItemStack current = slot.getItem();
+            ItemStack copy = current.copy();
+            int containerSlots = this.slots.size() - 36;
+            boolean moved;
+            if (index < containerSlots) {
+                moved = this.moveItemStackTo(current, containerSlots, this.slots.size(), true);
+            } else {
+                moved = this.moveItemStackTo(current, 0, containerSlots, false);
+            }
+            if (!moved) {
+                return ItemStack.EMPTY;
+            }
+            if (current.isEmpty()) {
+                slot.setByPlayer(ItemStack.EMPTY);
+            } else {
+                slot.setChanged();
+            }
+            return copy;
+        }
+
+        //#if MC < 260102
+        @Override
+        public void clicked(int index, int button, ClickType type, Player player) {
+            // 保护格：只放行左键点击转回调，shift-click/数字键交换/拖拽/扔出/克隆全部屏蔽
+            if (index >= 0 && index < this.slots.size() && protectedSlots.test(index)) {
+                if (type == ClickType.PICKUP) {
+                    onButton.accept(index);
+                }
+                return;
+            }
+            super.clicked(index, button, type, player);
+        }
+        //#else
+        //$$ @Override
+        //$$ public void clicked(int index, int button, ContainerInput type, Player player) {
+        //$$     // 保护格：只放行左键点击转回调，shift-click/数字键交换/拖拽/扔出/克隆全部屏蔽
+        //$$     if (index >= 0 && index < this.slots.size() && protectedSlots.test(index)) {
+        //$$         if (type == ContainerInput.PICKUP) {
+        //$$             onButton.accept(index);
+        //$$         }
+        //$$         return;
+        //$$     }
+        //$$     super.clicked(index, button, type, player);
+        //$$ }
+        //#endif
+
+        @Override
+        public boolean stillValid(Player player) {
+            return true;
         }
 
         @Override
         public void removed(Player player) {
-            List<ItemStack> remaining = new ArrayList<>();
-            for (int slot = 0; slot < 45; slot++) {
-                ItemStack stack = container.getItem(slot);
-                if (!stack.isEmpty()) {
-                    remaining.add(stack);
-                    container.forceSet(slot, ItemStack.EMPTY);
-                }
+            if (onRemoved != null) {
+                onRemoved.run();
             }
-            onClosed.accept(remaining);
             super.removed(player);
         }
     }
@@ -254,52 +334,52 @@ public final class RedPacketGui {
 
     // ==================== 打开 ====================
 
-    /** 类型选择：3 行，图标按 TYPE_SLOTS 槽位摆放，全槽保护；回调传图标下标 0-3 */
-    public static RedPacketContainer openTypeMenu(ServerPlayer player, Component title,
-                                                  ItemStack[] icons, IntConsumer onPick) {
-        RedPacketContainer container = new RedPacketContainer(27, slot -> true, slot -> {
-            for (int i = 0; i < TYPE_SLOTS.length; i++) {
-                if (TYPE_SLOTS[i] == slot) {
-                    onPick.accept(i);
-                    return;
-                }
-            }
-        });
+    /** 类型选择：3 行，图标按 TYPE_SLOTS 槽位摆放；回调传图标下标 0-3 */
+    public static void openTypeMenu(ServerPlayer player, Component title,
+                                    ItemStack[] icons, IntConsumer onPick) {
+        RedPacketContainer container = new RedPacketContainer(27);
+        RedPacketMenu menu = new RedPacketMenu(MenuType.GENERIC_9x3, 0,
+                player.getInventory(), container, 3, slot -> true,
+                slot -> {
+                    for (int i = 0; i < TYPE_SLOTS.length; i++) {
+                        if (TYPE_SLOTS[i] == slot) {
+                            onPick.accept(i);
+                            return;
+                        }
+                    }
+                }, null);
         for (int i = 0; i < TYPE_SLOTS.length; i++) {
             container.forceSet(TYPE_SLOTS[i], icons[i]);
         }
-        player.openMenu(new SimpleMenuProvider(
-                (id, inv, p) -> new ChestMenu(MenuType.GENERIC_9x3, id, inv, container, 3),
-                title));
-        return container;
+        player.openMenu(new SimpleMenuProvider((id, inv, p) -> menu, title));
     }
 
     /** 物品投放：6 行，槽 0-44 可编辑，按钮槽保护；关闭回调负责未确认退回语义 */
     public static RedPacketContainer openItemInput(ServerPlayer player, Component title,
                                                    ItemStack cancelIcon, ItemStack confirmIcon, ItemStack clearIcon,
-                                                   IntConsumer onButton, Consumer<List<ItemStack>> onClosed) {
-        RedPacketContainer container = new RedPacketContainer(54,
+                                                   IntConsumer onButton, Runnable onRemoved) {
+        RedPacketContainer container = new RedPacketContainer(54);
+        RedPacketMenu menu = new RedPacketMenu(MenuType.GENERIC_9x6, 0,
+                player.getInventory(), container, 6,
                 slot -> slot == SLOT_CANCEL || slot == SLOT_CONFIRM || slot == SLOT_CLEAR,
-                onButton);
+                onButton, onRemoved);
         container.forceSet(SLOT_CANCEL, cancelIcon);
         container.forceSet(SLOT_CONFIRM, confirmIcon);
         container.forceSet(SLOT_CLEAR, clearIcon);
-        player.openMenu(new SimpleMenuProvider(
-                (id, inv, p) -> new ItemInputMenu(id, inv, container, onClosed),
-                title));
+        player.openMenu(new SimpleMenuProvider((id, inv, p) -> menu, title));
         return container;
     }
 
     /** 专属对象选择：6 行放在线玩家头（不含发送者），全槽保护 */
     public static RedPacketContainer openTargetSelect(ServerPlayer player, Component title,
                                                       List<ItemStack> heads, IntConsumer onPick) {
-        RedPacketContainer container = new RedPacketContainer(54, slot -> true, onPick);
+        RedPacketContainer container = new RedPacketContainer(54);
+        RedPacketMenu menu = new RedPacketMenu(MenuType.GENERIC_9x6, 0,
+                player.getInventory(), container, 6, slot -> true, onPick, null);
         for (int i = 0; i < heads.size() && i < 54; i++) {
             container.forceSet(i, heads.get(i));
         }
-        player.openMenu(new SimpleMenuProvider(
-                (id, inv, p) -> new ChestMenu(MenuType.GENERIC_9x6, id, inv, container, 6),
-                title));
+        player.openMenu(new SimpleMenuProvider((id, inv, p) -> menu, title));
         return container;
     }
 

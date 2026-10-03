@@ -207,6 +207,28 @@ public final class RedPacketManager {
 
     private static void openItemInput(GuiSession session) {
         ServerPlayer player = session.player;
+        // 关闭（含取消/直接 ESC）：把 0-44 槽剩余物品原样退回（giveItems 放不下的掉脚下）
+        Runnable onRemoved = () -> {
+            RedPacketGui.RedPacketContainer container = session.container;
+            if (container == null) {
+                return;
+            }
+            List<ItemStack> remaining = new ArrayList<>();
+            for (int slot = 0; slot < 45; slot++) {
+                ItemStack stack = container.getItem(slot);
+                if (!stack.isEmpty()) {
+                    remaining.add(stack);
+                    container.forceSet(slot, ItemStack.EMPTY);
+                }
+            }
+            GuiSession open = SESSIONS.get(player.getUUID());
+            if (open == session && !remaining.isEmpty()) {
+                giveItems(player, remaining);
+            }
+            if (open == session && !open.awaitingPassword) {
+                SESSIONS.remove(player.getUUID());
+            }
+        };
         session.container = RedPacketGui.openItemInput(player,
                 ServerI18n.tr("carpetprimaryuan.redpacket.gui.items"),
                 RedPacketGui.icon(net.minecraft.world.item.Items.BARRIER,
@@ -216,16 +238,7 @@ public final class RedPacketManager {
                 RedPacketGui.icon(net.minecraft.world.item.Items.HOPPER,
                         ServerI18n.tr("carpetprimaryuan.redpacket.gui.clear").getString()),
                 slot -> onItemButton(player.getUUID(), slot),
-                remaining -> {
-                    // 关闭（含取消/确认后）：把 0-44 槽剩余物品原样退回
-                    GuiSession open = SESSIONS.get(player.getUUID());
-                    if (open == session && !remaining.isEmpty()) {
-                        giveItems(player, remaining);
-                    }
-                    if (open == session && !open.awaitingPassword) {
-                        SESSIONS.remove(player.getUUID());
-                    }
-                });
+                onRemoved);
     }
 
     private static void onItemButton(UUID playerId, int rawSlot) {
@@ -272,7 +285,7 @@ public final class RedPacketManager {
                     });
             return;
         }
-        createAndBroadcast(session, payload, null, null);
+        createAndBroadcast(session, payload, session.targetId, null);
     }
 
     private static void onPasswordSet(GuiSession session, String text) {
@@ -550,7 +563,10 @@ public final class RedPacketManager {
     private static void giveItems(ServerPlayer player, List<ItemStack> stacks) {
         for (ItemStack stack : stacks) {
             ItemStack copy = stack.copyWithCount(stack.getCount());
-            if (!player.getInventory().add(copy) && !copy.isEmpty()) {
+            // Inventory.add 会就地缩减 copy（放得下多少拿多少），返回值仅表示"至少放入一件"；
+            // 背包只装得下一部分时返回 true——剩余必须无条件掉落，否则蒸发（字节码实证）
+            player.getInventory().add(copy);
+            if (!copy.isEmpty()) {
                 dropAtFeet(player, copy);
             }
         }
