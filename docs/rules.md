@@ -420,7 +420,7 @@
 | **参考选项** | `false`, `true` |
 | **分类** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
 
-**工作原理**：挂在 Fabric `ServerMessageEvents.CHAT_MESSAGE`（注入点为 `PlayerManager.broadcast` 的 HEAD——签名与非签名聊天共同汇聚点，离线服未签名聊天同样触发），零 Mixin 纯服务端。名字匹配为大小写不敏感的**纯子串**——只要对话里出现名字就提醒，名字紧邻字母/数字（"Brokeyuan1"/"abcBrokeyuan"）同样命中；代价是接受前缀玩家间的误伤（服内同时有 Tim/Timy 时 "timy" 也会提醒 Tim），不漏报优先。自己发消息提到自己同样提醒，carpet 假人（作为被点名者）不提醒。提示音为紫水晶叮声定向单发（发声点在被听者头顶，仅本人可闻，pitch 2.0），首声立即同步发、余下每 6 tick（300ms）一声共三声；title 固定 0.25s 淡入 / 3s 停留 / 0.5s 淡出，文本即聊天框打出的原文——被点名者自己的名字以金黄加粗高亮、正文白色，一眼看到是谁在叫。
+**工作原理**：挂在 Fabric `ServerMessageEvents.CHAT_MESSAGE`（注入点为 `PlayerManager.broadcast` 的 HEAD——签名与非签名聊天共同汇聚点，离线服未签名聊天同样触发），零 Mixin 纯服务端。名字匹配为大小写不敏感的**子串 + 最长名优先**——只要对话里出现名字就提醒，名字紧邻字母/数字（"Brokeyuan1"/"abcBrokeyuan"）同样命中；命中若被更长玩家名完整覆盖则不提醒（服内同时有 Tim/Timy 时 "timy 来一下" 只提醒 Timy，而 "timy tim" 中独立的 "tim" 仍提醒 Tim），优先完整的名字。自己发消息提到自己同样提醒，carpet 假人（作为被点名者）不提醒。提示音为紫水晶叮声定向单发（发声点在被听者头顶，仅本人可闻，pitch 2.0），首声立即同步发、余下每 6 tick（300ms）一声共三声；title 固定 0.25s 淡入 / 3s 停留 / 0.5s 淡出，文本即聊天框打出的原文——被点名者自己的名字以金黄加粗高亮、正文白色，一眼看到是谁在叫。
 
 ## 生存功能---
 

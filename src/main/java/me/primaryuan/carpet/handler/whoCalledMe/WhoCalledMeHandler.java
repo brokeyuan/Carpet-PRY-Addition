@@ -17,6 +17,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -26,8 +28,9 @@ import java.util.Locale;
  * <p>纯服务端实现，零 Mixin：挂在 Fabric ServerMessageEvents.CHAT_MESSAGE——
  * 注入点在 PlayerManager.broadcast(SignedMessage, …) 的 HEAD，签名与非签名
  * 聊天共同汇聚于此，离线服的未签名聊天同样触发。名字匹配大小写不敏感的
- * 纯子串（只要对话出现名字即提醒，名字紧邻字母/数字同样命中；接受同名字
- * 前缀玩家间的误伤，不漏报优先）；自己发消息提到自己也提醒，仅排除假人。</p>
+ * 子串 + 最长名优先（只要对话出现名字即提醒，名字紧邻字母/数字同样命中；
+ * 命中若被更长玩家名覆盖则不提醒——Tim/Timy 同服时 "timy" 只提醒 Timy）；
+ * 自己发消息提到自己也提醒，仅排除假人。</p>
  *
  * <p>提示音为 ClientboundSoundPacket 定向单发（发声点在被听者头顶，仅本人
  * 可闻），首声当 tick 末尾、其余按间隔经 ServerTickScheduler 排出；title
@@ -72,40 +75,87 @@ public class WhoCalledMeHandler {
         }
         String lowered = content.toLowerCase(Locale.ROOT);
         MinecraftServer server = sender.level().getServer();
+        // 全体在线真人名（小写）：最长匹配优先需要两两比对命中覆盖关系
+        List<String> allNames = new ArrayList<>();
+        for (ServerPlayer online : server.getPlayerList().getPlayers()) {
+            if (!(online instanceof EntityPlayerMPFake)) {
+                allNames.add(online.getName().getString().toLowerCase(Locale.ROOT));
+            }
+        }
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             // 自己发消息提到自己同样提醒；carpet 假人（作为被点名者）不提醒
             if (player instanceof EntityPlayerMPFake) {
                 continue;
             }
             String nameLower = player.getName().getString().toLowerCase(Locale.ROOT);
-            if (mentionIndex(lowered, nameLower) >= 0) {
-                notifyMentioned(player, content, nameLower);
+            int idx = mentionIndex(lowered, nameLower, allNames);
+            if (idx >= 0) {
+                notifyMentioned(player, content, nameLower, idx);
             }
         }
     }
 
-    /** 子串匹配（大小写不敏感）：返回第一个命中的起始下标，未命中 -1（包可见供单测）。
-     * 只要对话里出现名字即提醒，不做词边界——名字紧邻字母/数字（如 Brokeyuan1）同样命中；
-     * 接受误伤（服内同时有 Tim/Timy 时 "timy" 也会提醒 Tim），不漏报优先 */
-    static int mentionIndex(String loweredContent, String loweredName) {
+    /**
+     * 子串匹配 + 最长名优先（大小写不敏感）：返回第一个未被更长玩家名命中覆盖的
+     * 命中下标，无有效命中 -1（包可见供单测）。
+     *
+     * <p>名字紧邻字母/数字（如 Brokeyuan1）同样命中；服内同时有 Tim/Timy 时，
+     * "timy 来一下" 的 [0,3) 命中属于 Timy 的 [0,4) 覆盖范围，Tim 不提醒、Timy
+     * 提醒（优先完整的名字）；而 "timy tim" 中 Tim 的独立第二命中仍提醒。</p>
+     */
+    static int mentionIndex(String loweredContent, String loweredName, List<String> allNamesLower) {
         if (loweredName.isEmpty()) {
             return -1;
         }
-        return loweredContent.indexOf(loweredName);
+        List<int[]> own = allHits(loweredContent, loweredName);
+        if (own.isEmpty()) {
+            return -1;
+        }
+        List<int[]> others = new ArrayList<>();
+        for (String other : allNamesLower) {
+            if (other.isEmpty() || other.equals(loweredName)) {
+                continue;
+            }
+            others.addAll(allHits(loweredContent, other));
+        }
+        for (int[] hit : own) {
+            boolean covered = false;
+            for (int[] range : others) {
+                if (range[0] <= hit[0] && range[1] >= hit[1]) {
+                    covered = true;
+                    break;
+                }
+            }
+            if (!covered) {
+                return hit[0];
+            }
+        }
+        return -1;
+    }
+
+    private static List<int[]> allHits(String loweredContent, String name) {
+        List<int[]> hits = new ArrayList<>();
+        int from = 0;
+        int idx;
+        while ((idx = loweredContent.indexOf(name, from)) >= 0) {
+            hits.add(new int[]{idx, idx + name.length()});
+            from = idx + 1;
+        }
+        return hits;
     }
 
     /** 子串匹配：命中即 true（包可见供单测） */
     static boolean mentionsName(String loweredContent, String loweredName) {
-        return mentionIndex(loweredContent, loweredName) >= 0;
+        return !loweredName.isEmpty() && loweredContent.contains(loweredName);
     }
 
     /** 名字高亮色：原版金 */
     private static final int NAME_GOLD = 0xFFAA00;
 
-    private static void notifyMentioned(ServerPlayer player, String content, String nameLower) {
+    private static void notifyMentioned(ServerPlayer player, String content, String nameLower, int hitIndex) {
         player.connection.send(new ClientboundSetTitlesAnimationPacket(
                 TITLE_FADE_IN_TICKS, TITLE_STAY_TICKS, TITLE_FADE_OUT_TICKS));
-        player.connection.send(new ClientboundSetTitleTextPacket(buildTitle(content, nameLower)));
+        player.connection.send(new ClientboundSetTitleTextPacket(buildTitle(content, nameLower, hitIndex)));
         // 首声同步发（不依赖调度），其余按间隔排出
         sendDing(player, DING_PITCHES[0]);
         for (int i = 1; i < DING_COUNT; i++) {
@@ -122,11 +172,11 @@ public class WhoCalledMeHandler {
     }
 
     /** title 分色：被点名者自己的名字金黄加粗、正文白——一眼看到是谁在叫 */
-    private static Component buildTitle(String content, String nameLower) {
-        int idx = mentionIndex(content.toLowerCase(Locale.ROOT), nameLower);
-        if (idx < 0) {
+    private static Component buildTitle(String content, String nameLower, int hitIndex) {
+        if (hitIndex < 0 || hitIndex + nameLower.length() > content.length()) {
             return Component.literal(content);
         }
+        int idx = hitIndex;
         int end = idx + nameLower.length();
         return Component.literal(content.substring(0, idx)).withStyle(ChatFormatting.WHITE)
                 .append(Component.literal(content.substring(idx, end))
