@@ -17,6 +17,8 @@ public class RidingCommand {
             // 规则关闭时整棵命令不可见（不显示、不可执行）
             dispatcher.register(Commands.literal("riding")
                     .requires(source -> CarpetPrimaryuanSettings.ridingPlayers)
+                    // 无参 = 翻转本人被骑许可（回执广播新状态）
+                    .executes(ctx -> toggleBare(ctx, EntitiesRidingPlayersHandler.Permission.RIDE))
                     .then(Commands.literal("on").executes(ctx ->
                             toggle(ctx, true, EntitiesRidingPlayersHandler.Permission.RIDE,
                                     "carpetprimaryuan.command.ride.allow_ride")))
@@ -26,6 +28,8 @@ public class RidingCommand {
 
             dispatcher.register(Commands.literal("picking")
                     .requires(source -> CarpetPrimaryuanSettings.pickupPlayers)
+                    // 无参 = 翻转本人被捡许可
+                    .executes(ctx -> toggleBare(ctx, EntitiesRidingPlayersHandler.Permission.PICKUP))
                     .then(Commands.literal("on").executes(ctx ->
                             toggle(ctx, true, EntitiesRidingPlayersHandler.Permission.PICKUP,
                                     "carpetprimaryuan.command.ride.allow_pickup")))
@@ -33,6 +37,21 @@ public class RidingCommand {
                             toggle(ctx, false, EntitiesRidingPlayersHandler.Permission.PICKUP,
                                     "carpetprimaryuan.command.ride.disallow_pickup"))));
         });
+    }
+
+    /** 无参入口：翻转本人对应类型的许可并按新状态广播 */
+    private static int toggleBare(CommandContext<CommandSourceStack> context,
+                                  EntitiesRidingPlayersHandler.Permission type) throws CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        boolean allow = !EntitiesRidingPlayersHandler.isAllowed(type, player.getName().getString());
+        toggle(context, allow, type, allow
+                ? (type == EntitiesRidingPlayersHandler.Permission.RIDE
+                        ? "carpetprimaryuan.command.ride.allow_ride"
+                        : "carpetprimaryuan.command.ride.allow_pickup")
+                : (type == EntitiesRidingPlayersHandler.Permission.RIDE
+                        ? "carpetprimaryuan.command.ride.disallow_ride"
+                        : "carpetprimaryuan.command.ride.disallow_pickup"));
+        return 1;
     }
 
     /** on/off 共用入口：设置本人对应类型的许可并广播 */

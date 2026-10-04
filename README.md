@@ -11,7 +11,7 @@
 
 ## 简介
 
-**Carpet-PRY-Addition** 是一个基于 [Fabric Carpet](https://github.com/gnembon/fabric-carpet) 的服务端扩展模组，主要为 PRY 服务器（Primaryuan Server）开发，在客户端安装时能增加使用体验。新增 **29 条**可配置 Carpet 规则和 **8 个**命令，涵盖假人管理增强、玩家缩放、服务器管理、模组兼容性修复、功能移植、玩家交互和生存特性扩展。
+**Carpet-PRY-Addition** 是一个基于 [Fabric Carpet](https://github.com/gnembon/fabric-carpet) 的服务端扩展模组，主要为 PRY 服务器（Primaryuan Server）开发，在客户端安装时能增加使用体验。新增 **33 条**可配置 Carpet 规则和 **10 个**命令，涵盖假人管理增强、玩家缩放、服务器管理、模组兼容性修复、功能移植、玩家交互和生存特性扩展。
 
 除 `ridingPlayersClientInteract` 客户端规则默认开启外，其余规则默认关闭，按需启用。
 
@@ -78,6 +78,7 @@
 - `fakePlayerSkinMode` / `fakePlayerSkinSet`：假人皮肤模式（默认 / 召唤时 / 统一皮肤）与统一皮肤玩家名；所有假人出生即穿目标皮肤无闪变，不影响真人玩家
 - `fakePlayerDropAll`：`/player dropall` 按设定节奏持续丢出假人背包物品
 - `fakePlayerSendto`：`/player sendto` 建立假人间单向背包物品流
+- `fakePlayerBrain`：`/player <name> brain` 为假人注入 19 种原版生物式 AI（僵尸/骷髅/猪灵/狼/末影人…），纯服务端、零额外实体；支持中文名、`keep` 跨重启保持与名牌后缀着色
 
 ### 玩家缩放
 
@@ -102,8 +103,8 @@
 - `playerHat`：`/hat` 将物品戴在头上，头部不死图腾可触发死亡保护
 - `betterSnowball`：雪球对玩家造成击退与伤害
 - `invisibleInTallGrass`：头部位于高草丛时自动隐身
-- `textAnimation`：`/text` 向所有在线玩家（假人除外）各自眼前逐字弹出对话文本，停留后整句坠落消散（米塔字幕，结尾感叹号越多整句越大，原版客户端即用）
-- `redPacket`：`/redpacket` 发红包（拼手气/普通/专属/口令），聊天框广播点击领取，过期退回（原版客户端即用）
+- `textAnimation`：`/text` 向在线玩家（假人除外；@a 全服或玩家名定向，目标必填）各自眼前逐字弹出对话文本，停留后整句坠落消散（米塔字幕，结尾感叹号越多整句越大，原版客户端即用）
+- `redPacket`：`/redpacket` 发红包（拼手气/普通/专属/口令），聊天框广播点击领取（支持 `@玩家` 专属直达、领取回执、`/redpacket mute` 退订），过期退回（原版客户端即用）
 
 
 ## 致谢

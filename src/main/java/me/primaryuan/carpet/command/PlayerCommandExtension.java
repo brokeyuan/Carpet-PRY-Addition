@@ -6,6 +6,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import me.primaryuan.carpet.i18n.ServerI18n;
 import me.primaryuan.carpet.util.DropSlotScheduler;
+import carpet.patches.EntityPlayerMPFake;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.server.level.ServerPlayer;
@@ -29,6 +30,20 @@ public final class PlayerCommandExtension {
     private PlayerCommandExtension() {}
 
     /**
+     * 目标必须是 Carpet 假人：resolvePlayer 按名解析任意在线玩家，/player 树对真人名
+     * 同样可达（commandPlayer 规则默认开放）——缺这层校验，任何玩家都能对真人持续
+     * 清空背包。与 brain（PlayerBrainCommand）/sendto（SendtoLinkManager）的既有校验对齐。
+     */
+    private static boolean requireFake(CommandSourceStack source, ServerPlayer player) {
+        if (player instanceof EntityPlayerMPFake) {
+            return true;
+        }
+        source.sendFailure(ServerI18n.tr(
+                "carpetprimaryuan.command.dropall.not_fake", player.getName().getString()));
+        return false;
+    }
+
+    /**
      * 构建独立的 dropall 命令 builder。
      * 根节点 requires 绑定 {@link CarpetPrimaryuanSettings#fakePlayerDropAll}：
      * 规则关闭时整棵子树不可见、不可执行（Brigadier 按节点谓词过滤下发）。
@@ -47,6 +62,7 @@ public final class PlayerCommandExtension {
         public int once(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
             ServerPlayer player = CommandSupport.resolvePlayer(ctx);
             if (player == null) return 0;
+            if (!requireFake(ctx.getSource(), player)) return 0;
             // 用实际丢弃数作返回值：背包为空（0）时报失败，而非虚假成功
             return DropSlotScheduler.dropOnce(player, DropSlotScheduler.SLOT_ALL) > 0 ? 1 : 0;
         }
@@ -57,6 +73,7 @@ public final class PlayerCommandExtension {
             CommandSourceStack source = ctx.getSource();
             ServerPlayer player = CommandSupport.resolvePlayer(ctx);
             if (player == null) return 0;
+            if (!requireFake(source, player)) return 0;
             String playerName = player.getName().getString();
 
             if (!DropSlotScheduler.start(player, DropSlotScheduler.SLOT_ALL, SLOT_KEY,
@@ -78,6 +95,7 @@ public final class PlayerCommandExtension {
             CommandSourceStack source = ctx.getSource();
             ServerPlayer player = CommandSupport.resolvePlayer(ctx);
             if (player == null) return 0;
+            if (!requireFake(source, player)) return 0;
 
             DropSlotScheduler.StopSummary summary = DropSlotScheduler.stop(player, SLOT_KEY);
             if (summary.result() == DropSlotScheduler.StopResult.NO_TASK) {

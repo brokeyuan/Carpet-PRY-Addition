@@ -45,8 +45,9 @@ import java.util.concurrent.CompletableFuture;
  *   - OP（非 self 模式） / everyone：补全所有在线玩家
  *
  * 范围限制：
- *   - 所有 set / reset 操作（含管理员调自己与调他人）均受 playerScaleMin/Max
- *     软边界限制；管理员需要更大范围时通过 /carpet playerScaleMin/Max 调整边界
+ *   - set 操作（含管理员调自己与调他人）受 playerScaleMin/Max 软边界限制；
+ *     管理员需要更大范围时通过 /carpet playerScaleMin/Max 调整边界
+ *   - reset 恒回默认 1.0，不受软边界限制
  *   - 硬边界仅要求 value > 0 且为有限值
  */
 public final class ScaleCommand {
@@ -154,7 +155,8 @@ public final class ScaleCommand {
     }
 
     /**
-     * 软边界校验：value 超出 playerScaleMin/Max 时向来源发送提示并返回 true。
+     * 软边界校验（仅约束 set；reset 恒回默认 1.0，不经过本校验）：
+     * value 超出 playerScaleMin/Max 时向来源发送提示并返回 true。
      * 软边界约束所有玩家（含管理员调自己与调他人）——管理员需要更大范围时，
      * 通过 /carpet playerScaleMin / playerScaleMax 调整边界本身。
      * 硬边界仅要求 value > 0（见 requirePositive）。

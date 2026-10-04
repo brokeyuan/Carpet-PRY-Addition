@@ -3,6 +3,8 @@ package me.primaryuan.carpet.util;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.MinecraftServer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -29,6 +31,7 @@ public final class ServerTickScheduler {
 
     private static final Set<TickTask> TASKS = new LinkedHashSet<>();
     private static boolean registered = false;
+    private static final Logger LOGGER = LogManager.getLogger("CarpetPrimaryuan");
 
     private ServerTickScheduler() {}
 
@@ -57,7 +60,11 @@ public final class ServerTickScheduler {
             if (--left[0] > 0) {
                 return true;
             }
-            return task.tick(server);
+            // 一次性契约：到期执行后强制注销，不透传内部任务的返回值——
+            // 那是"任务自身是否继续"的语义，透传会让包装任务在 left 计负后
+            // 退化为每 tick 重复执行
+            task.tick(server);
+            return false;
         });
     }
 
@@ -82,7 +89,16 @@ public final class ServerTickScheduler {
         List<TickTask> snapshot = new ArrayList<>(TASKS);
         List<TickTask> dead = null;
         for (TickTask task : snapshot) {
-            if (!task.tick(server)) {
+            boolean keep;
+            try {
+                keep = task.tick(server);
+            } catch (Throwable t) {
+                // 逐任务异常隔离：单个任务崩溃记日志并淘汰，不上抛拖垮服务器 tick
+                //（同 BrainManager 单脑崩溃摘除的思路）
+                LOGGER.error("[ServerTickScheduler] Task crashed and was removed", t);
+                keep = false;
+            }
+            if (!keep) {
                 if (dead == null) {
                     dead = new ArrayList<>();
                 }

@@ -22,7 +22,6 @@ import net.minecraft.sounds.SoundSource;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * 谁在叫我（whoCalledMe）：聊天消息中出现其他玩家的名字时，给被点名的玩家
@@ -81,13 +80,13 @@ public class WhoCalledMeHandler {
             }
             content = unsigned.getString();
         }
-        String lowered = content.toLowerCase(Locale.ROOT);
         MinecraftServer server = sender.level().getServer();
-        // 全体在线真人名（小写）：最长匹配优先需要两两比对命中覆盖关系
+        // 全体在线真人名（保持原文大小写；匹配在 mentionIndex 内做大小写不敏感，
+        // 不经 toLowerCase——İ 等字符小写化会变长，下标会漂移，见 allHits）
         List<String> allNames = new ArrayList<>();
         for (ServerPlayer online : server.getPlayerList().getPlayers()) {
             if (!(online instanceof EntityPlayerMPFake)) {
-                allNames.add(online.getName().getString().toLowerCase(Locale.ROOT));
+                allNames.add(online.getName().getString());
             }
         }
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
@@ -95,41 +94,42 @@ public class WhoCalledMeHandler {
             if (player instanceof EntityPlayerMPFake) {
                 continue;
             }
-            String nameLower = player.getName().getString().toLowerCase(Locale.ROOT);
+            String name = player.getName().getString();
             // mention 模式：仅 @名字 触发（needle 含 @）；true 模式：子串 + 最长名优先
-            String needle = mentionMode ? "@" + nameLower : nameLower;
+            String needle = mentionMode ? "@" + name : name;
             List<String> allNeedles = mentionMode
                     ? allNames.stream().map(n -> "@" + n).toList() : allNames;
-            int idx = mentionIndex(lowered, needle, allNeedles);
+            int idx = mentionIndex(content, needle, allNeedles);
             if (idx >= 0) {
                 // @ 命中下标指向 @ 字符，高亮从名字本体开始
-                notifyMentioned(player, content, nameLower, mentionMode ? idx + 1 : idx);
+                notifyMentioned(player, content, name, mentionMode ? idx + 1 : idx);
             }
         }
     }
 
     /**
      * 子串匹配 + 最长名优先（大小写不敏感）：返回第一个未被更长玩家名命中覆盖的
-     * 命中下标，无有效命中 -1（包可见供单测）。
+     * 命中下标，无有效命中 -1（包可见供单测）。content/name 均为原文，
+     * 返回下标恒为原文下标。
      *
      * <p>名字紧邻字母/数字（如 Brokeyuan1）同样命中；服内同时有 Tim/Timy 时，
      * "timy 来一下" 的 [0,3) 命中属于 Timy 的 [0,4) 覆盖范围，Tim 不提醒、Timy
      * 提醒（优先完整的名字）；而 "timy tim" 中 Tim 的独立第二命中仍提醒。</p>
      */
-    static int mentionIndex(String loweredContent, String loweredName, List<String> allNamesLower) {
-        if (loweredName.isEmpty()) {
+    static int mentionIndex(String content, String name, List<String> allNames) {
+        if (name.isEmpty()) {
             return -1;
         }
-        List<int[]> own = allHits(loweredContent, loweredName);
+        List<int[]> own = allHits(content, name);
         if (own.isEmpty()) {
             return -1;
         }
         List<int[]> others = new ArrayList<>();
-        for (String other : allNamesLower) {
-            if (other.isEmpty() || other.equals(loweredName)) {
+        for (String other : allNames) {
+            if (other.isEmpty() || other.equalsIgnoreCase(name)) {
                 continue;
             }
-            others.addAll(allHits(loweredContent, other));
+            others.addAll(allHits(content, other));
         }
         for (int[] hit : own) {
             boolean covered = false;
@@ -146,20 +146,27 @@ public class WhoCalledMeHandler {
         return -1;
     }
 
-    private static List<int[]> allHits(String loweredContent, String name) {
+    /**
+     * 大小写不敏感地在原文上找 name 的全部命中区间。不经 toLowerCase：İ（U+0130）
+     * 等字符小写化会变长（i + 组合附点），在小写串上算出的下标拿回原文切分时会
+     * 错位甚至越界；regionMatches 逐字符比较，下标恒为原文下标（包可见供单测）。
+     */
+    static List<int[]> allHits(String content, String name) {
         List<int[]> hits = new ArrayList<>();
-        int from = 0;
-        int idx;
-        while ((idx = loweredContent.indexOf(name, from)) >= 0) {
-            hits.add(new int[]{idx, idx + name.length()});
-            from = idx + 1;
+        if (name.isEmpty() || name.length() > content.length()) {
+            return hits;
+        }
+        for (int i = 0; i <= content.length() - name.length(); i++) {
+            if (content.regionMatches(true, i, name, 0, name.length())) {
+                hits.add(new int[]{i, i + name.length()});
+            }
         }
         return hits;
     }
 
-    /** 子串匹配：命中即 true（包可见供单测） */
-    static boolean mentionsName(String loweredContent, String loweredName) {
-        return !loweredName.isEmpty() && loweredContent.contains(loweredName);
+    /** 大小写不敏感子串匹配：命中即 true（包可见供单测） */
+    static boolean mentionsName(String content, String name) {
+        return !name.isEmpty() && !allHits(content, name).isEmpty();
     }
 
     // ==================== 聊天名字高亮（ChatDecorator） ====================
@@ -190,20 +197,14 @@ public class WhoCalledMeHandler {
         List<String> allNames = new ArrayList<>();
         for (ServerPlayer online : decoratedServer.getPlayerList().getPlayers()) {
             if (!(online instanceof EntityPlayerMPFake)) {
-                allNames.add(online.getName().getString().toLowerCase(Locale.ROOT));
+                allNames.add(online.getName().getString());
             }
         }
-        String lowered = text.toLowerCase(Locale.ROOT);
         List<int[]> ranges = new ArrayList<>();
         for (String name : allNames) {
             // mention 模式高亮 @+名字 整体；true 模式只高亮名字本体
             String needle = mentionMode ? "@" + name : name;
-            int from = 0;
-            int idx;
-            while ((idx = lowered.indexOf(needle, from)) >= 0) {
-                ranges.add(new int[]{idx, idx + needle.length()});
-                from = idx + 1;
-            }
+            ranges.addAll(allHits(text, needle));
         }
         ranges = nonOverlappingLongestFirst(ranges);
         if (ranges.isEmpty()) {
@@ -278,9 +279,10 @@ public class WhoCalledMeHandler {
         };
     }
 
-    /** title 分色：被点名者自己的名字按规则色加粗、正文白——一眼看到是谁在叫 */
-    private static Component buildTitle(String content, String nameLower, int hitIndex) {
-        if (hitIndex < 0 || hitIndex + nameLower.length() > content.length()) {
+    /** title 分色：被点名者自己的名字按规则色加粗、正文白——一眼看到是谁在叫。
+     *  name 为原文，hitIndex 为原文下标（与 content 同一坐标系） */
+    private static Component buildTitle(String content, String name, int hitIndex) {
+        if (hitIndex < 0 || hitIndex + name.length() > content.length()) {
             return Component.literal(content);
         }
         ChatFormatting highlight = highlightColor();
@@ -288,7 +290,7 @@ public class WhoCalledMeHandler {
             return Component.literal(content).withStyle(ChatFormatting.WHITE);
         }
         int idx = hitIndex;
-        int end = idx + nameLower.length();
+        int end = idx + name.length();
         return Component.literal(content.substring(0, idx)).withStyle(ChatFormatting.WHITE)
                 .append(Component.literal(content.substring(idx, end))
                         .withStyle(highlight, ChatFormatting.BOLD))

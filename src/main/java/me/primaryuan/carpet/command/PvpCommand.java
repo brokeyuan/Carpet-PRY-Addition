@@ -22,7 +22,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * 结构（动作在前，目标可选；无目标 = 自己）：
  *   pvp
- *     (无参数)           → 查看自己的 PVP 状态 + 全服模式（控制台提示子命令）
+ *     (无参数)           → 切换自己的 PVP（回执即新状态；控制台提示子命令）
  *     list               → 列出所有 PVP 关闭的玩家
  *     on                 → 开启自己的 PVP
  *     off                → 关闭自己的 PVP（进入和平状态）
@@ -56,8 +56,8 @@ public final class PvpCommand {
                     // 规则 = false 时整棵命令树不可见
                     .requires(source -> !"false".equalsIgnoreCase(CarpetPrimaryuanSettings.peacefulPlayers))
 
-                    // /pvp —— 查看自己的状态 + 全服模式
-                    .executes(PvpCommand::showSelfStatus)
+                    // /pvp —— 切换自己的 PVP（回执带新状态）
+                    .executes(PvpCommand::toggleSelf)
 
                     // /pvp list —— 所有 PVP 关闭的玩家
                     .then(Commands.literal("list")
@@ -243,24 +243,28 @@ public final class PvpCommand {
         return 1;
     }
 
-    // ==================== 自身状态 ====================
+    // ==================== 切换自己 ====================
 
-    private static int showSelfStatus(CommandContext<CommandSourceStack> ctx) {
+    /** /pvp 无参：翻转自己的 PVP 并回执新状态（on/off 显式写法保留给明确语义场景） */
+    private static int toggleSelf(CommandContext<CommandSourceStack> ctx) {
         CommandSourceStack source = ctx.getSource();
+        ServerPlayer self;
         try {
-            ServerPlayer self = source.getPlayerOrException();
-            boolean pvpOn = PvpManager.isPvpOn(self);
-            source.sendSuccess(() -> ServerI18n.tr(pvpOn
-                    ? "carpetprimaryuan.command.pvp.status_self_on"
-                    : "carpetprimaryuan.command.pvp.status_self_off"), false);
-            source.sendSuccess(() -> ServerI18n.tr("carpetprimaryuan.command.pvp.status_global",
-                    ServerI18n.tr(PvpManager.isGlobalOff()
-                            ? "carpetprimaryuan.command.pvp.global_state_off"
-                            : "carpetprimaryuan.command.pvp.global_state_on").getString()), false);
+            self = source.getPlayerOrException();
         } catch (CommandSyntaxException e) {
-            // 控制台等非玩家来源：无"自身状态"，提示可用子命令
+            // 控制台等非玩家来源：无自身状态可切换，提示子命令
             source.sendSuccess(() -> ServerI18n.tr("carpetprimaryuan.command.pvp.console_hint"), false);
+            return 0;
         }
+        if (requireNotGlobalLocked(source)) return 0;
+
+        boolean newState = !PvpManager.isPvpOn(self);
+        PvpManager.setPlayerState(CommandSupport.profileName(self),
+                newState ? PvpManager.STATE_ON : PvpManager.STATE_OFF);
+        boolean pvpOn = newState;
+        source.sendSuccess(() -> ServerI18n.tr(pvpOn
+                ? "carpetprimaryuan.command.pvp.status_self_on"
+                : "carpetprimaryuan.command.pvp.status_self_off"), false);
         return 1;
     }
 }

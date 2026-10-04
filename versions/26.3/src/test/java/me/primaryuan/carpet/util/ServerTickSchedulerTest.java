@@ -62,6 +62,19 @@ public class ServerTickSchedulerTest {
     }
 
     @Test
+    void delayedTaskRunsOnceEvenIfInnerTaskReturnsTrue() {
+        int[] runs = {0};
+        ServerTickScheduler.registerDelayed(2, server -> {
+            runs[0]++;
+            return true; // 内部任务声称"继续"，也不得让包装任务常驻
+        });
+        ServerTickScheduler.runTasks(null);
+        ServerTickScheduler.runTasks(null);
+        ServerTickScheduler.runTasks(null);
+        assertEquals(1, runs[0], "延迟任务到期执行一次即注销（内部返回值不透传）");
+    }
+
+    @Test
     void finishedTasksAreRemoved() {
         int[] runs = {0};
         Runnable detach = ServerTickScheduler.register(server -> {

@@ -21,6 +21,8 @@ import carpet.patches.EntityPlayerMPFake;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.Vec3;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,6 +30,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * 米塔字幕（textAnimation）：/text 向所有在线真人玩家（carpet 假人除外）广播
@@ -77,6 +80,7 @@ public final class TextAnimationHandler {
 
     private static final Set<Broadcast> ACTIVE_BROADCASTS = new HashSet<>();
     private static final Map<TextSession, Broadcast> SESSION_TO_BROADCAST = new HashMap<>();
+    private static final Logger LOGGER = LogManager.getLogger("CarpetPrimaryuan");
     private static boolean registered = false;
 
     /** 26.2 起实体类型常量从 EntityType 迁入 EntityTypes（复数），此处统一收敛为一个字段 */
@@ -139,6 +143,35 @@ public final class TextAnimationHandler {
     }
 
     /**
+     * 每人发送冷却（字幕是全服可见效果，按人限频防单人连发刷屏）：
+     * key=发送者 UUID（控制台不记录、不受限），value=上次成功发送的 tick。
+     */
+    private static final Map<UUID, Long> LAST_TEXT = new HashMap<>();
+    private static final int TEXT_COOLDOWN_TICKS = 200;
+
+    /** 每人发送冷却的剩余秒数（0 = 可发送）；控制台（非玩家 source）不受限 */
+    public static int cooldownRemainSeconds(CommandSourceStack source) {
+        ServerPlayer player = source.getPlayer();
+        if (player == null) {
+            return 0;
+        }
+        Long last = LAST_TEXT.get(player.getUUID());
+        if (last == null) {
+            return 0;
+        }
+        long remainTicks = TEXT_COOLDOWN_TICKS - (source.getLevel().getServer().getTickCount() - last);
+        return remainTicks > 0 ? (int) ((remainTicks + 19) / 20) : 0;
+    }
+
+    /** 成功发起后打上冷却时间戳 */
+    public static void markSent(CommandSourceStack source) {
+        ServerPlayer player = source.getPlayer();
+        if (player != null) {
+            LAST_TEXT.put(player.getUUID(), (long) source.getLevel().getServer().getTickCount());
+        }
+    }
+
+    /**
      * 向所有在线真人玩家广播一条字幕（聊天形式：每人各自眼前弹出，carpet 假人除外；
      * 控制台/命令方块同样可用）。每个玩家一份独立会话（以该玩家的位置与朝向为基准）。
      *
@@ -147,6 +180,15 @@ public final class TextAnimationHandler {
      *         加进非 ENTITY_TICKING 区块的实体按 UNLOADED_TO_CHUNK 写回区块，本地 E2E 实证）
      */
     public static int play(CommandSourceStack source, String rawText, TextOptions options) {
+        return play(source, null, rawText, options);
+    }
+
+    /**
+     * 定向字幕：{@code targets} 非空时只发给指定玩家（仍排除假人），null = 全服广播。
+     * 每人 10 秒发送冷却（{@link #markSent}），防单人连发刷满全服屏幕。
+     */
+    public static int play(CommandSourceStack source, java.util.Collection<ServerPlayer> targets,
+                           String rawText, TextOptions options) {
         if (ACTIVE_BROADCASTS.size() >= MAX_BROADCASTS) {
             return -3;
         }
@@ -171,7 +213,8 @@ public final class TextAnimationHandler {
 
         List<ServerPlayer> direct = new ArrayList<>();
         List<ServerPlayer> degraded = new ArrayList<>();
-        for (ServerPlayer target : server.getPlayerList().getPlayers()) {
+        Iterable<ServerPlayer> candidates = targets != null ? targets : server.getPlayerList().getPlayers();
+        for (ServerPlayer target : candidates) {
             if (target instanceof EntityPlayerMPFake) {
                 continue;
             }
@@ -194,10 +237,11 @@ public final class TextAnimationHandler {
         for (ServerPlayer target : direct) {
             TextSession session = new TextSession(target, copyGroups(template), options, broadcast);
             SESSION_TO_BROADCAST.put(session, broadcast);
-            ServerTickScheduler.register(session);
+            registerSession(session, () -> onSessionEnded(session));
         }
         if (!degraded.isEmpty()) {
-            ServerTickScheduler.register(new ActionbarSession(degraded, segments, broadcast, options.hold));
+            ActionbarSession actionbar = new ActionbarSession(degraded, segments, broadcast, options.hold);
+            registerSession(actionbar, actionbar::finish);
         }
         ACTIVE_BROADCASTS.add(broadcast);
         return template.size();
@@ -213,14 +257,29 @@ public final class TextAnimationHandler {
         return chunk != null && chunk.getFullStatus() == FullChunkStatus.ENTITY_TICKING;
     }
 
+    /**
+     * 注册会话任务并兜底：调度器对崩溃任务的处置是记日志淘汰、不回调业务——
+     * 会话若不在此自行回报结束，Broadcast.remaining 永不归零，并发额度被永久
+     * 占用（8 次崩溃后 /text 恒 -3），孤儿清扫也被"有活跃广播"条件抑制。
+     * 崩溃回调与正常结束路径共用幂等清理，最多重复一次、无副作用。
+     */
+    private static void registerSession(ServerTickScheduler.TickTask task, Runnable onCrash) {
+        ServerTickScheduler.register(server -> {
+            try {
+                return task.tick(server);
+            } catch (Throwable t) {
+                LOGGER.error("[TextAnimation] Session crashed, force-finishing its broadcast", t);
+                onCrash.run();
+                return false;
+            }
+        });
+    }
+
     /** 会话自然结束（或停服清理）时通知广播；全部部分结束即销毁广播 */
     static void onSessionEnded(TextSession session) {
         Broadcast broadcast = SESSION_TO_BROADCAST.remove(session);
         if (broadcast != null) {
             broadcast.partFinished();
-            if (broadcast.remaining <= 0) {
-                ACTIVE_BROADCASTS.remove(broadcast);
-            }
         }
     }
 
@@ -228,8 +287,12 @@ public final class TextAnimationHandler {
     static final class Broadcast {
         int remaining;
 
+        /** 一部分结束；全部结束时自行从 ACTIVE_BROADCASTS 移除（并发额度回收的唯一收敛点，
+         *  覆盖字幕会话与降级 actionbar 会话两条结束路径） */
         void partFinished() {
-            remaining--;
+            if (--remaining <= 0) {
+                ACTIVE_BROADCASTS.remove(this);
+            }
         }
     }
 

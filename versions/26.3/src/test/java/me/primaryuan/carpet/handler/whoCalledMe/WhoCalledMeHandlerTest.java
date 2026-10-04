@@ -3,24 +3,21 @@ package me.primaryuan.carpet.handler.whoCalledMe;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** {@link WhoCalledMeHandler#mentionIndex} 的匹配契约：子串命中、紧邻字母数字也算、最长名优先 */
+/** {@link WhoCalledMeHandler#mentionIndex} 的匹配契约：子串命中、紧邻字母数字也算、最长名优先；
+ *  入参与返回下标均为原文坐标（匹配内部大小写不敏感，不经 toLowerCase） */
 class WhoCalledMeHandlerTest {
 
     private static int index(String content, String name, String... allNames) {
-        return WhoCalledMeHandler.mentionIndex(
-                content.toLowerCase(Locale.ROOT), name.toLowerCase(Locale.ROOT),
-                List.of(allNames).stream().map(n -> n.toLowerCase(Locale.ROOT)).toList());
+        return WhoCalledMeHandler.mentionIndex(content, name, List.of(allNames));
     }
 
     private static boolean match(String content, String name) {
-        return WhoCalledMeHandler.mentionsName(
-                content.toLowerCase(Locale.ROOT), name.toLowerCase(Locale.ROOT));
+        return WhoCalledMeHandler.mentionsName(content, name);
     }
 
     @Test
@@ -80,5 +77,13 @@ class WhoCalledMeHandlerTest {
         assertEquals(-1, index("anything", "", "anything"));
         assertFalse(match("anything", ""));
         assertTrue(match("timy 来一下", "timy"));
+    }
+
+    @Test
+    void caseFoldingExpansionDoesNotDriftIndices() {
+        // 土耳其 İ（U+0130）小写化为两字符（i + 组合附点）：若在小写串上算下标
+        // 再回原文切分，alex 的下标会从 2 漂移到 3（高亮错位/越界的根因）
+        String content = "İ alex 来一下";
+        assertEquals(2, index(content, "Alex", "Alex"), "命中下标必须落在原文的 alex 上");
     }
 }

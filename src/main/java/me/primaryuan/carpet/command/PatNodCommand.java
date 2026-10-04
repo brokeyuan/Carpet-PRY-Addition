@@ -14,7 +14,7 @@ import net.minecraft.server.level.ServerPlayer;
  * /patnod 命令：按玩家开关"接不接受被摸"（规则 patPatPlayers 控制可用性）。
  *
  * 结构：
- *   patnod        → 查看自己的当前状态（接受 / 不接受）
+ *   patnod        → 切换自己接不接受被摸（回执即新状态）
  *   patnod on     → 接受被摸（其他玩家可以摸你）
  *   patnod off    → 不接受被摸（其他玩家无法摸你，摸头对其完全不生效）
  *
@@ -32,7 +32,7 @@ public final class PatNodCommand {
             dispatcher.register(Commands.literal("patnod")
                     // 主规则 = false 时整棵命令树不可见
                     .requires(source -> !"false".equals(CarpetPrimaryuanSettings.patPatPlayers))
-                    .executes(PatNodCommand::showStatus)
+                    .executes(PatNodCommand::toggle)
                     .then(Commands.literal("on").executes(ctx -> set(ctx, true)))
                     .then(Commands.literal("off").executes(ctx -> set(ctx, false))));
         });
@@ -40,11 +40,11 @@ public final class PatNodCommand {
 
     // ==================== 执行 ====================
 
-    private static int showStatus(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    /** 无参：翻转本人被摸许可并回执新状态 */
+    private static int toggle(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
-        player.sendSystemMessage(ServerI18n.tr(PatPatPlayersHandler.acceptsPat(player)
-                ? "carpetprimaryuan.command.patnod.status_on"
-                : "carpetprimaryuan.command.patnod.status_off"));
+        boolean accept = !PatPatPlayersHandler.acceptsPat(player);
+        set(context, accept);
         return 1;
     }
 

@@ -129,6 +129,15 @@ public final class RedPacketGui {
         //#endif
     }
 
+    /** 纯悬浮样式（无点击无颜色）：领取明细单行 + 悬浮展开用，版本分叉同 claimStyle */
+    public static Style hoverStyle(Component hover) {
+        //#if MC < 12105
+        //$$ return Style.EMPTY.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, hover));
+        //#else
+        return Style.EMPTY.withHoverEvent(new HoverEvent.ShowText(hover));
+        //#endif
+    }
+
     // ==================== 菜单 ====================
 
     /** 红包自简容器：纯数据（图标注入 forceSet），全部保护在菜单 Slot 层 */
@@ -276,16 +285,27 @@ public final class RedPacketGui {
         }
     }
 
-    /** 口令铁砧：改名免费（mayPickup 恒真，不耗经验），点成品即提交口令文本 */
+    /**
+     * 口令铁砧：改名免费（mayPickup 恒真，不耗经验），点成品即提交口令文本。
+     *
+     * <p>输入槽白名单：只有标记口令纸可留在输入槽，其余物品一进槽即被弹回背包
+     * （{@link #slotsChanged} 拦截——输入容器的任何变更路径都会回调它，javap 核实
+     * 1.21.11 匿名容器 setChanged → menu.slotsChanged）——堵死"借红包铁砧免费改名/
+     * 合成任意物品"的滥用面（本菜单 mayPickup 恒真绕过了原版全部经验费）。
+     * {@link #onTake} 必须先调 {@code super}：原版 onTake 负责消耗输入槽并重置费用，
+     * 漏调即输入永不消耗，成品可反复领取 = 任意物品复制机。</p>
+     */
     public static final class PasswordAnvilMenu extends AnvilMenu {
         private final Consumer<String> onPassword;
         private final Runnable onClosed;
+        private final Inventory playerInventory;
 
         PasswordAnvilMenu(int id, Inventory playerInventory, ContainerLevelAccess access,
                           Consumer<String> onPassword, Runnable onClosed) {
             super(id, playerInventory, access);
             this.onPassword = onPassword;
             this.onClosed = onClosed;
+            this.playerInventory = playerInventory;
             // UI 用纸：关闭时统一回收（见 reclaimPapers），避免凭空造物流入玩家背包
             this.slots.get(0).set(passwordPaper());
         }
@@ -301,7 +321,32 @@ public final class RedPacketGui {
 
         @Override
         protected void onTake(Player player, ItemStack stack) {
+            super.onTake(player, stack); // 原版语义：消耗输入槽 + 重置费用（缺它即复制机）
             onPassword.accept(stack.getHoverName().getString());
+        }
+
+        @Override
+        public void slotsChanged(net.minecraft.world.Container container) {
+            super.slotsChanged(container);
+            if (container == this.inputSlots) {
+                this.evictForeignInput();
+            }
+        }
+
+        /** 输入槽白名单：槽 0 只留标记口令纸，槽 1 一律清空；外来物品弹回背包（放不下掉脚下） */
+        private void evictForeignInput() {
+            for (int slot = 0; slot < this.inputSlots.getContainerSize(); slot++) {
+                ItemStack stack = this.inputSlots.getItem(slot);
+                if (stack.isEmpty() || (slot == 0 && isPasswordPaper(stack))) {
+                    continue;
+                }
+                this.inputSlots.setItem(slot, ItemStack.EMPTY);
+                //#if MC >= 260300
+                //$$ this.playerInventory.placeItemBackInInventory(stack, net.minecraft.util.Prediction.PREDICTED);
+                //#else
+                this.playerInventory.placeItemBackInInventory(stack);
+                //#endif
+            }
         }
 
         @Override

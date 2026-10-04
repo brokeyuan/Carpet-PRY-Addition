@@ -3,8 +3,10 @@ package me.primaryuan.carpet.handler.redPacket;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -39,8 +41,13 @@ public final class RedPacket {
     public String password;
     /** 过期时刻（服务器 tick） */
     public final long expireTick;
-    /** 已领取的玩家 */
-    public final Set<UUID> claimed = new HashSet<>();
+    /**
+     * 已领取的玩家（插入序 = 领取顺序，与份额下标一一对应）——
+     * LinkedHashSet 保证手气王"并列取先领取"与领取明细的顺序稳定
+     */
+    public final Set<UUID> claimed = new LinkedHashSet<>();
+    /** 已领取玩家名（uuid → 名，领取时记录，结算明细用——领取者离线后名字仍可查） */
+    public final Map<UUID, String> claimerNames = new LinkedHashMap<>();
     /** 过期标记：仅保留用于"已过期"提示，不再可领 */
     public boolean expired;
     /** 领完标记：保留一段时间供"已被领完"提示，清理同过期 */
@@ -75,6 +82,63 @@ public final class RedPacket {
             copy.add(stack.copyWithCount(stack.getCount()));
         }
         return copy;
+    }
+
+    /** 过期前提醒标记（30 秒一次，只发一条） */
+    public boolean warned;
+
+    /**
+     * 手气王份额下标：按价值函数加总最大者（并列取先领取），无人领取或全员零价值返回 -1。
+     * 仅随机切分类型（拼手气/口令）有"手气"语义；普通为平均分配、专属只有一人。
+     * 价值函数由调用方注入（管理器传价值表，单测传 lambda）。
+     */
+    public int luckKingIndex(java.util.function.ToLongFunction<ItemStack> valueFn) {
+        int best = -1;
+        long bestSum = 0;
+        int index = 0;
+        for (UUID ignored : claimed) {
+            long sum = 0;
+            for (ItemStack stack : shares.get(index)) {
+                sum += valueFn.applyAsLong(stack);
+            }
+            if (sum > bestSum) {
+                bestSum = sum;
+                best = index;
+            }
+            index++;
+        }
+        return best;
+    }
+
+    /** 按领取顺序的第 index 个领取者（takeShare 的游标语义：插入序 = 份额下标） */
+    public UUID claimerAt(int index) {
+        int i = 0;
+        for (UUID uuid : claimed) {
+            if (i++ == index) {
+                return uuid;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 红包是否只含单种物品——手气王结算的前提：
+     * 混合物品（钻石+泥土混发）的份额组合没有公平的"手气"可比性，不评王。
+     */
+    public boolean hasSingleItemType() {
+        String only = null;
+        for (List<ItemStack> share : shares) {
+            for (ItemStack stack : share) {
+                String id = net.minecraft.core.registries.BuiltInRegistries.ITEM
+                        .getKey(stack.getItem()).toString();
+                if (only == null) {
+                    only = id;
+                } else if (!only.equals(id)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     /** 未领取份额的全部物品（过期退回用） */

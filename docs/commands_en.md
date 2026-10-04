@@ -539,6 +539,7 @@ Current mode: self (everyone can only adjust themselves)
 #### Syntax
 
 ```
+/riding        # toggle: allow <-> forbid being ridden
 /riding on     # Allow other players to ride you
 /riding off    # Forbid other players from riding you
 ```
@@ -579,6 +580,7 @@ Set whether other players are allowed to ride you. When you set it to `on`, othe
 #### Syntax
 
 ```
+/picking        # toggle: allow <-> forbid being picked up
 /picking on     # Allow other players to pick you up
 /picking off    # Forbid other players from picking you up
 ```
@@ -618,7 +620,7 @@ Toggle PVP per player: players with PVP off cannot attack players and take no da
 
 ### Command Syntax
 
-- `/pvp`: view your PVP status
+- `/pvp`: toggle your own PVP (the reply shows the new state)
 - `/pvp list`: list all players with PVP off (including registered offline players)
 - `/pvp on|off`: toggle your own PVP
 - `/pvp on|off <player>`: toggle a player
@@ -648,7 +650,7 @@ Toggles the per-player preference for accepting pats: declined players cannot be
 
 ### Syntax
 
-- `/patnod`: show your current status
+- `/patnod`: toggle whether you accept being patted (the reply shows the new state)
 - `/patnod on`: accept being patted
 - `/patnod off`: decline being patted
 
@@ -675,12 +677,13 @@ Toggles the per-player preference for accepting pats: declined players cannot be
 
 > **Related rule**: `textAnimation`
 
-Pops up dialogue text character by character in front of every online player (fake players excluded), holds, then lets the whole sentence drop and fade (the text display effect from the game MiSide). One vanilla text_display entity per character, removed after play; long texts are split into groups at punctuation and played sequentially. The console and command blocks work too.
+Pops up dialogue text character by character in front of online players (fake players excluded), holds, then lets the whole sentence drop and fade (the text display effect from the game MiSide). One vanilla text_display entity per character, removed after play; long texts are split into groups at punctuation and played sequentially. The console and command blocks work too. **A target is required**: `@a` for everyone or an online player name to direct.
 
 ### Syntax
 
-- `/text <message>`: the whole line is the message (spaces free, no quotes needed)
-- `/text <message>|<options>`: an inline `|` splits the message from a `k=v;k=v` options string
+- `/text @a <message>[|options]`: broadcast to everyone
+- `/text <player> <message>[|options]`: direct at a single online player (matched case-insensitively against the current online list; single target only — send multiple commands for more)
+- A target is required: a first word that is neither `@a` nor an online player name is rejected (including other `@`-prefixed forms)
 
 Use `||` for a literal `|`; legacy color codes use `&` (e.g. `&c`), `&&` for a literal `&`, and color codes reset style flags like vanilla `§`.
 
@@ -688,6 +691,7 @@ Use `||` for a literal `|`; legacy color codes use `&` (e.g. `&c`), `&&` for a l
 
 - Available to all players (console and command blocks included)
 - The whole command tree is hidden while the `textAnimation` rule is disabled
+- 10-second per-player send cooldown (console exempt); the error shows the remaining seconds
 
 ### Options
 
@@ -714,12 +718,13 @@ Use `||` for a literal `|`; legacy color codes use `&` (e.g. `&c`), `&&` for a l
 ### Examples
 
 ```
-/text Hello there                         # spaces free, no quotes
-/text done!!!                             # exclamation gain enlarges the sentence
-/text &cRed&eYellow&B                     # & color codes
-/text Hi|scale=3;hold=60                  # inline options
-/text Static text|drop=false              # fade in place, no drop
-/text Glowing|glow=true;sound=false       # glow, no sound
+/text @a hello everyone                   # broadcast to everyone
+/text @a done!!!                          # exclamation gain enlarges the sentence
+/text @a &cRed&eYellow&B                  # & color codes
+/text @a Hi|scale=3;hold=60               # inline options
+/text @a Static text|drop=false           # fade in place, no drop
+/text @a Glowing|glow=true;sound=false    # glow, no sound
+/text brokeyuan private ping              # direct at a single player
 ```
 
 ## /redpacket - Red Packet
@@ -730,8 +735,13 @@ Sends a red packet: share count + blessing message -> type selection -> put in i
 
 ### Syntax
 
-- `/redpacket <count> <message>`: count 1-100, message 1-32 characters (spaces allowed, § and line breaks stripped)
+- `/redpacket`: all defaults — share count = current online players (fakes excluded), message "Happy New Year"
+- `/redpacket <count> [message]`: specify the share count (1-100); message optional (default "Happy New Year")
+- `/redpacket [count] @player [message]`: exclusive shortcut — skips type selection and the head list (the only entry when more than 53 players are online; target must be online and not yourself, share count forced to 1)
 - `/redpacket claim <id>`: claim from the chat link (internal, delivered with every broadcast)
+- `/redpacket list`: list your ongoing packets (id/type/message/shares left)
+- `/redpacket again`: reopen the item-input GUI with your last successful type/count/message
+- `/redpacket mute`: toggle muting yourself (the reply shows the new state); `/redpacket unmute`: explicitly unmute. Muted players no longer receive red packet broadcasts (including claimed-out/expired notices) and can no longer claim; persisted in config/carpet-pry-redpacket.json
 
 ### Permission
 
@@ -749,12 +759,16 @@ Sends a red packet: share count + blessing message -> type selection -> put in i
 
 - Click the bright-red `[Red Packet: message]` link in chat to claim; validation order: exists -> not expired -> shares left -> not your own -> not claimed yet -> exclusive check -> password check
 - One claim per player per packet; a packet ends immediately when fully claimed; validity is 3 minutes, unclaimed shares return to the sender on expiry, stored while offline and re-delivered on the next join (overflow drops at feet)
-- Hover shows message/type/shares left/time left; feedback covers already-claimed, own packet, fully claimed and expired
+- Hover shows message/type/shares left/time left plus a rules hint (one share per player; passwords typed in chat); feedback covers already-claimed, own packet, fully claimed, expired and wrong password (with its character count)
+- Every claim is **broadcast to everyone**: "xx claimed yy's red packet (share n/m): items" (exclusive packets without the share index; muted players don't receive it)
+- Settlement on fully-claimed/expired: the **Lucky King** is broadcast server-wide (random-split types **with a single item kind only** — mixed-item packets have no fair luck to rank; ranked by **rarity**: five built-in tiers structurally guarantee that one item of a higher tier beats any quantity of a lower tier (1 diamond > a whole cargo of dirt); within a tier, value table x count decides, ties go to the earlier claimer; config/carpet-pry-values.json customizes per-item values within a tier, restart to apply)
+- The **target** of an exclusive packet gets a golden "sent to you" broadcast with a chime; other players see the regular broadcast
+- A warning broadcast fires 30 seconds before expiry (when shares remain); item-input confirmation warns when the total item count is smaller than the share count (non-blocking)
 
 ### Guards & Limits
 
 - Count 1-100 (Brigadier bounds), message 1-32 characters
-- 10-tick claim-click debounce; 10-second send cooldown; at most 3 unfinished packets per player
+- 10-tick claim-click debounce; 10-second send cooldown (the error shows the remaining seconds); at most 3 unfinished packets per player
 - Running packets and offline refund storage are in-memory and cleared on server restart (documented restart semantics)
 
 ### Examples
@@ -762,5 +776,10 @@ Sends a red packet: share count + blessing message -> type selection -> put in i
 ```
 /redpacket 1 Happy New Year                # 1 share
 /redpacket 10 Good luck                    # 10 shares, split by the chosen type
+/redpacket                                # all defaults: one share per online player
+/redpacket 15                             # 15 shares, "Happy New Year"
+/redpacket 20 Good luck                   # 20 shares, custom message
+/redpacket 1 @player just for you          # exclusive shortcut, skips type selection
 /redpacket claim 3                         # claim packet #3 (usually via chat click)
+/redpacket mute                           # mute red packet broadcasts
 ```

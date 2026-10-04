@@ -66,7 +66,8 @@ final class ActionbarSession implements ServerTickScheduler.TickTask {
         return true;
     }
 
-    private void finish() {
+    /** 结束并回报广播（done 幂等）；崩溃兜底（TextAnimationHandler.registerSession）也走这里 */
+    void finish() {
         if (!done) {
             done = true;
             broadcast.partFinished();

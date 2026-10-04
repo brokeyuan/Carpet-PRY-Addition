@@ -1,4 +1,4 @@
-Carpet PRY Addition is a server-side Fabric extension for the [fabric-carpet](https://github.com/gnembon/fabric-carpet) mod, developed for the **Primaryuan Server**. It adds 31 configurable Carpet rules and 10 new commands (plus `/player` extensions) covering bug fixes, fake player enhancements, player interaction, and survival gameplay expansion.
+Carpet PRY Addition is a server-side Fabric extension for the [fabric-carpet](https://github.com/gnembon/fabric-carpet) mod, developed for the **Primaryuan Server**. It adds 33 configurable Carpet rules and 10 new commands (plus `/player` extensions) covering bug fixes, fake player enhancements, player interaction, and survival gameplay expansion.
 
 ---
 
@@ -64,6 +64,10 @@ Adds a `/player <name> dropall` sub-command that drops the fake player's whole i
 
 Adds a `/player <name> sendto <target>` sub-command creating a one-way item flow between fake players: one stack is transferred per trigger, round-robin across multiple targets, and the source buffers items when a target is full. The same pace modifiers as dropall are supported; `sendto stop` removes all links. Links live in memory only and do not survive restarts.
 
+### Fake Player Brain (`fakePlayerBrain`)
+
+Adds a `/player <name> brain <mode>` sub-command injecting vanilla-mob-style AI into fake players — 19 modes (zombie, babyzombie, skeleton, wither skeleton, pillager, vindicator, iron golem, spider, wolf, villager, enderman, drowned, fish, pig, piglin, piglin brute, slime, magma cube, zombie piglin). Pure server-side with zero extra entities: AI movement is translated into native player movement input, coordinates are never touched. Supports CJK fake player names, a `keep` suffix that re-attaches the brain after respawn, and a colored name suffix showing the active mode.
+
 ---
 
 ## Gameplay Expansion
@@ -93,7 +97,8 @@ Hold a **Totem of Undying** in your main hand and right-click another player's *
 
 ### Pat Players (`patPatPlayers`)
 
-Pat other real players on the head, cat-petting style: each right-click is a stroking pulse — the target bobs down and up with the rhythm with hearts above their head, while the patted player gets a heart in front of their eyes, a soft directional sound and a soft directional sound and a per-player opt-out (`/patnod`, persisted in config/carpet-pry-patnod.json). Fake players are excluded; works with any item in hand and never consumes the interaction.
+Pat other real players on the head, cat-petting style: each right-click is a stroking pulse — the target bobs down and up with the rhythm with hearts above their head, while the patted player gets a heart in front of their eyes, a soft directional sound and a per-player opt-out (`/patnod`, persisted in config/carpet-pry-patnod.json). Fake players are excluded; works with any item in hand and never consumes the interaction.
+
 ### Peaceful Players (`peacefulPlayers`)
 
 Enables the `/pvp` command: each player can turn their own PVP on or off. Players with PVP off cannot attack players and take no damage from players (self-inflicted damage unaffected); blocked attacks play a cue sound so the "poke" signal is preserved. Admins can toggle PVP for anyone or server-wide with `/pvp on|off @a`, and `/pvp list` shows everyone who currently has PVP off. States persist across restarts in `config/carpet-pry-pvp.json`.
@@ -104,11 +109,11 @@ When a chat message contains another player's name, the mentioned player gets th
 
 ### MiSide Subtitles (`textAnimation`)
 
-The `/text` command plays dialogue text in front of every online player (fake players excluded) with the text display effect from the game MiSide (the more trailing exclamation marks, the bigger the whole sentence): characters pop in one by one (random tilt, scale settling, click sounds), hold, then the whole sentence drops with server-side gravity/bounce physics while fading out. Long texts are split into groups at punctuation and played sequentially. One vanilla text_display entity per character, removed after play; default MiSide yellow with legacy color code support; pure server-side — works on vanilla clients.
+The `/text` command plays dialogue text in front of online players (fake players excluded; `@a` broadcasts to everyone, a player name directs at one — a target is required) with the text display effect from the game MiSide (the more trailing exclamation marks, the bigger the whole sentence): characters pop in one by one (random tilt, scale settling, click sounds), hold, then the whole sentence drops with server-side gravity/bounce physics while fading out. Long texts are split into groups at punctuation and played sequentially. One vanilla text_display entity per character, removed after play; default MiSide yellow with legacy color code support; pure server-side — works on vanilla clients.
 
 ### Red Packet (`redPacket`)
 
-The `/redpacket <count> <message>` command sends a red packet with four distribution types — Lucky (random, total conserved), Normal (even split with random remainder), Exclusive (a chosen player claims everything) and Password (claim by typing the password in chat). Items are placed in a vanilla chest GUI, and a bright-red clickable chat broadcast lets players claim with one click; unclaimed shares return to the sender after 3 minutes (stored while offline). Server-side vanilla menus only — works on vanilla clients.
+The `/redpacket <count> <message>` command sends a red packet with four distribution types — Lucky (random, total conserved), Normal (even split with random remainder), Exclusive (a chosen player claims everything, also reachable via `/redpacket <count> @player <message>`) and Password (claim by typing the password in chat). Items are placed in a vanilla chest GUI, and a bright-red clickable chat broadcast lets players claim with one click; senders get per-claim receipts, unclaimed shares return to the sender after 3 minutes (stored while offline), and `/redpacket mute` opts out of broadcasts. Server-side vanilla menus only — works on vanilla clients.
 
 ---
 
@@ -140,7 +145,7 @@ Living entities spawned directly by a player using an item (armor stands, spawn-
 ## Why Download
 
 - **All features are toggleable** — every mechanic is a Carpet rule. Everything is off by default except `ridingPlayersClientInteract` (a client-side quality-of-life rule that is on by default).
-- **Wide version coverage** — supports Minecraft 1.21 through the latest snapshots (26.2), with 10 versions actively maintained.
+- **Wide version coverage** — supports Minecraft 1.21 through the latest snapshots (26.3), with 11 versions actively maintained.
 - **Server-side only** — players do not need to install the mod on their clients (except for the FOV compensation of the player scaling feature and the optional `ridingPlayersClientInteract` client rule).
 - **Lightweight and focused** — built on the Carpet framework, integrates naturally with existing Carpet setups.
 
