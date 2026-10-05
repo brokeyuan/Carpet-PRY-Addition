@@ -320,12 +320,12 @@ final class TextSession implements ServerTickScheduler.TickTask {
 
         int fadeDelay = options.drop ? FADE_DELAY_FALL : FADE_DELAY_FADE;
         if (glyph.age >= fadeDelay) {
-            glyph.opacity = (byte) (glyph.opacity - FADE_STEP);
+            glyph.opacity = Math.max(0, glyph.opacity - FADE_STEP);
             if (glyph.opacity <= 0) {
                 discard(glyph);
                 return true;
             }
-            ((TextDisplayInvoker) glyph.entity).pry$setTextOpacity(glyph.opacity);
+            ((TextDisplayInvoker) glyph.entity).pry$setTextOpacity((byte) glyph.opacity);
         }
         if (glyph.age >= DROP_FAILSAFE) {
             discard(glyph);

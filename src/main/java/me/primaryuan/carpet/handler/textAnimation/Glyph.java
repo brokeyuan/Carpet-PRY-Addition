@@ -26,7 +26,7 @@ final class Glyph {
     boolean dropping;
     int popAge;
     int age;
-    byte opacity = (byte) 255;
+    int opacity = 255;
 
     Glyph(Display.TextDisplay entity, double x, double y, double z, double offset, Quaternionf finalRot) {
         this.entity = entity;

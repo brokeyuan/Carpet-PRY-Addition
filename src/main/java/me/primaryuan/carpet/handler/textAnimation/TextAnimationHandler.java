@@ -143,6 +143,7 @@ public final class TextAnimationHandler {
         }
         SESSION_TO_BROADCAST.clear();
         ACTIVE_BROADCASTS.clear();
+        LAST_TEXT.clear();
     }
 
     /**

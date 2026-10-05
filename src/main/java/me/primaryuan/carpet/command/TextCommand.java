@@ -17,8 +17,10 @@ import net.minecraft.server.level.ServerPlayer;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -77,14 +79,31 @@ public final class TextCommand {
             CommandSupport.suggestMatching(builder, candidates);
             return builder.buildFuture();
         }
-        int pipe = Math.max(remaining.lastIndexOf('|'), remaining.lastIndexOf('｜'));
+        int pipe = -1;
+        for (int i = space + 1; i < remaining.length(); i++) {
+            char c = remaining.charAt(i);
+            if (c != '|' && c != '｜') continue;
+            if (i + 1 < remaining.length() && (remaining.charAt(i + 1) == '|' || remaining.charAt(i + 1) == '｜')) {
+                i++;
+            } else {
+                pipe = i;
+                break;
+            }
+        }
         if (pipe > space) {
-            String typed = remaining.substring(pipe + 1);
-            // createOffset：同 fullInput、start 推进到分隔符后——建议只替换分隔符右侧
-            SuggestionsBuilder optBuilder = builder.createOffset(pipe + 1);
+            int start = Math.max(pipe, remaining.lastIndexOf(';')) + 1;
+            Set<String> used = new HashSet<>();
+            for (String option : remaining.substring(pipe + 1, start).split(";")) {
+                int equals = option.indexOf('=');
+                if (equals >= 0) used.add(option.substring(0, equals).trim().toLowerCase(Locale.ROOT));
+            }
+            while (start < remaining.length() && Character.isWhitespace(remaining.charAt(start))) start++;
+            String typed = remaining.substring(start).toLowerCase(Locale.ROOT);
+            // Brigadier 的替换范围基于完整输入，只替换当前选项键。
+            SuggestionsBuilder optBuilder = builder.createOffset(builder.getStart() + start);
             for (String key : OPTION_KEYS) {
                 String entry = key + "=";
-                if (!typed.toLowerCase(Locale.ROOT).contains(key) && entry.startsWith(typed)) {
+                if (!used.contains(key) && entry.startsWith(typed)) {
                     optBuilder.suggest(entry);
                 }
             }

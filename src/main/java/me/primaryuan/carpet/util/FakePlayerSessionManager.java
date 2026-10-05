@@ -95,15 +95,26 @@ public final class FakePlayerSessionManager {
         SESSIONS.put(initiator.getUUID(), new Session(initiator, fakePlayerName, stationDisplayName, totalUses, Phase.WAIT_JOIN));
     }
 
-    /** 启动 /tppset spawn 会话：立即以发起者身份生成假人，停留 SPAWN_LINGER_TICKS 后自动下线 */
+    /**
+     * 启动 /tppset spawn 会话：以发起者身份生成假人，等生成成功后停留
+     * SPAWN_LINGER_TICKS 再自动下线。
+     *
+     * <p>延迟下线只能针对本次成功生成的假人：同名假人已在线时直接拒绝——否则
+     * spawn 失败后仍按名字执行控制台 kill，会下线既有的同名假人；生成失败
+     * （权限不足/Carpet 拒绝）由 WAIT_JOIN 超时收场，同样不会走 kill。</p>
+     */
     public static void startSpawn(MinecraftServer server, ServerPlayer initiator, String fakePlayerName) {
         ensureRegistered();
+        if (isPlayerOnline(server, fakePlayerName)) {
+            sendFeedback(initiator, "carpetprimaryuan.command.tpp.fake_player_busy", fakePlayerName);
+            return;
+        }
         if (!BUSY_FAKE_NAMES.add(fakePlayerName)) {
             sendFeedback(initiator, "carpetprimaryuan.command.tpp.fake_player_busy", fakePlayerName);
             return;
         }
         performPlayerCommand(server, initiator, fakePlayerName, "spawn");
-        SESSIONS.put(initiator.getUUID(), new Session(initiator, fakePlayerName, null, 0, Phase.WAIT_KILL));
+        SESSIONS.put(initiator.getUUID(), new Session(initiator, fakePlayerName, null, 0, Phase.WAIT_JOIN));
     }
 
     /** 惰性注册 tick 状态机与服务器停止清理 */
@@ -139,13 +150,18 @@ public final class FakePlayerSessionManager {
 
         switch (session.phase) {
             case WAIT_JOIN -> {
-                if (isPlayerOnline(server, session.fakePlayerName)) {
-                    // 假人已上线：立即执行第一次 use
-                    performPlayerCommand(server, session.player, session.fakePlayerName, "use");
-                    session.usesDone = 1;
+                if (isFakePlayerOnline(server, session.fakePlayerName)) {
                     session.ticksInPhase = 0;
-                    session.phase = session.usesDone >= session.totalUses
-                            ? Phase.WAIT_TELEPORT : Phase.USE;
+                    if (session.stationDisplayName == null) {
+                        // /tppset spawn：本次生成的假人已上线 → 进入停留计时（到点 kill）
+                        session.phase = Phase.WAIT_KILL;
+                    } else {
+                        // /tpp：假人已上线：立即执行第一次 use
+                        performPlayerCommand(server, session.player, session.fakePlayerName, "use");
+                        session.usesDone = 1;
+                        session.phase = session.usesDone >= session.totalUses
+                                ? Phase.WAIT_TELEPORT : Phase.USE;
+                    }
                 } else if (session.ticksInPhase >= JOIN_TIMEOUT_TICKS) {
                     sendFeedback(session.player,
                             "carpetprimaryuan.command.tpp.teleport_failed", session.fakePlayerName);
@@ -212,6 +228,21 @@ public final class FakePlayerSessionManager {
         //$$         .anyMatch(p -> p.getGameProfile().getName().equals(name));
         //#else
         return server.getPlayerList().getPlayer(name) != null;
+        //#endif
+    }
+
+    /**
+     * 检查指定名称的<b>假人</b>是否在线。WAIT_JOIN 专属：spawn 失败后 10 秒窗口内若有
+     * 真人恰以该假人名上线，按名字判定会把真人当成本次假人，随后的控制台 kill 对真人
+     * 同样生效——必须校验实体类型
+     */
+    private static boolean isFakePlayerOnline(MinecraftServer server, String name) {
+        //#if MC < 12110
+        //$$ return server.getPlayerList().getPlayers().stream()
+        //$$         .anyMatch(p -> p.getGameProfile().getName().equals(name)
+        //$$                 && p instanceof carpet.patches.EntityPlayerMPFake);
+        //#else
+        return server.getPlayerList().getPlayer(name) instanceof carpet.patches.EntityPlayerMPFake;
         //#endif
     }
 }

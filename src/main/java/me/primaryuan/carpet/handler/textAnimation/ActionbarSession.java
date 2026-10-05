@@ -21,15 +21,13 @@ import java.util.List;
  */
 final class ActionbarSession implements ServerTickScheduler.TickTask {
 
-    private static final int HOLD_TICKS = 40;
     private static final int KEEPALIVE_TICKS = 10;
 
     private final List<ServerPlayer> players;
     private final List<TextAnimationHandler.Segment> segments;
     private final TextAnimationHandler.Broadcast broadcast;
-    private final int hold;
     private int typed;
-    private int holdLeft = HOLD_TICKS;
+    private int holdLeft;
     private boolean done;
 
     ActionbarSession(List<ServerPlayer> players, List<TextAnimationHandler.Segment> segments,
@@ -37,7 +35,7 @@ final class ActionbarSession implements ServerTickScheduler.TickTask {
         this.players = new ArrayList<>(players);
         this.segments = segments;
         this.broadcast = broadcast;
-        this.hold = hold;
+        this.holdLeft = hold;
     }
 
     @Override

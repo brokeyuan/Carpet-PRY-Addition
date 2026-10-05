@@ -222,7 +222,7 @@ public final class PlayerBrainCommand {
                 }
             }
         } else if ("keep".startsWith(remaining.substring(space + 1))) {
-            builder.suggest("keep");
+            return builder.createOffset(builder.getStart() + space + 1).suggest("keep").buildFuture();
         }
         return builder.buildFuture();
     }
