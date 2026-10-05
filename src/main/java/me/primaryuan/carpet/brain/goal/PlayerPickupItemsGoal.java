@@ -42,14 +42,14 @@ public class PlayerPickupItemsGoal extends PlayerGoal {
     }
 
     /** Wiki：被玩家/生物攻击后 20 秒（400 tick）内不再尝试捡起物品。
-     *  lastHurtByMobTimestamp 新实体默认 0，须先判 getLastHurtByMob() 非空，
-     *  否则猪灵开局 20 秒恒判"刚被打"不捡物 */
+     *  纯时间戳门控：lastHurtByMob 引用会被原版在约 100 tick 后清除（1.21.4 字节码：
+     *  tick 内 isAlive/超 100 tick 双分支 setLastHurtByMob(null)），引用非空判断会让
+     *  400 tick 窗口提前失效。时间戳新实体默认 0，须先判非零，否则开局恒判"刚被打"。
+     *  口径披露：清除调用会顺带把时间戳刷新为清除时刻（setLastHurtByMob 无条件写点），
+     *  故实际窗口 ≈ 400+101 tick（26.x 无定时清除，恒为 400）；20 秒语义的 ±5 秒内漂移 */
     private boolean recentlyHurt() {
-        if (this.mob.asLiving().getLastHurtByMob() == null) {
-            return false;
-        }
-        int since = this.mob.asLiving().tickCount - this.mob.asLiving().getLastHurtByMobTimestamp();
-        return since < 400;
+        int timestamp = this.mob.asLiving().getLastHurtByMobTimestamp();
+        return timestamp > 0 && this.mob.asLiving().tickCount - timestamp < 400;
     }
 
     /** 最近的掉落物；金质物品（#piglin_loved）优先于普通物品，同组按距离 */

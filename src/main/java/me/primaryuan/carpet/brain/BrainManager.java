@@ -197,12 +197,19 @@ public final class BrainManager {
     /**
      * 卸载脑子；恢复身体静止输入与原计分板队伍。
      *
+     * <p>当前无脑子也须清除 keep：规则自动卸载（detach(player,false)）后，重新开启
+     * 且 sweep 补挂前执行 off，若因"无脑子"提前返回，keep 记录残留会让扫描把脑子
+     * 再挂回来——off 语义是"不再保持"，与当前是否挂载无关。</p>
+     *
      * @param clearKeep true 时同时清除 keep 记录（brain off）；下线/规则切换等
      *                  自动卸载传 false——keep 语义要求下线重上后自动恢复
      */
     public static boolean detach(ServerPlayer player, boolean clearKeep) {
         PlayerBrainController brain = BRAINS.remove(player.getUUID());
         if (brain == null) {
+            if (clearKeep) {
+                KEEP.remove(player.getUUID());
+            }
             return false;
         }
         brain.onDetach();
@@ -219,9 +226,13 @@ public final class BrainManager {
         return true;
     }
 
-    /** 停服清理：卸载全部脑子。keep 语义 = 本次服务器运行内有效，随停服一并作废 */
+    /** 停服清理：卸载全部脑子并恢复原计分板队伍——世界停服时仍会保存，漏恢复会把
+     *  临时脑队伍（后缀/成员）写进存档，重启后残留且原队伍记录丢失 */
     public static void detachAll() {
-        BRAINS.values().forEach(PlayerBrainController::onDetach);
+        BRAINS.values().forEach(brain -> {
+            brain.onDetach();
+            restoreTeam(brain.player);
+        });
         BRAINS.clear();
         KEEP.clear();
         ORIGINAL_TEAM.clear();
@@ -389,8 +400,22 @@ public final class BrainManager {
         if (team == null) {
             team = scoreboard.addPlayerTeam(TEAM_PREFIX + mode + "_" + player.getUUID());
         }
-        // 队后缀每次挂载都刷新：颜色挂在后缀组件自己身上（不设队色——队色会把
-        // 假人名字一起染色，需求是"名字颜色不变、只有后缀变色"）；三语显示名随
+        // 原队伍行为面整体继承（挂脑不改变原队伍归属带来的行为：颜色、友伤保护、
+        // 隐身可见、名字/死亡消息可见性、碰撞规则）——只复制前缀会让假人进入
+        // 临时队后丢失原队伍的全部队务语义
+        if (previous != null) {
+            team.setAllowFriendlyFire(previous.isAllowFriendlyFire());
+            team.setSeeFriendlyInvisibles(previous.canSeeFriendlyInvisibles());
+            team.setNameTagVisibility(previous.getNameTagVisibility());
+            team.setDeathMessageVisibility(previous.getDeathMessageVisibility());
+            team.setCollisionRule(previous.getCollisionRule());
+            //#if MC >= 260200
+            //$$ team.setColor(previous.getColor()); // 26.2 起队色为 Optional<TeamColor>
+            //#else
+            team.setColor(previous.getColor()); // 1.21~26.1.2 为 ChatFormatting
+            //#endif
+        }
+        // 队后缀每次挂载都刷新：颜色挂在后缀组件自己身上；三语显示名随
         // carpet 语言切换即时生效
         team.setPlayerSuffix(Component.literal(
                 "[" + ServerI18n.tr("carpetprimaryuan.command.brain.mode_" + mode).getString() + "]")

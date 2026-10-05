@@ -18,8 +18,9 @@ import java.util.function.Predicate;
  * <ul>
  *   <li>{@code randomInterval}=10：每 tick 只有 1/10 概率真正重新搜索
  *       （原版的目标搜索节流，避免每 tick 全量扫描实体列表）；</li>
- *   <li>{@code mustSee}=true：需要视野；看不到的目标靠 {@code unseenTicks} 短暂记忆
- *       （原版 5 秒遗忘窗口，避免"转身即丢目标"的抖动）；</li>
+ *   <li>{@code mustSee}=true：新目标必须直接可见（对齐原版 TargetingConditions）；
+ *       视线记忆只服务<b>当前目标</b>的丢失缓冲（60 tick，约 3 秒，
+ *       避免"转身即丢目标"的抖动）；</li>
  *   <li>搜索范围显式传入（玩家没有 {@code FOLLOW_RANGE} 属性，不能用
  *       原版的 getFollowDistance）。</li>
  * </ul>
@@ -80,6 +81,10 @@ public class PlayerNearestAttackableTargetGoal<T extends LivingEntity> extends P
     public boolean canContinueToUse() {
         LivingEntity target = this.mob.getTarget();
         if (target == null || !target.isAlive()) {
+            return false;
+        }
+        // 跨维度：/tp 换世界后旧世界目标引用失效（距离/视线对异世界对象无意义）
+        if (target.level() != this.mob.level()) {
             return false;
         }
         // 丢失半径 = 搜索半径 × 1.25（滞后回差）：目标在搜索半径边缘走位时，
@@ -150,17 +155,16 @@ public class PlayerNearestAttackableTargetGoal<T extends LivingEntity> extends P
         return best;
     }
 
-    /** 原版 TargetGoal.canAttack：视野门控（无视野用记忆窗口兜底） */
+    /** 原版 TargetingConditions 语义：mustSee 时新候选必须直接可见 */
     private boolean canAttack(LivingEntity target) {
         if (target == null || !this.inRange(target) || !this.acceptsTarget(target)) {
             return false;
         }
         if (this.mustSee) {
-            if (this.mob.getSensing().hasLineOfSight(target)) {
-                this.unseenTicks = 0;
-                return true;
-            }
-            return this.unseenTicks > 0; // 曾见过：短暂记忆期仍可锁定
+            // 新候选必须直接可见：视线记忆只服务于"当前目标"的丢失缓冲
+            //（canContinueToUse），不解锁从未看见的隔墙目标——原目标暂时不可见时，
+            // 凭残余记忆切换到隔墙候选是越权索敌
+            return this.mob.getSensing().hasLineOfSight(target);
         }
         return true;
     }

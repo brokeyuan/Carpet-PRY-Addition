@@ -5,6 +5,7 @@ import me.primaryuan.carpet.brain.PryMob;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -17,7 +18,7 @@ import java.util.EnumSet;
  *
  * <p>行为与原版骷髅 1:1：锁定目标 → 远距离直线接近、进入射程后横向风筝
  * （strafing 走位，近身倒退）→ 拉弓蓄力（{@code startUsingItem}）→
- * 满弦（20 tick）后 {@code stopUsingItem} 放箭 → 冷却 20 tick 再来。</p>
+ * 满弦（20 tick）后 {@code releaseUsingItem} 放箭 → 冷却 20 tick 再来。</p>
  *
  * <p><b>零凭空造物关键</b>：箭矢不是代码"造"出来的——{@code PryMob}
  * 的 {@code performRangedAttack} 是空实现，真正射箭的是假人
@@ -83,12 +84,19 @@ public class PlayerRangedAttackGoal extends PlayerGoal {
 
     @Override
     public boolean canUse() {
-        return this.mob.getTarget() != null && this.isHoldingWeapon();
+        LivingEntity target = this.mob.getTarget();
+        return target != null && target.level() == this.mob.level() && this.isHoldingWeapon();
     }
 
     /** 是否手持认可武器（原版 isHoldingBow：主手或副手均可） */
     protected boolean isHoldingWeapon() {
         return this.mob.isHolding(stack -> stack.is(this.weapon));
+    }
+
+    /** 武器所在手（主手优先）：执行侧必须与启动侧同手——固定读主手时副手武器能启动目标却永不射击 */
+    private InteractionHand weaponHand() {
+        Player player = this.mob.asPlayer();
+        return player.getMainHandItem().is(this.weapon) ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
     }
 
     /**
@@ -172,37 +180,52 @@ public class PlayerRangedAttackGoal extends PlayerGoal {
             this.mob.getLookControl().setLookAt(target, 30.0F, 30.0F);
         }
 
-        // 射击状态机：蓄力 → 满弦/上弦完成放箭 → 冷却 → 再开弓
+        // 射击状态机：蓄力 → 满弦/上弦完成放箭 → 冷却 → 再开弓。
+        // 执行手与 isHoldingWeapon 的认可面同手（主手优先，否则副手）
+        InteractionHand hand = this.weaponHand();
         if (this.mob.isUsingItem()) {
             if (!hasLineOfSight && this.seeTime < -60) {
                 this.mob.stopUsingItem(); // 跟丢目标：静默收弓重新瞄准（不发射）
             } else if (hasLineOfSight) {
                 int charge = this.mob.getTicksUsingItem();
-                // 弩在蓄满瞬间由原版 onUseTick 自动装填背包真箭（isCharged 翻 true），
-                // 弓无此状态，按 elapsed 蓄力 tick 判定满弦
-                boolean loaded = this.crossbow
-                        ? CrossbowItem.isCharged(this.mob.getMainHandItem())
-                        : charge >= this.chargeTime;
-                if (loaded) {
+                if (this.crossbow) {
+                    ItemStack held = this.mob.asPlayer().getItemInHand(hand);
+                    //#if MC >= 12105
+                    // 1.21.5+：原版 onUseTick 蓄满自动装填背包真箭（javap 1.21.5 实证），
+                    // isCharged 翻 true 后释放扣扳机，performShooting 射出已装填的真箭
+                    if (CrossbowItem.isCharged(held)) {
+                        this.mob.releaseUsingItem();
+                        this.mob.performRangedAttack(target, getPowerForTime(charge, this.chargeTime));
+                        this.attackTime = SHOOT_COOLDOWN;
+                    }
+                    //#else
+                    //$$ // 1.21~1.21.4：onUseTick 只播上弦音效，装填发生在释放动作时
+                    //$$ //（javap 1.21.4 releaseUsing：getPowerForTime>=1 → tryLoadProjectiles）。
+                    //$$ // 等 isCharged 会死锁（装填前恒 false）——蓄满即走 releaseUsingItem
+                    //$$ //（经 CrossbowItem.releaseUsing 装填背包真箭；stopUsingItem 只清
+                    //$$ // 使用状态不触发装填，弩永不上弦），下个冷却窗由"已上弦扣扳机"分支射击
+                    //$$ if (charge >= this.chargeTime) {
+                    //$$     this.mob.releaseUsingItem();
+                    //$$     this.attackTime = SHOOT_COOLDOWN;
+                    //$$ }
+                    //#endif
+                } else if (charge >= this.chargeTime) {
                     // ★ 原生流程：releaseUsingItem 触发 ItemStack.releaseUsing →
-                    //   BowItem.releaseUsing / CrossbowItem.releaseUsing，
-                    //   按满蓄力力学射出（弩射出的正是 onUseTick 从背包装填的真箭，
-                    //   零凭空造物）★
+                    //   BowItem.releaseUsing，按满蓄力力学射出（零凭空造物）★
                     this.mob.releaseUsingItem();
                     this.mob.performRangedAttack(target, getPowerForTime(charge, this.chargeTime));
                     this.attackTime = SHOOT_COOLDOWN;
                 }
             }
         } else if (--this.attackTime <= 0 && this.seeTime >= -60) {
-            ItemStack weapon = this.mob.getMainHandItem();
+            ItemStack weapon = this.mob.asPlayer().getItemInHand(hand);
             if (this.crossbow && CrossbowItem.isCharged(weapon)) {
                 // 已上弦但"使用中"状态被原版蓄满自动完成（completeUsingItem）收走：
                 // 走原版 use() 扣扳机射击（等价真人右键击发已上弦的弩）
-                weapon.getItem().use(this.mob.asPlayer().level(), this.mob.asPlayer(),
-                        InteractionHand.MAIN_HAND);
+                weapon.getItem().use(this.mob.asPlayer().level(), this.mob.asPlayer(), hand);
                 this.attackTime = SHOOT_COOLDOWN;
             } else if (weapon.is(this.weapon) && this.hasAmmo(weapon)) {
-                this.mob.startUsingItem(InteractionHand.MAIN_HAND); // 拉弦/上弦/举矛蓄力
+                this.mob.startUsingItem(hand); // 拉弦/上弦/举矛蓄力
                 if (!this.mob.isUsingItem()) {
                     // use() 拒绝（激流三叉戟在陆地等）：进入冷却等条件满足，不空转
                     this.attackTime = 40;

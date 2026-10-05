@@ -14,7 +14,8 @@ import java.util.EnumSet;
  * 移植版规避目标（← 原版 {@code AvoidEntityGoal}）。
  *
  * <p>语义：检测到视距内出现某类实体（如村民遇僵尸）时，朝远离它的方向
- * 逃跑并盯着它看；距离近（7 格内）加速（sprint 疾跑），远了恢复常速。
+ * 逃跑；距离近（7 格内）加速（sprint 疾跑），远了恢复常速。注视与逃跑同向
+ * （玩家实体身体朝向 = 前进输入方向，不能像原版生物那样身体随移动、头部盯威胁）。
  * 原版依赖 {@code RandomPos} 选点，这里自包含复刻（反方向 + 随机扇形偏移）。
  * 仅规避存活实体（旧实现收下 Predicate 参数却从未存储，isAlive 过滤随之丢失）。</p>
  */
@@ -29,6 +30,8 @@ public class PlayerAvoidEntityGoal<T extends LivingEntity> extends PlayerGoal {
 
     private LivingEntity toAvoid;
     private Path path;
+    /** 逃跑路径锚点（start 时从 path 取）：注视方向跟随逃跑路径而非威胁 */
+    private BlockPos fleePos;
 
     public PlayerAvoidEntityGoal(PryMob mob, Class<T> avoidClass, float maxDist,
                                  double walkSpeedModifier, double sprintSpeedModifier) {
@@ -78,6 +81,11 @@ public class PlayerAvoidEntityGoal<T extends LivingEntity> extends PlayerGoal {
 
     @Override
     public void start() {
+        // 注视与逃跑同向：玩家实体的身体朝向同时是移动输入的"前方"——若沿用原版
+        // "边逃边盯威胁"（生物身体随移动、头部独立），视线控制会把身体转回威胁方向，
+        // 与移动控制的逃离转向互相抵消，表现为朝危险前进或原地打转。注视跟随逃跑
+        // 路径方向，前进输入才指向远离威胁
+        this.fleePos = this.path != null && !this.path.isEmpty() ? this.path.first() : null;
         this.mob.getNavigation().moveTo(this.path, this.walkSpeedModifier);
     }
 
@@ -89,13 +97,18 @@ public class PlayerAvoidEntityGoal<T extends LivingEntity> extends PlayerGoal {
     @Override
     public void stop() {
         this.toAvoid = null;
+        this.fleePos = null;
         this.mob.getNavigation().stop();
     }
 
     @Override
     public void tick() {
         if (this.toAvoid != null) {
-            this.mob.getLookControl().setLookAt(this.toAvoid, 30.0F, 30.0F); // 边逃边盯
+            if (this.fleePos != null) {
+                this.mob.getLookControl().setLookAt(
+                        this.fleePos.getX() + 0.5, this.fleePos.getY(), this.fleePos.getZ() + 0.5,
+                        30.0F, 30.0F); // 盯逃跑方向，身体朝向与前进输入一致
+            }
             // 距离越近跑得越快（原版：小于 7 格切换疾跑速度）
             this.mob.getNavigation().setSpeedModifier(
                     this.mob.distanceToSqr(this.toAvoid) < this.tooClose * this.tooClose
