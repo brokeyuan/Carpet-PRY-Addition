@@ -379,12 +379,21 @@ public final class RedPacketGui {
 
     // ==================== 打开 ====================
 
+    // containerId 铁律：菜单必须在 createMenu(id,...) 回调内用 openMenu 分配的真实 id 构建。
+    // 预构建实例（id 硬编码 0）会让服务端把 GUI 全量同步打上 containerId=0——那是玩家
+    // 背包菜单的保留号，原版客户端把 id=0 的内容同步无条件路由进 46 格背包菜单：类型菜单
+    // 9x3 共 63 格（27 容器 + 36 背包）灌 46 格 → IndexOutOfBoundsException → 客户端
+    // "网络协议错误"踢出（d65e6c3 回归，26.2 生产实证）。
+
     /** 类型选择：3 行，图标按 TYPE_SLOTS 槽位摆放；回调传图标下标 0-3 */
     public static void openTypeMenu(ServerPlayer player, Component title,
                                     ItemStack[] icons, IntConsumer onPick) {
         RedPacketContainer container = new RedPacketContainer(27);
-        RedPacketMenu menu = new RedPacketMenu(MenuType.GENERIC_9x3, 0,
-                player.getInventory(), container, 3, slot -> true,
+        for (int i = 0; i < TYPE_SLOTS.length; i++) {
+            container.forceSet(TYPE_SLOTS[i], icons[i]);
+        }
+        player.openMenu(new SimpleMenuProvider((id, inv, p) -> new RedPacketMenu(
+                MenuType.GENERIC_9x3, id, inv, container, 3, slot -> true,
                 slot -> {
                     for (int i = 0; i < TYPE_SLOTS.length; i++) {
                         if (TYPE_SLOTS[i] == slot) {
@@ -392,11 +401,7 @@ public final class RedPacketGui {
                             return;
                         }
                     }
-                }, null);
-        for (int i = 0; i < TYPE_SLOTS.length; i++) {
-            container.forceSet(TYPE_SLOTS[i], icons[i]);
-        }
-        player.openMenu(new SimpleMenuProvider((id, inv, p) -> menu, title));
+                }, null), title));
     }
 
     /** 物品投放：6 行，槽 0-44 可编辑，按钮槽保护；关闭回调负责未确认退回语义 */
@@ -404,14 +409,13 @@ public final class RedPacketGui {
                                                    ItemStack cancelIcon, ItemStack confirmIcon, ItemStack clearIcon,
                                                    IntConsumer onButton, Runnable onRemoved) {
         RedPacketContainer container = new RedPacketContainer(54);
-        RedPacketMenu menu = new RedPacketMenu(MenuType.GENERIC_9x6, 0,
-                player.getInventory(), container, 6,
-                slot -> slot == SLOT_CANCEL || slot == SLOT_CONFIRM || slot == SLOT_CLEAR,
-                onButton, onRemoved);
         container.forceSet(SLOT_CANCEL, cancelIcon);
         container.forceSet(SLOT_CONFIRM, confirmIcon);
         container.forceSet(SLOT_CLEAR, clearIcon);
-        player.openMenu(new SimpleMenuProvider((id, inv, p) -> menu, title));
+        player.openMenu(new SimpleMenuProvider((id, inv, p) -> new RedPacketMenu(
+                MenuType.GENERIC_9x6, id, inv, container, 6,
+                slot -> slot == SLOT_CANCEL || slot == SLOT_CONFIRM || slot == SLOT_CLEAR,
+                onButton, onRemoved), title));
         return container;
     }
 
@@ -419,12 +423,11 @@ public final class RedPacketGui {
     public static RedPacketContainer openTargetSelect(ServerPlayer player, Component title,
                                                       List<ItemStack> heads, IntConsumer onPick) {
         RedPacketContainer container = new RedPacketContainer(54);
-        RedPacketMenu menu = new RedPacketMenu(MenuType.GENERIC_9x6, 0,
-                player.getInventory(), container, 6, slot -> true, onPick, null);
         for (int i = 0; i < heads.size() && i < 54; i++) {
             container.forceSet(i, heads.get(i));
         }
-        player.openMenu(new SimpleMenuProvider((id, inv, p) -> menu, title));
+        player.openMenu(new SimpleMenuProvider((id, inv, p) -> new RedPacketMenu(
+                MenuType.GENERIC_9x6, id, inv, container, 6, slot -> true, onPick, null), title));
         return container;
     }
 
