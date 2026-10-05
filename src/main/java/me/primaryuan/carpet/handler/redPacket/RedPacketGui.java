@@ -1,6 +1,7 @@
 package me.primaryuan.carpet.handler.redPacket;
 
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
@@ -25,6 +26,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.component.ItemLore;
 import net.minecraft.world.item.component.ResolvableProfile;
 
@@ -286,16 +288,25 @@ public final class RedPacketGui {
     }
 
     /**
-     * 口令铁砧：改名免费（mayPickup 恒真，不耗经验），点成品即提交口令文本。
+     * 口令铁砧：改名免费（不耗经验），点成品即提交口令文本，全程纯虚拟（不依赖世界方块）。
      *
-     * <p>输入槽白名单：只有标记口令纸可留在输入槽，其余物品一进槽即被弹回背包
-     * （{@link #slotsChanged} 拦截——输入容器的任何变更路径都会回调它，javap 核实
-     * 1.21.11 匿名容器 setChanged → menu.slotsChanged）——堵死"借红包铁砧免费改名/
-     * 合成任意物品"的滥用面（本菜单 mayPickup 恒真绕过了原版全部经验费）。
-     * {@link #onTake} 必须先调 {@code super}：原版 onTake 负责消耗输入槽并重置费用，
-     * 漏调即输入永不消耗，成品可反复领取 = 任意物品复制机。</p>
+     * <p>虚拟菜单三防线：{@link #stillValid} 恒真（原版判断要求脚下是铁砧，普通地点会
+     * 下一 tick 自动关闭）；输入槽点击全阻断（{@link #clicked}——原版 Slot.mayPickup 恒真
+     * 可把 UI 纸拿进背包或 Q 键丢进世界）；shift-click 一律不迁移（{@link #quickMoveStack}
+     * ——super 会把玩家物品塞进输入槽、把成品纸塞进背包）。</p>
+     *
+     * <p>输入槽白名单：只有标记口令纸可留在输入槽（{@link #slotsChanged} 兜底拦截非点击
+     * 路径的写入）。标记在 {@code CustomData} 组件而非名字——改名后的成品纸带同标记，
+     * 真实玩家的同名纸不带，两者不混淆。</p>
+     *
+     * <p>{@link #onTake} 不调 {@code super}：javap 26.3 实证 super 首行即
+     * {@code giveExperienceLevels(-cost)}（免费提交被扣经验），随后消耗输入槽、重置费用、
+     * 文本过滤、access.execute（铁砧损耗与音效，虚拟菜单全不适用）。这里复刻消耗输入槽
+     * 语义并额外把成品栈清零——漏消耗即纸复制机。</p>
      */
     public static final class PasswordAnvilMenu extends AnvilMenu {
+        /** 口令纸 CustomData 标记键：识别 UI 用纸（改名后仍在，玩家自带同名纸无此标记） */
+        private static final String PASSWORD_PAPER_MARKER = "pry_redpacket_paper";
         private final Consumer<String> onPassword;
         private final Runnable onClosed;
         private final Inventory playerInventory;
@@ -306,12 +317,22 @@ public final class RedPacketGui {
             this.onPassword = onPassword;
             this.onClosed = onClosed;
             this.playerInventory = playerInventory;
-            // UI 用纸：关闭时统一回收（见 reclaimPapers），避免凭空造物流入玩家背包
+            // UI 用纸：关闭时按标记回收（见 reclaimPapers），避免凭空造物流入玩家背包
             this.slots.get(0).set(passwordPaper());
         }
 
         public static ItemStack passwordPaper() {
-            return icon(Items.PAPER, PASSWORD_PAPER_NAME);
+            ItemStack stack = icon(Items.PAPER, PASSWORD_PAPER_NAME);
+            CompoundTag marker = new CompoundTag();
+            marker.putBoolean(PASSWORD_PAPER_MARKER, true);
+            stack.set(DataComponents.CUSTOM_DATA, CustomData.of(marker));
+            return stack;
+        }
+
+        @Override
+        public boolean stillValid(Player player) {
+            // 虚拟铁砧：不绑定世界方块位置，恒有效（原版判断要求 access 处是铁砧）
+            return true;
         }
 
         @Override
@@ -321,9 +342,47 @@ public final class RedPacketGui {
 
         @Override
         protected void onTake(Player player, ItemStack stack) {
-            super.onTake(player, stack); // 原版语义：消耗输入槽 + 重置费用（缺它即复制机）
-            onPassword.accept(stack.getHoverName().getString());
+            // 不调 super：免费提交（super 首行扣经验）+ 虚拟菜单（super 会损耗世界铁砧）
+            String password = stack.isEmpty() ? "" : stack.getHoverName().getString();
+            // 原版语义：消耗输入槽（javap 26.3：inputSlots.setItem(0/1, EMPTY)），漏它即复制机；
+            // setChanged 链会顺带走 slotsChanged → createResult 重置费用
+            this.inputSlots.setItem(0, ItemStack.EMPTY);
+            this.inputSlots.setItem(1, ItemStack.EMPTY);
+            // 成品纸随提交一并消耗：原版取出流程把它交给玩家（safeTake 副本进 carried），
+            // 清零同一实例即可同时覆盖直调与点击取走两条路径，纸不进背包
+            stack.setCount(0);
+            onPassword.accept(password);
         }
+
+        @Override
+        public ItemStack quickMoveStack(Player player, int index) {
+            // 成品格 shift-click = 提交口令（同点击取走语义）；其余格一律不迁移：
+            // super 会把玩家物品塞进输入槽/成品纸塞进背包
+            if (index == RESULT_SLOT && this.slots.get(index).hasItem()) {
+                this.onTake(player, this.slots.get(index).getItem());
+            }
+            return ItemStack.EMPTY;
+        }
+
+        //#if MC < 260102
+        @Override
+        public void clicked(int index, int button, ClickType type, Player player) {
+            // 输入槽服务端托管：阻断拿取/交换/丢弃等一切点击，UI 纸只进不出
+            if (index == 0 || index == 1) {
+                return;
+            }
+            super.clicked(index, button, type, player);
+        }
+        //#else
+        //$$ @Override
+        //$$ public void clicked(int index, int button, ContainerInput type, Player player) {
+        //$$     // 输入槽服务端托管：阻断拿取/交换/丢弃等一切点击，UI 纸只进不出
+        //$$     if (index == 0 || index == 1) {
+        //$$         return;
+        //$$     }
+        //$$     super.clicked(index, button, type, player);
+        //$$ }
+        //#endif
 
         @Override
         public void slotsChanged(net.minecraft.world.Container container) {
@@ -351,29 +410,27 @@ public final class RedPacketGui {
 
         @Override
         public void removed(Player player) {
-            reclaimPapers(player);
+            reclaimPapers();
             onClosed.run();
             super.removed(player);
         }
 
-        private void reclaimPapers(Player player) {
+        /** 按标记回收菜单内 UI 用纸（输入槽 + 手持）。玩家背包不扫——玩家物品不受触碰 */
+        private void reclaimPapers() {
             if (isPasswordPaper(this.slots.get(0).getItem())) {
                 this.slots.get(0).set(ItemStack.EMPTY);
             }
             if (isPasswordPaper(this.getCarried())) {
                 this.setCarried(ItemStack.EMPTY);
             }
-            Inventory inv = player.getInventory();
-            for (int slot = 0; slot < inv.getContainerSize(); slot++) {
-                if (isPasswordPaper(inv.getItem(slot))) {
-                    inv.setItem(slot, ItemStack.EMPTY);
-                }
-            }
         }
 
         private static boolean isPasswordPaper(ItemStack stack) {
-            return stack.getItem() == Items.PAPER
-                    && PASSWORD_PAPER_NAME.equals(stack.getHoverName().getString());
+            if (stack.getItem() != Items.PAPER) {
+                return false;
+            }
+            CustomData data = stack.get(DataComponents.CUSTOM_DATA);
+            return data != null && data.copyTag().contains(PASSWORD_PAPER_MARKER);
         }
     }
 
@@ -404,7 +461,7 @@ public final class RedPacketGui {
                 }, null), title));
     }
 
-    /** 物品投放：6 行，槽 0-44 可编辑，按钮槽保护；关闭回调负责未确认退回语义 */
+    /** 物品投放：6 行，槽 0-44 可编辑，末行（按钮+两侧空格）全保护——投放区以外禁止存放，防物品丢失 */
     public static RedPacketContainer openItemInput(ServerPlayer player, Component title,
                                                    ItemStack cancelIcon, ItemStack confirmIcon, ItemStack clearIcon,
                                                    IntConsumer onButton, Runnable onRemoved) {
@@ -414,7 +471,7 @@ public final class RedPacketGui {
         container.forceSet(SLOT_CLEAR, clearIcon);
         player.openMenu(new SimpleMenuProvider((id, inv, p) -> new RedPacketMenu(
                 MenuType.GENERIC_9x6, id, inv, container, 6,
-                slot -> slot == SLOT_CANCEL || slot == SLOT_CONFIRM || slot == SLOT_CLEAR,
+                slot -> slot >= SLOT_CANCEL,
                 onButton, onRemoved), title));
         return container;
     }

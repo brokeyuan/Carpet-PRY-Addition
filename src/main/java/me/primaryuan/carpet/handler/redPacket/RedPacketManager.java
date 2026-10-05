@@ -174,14 +174,16 @@ public final class RedPacketManager {
             LAST_HINT.remove(uuid);
         });
         // 停服：开放中的 GUI 会话原样退回；未过期红包的未领份额退回发送者
-        //（消除"重启窗口内未领完红包物品消失"的损失；退不掉的打日志）
+        //（消除"重启窗口内未领完红包物品消失"的损失；退不掉的打日志）。
+        // 退款必须用本监听器入参 server：currentServer 先注册的监听器已置空（Fabric 按
+        // 注册顺序回调），依赖静态引用会让在线发送者被误判离线、退回暂存后又被清空
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
             for (GuiSession session : new ArrayList<>(SESSIONS.values())) {
                 session.returnContainerItems();
             }
             for (RedPacket packet : PACKETS.values()) {
                 if (!packet.expired && !packet.done && packet.sharesLeft() > 0) {
-                    refundUnclaimed(packet, false);
+                    refundUnclaimed(server, packet, false);
                 }
             }
             if (!OFFLINE_REFUNDS.isEmpty()) {
@@ -216,7 +218,7 @@ public final class RedPacketManager {
                 // 会向全服误播"已过期"并二次结算；其到时清理由下方 done 条件承担
                 if (!packet.expired && !packet.done && now >= packet.expireTick) {
                     packet.expired = true;
-                    refundUnclaimed(packet, true);
+                    refundUnclaimed(server, packet, true);
                     broadcastStatus(server, ServerI18n.tr(
                             "carpetprimaryuan.redpacket.msg.expired_broadcast", packet.senderName));
                     settlePacket(server, packet);
@@ -304,8 +306,30 @@ public final class RedPacketManager {
 
     // ==================== 入口：打开类型选择 ====================
 
+    /**
+     * 开新会话前清理旧会话：先摘除记录，再收取其持有物品（投放区余量 + 口令阶段锁定的
+     * payload），然后关旧菜单。摘除必须先于关闭——旧菜单的关闭回调按会话身份判断是否
+     * 退回，摘除后身份不再匹配，退款全部走这里单一路径，不会双发也不会漏发。
+     */
+    private static void abandonSession(ServerPlayer player) {
+        GuiSession old = SESSIONS.remove(player.getUUID());
+        if (old == null) {
+            return;
+        }
+        List<ItemStack> refund = old.itemInputOpen ? old.drainContainer(45) : new ArrayList<>();
+        if (old.payload != null && !old.payload.isEmpty()) {
+            refund.addAll(old.payload);
+            old.payload = null;
+        }
+        player.closeContainer();
+        if (!refund.isEmpty()) {
+            giveItems(player, refund);
+        }
+    }
+
     /** 命令入口：校验通过后打开类型选择 GUI */
     public static void openTypeMenu(ServerPlayer player, int count, String message) {
+        abandonSession(player);
         GuiSession session = new GuiSession(player, null, count, message);
         SESSIONS.put(player.getUUID(), session);
         Component[] names = new Component[RedPacket.Type.values().length];
@@ -328,6 +352,7 @@ public final class RedPacketManager {
      * 头像页，直接开物品投放——大服在线玩家超过头像页 54 格时命令是唯一入口。
      */
     public static void openTypeMenuTargeted(ServerPlayer player, int count, String message, ServerPlayer target) {
+        abandonSession(player);
         GuiSession session = new GuiSession(player, RedPacket.Type.TARGETED, count, message);
         session.targetId = target.getUUID();
         session.targetName = target.getName().getString();
@@ -590,6 +615,7 @@ public final class RedPacketManager {
         if (last == null) {
             return false;
         }
+        abandonSession(player);
         GuiSession session = new GuiSession(player, last.type(), last.count(), last.message());
         if (last.targetId() != null) {
             session.targetId = last.targetId();
@@ -968,12 +994,13 @@ public final class RedPacketManager {
 
     // ==================== 退回 ====================
 
-    private static void refundUnclaimed(RedPacket packet, boolean notify) {
+    /** 未领份额退回：发送者在线直接进包（放不下掉脚下），离线进暂存（上线补发） */
+    private static void refundUnclaimed(MinecraftServer server, RedPacket packet, boolean notify) {
         List<ItemStack> items = packet.unclaimedItems();
         if (items.isEmpty()) {
             return;
         }
-        ServerPlayer sender = findOnlinePlayer(packet.senderId);
+        ServerPlayer sender = findOnlinePlayer(server, packet.senderId);
         if (sender != null) {
             giveItems(sender, items);
             if (notify) {
@@ -1039,10 +1066,14 @@ public final class RedPacketManager {
     }
 
     private static ServerPlayer findOnlinePlayer(UUID id) {
-        if (currentServer == null) {
+        return findOnlinePlayer(currentServer, id);
+    }
+
+    private static ServerPlayer findOnlinePlayer(MinecraftServer server, UUID id) {
+        if (server == null) {
             return null;
         }
-        for (ServerPlayer player : currentServer.getPlayerList().getPlayers()) {
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             if (player.getUUID().equals(id)) {
                 return player;
             }
