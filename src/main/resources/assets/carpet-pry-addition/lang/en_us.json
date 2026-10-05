@@ -199,6 +199,8 @@
   "carpetprimaryuan.command.text.bad_option": "Invalid option %s (available: %s)",
   "carpet.rule.redPacket.name": "Red Packet",
   "carpet.rule.redPacket.desc": "/redpacket sends a red packet (lucky/normal/targeted/password types) broadcast in chat with a clickable claim link; unclaimed shares are refunded on expiry; server-side vanilla GUI, no client install needed",
+  "carpet.rule.clickThrough.name": "Click Through",
+  "carpet.rule.clickThrough.desc": "Right-clicking a wall sign, wall hanging sign, wall banner, item frame or painting opens the container mounted directly behind it; sneaking keeps the vanilla interaction, so does having no container behind",
   "carpetprimaryuan.redpacket.type.lucky": "Lucky Packet",
   "carpetprimaryuan.redpacket.type.normal": "Normal Packet",
   "carpetprimaryuan.redpacket.type.targeted": "Exclusive Packet",

@@ -199,6 +199,8 @@
   "carpetprimaryuan.command.text.bad_option": "非法選項 %s（可用：%s）",
   "carpet.rule.redPacket.name": "紅包",
   "carpet.rule.redPacket.desc": "/redpacket 發紅包（拼手氣/普通/專屬/口令四類），聊天框廣播可點擊領取，過期未領退回；伺服器端原版容器 GUI，用戶端無需安裝",
+  "carpet.rule.clickThrough.name": "穿透點擊",
+  "carpet.rule.clickThrough.desc": "右鍵牆面告示牌/掛起告示牌/牆面橫幅/展示框/畫直接打開背後貼掛的容器，潛行時保持原版互動，背後無容器也走原版行為",
   "carpetprimaryuan.redpacket.type.lucky": "拼手氣紅包",
   "carpetprimaryuan.redpacket.type.normal": "普通紅包",
   "carpetprimaryuan.redpacket.type.targeted": "專屬紅包",

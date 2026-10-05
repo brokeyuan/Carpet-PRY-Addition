@@ -222,4 +222,11 @@ public class CarpetPrimaryuanSettings {
     )
     public static boolean redPacket = false;
 
+    // 穿透点击：右键墙告示牌/挂墙木牌/墙横幅/展示框/画直接打开背后贴挂的容器；
+    // 潜行时保持原版交互（编辑/染色告示牌、旋转展示框），背后无容器也走原版
+    @Rule(
+            categories = {PRIMARYUAN, SURVIVAL, FEATURE}
+    )
+    public static boolean clickThrough = false;
+
 }

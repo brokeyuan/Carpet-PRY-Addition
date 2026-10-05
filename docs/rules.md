@@ -2,7 +2,7 @@
 
 > Mod ID: `carpet-pry-addition` | 版本: `1.2.0`
 >
-> 共 **33 条**规则（`whoCalledMeSound` / `whoCalledMeHighlight` 作为配套子规则内联在 whoCalledMe 节）
+> 共 **34 条**规则（`whoCalledMeSound` / `whoCalledMeHighlight` 作为配套子规则内联在 whoCalledMe 节）
 >
 > **提示：可以使用 `Ctrl+F` 快速查找自己想要的规则**
 
@@ -41,6 +41,7 @@
   - [moreEndCrystalTypes - 更多种类的末地水晶](#moreendcrystaltypes---更多种类的末地水晶)
   - [textAnimation - 米塔字幕](#textanimation---米塔字幕)
   - [redPacket - 红包](#redpacket---红包)
+  - [clickThrough - 穿透点击](#clickthrough---穿透点击)
 - [玩家缩放](#玩家缩放)
   - [playerScale - 玩家随地大小变](#playerscale---玩家随地大小变)
   - [playerScaleMin - 玩家大小最小值](#playerscalemin---玩家大小最小值)
@@ -521,6 +522,23 @@
 | **分类** | `PRIMARYUAN`, `FEATURE`, `COMMAND` |
 
 **工作原理**：命令语法、四类分配规则与 GUI 槽位见命令文档 `/redpacket`。领完/过期时对全服广播灰色状态行（后续点击也有"已被领完/已过期"反馈，不再静默）；断线时投放 GUI 内的物品自动进离线暂存（重进补发）。全程服务端自定义菜单（Slot 层保护：保护格 mayPlace/mayPickup=false、removeItem 返空、set 空操作，clicked 对保护格只放行左键转回调、shift-click/数字键交换/拖拽/扔出/克隆整体屏蔽——Container 层拦截会被 quickMoveStack/moveItemStackTo/doClick SWAP 绕过造成图标复制与玩家物品蒸发，生产实证）；发出与领取有提示音（经验球音，与摸摸头同款配方）；聊天广播为亮红可点击组件（RUN_COMMAND 打开 `/redpacket claim <id>`），口令红包经聊天框逐字匹配领取（复用 ServerMessageEvents.CHAT_MESSAGE）。份额在发出时按类型一次性切好，总量守恒（星与条随机组成/余数随机落份，JUnit 契约测试覆盖）；有效期 3 分钟，过期未领份额原样退回发送者，离线暂存上线补发；领完立即结束。防滥用：领取点击防抖 10 tick、发送冷却 10 秒、每人同时最多 3 个未结束红包。玩家头颅经 PROFILE 组件按名字异步解析（1.21.10 起为 ResolvableProfile 工厂方法，1.21~1.21.8 为 record 构造，javap 核实分叉）；26.2 起染色物品常量并入 ColorCollection 按 pick(DyeColor) 取值。**重启失效语义**：进行中的红包、离线退回暂存、冷却与防抖状态均为内存态，服务器重启即清空（与假人脑 keep 同款如实注明）。
+
+---
+
+### clickThrough - 穿透点击
+
+右键墙告示牌/挂墙木牌/墙横幅/展示框/画直接打开背后贴挂的容器，潜行时保持原版交互。
+
+| 属性 | 值 |
+|------|-----|
+| **规则名** | `clickThrough` |
+| **描述** | 右键墙告示牌/挂墙木牌/墙横幅/展示框/画直接打开背后贴挂的容器，潜行时保持原版交互，背后无容器也走原版行为 |
+| **类型** | `boolean` |
+| **默认值** | `false` |
+| **参考选项** | `false`, `true` |
+| **分类** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
+
+**工作原理**：Fabric API 的 UseBlockCallback（墙告示牌/挂墙木牌/墙横幅）与 UseEntityCallback（展示框/发光展示框/画）在服务端拦截点击，取贴挂面背后一格 `BlockState.getMenuProvider`，非空即 `openMenu` 打开并消费交互，空则 PASS 放行原版（编辑/染色告示牌、旋转展示框/放物品）。潜行（secondary use）恒放行原版，是误穿透的逃生门；旁观者不处理。打开入口与原版右键相同，猫占、上方被堵等"箱子打不开"的原版校验天然一致。纯服务端事件实现，零 mixin，原版客户端即用；检测到独立服务端模组 ClickThrough Server（`clickthrough_server`）时整体让路避免双开，客户端版 ClickThrough（gbl）改的是准星目标、发来的是普通右键包，天然兼容。立式告示牌/站立横幅无水平朝向不处理。
 
 ---
 

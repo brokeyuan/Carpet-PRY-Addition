@@ -2,7 +2,7 @@
 
 > Mod ID: `carpet-pry-addition` | Version: `1.2.0`
 >
-> Total: **33 rules** (`whoCalledMeSound` / `whoCalledMeHighlight` are documented inline as companion rules in the whoCalledMe section)
+> Total: **34 rules** (`whoCalledMeSound` / `whoCalledMeHighlight` are documented inline as companion rules in the whoCalledMe section)
 >
 > **Tip: Use `Ctrl+F` to quickly find the rule you want**
 
@@ -41,6 +41,7 @@
   - [moreEndCrystalTypes - More End Crystal Types](#moreendcrystaltypes---more-end-crystal-types)
   - [textAnimation - MiSide Subtitles](#textanimation---miside-subtitles)
   - [redPacket - Red Packet](#redpacket---red-packet)
+  - [clickThrough - Click Through](#clickthrough---click-through)
 - [Player Scaling](#player-scaling)
   - [playerScale - Player Scale](#playerscale---player-scale)
   - [playerScaleMin - Player Scale Min](#playerscalemin---player-scale-min)
@@ -520,6 +521,23 @@ Allows placing end crystals on crying obsidian. In vanilla, end crystals can onl
 | **Categories** | `PRIMARYUAN`, `FEATURE`, `COMMAND` |
 
 **How it works**: command syntax, the four distribution rules and GUI slots are documented under `/redpacket` in the commands doc. Claimed-out and expired packets are announced server-wide in gray (later clicks get proper "fully claimed/expired" feedback instead of silence); items inside the item-input GUI on disconnect go to the offline refund storage (re-delivered on next join); sending and claiming play a sound (experience orb, same verified recipe as the pat rule). The whole flow runs on a server-side custom menu with Slot-level protection (protected slots are mayPlace/mayPickup=false, removeItem returns empty, set is a no-op, and clicked only lets left clicks through as callbacks — shift-click/number-swap/drag/throw/clone are all blocked; container-level interception alone is bypassed by quickMoveStack/moveItemStackTo/doClick SWAP, causing icon duplication and item evaporation in production). The chat broadcast is a bright-red clickable component (RUN_COMMAND opening `/redpacket claim <id>`); password packets are claimed by typing the exact password in chat (reusing ServerMessageEvents.CHAT_MESSAGE). Shares are split once at send time per type with guaranteed conservation (stars-and-bars random composition / random remainder placement, covered by JUnit contract tests); validity is 3 minutes, unclaimed shares are returned to the sender on expiry, stored while they are offline and re-delivered on their next join; a packet is marked claimed-out once fully claimed (kept for a while so later clicks still see the feedback). Abuse guards: 10-tick claim-click debounce, 10-second send cooldown, at most 3 unfinished packets per player. Player heads use the PROFILE component resolved asynchronously by name (ResolvableProfile factory since 1.21.10, record constructor on 1.21-1.21.8, javap-verified fork); since 26.2 dyed item constants live in ColorCollection picked by DyeColor. **Restart semantics**: running packets, offline refund storage, cooldowns and debounce state are in-memory only and cleared on server restart (same documented behavior as fake player brain keep).
+
+---
+
+### clickThrough - Click Through
+
+Right-clicking a wall sign, wall hanging sign, wall banner, item frame or painting opens the container mounted directly behind it; sneaking keeps the vanilla interaction.
+
+| Property | Value |
+|----------|-------|
+| **Rule Name** | `clickThrough` |
+| **Description** | Right-clicking a wall sign, wall hanging sign, wall banner, item frame or painting opens the container mounted directly behind it; sneaking keeps the vanilla interaction, so does having no container behind |
+| **Type** | `boolean` |
+| **Default Value** | `false` |
+| **Suggested Options** | `false`, `true` |
+| **Categories** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
+
+**How it works**: UseBlockCallback (wall signs / wall hanging signs / wall banners) and UseEntityCallback (item frames / glow item frames / paintings) intercept the click server-side, resolve the block one step behind the mounted face via `BlockState.getMenuProvider`, open it with `openMenu` and consume the interaction when present, or PASS to vanilla otherwise (sign editing / dyeing, frame rotating / item placement). Sneaking (secondary use) always falls through to vanilla and doubles as the escape hatch; spectators are ignored. Opening goes through the same entry point as a vanilla right-click, so vanilla "container can't open" checks (cat on top, blocked above) apply naturally. Pure server-side event implementation with zero mixins, works with vanilla clients; yields entirely when the standalone ClickThrough Server mod (`clickthrough_server`) is present to avoid double opening, while the client-side ClickThrough mod (gbl) is naturally compatible since it rewrites the crosshair target and sends an ordinary use packet. Standing signs / free-standing banners have no horizontal facing and are not handled.
 
 ---
 

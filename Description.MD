@@ -1,4 +1,4 @@
-Carpet PRY Addition is a server-side Fabric extension for the [fabric-carpet](https://github.com/gnembon/fabric-carpet) mod, developed for the **Primaryuan Server**. It adds 33 configurable Carpet rules and 10 new commands (plus `/player` extensions) covering bug fixes, fake player enhancements, player interaction, and survival gameplay expansion.
+Carpet PRY Addition is a server-side Fabric extension for the [fabric-carpet](https://github.com/gnembon/fabric-carpet) mod, developed for the **Primaryuan Server**. It adds 34 configurable Carpet rules and 10 new commands (plus `/player` extensions) covering bug fixes, fake player enhancements, player interaction, and survival gameplay expansion.
 
 ---
 
@@ -114,6 +114,10 @@ The `/text` command plays dialogue text in front of online players (fake players
 ### Red Packet (`redPacket`)
 
 The `/redpacket <count> <message>` command sends a red packet with four distribution types — Lucky (random, total conserved), Normal (even split with random remainder), Exclusive (a chosen player claims everything, also reachable via `/redpacket <count> @player <message>`) and Password (claim by typing the password in chat). Items are placed in a vanilla chest GUI, and a bright-red clickable chat broadcast lets players claim with one click; senders get per-claim receipts, unclaimed shares return to the sender after 3 minutes (stored while offline), and `/redpacket mute` opts out of broadcasts. Server-side vanilla menus only — works on vanilla clients.
+
+### Click Through (`clickThrough`)
+
+Right-clicking a wall sign, wall hanging sign, wall banner, item frame or painting opens the container mounted directly behind it — chests, barrels, shulker boxes, hoppers, dispensers and anything else the vanilla right-click could open. Sneaking keeps the vanilla interaction (sign editing/dyeing, frame rotation), and so does having no container behind; vanilla "container can't open" checks (cat on top, blocked above) apply naturally. Pure server-side event implementation with zero mixins — works on vanilla clients, and yields automatically when the standalone ClickThrough Server mod is installed.
 
 ---
 

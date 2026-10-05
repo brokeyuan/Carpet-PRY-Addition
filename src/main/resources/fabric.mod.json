@@ -38,7 +38,8 @@
   "suggests": {
     "skinrestorer": "${skinrestorer_dependency}",
     "xaerolib": "*",
-    "carpet-tis-addition": "*"
+    "carpet-tis-addition": "*",
+    "clickthrough_server": "*"
   },
   "custom": {
     "modmenu": {

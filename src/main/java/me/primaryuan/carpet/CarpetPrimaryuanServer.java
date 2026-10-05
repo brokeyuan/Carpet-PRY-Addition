@@ -16,6 +16,7 @@ import me.primaryuan.carpet.command.RidingCommand;
 import me.primaryuan.carpet.command.ScaleCommand;
 import me.primaryuan.carpet.command.TextCommand;
 import me.primaryuan.carpet.command.TppCommand;
+import me.primaryuan.carpet.handler.clickThrough.ClickThroughHandler;
 import me.primaryuan.carpet.handler.entitiesRidingPlayers.EntitiesRidingPlayersHandler;
 import me.primaryuan.carpet.handler.patPatPlayers.PatPatPlayersHandler;
 import me.primaryuan.carpet.handler.peacefulPlayers.PvpManager;
@@ -28,6 +29,7 @@ import me.primaryuan.carpet.util.SendtoLinkManager;
 //#if MC < 12111
 //$$ import net.fabricmc.fabric.api.entity.event.v1.EntitySleepEvents;
 //#endif
+import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.world.InteractionResult;
@@ -127,7 +129,19 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
             EntitiesRidingPlayersHandler.onLogOut(handler.player);
         });
 
+        // 穿透点击：右键墙告示牌/挂墙木牌/墙横幅直接打开背后容器（展示框/画在下方 UseEntityCallback 内）
+        UseBlockCallback.EVENT.register(ClickThroughHandler::useBlock);
+
         UseEntityCallback.EVENT.register((player, level, hand, entity, hitResult) -> {
+            // 穿透点击最先处理：展示框/发光展示框/画命中且背后有容器时消费交互（打开背后容器），
+            // 原版旋转/放置不再走、其余监听短路；PASS 时自然落到骑乘/摸摸头（目标类型互斥）
+            if (CarpetPrimaryuanSettings.clickThrough) {
+                InteractionResult clickResult = ClickThroughHandler.useEntity(player, level, hand, entity, hitResult);
+                if (clickResult != InteractionResult.PASS) {
+                    return clickResult;
+                }
+            }
+
             if (CarpetPrimaryuanSettings.ridingPlayers || CarpetPrimaryuanSettings.pickupPlayers) {
                 InteractionResult rideResult =
                         EntitiesRidingPlayersHandler.rideOrPickUp(player, entity, level, hand, hitResult);
