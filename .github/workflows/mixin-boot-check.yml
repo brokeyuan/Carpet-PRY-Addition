@@ -23,7 +23,7 @@ jobs:
           java-version: 25
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6.3.0
+        uses: gradle/actions/setup-gradle@v6.4.0
 
       # 预下载全部版本的 carpet 到 libs/（flatDir）：boot 阶段不再解析 masa maven，
       # 其可用性波动曾导致 26.3 以外全矩阵 "Server failed to boot"（依赖解析快速失败）。
