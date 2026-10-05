@@ -79,7 +79,7 @@ public final class PlayerCommandExtension {
             if (!DropSlotScheduler.start(player, DropSlotScheduler.SLOT_ALL, SLOT_KEY,
                     spec.mode(), spec.interval(), spec.min(), spec.max(), source)) {
                 source.sendFailure(ServerI18n.tr(
-                        "carpetprimaryuan.command.dropall.already_running", SLOT_KEY));
+                        "carpetprimaryuan.command.dropall.already_running", playerName, SLOT_KEY));
                 return 0;
             }
 
@@ -96,15 +96,16 @@ public final class PlayerCommandExtension {
             ServerPlayer player = CommandSupport.resolvePlayer(ctx);
             if (player == null) return 0;
             if (!requireFake(source, player)) return 0;
+            String playerName = player.getName().getString();
 
             DropSlotScheduler.StopSummary summary = DropSlotScheduler.stop(player, SLOT_KEY);
             if (summary.result() == DropSlotScheduler.StopResult.NO_TASK) {
-                source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.dropall.no_task", SLOT_KEY));
+                source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.dropall.no_task", playerName));
                 return 0;
             }
             final int dropped = summary.droppedStacks();
             source.sendSuccess(() -> ServerI18n.tr(
-                    "carpetprimaryuan.command.dropall.stopped", SLOT_KEY, dropped), true);
+                    "carpetprimaryuan.command.dropall.stopped", playerName, dropped), true);
             return 1;
         }
     }

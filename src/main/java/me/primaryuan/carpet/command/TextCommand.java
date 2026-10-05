@@ -3,6 +3,9 @@ package me.primaryuan.carpet.command;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import carpet.patches.EntityPlayerMPFake;
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import me.primaryuan.carpet.handler.textAnimation.TextAnimationHandler;
 import me.primaryuan.carpet.handler.textAnimation.TextOptions;
@@ -12,8 +15,11 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.server.level.ServerPlayer;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * /text 命令：向在线真人玩家（假人除外）播放米塔风格字幕（规则 textAnimation 控制可用性）。
@@ -32,6 +38,9 @@ public final class TextCommand {
 
     private TextCommand() {}
 
+    /** options 键：bad_option 提示与行内补全共用同一份 */
+    private static final String[] OPTION_KEYS = {"distance", "scale", "spacing", "hold", "glow", "sound", "drop"};
+
     // ==================== 注册 ====================
 
     public static void register() {
@@ -42,9 +51,46 @@ public final class TextCommand {
                     // 单 greedy 分支：目标前缀（@a / 在线玩家名）在 execute 内剥离，
                     // 目标参数必填，首词非目标时报错
                     .then(Commands.argument("text", StringArgumentType.greedyString())
+                            .suggests(TextCommand::suggestInput)
                             .executes(ctx -> execute(ctx)));
             dispatcher.register(text);
         });
+    }
+
+    /**
+     * 输入补全：目标前缀可发现（"目标必填"契约的提示面）。
+     * 首词建议 "@a " 与在线真人玩家名（假人不可接收字幕，排除；带尾随空格直达消息）；
+     * 消息区出现 | 分隔符后建议未用过的 options 键（k=v 语法发现）。
+     */
+    private static CompletableFuture<Suggestions> suggestInput(
+            CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
+        String remaining = builder.getRemaining();
+        int space = remaining.indexOf(' ');
+        if (space < 0) {
+            List<String> candidates = new ArrayList<>();
+            candidates.add("@a ");
+            for (ServerPlayer p : context.getSource().getServer().getPlayerList().getPlayers()) {
+                if (!(p instanceof EntityPlayerMPFake)) {
+                    candidates.add(CommandSupport.profileName(p) + " ");
+                }
+            }
+            CommandSupport.suggestMatching(builder, candidates);
+            return builder.buildFuture();
+        }
+        int pipe = Math.max(remaining.lastIndexOf('|'), remaining.lastIndexOf('｜'));
+        if (pipe > space) {
+            String typed = remaining.substring(pipe + 1);
+            // createOffset：同 fullInput、start 推进到分隔符后——建议只替换分隔符右侧
+            SuggestionsBuilder optBuilder = builder.createOffset(pipe + 1);
+            for (String key : OPTION_KEYS) {
+                String entry = key + "=";
+                if (!typed.toLowerCase(Locale.ROOT).contains(key) && entry.startsWith(typed)) {
+                    optBuilder.suggest(entry);
+                }
+            }
+            return optBuilder.buildFuture();
+        }
+        return Suggestions.empty();
     }
 
     /**
@@ -95,7 +141,7 @@ public final class TextCommand {
             } catch (IllegalArgumentException e) {
                 source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.text.bad_option",
                         e.getMessage(),
-                        "distance, scale, spacing, hold, glow, sound, drop"));
+                        String.join(", ", OPTION_KEYS)));
                 return 0;
             }
         }

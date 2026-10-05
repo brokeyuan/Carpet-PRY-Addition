@@ -18,6 +18,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.List;
+import java.util.StringJoiner;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -108,7 +109,7 @@ public final class PlayerBrainCommand {
                 source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.brain.not_fake", name));
                 return 0;
             }
-            source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.brain.unknown_mode", raw));
+            source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.brain.unknown_mode", raw, modeList()));
             return 0;
         }
 
@@ -143,7 +144,7 @@ public final class PlayerBrainCommand {
         try {
             String attached = BrainManager.attach(player, mode, ownerUuid, keep);
             if (attached == null) {
-                source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.brain.unknown_mode", raw));
+                source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.brain.unknown_mode", raw, modeList()));
                 return 0;
             }
             // 状态展示靠头顶名牌后缀（[僵尸] 等，颜色按敌对/中立/不敌对），回执一行带执行者
@@ -184,6 +185,18 @@ public final class PlayerBrainCommand {
             }
         }
         return null;
+    }
+
+    /**
+     * 可用模式名列表（当前 carpet 语言显示名，" / " 分隔）：
+     * 供 unknown_mode 失败提示使用，与 suggestModes 引导输入的写法一致。
+     */
+    private static String modeList() {
+        StringJoiner joiner = new StringJoiner(" / ");
+        for (String mode : MODES) {
+            joiner.add(Translations.tr(MODE_KEY_PREFIX + mode));
+        }
+        return joiner.toString();
     }
 
     /**

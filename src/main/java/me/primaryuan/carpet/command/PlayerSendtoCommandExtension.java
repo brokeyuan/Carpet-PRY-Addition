@@ -4,14 +4,19 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import me.primaryuan.carpet.i18n.ServerI18n;
 import me.primaryuan.carpet.util.SendtoLinkManager;
+import carpet.patches.EntityPlayerMPFake;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.server.level.ServerPlayer;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * 独立的 /player &lt;name&gt; sendto 命令节点（假人背包链接 spec）。
@@ -40,9 +45,37 @@ public final class PlayerSendtoCommandExtension {
                 .requires(source -> CarpetPrimaryuanSettings.fakePlayerSendto);
         // <target>：建立 源假人 → 目标假人 的链接并立即开始转移（默认 continuous）
         root.then(Commands.argument("target", StringArgumentType.word())
-                .suggests(CommandSupport::suggestOnlinePlayers)
+                .suggests(PlayerSendtoCommandExtension::suggestFakeTargets)
                 .executes(SendtoHandler::addLink));
         return root;
+    }
+
+    /**
+     * <target> 补全：仅建议在线假人且排除源本身，与 addLink 的运行期校验
+     * （SOURCE_NOT_FAKE / TARGET_NOT_FAKE / SELF_LINK）对齐，建议面不出现执行必败的目标。
+     * 补全路径只读：源参数缺失时静默跳过自身排除，绝不发失败消息。
+     */
+    private static CompletableFuture<Suggestions> suggestFakeTargets(
+            CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
+        String sourceName;
+        try {
+            sourceName = StringArgumentType.getString(context, "player");
+        } catch (IllegalArgumentException e) {
+            sourceName = null;
+        }
+        List<String> candidates = new ArrayList<>();
+        for (ServerPlayer p : context.getSource().getServer().getPlayerList().getPlayers()) {
+            if (!(p instanceof EntityPlayerMPFake)) {
+                continue;
+            }
+            String name = CommandSupport.profileName(p);
+            if (name.equalsIgnoreCase(sourceName)) {
+                continue;
+            }
+            candidates.add(name);
+        }
+        CommandSupport.suggestMatching(builder, candidates);
+        return builder.buildFuture();
     }
 
     /** sendto 的频率命令业务处理：把模式落到 {@link SendtoLinkManager} 并发送反馈 */

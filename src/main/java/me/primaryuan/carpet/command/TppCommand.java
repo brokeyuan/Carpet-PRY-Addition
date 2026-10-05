@@ -2,7 +2,6 @@ package me.primaryuan.carpet.command;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
@@ -55,6 +54,8 @@ public class TppCommand {
             tppRoot.then(Commands.argument(STATION_ARG, StringArgumentType.greedyString())
                     .suggests(TppCommand::suggestStations)
                     .executes(TppCommand::teleportToStation));
+            // /tpp（无参数）— 列出全部可用站点（显示名优先），替代 Brigadier 原生 usage 报错
+            tppRoot.executes(TppCommand::listStations);
             dispatcher.register(tppRoot);
 
             // === /tppset — 站点管理与规则配置命令（规则关闭时整棵命令不可见）===
@@ -83,7 +84,7 @@ public class TppCommand {
                             .then(Commands.literal("remove")
                                     .executes(TppCommand::removePlayerAlias))
                             .then(Commands.literal("set")
-                                    .then(Commands.argument(ALIAS_ARG, StringArgumentType.word())
+                                    .then(Commands.argument(ALIAS_ARG, StringArgumentType.greedyString())
                                             .executes(TppCommand::renamePlayer)))));
 
             // /tppset remove <station>（管理员专属）
@@ -185,9 +186,10 @@ public class TppCommand {
      * /tpp <station> - 玩家传送到指定站点（requires 已保证 fakePlayerTpp=true）
      * 流程（tick 状态机，见 {@link FakePlayerSessionManager}）: rejoin → 等待上线 → use×N → 3秒 → kill
      */
-    private static int teleportToStation(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    private static int teleportToStation(CommandContext<CommandSourceStack> context) {
         CommandSourceStack source = context.getSource();
-        ServerPlayer player = source.getPlayerOrException();
+        ServerPlayer player = CommandSupport.requirePlayer(context);
+        if (player == null) return 0;
 
         // /tpp 依赖 rejoin 在假人下线位置重生（由 Carpet TIS Addition 提供，软依赖）
         if (!TIS_ADDITION_LOADED) {
@@ -212,9 +214,10 @@ public class TppCommand {
      * /tppset spawn <station> - 立即以玩家身份生成假人，3 秒后自动下线（tick 状态机）
      * requires 已保证 fakePlayerTpp=true
      */
-    private static int setSpawnFakePlayer(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    private static int setSpawnFakePlayer(CommandContext<CommandSourceStack> context) {
         CommandSourceStack source = context.getSource();
-        ServerPlayer player = source.getPlayerOrException();
+        ServerPlayer player = CommandSupport.requirePlayer(context);
+        if (player == null) return 0;
 
         StationRequest request = resolveStation(source, player, context.getArgument(STATION_ARG, String.class));
         if (request == null) return 0;
@@ -230,11 +233,6 @@ public class TppCommand {
      */
     private static int addStation(CommandContext<CommandSourceStack> context) {
         CommandSourceStack source = context.getSource();
-
-        if (!CommandSupport.isAdmin(source)) {
-            source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.tpp.admin_only"));
-            return 0;
-        }
 
         String name = context.getArgument(STATION_ARG, String.class);
         if (stationNameTooLong(source, name)) return 0;
@@ -253,11 +251,6 @@ public class TppCommand {
      */
     private static int addStationWithDisplay(CommandContext<CommandSourceStack> context) {
         CommandSourceStack source = context.getSource();
-
-        if (!CommandSupport.isAdmin(source)) {
-            source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.tpp.admin_only"));
-            return 0;
-        }
 
         String name = context.getArgument(STATION_ARG, String.class);
         if (stationNameTooLong(source, name)) return 0;
@@ -278,11 +271,6 @@ public class TppCommand {
     private static int removeStation(CommandContext<CommandSourceStack> context) {
         CommandSourceStack source = context.getSource();
 
-        if (!CommandSupport.isAdmin(source)) {
-            source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.tpp.admin_only"));
-            return 0;
-        }
-
         String input = context.getArgument(STATION_ARG, String.class);
         String internalName = TppConfigManager.getInternalName(input);
 
@@ -299,17 +287,14 @@ public class TppCommand {
 
     /**
      * /tppset rename <playerName> set <alias> - 为玩家设置假人传送别名
+     * 别名参数为 greedy（Brigadier 未引号参数只认 ASCII，greedy 才能不带引号输中文别名）；
+     * 别名会进入假人名，含空格会破坏 /player 系列按名寻址，故拒绝。
      */
     private static int renamePlayer(CommandContext<CommandSourceStack> context) {
         CommandSourceStack source = context.getSource();
 
-        if (!CommandSupport.isAdmin(source)) {
-            source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.tpp.admin_only"));
-            return 0;
-        }
-
         String playerName = context.getArgument(PLAYER_ARG, String.class);
-        String alias = context.getArgument(ALIAS_ARG, String.class);
+        String alias = context.getArgument(ALIAS_ARG, String.class).trim();
 
         if (playerName.isEmpty()) {
             source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.tpp.player_name_empty"));
@@ -317,6 +302,10 @@ public class TppCommand {
         }
         if (alias.isEmpty()) {
             source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.tpp.alias_empty"));
+            return 0;
+        }
+        if (alias.chars().anyMatch(Character::isWhitespace)) {
+            source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.tpp.alias_invalid"));
             return 0;
         }
 
@@ -338,11 +327,6 @@ public class TppCommand {
     private static int removePlayerAlias(CommandContext<CommandSourceStack> context) {
         CommandSourceStack source = context.getSource();
 
-        if (!CommandSupport.isAdmin(source)) {
-            source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.tpp.admin_only"));
-            return 0;
-        }
-
         String playerName = context.getArgument(PLAYER_ARG, String.class);
 
         if (!TppConfigManager.removeAlias(playerName)) {
@@ -361,11 +345,6 @@ public class TppCommand {
      */
     private static int setUseCount(CommandContext<CommandSourceStack> context) {
         CommandSourceStack source = context.getSource();
-
-        if (!CommandSupport.isAdmin(source)) {
-            source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.tpp.admin_only"));
-            return 0;
-        }
 
         int count = context.getArgument("count", Integer.class);
 
@@ -414,6 +393,21 @@ public class TppCommand {
         }
         final MutableComponent finalMessage = message;
         source.sendSuccess(() -> finalMessage, false);
+        return 1;
+    }
+
+    /**
+     * /tpp（无参数）- 列出全部可用站点，替代 Brigadier 原生 usage 报错；
+     * 站点列表与 station_not_found 失败分支同一来源（显示名优先）。
+     */
+    private static int listStations(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+        java.util.List<String> stations = TppConfigManager.getDisplayNames();
+        if (stations.isEmpty()) {
+            source.sendSuccess(() -> ServerI18n.tr("carpetprimaryuan.command.tpp.station_list_empty"), false);
+        } else {
+            source.sendSuccess(() -> ServerI18n.tr("carpetprimaryuan.command.tpp.station_list", String.join(", ", stations)), false);
+        }
         return 1;
     }
 

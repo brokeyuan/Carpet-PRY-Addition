@@ -3,7 +3,8 @@ package me.primaryuan.carpet.command;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import me.primaryuan.carpet.handler.redPacket.RedPacketManager;
 import carpet.patches.EntityPlayerMPFake;
@@ -14,6 +15,10 @@ import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * /redpacket 命令：发红包（规则 redPacket 控制可用性）。
@@ -49,19 +54,37 @@ public final class RedPacketCommand {
                     .then(Commands.literal("list").executes(RedPacketCommand::list))
                     .then(Commands.literal("again").executes(RedPacketCommand::again))
                     .then(Commands.argument("args", StringArgumentType.greedyString())
+                            .suggests(RedPacketCommand::suggestArgs)
                             .executes(RedPacketCommand::openRedPacket))
                     // /redpacket 裸命令：份数与祝福语全默认
                     .executes(RedPacketCommand::openBare));
         });
     }
 
+    /**
+     * greedy 参数补全：份数示例、@在线玩家、默认祝福语——把"单 greedy 手工解析"的
+     * 语法契约（[份数] [@玩家] [祝福语]）透出到输入提示面。
+     */
+    private static CompletableFuture<Suggestions> suggestArgs(
+            CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
+        List<String> candidates = new ArrayList<>();
+        candidates.add("1 ");
+        candidates.add("10 ");
+        for (ServerPlayer p : context.getSource().getServer().getPlayerList().getPlayers()) {
+            candidates.add("@" + CommandSupport.profileName(p) + " ");
+        }
+        candidates.add(ServerI18n.tr("carpetprimaryuan.redpacket.default_message").getString());
+        CommandSupport.suggestMatching(builder, candidates);
+        return builder.buildFuture();
+    }
+
     // ==================== 执行 ====================
 
     /** /redpacket 裸命令：份数与祝福语全默认 */
-    private static int openBare(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        CommandSourceStack source = context.getSource();
-        ServerPlayer player = source.getPlayerOrException();
-        RedPacketManager.openTypeMenu(player, defaultCount(source.getServer()),
+    private static int openBare(CommandContext<CommandSourceStack> context) {
+        ServerPlayer player = CommandSupport.requirePlayer(context);
+        if (player == null) return 0;
+        RedPacketManager.openTypeMenu(player, defaultCount(context.getSource().getServer()),
                 ServerI18n.tr("carpetprimaryuan.redpacket.default_message").getString());
         return 1;
     }
@@ -72,7 +95,7 @@ public final class RedPacketCommand {
      * ② 次词以 @ 开头 → 专属直达目标（按名不区分大小写匹配在线玩家，不能是自己）；
      * ③ 其余为祝福语，缺省 = 恭喜发财（lang 键随全局语言）。
      */
-    private static int openRedPacket(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    private static int openRedPacket(CommandContext<CommandSourceStack> context) {
         CommandSourceStack source = context.getSource();
         // 参数解析在来源校验之前：解析错误（份数越界/目标缺失）对控制台同样可见
         String raw = StringArgumentType.getString(context, "args").trim();
@@ -127,7 +150,8 @@ public final class RedPacketCommand {
         }
 
         // 解析全部通过才要求玩家来源（红包必须有发送者）
-        ServerPlayer player = source.getPlayerOrException();
+        ServerPlayer player = CommandSupport.requirePlayer(context);
+        if (player == null) return 0;
         if (target != null) {
             RedPacketManager.openTypeMenuTargeted(player, count, message, target);
         } else {
@@ -147,9 +171,10 @@ public final class RedPacketCommand {
         return online;
     }
 
-    private static int list(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        ServerPlayer player = context.getSource().getPlayerOrException();
-        java.util.List<Component> lines = RedPacketManager.listOngoing(player);
+    private static int list(CommandContext<CommandSourceStack> context) {
+        ServerPlayer player = CommandSupport.requirePlayer(context);
+        if (player == null) return 0;
+        List<Component> lines = RedPacketManager.listOngoing(player);
         if (lines.isEmpty()) {
             context.getSource().sendFailure(ServerI18n.tr("carpetprimaryuan.redpacket.msg.list_empty"));
             return 0;
@@ -160,8 +185,9 @@ public final class RedPacketCommand {
         return 1;
     }
 
-    private static int again(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        ServerPlayer player = context.getSource().getPlayerOrException();
+    private static int again(CommandContext<CommandSourceStack> context) {
+        ServerPlayer player = CommandSupport.requirePlayer(context);
+        if (player == null) return 0;
         if (!RedPacketManager.reopenLast(player)) {
             context.getSource().sendFailure(ServerI18n.tr("carpetprimaryuan.redpacket.msg.again_none"));
             return 0;
@@ -169,26 +195,29 @@ public final class RedPacketCommand {
         return 1;
     }
 
-    private static int claim(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        ServerPlayer player = context.getSource().getPlayerOrException();
+    private static int claim(CommandContext<CommandSourceStack> context) {
+        ServerPlayer player = CommandSupport.requirePlayer(context);
+        if (player == null) return 0;
         int id = IntegerArgumentType.getInteger(context, "id");
         RedPacketManager.claim(player, id);
         return 1;
     }
 
     /** mute 无参 = 翻转本人退订状态；unmute 子命令保留为显式恢复 */
-    private static int mute(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        ServerPlayer player = context.getSource().getPlayerOrException();
+    private static int mute(CommandContext<CommandSourceStack> context) {
+        ServerPlayer player = CommandSupport.requirePlayer(context);
+        if (player == null) return 0;
         boolean muted = RedPacketManager.isMuted(player);
         return toggleMute(context, !muted);
     }
 
-    private static int unmute(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    private static int unmute(CommandContext<CommandSourceStack> context) {
         return toggleMute(context, false);
     }
 
-    private static int toggleMute(CommandContext<CommandSourceStack> context, boolean mute) throws CommandSyntaxException {
-        ServerPlayer player = context.getSource().getPlayerOrException();
+    private static int toggleMute(CommandContext<CommandSourceStack> context, boolean mute) {
+        ServerPlayer player = CommandSupport.requirePlayer(context);
+        if (player == null) return 0;
         RedPacketManager.toggleMute(player, mute);
         player.sendSystemMessage(ServerI18n.tr(mute
                 ? "carpetprimaryuan.redpacket.msg.mute_on"

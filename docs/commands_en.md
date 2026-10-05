@@ -52,8 +52,11 @@
 #### Syntax
 
 ```
+/tpp
 /tpp <station>
 ```
+
+With no argument, lists all available stations (display names preferred).
 
 #### Permission
 
@@ -136,7 +139,7 @@ Set a fake player teleport alias for a player.
 - **Permission**: Admin only
 - **Parameters**:
   - `player` - Player's real name
-  - `alias` - Alias (up to 10 characters)
+  - `alias` - Alias (up to 10 characters, no spaces, Chinese supported)
 
 ##### `/tppset rename <player> remove`
 
@@ -666,7 +669,7 @@ Toggles the per-player preference for accepting pats: declined players cannot be
 ### Examples
 
 ```
-/patnod          # status: Pat interactions: accepted
+/patnod          # toggle: accepted ↔ declined (reply shows the new state)
 /patnod off      # declined: players cannot pat you
 /patnod on       # accept again
 ```
@@ -767,7 +770,7 @@ Sends a red packet: share count + blessing message -> type selection -> put in i
 
 ### Guards & Limits
 
-- Count 1-100 (Brigadier bounds), message 1-32 characters
+- Count 1-100 (validated manually inside the greedy argument, rejected at execution rather than parse time), message 1-32 characters
 - 10-tick claim-click debounce; 10-second send cooldown (the error shows the remaining seconds); at most 3 unfinished packets per player
 - Running packets and offline refund storage are in-memory and cleared on server restart (documented restart semantics)
 

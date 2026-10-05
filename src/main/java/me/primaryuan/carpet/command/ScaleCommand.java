@@ -3,7 +3,6 @@ package me.primaryuan.carpet.command;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
@@ -124,9 +123,10 @@ public final class ScaleCommand {
 
     // ==================== set 自己 / 他人 ====================
 
-    private static int setSelfScale(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+    private static int setSelfScale(CommandContext<CommandSourceStack> ctx) {
+        ServerPlayer self = CommandSupport.requirePlayer(ctx);
+        if (self == null) return 0;
         CommandSourceStack source = ctx.getSource();
-        ServerPlayer self = source.getPlayerOrException();
         double value = DoubleArgumentType.getDouble(ctx, "value");
 
         if (requirePositive(source, value)) return 0;
@@ -134,7 +134,7 @@ public final class ScaleCommand {
         return applyScale(self, value, source, "set", true);
     }
 
-    private static int setTargetScale(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+    private static int setTargetScale(CommandContext<CommandSourceStack> ctx) {
         CommandSourceStack source = ctx.getSource();
         ServerPlayer target = CommandSupport.resolvePlayer(ctx);
         if (target == null) return 0;
@@ -188,12 +188,13 @@ public final class ScaleCommand {
 
     // ==================== reset 自己 / 他人 ====================
 
-    private static int resetSelfScale(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
-        ServerPlayer self = ctx.getSource().getPlayerOrException();
+    private static int resetSelfScale(CommandContext<CommandSourceStack> ctx) {
+        ServerPlayer self = CommandSupport.requirePlayer(ctx);
+        if (self == null) return 0;
         return applyScale(self, DEFAULT_SCALE, ctx.getSource(), "reset", true);
     }
 
-    private static int resetTargetScale(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+    private static int resetTargetScale(CommandContext<CommandSourceStack> ctx) {
         CommandSourceStack source = ctx.getSource();
         ServerPlayer target = CommandSupport.resolvePlayer(ctx);
         if (target == null) return 0;
@@ -210,13 +211,14 @@ public final class ScaleCommand {
 
     // ==================== info 自己 / 他人 ====================
 
-    private static int infoSelfScale(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
-        ServerPlayer self = ctx.getSource().getPlayerOrException();
+    private static int infoSelfScale(CommandContext<CommandSourceStack> ctx) {
+        ServerPlayer self = CommandSupport.requirePlayer(ctx);
+        if (self == null) return 0;
         sendInfo(self, ctx.getSource(), true);
         return 1;
     }
 
-    private static int infoTargetScale(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+    private static int infoTargetScale(CommandContext<CommandSourceStack> ctx) {
         CommandSourceStack source = ctx.getSource();
         ServerPlayer target = CommandSupport.resolvePlayer(ctx);
         if (target == null) return 0;

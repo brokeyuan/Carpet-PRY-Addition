@@ -1,7 +1,6 @@
 package me.primaryuan.carpet.command;
 
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import me.primaryuan.carpet.i18n.ServerI18n;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -23,8 +22,9 @@ public class HatCommand {
         });
     }
 
-    private static int execute(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        ServerPlayer player = context.getSource().getPlayerOrException();
+    private static int execute(CommandContext<CommandSourceStack> context) {
+        ServerPlayer player = CommandSupport.requirePlayer(context);
+        if (player == null) return 0;
 
         ItemStack mainHandItem = player.getMainHandItem();
         ItemStack headSlotItem = player.getItemBySlot(EquipmentSlot.HEAD);
