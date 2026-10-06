@@ -37,9 +37,6 @@
 - [/patnod - Pat Interaction Toggle](#patnod---pat-interaction-toggle)
 - [/text - MiSide Subtitles](#text---miside-subtitles)
 - [/redpacket - Red Packet](#redpacket---red-packet)
-  - [Command Syntax](#command-syntax)
-  - [Permission Modes (peacefulPlayers values)](#permission-modes-peacefulplayers-values)
-  - [Server-wide Switch Behavior](#server-wide-switch-behavior)
 
 ---
 

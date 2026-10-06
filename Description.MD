@@ -105,7 +105,7 @@ Enables the `/pvp` command: each player can turn their own PVP on or off. Player
 
 ### Who Called Me (`whoCalledMe`)
 
-When a chat message contains another player's name, the mentioned player gets three notification dings and a title showing the message text; names appearing in chat are also rendered gold for everyone via the vanilla chat decorator. Name matching is case-insensitive with word boundaries, so substrings never trigger for the wrong player; mentioning yourself and fake players (as receivers) is ignored. Purely server-side — works on vanilla clients.
+When a chat message contains another player's name, the mentioned player gets three notification dings (sound selectable via `whoCalledMeSound`: ding/levelup/bell/pling/hit, or `false` for none) and a title showing the message text — oversized titles are truncated by display width, keeping the name visible; names appearing in chat are highlighted for everyone via the vanilla chat decorator (default aqua, all 16 colors + a rainbow gradient + `false` to keep colors untouched). Name matching is case-insensitive substring with longest-name-wins; mentioning yourself and fake players (as receivers) is ignored. Purely server-side — works on vanilla clients.
 
 ### MiSide Subtitles (`textAnimation`)
 
@@ -114,6 +114,7 @@ The `/text` command plays dialogue text in front of online players (fake players
 ### Red Packet (`redPacket`)
 
 The `/redpacket <count> <message>` command sends a red packet with four distribution types — Lucky (random, total conserved), Normal (even split with random remainder), Exclusive (a chosen player claims everything, also reachable via `/redpacket <count> @player <message>`) and Password (claim by typing the password in chat). Items are placed in a vanilla chest GUI, and a bright-red clickable chat broadcast lets players claim with one click; senders get per-claim receipts, unclaimed shares return to the sender after 3 minutes (stored while offline), and `/redpacket mute` opts out of broadcasts. Server-side vanilla menus only — works on vanilla clients.
+
 
 ### Click Through (`clickThrough`)
 

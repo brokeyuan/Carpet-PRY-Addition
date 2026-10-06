@@ -15,7 +15,8 @@ import java.util.List;
  * 大服降级会话：单条广播直接生成字幕的玩家超过上限（{@code TextAnimationHandler#MAX_DIRECT_PLAYERS}）
  * 时，超出部分改用 actionbar 打字机（零实体、纯包）呈现同一文本。
  *
- * <p>打字阶段每 tick 发一次"前 k 字符"（样式同字幕解析）；打完进入保持期，每 10 tick
+ * <p>打字阶段每 {@code TextAnimationHandler#TYPE_INTERVAL_TICKS} tick 发一次
+ * "前 k 字符"（样式同字幕解析）；打完进入保持期，每 10 tick
  * 重发完整文本对抗 actionbar 自动淡出；玩家断线/死亡/换维度即移出，全部结束或无人剩余时
  * 通知广播销毁。</p>
  */
@@ -27,6 +28,7 @@ final class ActionbarSession implements ServerTickScheduler.TickTask {
     private final List<TextAnimationHandler.Segment> segments;
     private final TextAnimationHandler.Broadcast broadcast;
     private int typed;
+    private int typeCooldown = 1;
     private int holdLeft;
     private boolean done;
 
@@ -47,8 +49,12 @@ final class ActionbarSession implements ServerTickScheduler.TickTask {
         }
 
         if (typed < segments.size()) {
-            typed++;
-            broadcastToAll(buildComponent(typed));
+            // 与字幕会话同款打字节奏
+            if (--typeCooldown <= 0) {
+                typed++;
+                broadcastToAll(buildComponent(typed));
+                typeCooldown = TextAnimationHandler.TYPE_INTERVAL_TICKS;
+            }
             return true;
         }
 

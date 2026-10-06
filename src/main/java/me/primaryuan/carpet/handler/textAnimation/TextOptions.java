@@ -35,7 +35,7 @@ public final class TextOptions {
     }
 
     public static TextOptions defaults() {
-        return new TextOptions(2.5, 2.2f, SPACING_AUTO, 40, false, true, true);
+        return new TextOptions(2.5, 2.2f, SPACING_AUTO, 80, false, true, true);
     }
 
     public static TextOptions with(TextOptions base, double distance, Float scale, Float spacing,

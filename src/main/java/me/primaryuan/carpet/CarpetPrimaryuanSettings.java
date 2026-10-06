@@ -192,21 +192,25 @@ public class CarpetPrimaryuanSettings {
     )
     public static String whoCalledMe = "false";
 
-    // 谁在叫我音效开关（title 与聊天高亮不受影响）
+    // 谁在叫我提示音（三连叮结构不变，title 与聊天高亮不受影响）；false=无音效，
+    // true 为旧开关兼容值等同 ding
     @Rule(
-            options = {"true", "false"},
+            options = {"false", "true", "ding", "levelup", "bell", "pling", "hit"},
             strict = false,
             categories = {PRIMARYUAN, SURVIVAL, FEATURE}
     )
-    public static boolean whoCalledMeSound = true;
+    public static String whoCalledMeSound = "ding";
 
-    // 谁在叫我名字高亮色（title 与聊天框一致）；none=不高亮
+    // 谁在叫我名字高亮色（title 与聊天框一致）；false=不改变颜色，
+    // rainbow=名字逐字符彩虹渐变
     @Rule(
-            options = {"gold", "yellow", "aqua", "green", "red", "none"},
+            options = {"rainbow", "gold", "yellow", "aqua", "green", "red", "blue", "light_purple",
+                    "dark_aqua", "dark_green", "dark_red", "dark_blue", "dark_purple", "white",
+                    "black", "gray", "dark_gray", "false"},
             strict = false,
             categories = {PRIMARYUAN, SURVIVAL, FEATURE}
     )
-    public static String whoCalledMeHighlight = "gold";
+    public static String whoCalledMeHighlight = "aqua";
 
     // 米塔字幕：/text 在执行者眼前逐字弹出对话文本，停留后整句坠落消散（米塔游戏的文字显示效果）；
     // 原版 text_display 实体逐字驱动，纯服务端实现，客户端无需安装任何模组

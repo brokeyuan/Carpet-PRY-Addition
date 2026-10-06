@@ -20,6 +20,9 @@ final class Glyph {
     Quaternionf finalRot;
     double y;
     double vy;
+    /** 落地高度（beginDrop 时缓存）：列高度表与发起者脚位的较小值——只看列高度表
+     *  会被头顶方块（室内顶/桥洞）顶高，坠落首 tick 即满足落地判定，字原地渐隐 */
+    double floorY;
     boolean bounced;
     boolean landed;
     boolean dead;

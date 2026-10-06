@@ -27,14 +27,15 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * 一条 /text 的播放会话：逐字弹出（1 字/tick，随机歪斜 + 放大插值收拢 + 逐字点击音，
+ * 一条 /text 的播放会话：逐字弹出（2 tick 一字，随机歪斜 + 放大插值收拢 + 逐字点击音，
  * 打字期间整组跟随玩家实时视角、打字完成即冻结在世界坐标）→ 停留 → 结局（坠落：
  * 服务端自算重力/阻力/地面反弹 + 随机翻滚，同时逐字渐隐）。
  *
  * <p>长文本按标点分组接续播放：上一组开始坠落时下一组才开打（组间随机偏航/抬高）。
- * 时间线与观感配方对齐 maplegrove-misidechat（弹出 1.8 倍→终态 10 tick 插值、停留
- * 40 tick、坠落重力 0.03/阻力 0.99/一次反弹、渐隐 -8/tick）；坠落物理不复用掉落物
- * 骑乘（那是 Bukkit 平台的限制），由本会话每 tick 直接驱动实体坐标。</p>
+ * 时间线与观感配方对齐 maplegrove-misidechat（弹出 1.8 倍→终态 10 tick 插值、坠落
+ * 重力 0.03/阻力 0.99/一次反弹、渐隐 -8/tick）并整体放慢（打字 2 tick 一字、停留
+ * 80 tick）；坠落物理不复用掉落物骑乘（那是 Bukkit 平台的限制），由本会话每 tick
+ * 直接驱动实体坐标。</p>
  */
 final class TextSession implements ServerTickScheduler.TickTask {
 
@@ -101,11 +102,14 @@ final class TextSession implements ServerTickScheduler.TickTask {
 
         if (current != null) {
             if (current.phase == Group.Phase.TYPING) {
-                spawnGlyph(current, current.segments.get(current.typed));
-                current.typed++;
-                if (current.typed >= current.segments.size()) {
-                    current.phase = Group.Phase.HOLDING;
-                    current.holdLeft = options.hold;
+                if (--current.typeCooldown <= 0) {
+                    spawnGlyph(current, current.segments.get(current.typed));
+                    current.typed++;
+                    current.typeCooldown = TextAnimationHandler.TYPE_INTERVAL_TICKS;
+                    if (current.typed >= current.segments.size()) {
+                        current.phase = Group.Phase.HOLDING;
+                        current.holdLeft = options.hold;
+                    }
                 }
             } else if (--current.holdLeft <= 0) {
                 beginDrop(current);
@@ -254,8 +258,16 @@ final class TextSession implements ServerTickScheduler.TickTask {
     }
 
     private void beginDrop(Group group) {
+        // 落地高度 = 字形列高度表与发起时脚位的较小值：室内/桥洞等头顶有方块时，
+        // 列高度表比生成点还高，按它判定会让字坠落首 tick 就"落地"停在原地渐隐
+        //（玩家可见症状：无下坠原地消散）；跨出顶悬边缘时列高度表更低，照常落到真实地面
+        double originFloor = origin.y;
         for (Glyph glyph : group.glyphs) {
             glyph.dropping = true;
+            glyph.floorY = Math.min(
+                    level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                            (int) Math.floor(glyph.x), (int) Math.floor(glyph.z)),
+                    originFloor);
         }
     }
 
@@ -285,15 +297,13 @@ final class TextSession implements ServerTickScheduler.TickTask {
         if (options.drop && !glyph.landed) {
             glyph.vy = (glyph.vy - GRAVITY) * DRAG;
             glyph.y += glyph.vy;
-            int groundY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
-                    (int) Math.floor(glyph.x), (int) Math.floor(glyph.z));
-            if (glyph.y <= groundY && glyph.vy < 0) {
+            if (glyph.y <= glyph.floorY && glyph.vy < 0) {
                 if (!glyph.bounced && glyph.vy < -0.06) {
-                    glyph.y = groundY;
+                    glyph.y = glyph.floorY;
                     glyph.vy = -glyph.vy * BOUNCE;
                     glyph.bounced = true;
                 } else {
-                    glyph.y = groundY;
+                    glyph.y = glyph.floorY;
                     glyph.landed = true;
                 }
             }

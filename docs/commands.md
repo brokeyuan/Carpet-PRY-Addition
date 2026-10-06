@@ -37,9 +37,6 @@
 - [/patnod - 被摸互动开关](#patnod---被摸互动开关)
 - [/text - 米塔字幕](#text---米塔字幕)
 - [/redpacket - 红包](#redpacket---红包)
-  - [命令语法](#命令语法)
-  - [权限模式（peacefulPlayers 规则取值）](#权限模式peacefulplayers-规则取值)
-  - [全服总开关行为](#全服总开关行为)
 
 ---
 

@@ -9,8 +9,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import me.primaryuan.carpet.brain.BrainManager;
 import me.primaryuan.carpet.command.HatCommand;
-import me.primaryuan.carpet.command.PvpCommand;
 import me.primaryuan.carpet.command.RedPacketCommand;
+import me.primaryuan.carpet.command.PvpCommand;
 import me.primaryuan.carpet.command.PatNodCommand;
 import me.primaryuan.carpet.command.RidingCommand;
 import me.primaryuan.carpet.command.ScaleCommand;
@@ -18,9 +18,9 @@ import me.primaryuan.carpet.command.TextCommand;
 import me.primaryuan.carpet.command.TppCommand;
 import me.primaryuan.carpet.handler.clickThrough.ClickThroughHandler;
 import me.primaryuan.carpet.handler.entitiesRidingPlayers.EntitiesRidingPlayersHandler;
+import me.primaryuan.carpet.handler.redPacket.RedPacketManager;
 import me.primaryuan.carpet.handler.patPatPlayers.PatPatPlayersHandler;
 import me.primaryuan.carpet.handler.peacefulPlayers.PvpManager;
-import me.primaryuan.carpet.handler.redPacket.RedPacketManager;
 import me.primaryuan.carpet.handler.textAnimation.TextAnimationHandler;
 import me.primaryuan.carpet.handler.whoCalledMe.WhoCalledMeHandler;
 import me.primaryuan.carpet.settings.CarpetRuleRegistrar;
@@ -98,6 +98,9 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         // 和平的玩家（pvp）：加载持久化状态、注册 PVP 伤害拦截与玩家加入登记
         PvpManager.init();
 
+        // 红包：口令聊天监听、上线补发、过期检查与停服清理
+        RedPacketManager.init();
+
         // 骑乘/捡起许可表的下线清理兜底扫描（假人在默认配置下不触发 DISCONNECT）
         EntitiesRidingPlayersHandler.init();
 
@@ -109,9 +112,6 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
 
         // 米塔字幕：孤儿实体清扫（启动）与停服清理
         TextAnimationHandler.init();
-
-        // 红包：口令聊天监听、上线补发、过期检查与停服清理
-        RedPacketManager.init();
 
         // 假人背包链接（sendto）：初始化 tick 转移调度、假人下线清理与服务器停止清空监听
         SendtoLinkManager.init();

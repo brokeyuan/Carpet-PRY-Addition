@@ -54,6 +54,8 @@ public final class TextAnimationHandler {
 
     /** 感叹号整句增益：尾部每连发一个 +0.3（无封顶，感叹号越多字越大） */
     static final float BANG_GAIN_STEP = 0.3f;
+    /** 打字节奏：每 N tick 弹出一字（字幕会话与降级 actionbar 同口径） */
+    static final int TYPE_INTERVAL_TICKS = 2;
     /** 感叹号距离增益：尾部每连发一个 ×(1+0.15) 生成距离（越多越远，防大字怼脸；
      *  增速低于字号增益，保持"更大"的观感） */
     static final float BANG_DIST_STEP = 0.15f;
@@ -394,6 +396,8 @@ public final class TextAnimationHandler {
         final List<Segment> segments;
         final List<Glyph> glyphs = new ArrayList<>();
         int typed;
+        /** 打字节流倒计时（tick）：1 = 下个 typing tick 立即弹首字，其后按 TYPE_INTERVAL_TICKS */
+        int typeCooldown = 1;
         int holdLeft;
         Phase phase;
         double baseX;
