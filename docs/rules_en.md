@@ -2,7 +2,7 @@
 
 > Mod ID: `carpet-pry-addition` | Version: `1.2.0`
 >
-> Total: **34 rules** (`whoCalledMeSound` / `whoCalledMeHighlight` are documented inline as companion rules in the whoCalledMe section)
+> Total: **33 rules** (`whoCalledMeSound` / `whoCalledMeHighlight` are documented inline as companion rules in the whoCalledMe section)
 >
 > **Tip: Use `Ctrl+F` to quickly find the rule you want**
 
@@ -40,7 +40,6 @@
   - [invisibleInTallGrass - Invisibility Grass](#invisibleintallgrass---invisibility-grass)
   - [moreEndCrystalTypes - More End Crystal Types](#moreendcrystaltypes---more-end-crystal-types)
   - [textAnimation - MiSide Subtitles](#textanimation---miside-subtitles)
-  - [redPacket - Red Packet](#redpacket---red-packet)
 - [Player Scaling](#player-scaling)
   - [playerScale - Player Scale](#playerscale---player-scale)
   - [playerScaleMin - Player Scale Min](#playerscalemin---player-scale-min)
@@ -503,23 +502,6 @@ Allows placing end crystals on crying obsidian. In vanilla, end crystals can onl
 | **Categories** | `PRIMARYUAN`, `FEATURE`, `COMMAND` |
 
 **How it works**: command syntax and parameters are documented under `/text` in the commands doc (one greedy argument with inline `|` options; spaces free, no quotes). Every /text is one broadcast: each online human player (carpet fake players excluded at the entry) gets an independent session based on their own position and view direction; the console and command blocks work too, and an explicit error is returned when nobody can receive it. Timeline: character-by-character pop-in (one character every 2 ticks, one vanilla text_display entity per character, spawned with a random ±45° tilt at 1.8x scale that tweens to the final state over 10 client-side transformation interpolation ticks, plus a click sound per character; **the whole group follows the player's live view while typing** — anchor re-computed from position and orientation each tick, already-spawned glyphs translate and rotate with it while staying a rigid line, zero packets when the player stands still, frozen in world coordinates once typing completes) → hold for 80 ticks (default) → drop (server-side physics: gravity 0.03/tick², drag 0.99, one 0.28 bounce on landing — the floor is the smaller of the glyph's column heightmap and the sender's feet height, so indoor ceilings/overhangs never read as the ground and cut the fall to an in-place fade, while stepping out past an overhang lands on the real ground; a one-shot random tumble at drop start, and fading from tick 24 of the drop at -8 opacity/tick; entities are removed once played out). Long texts are split into groups at punctuation (≤25 characters per group, with the break point pushed to a punctuation mark within 10 characters ahead); non-final groups get a " - " connector, the next group starts typing as soon as the previous one starts dropping, and groups get a random ±22.5° yaw and height jitter. The spawn point is each player's feet + view direction × distance, at feet +1.3; the default color is white #FFFFFF, and legacy & color codes are supported (&c etc., && for a literal &, color codes reset style flags like vanilla §); **trailing exclamation gain, uncapped** — each consecutive trailing `!`/`！` adds +0.3 to the whole sentence's scale (the more exclamation marks, the bigger) and multiplies the spawn distance by ×1.15 (the more, the farther, keeping oversized text out of the player's face; the distance gain is gentler than the scale gain so the text still reads as bigger) (trailing spaces don't interrupt, other characters do), and letter spacing defaults to a proportional 0.15×final scale to prevent overlap after enlargement (an explicit spacing wins). Guards: ≤128 characters per sentence, ≤8 concurrent broadcasts server-wide; each player's spawn chunk must be ENTITY_TICKING (guaranteed by the player ticket while online; players whose chunks are not loaded are skipped — vanilla writes entities added to non-entity-ticking chunks back to the chunk as UNLOADED_TO_CHUNK, verified by local E2E). Vanilla never offered a programmatic interface for display entities (text/transformation/interpolation/opacity setters are all private; signatures verified identical on 1.21/1.21.11/26.3 via javap), so two @Invoker mixin accessors drive them; entity tag reads were renamed to entityTags in 26.1.2 and entity type constants moved to EntityTypes (plural) in 26.2, handled by preprocessor forks. Orphan entities left by crashes/kills carry the `pry_textanim` tag and are swept at server start plus every 100 ticks (skipped while sessions are active, so playing glyphs are never swept — a sweep-kills-live-glyphs bug was reproduced and fixed locally).
-
----
-
-### redPacket - Red Packet
-
-/redpacket sends a red packet (lucky/normal/exclusive/password types) broadcast in chat with a clickable claim link; unclaimed shares are refunded on expiry.
-
-| Property | Value |
-|----------|-------|
-| **Rule Name** | `redPacket` |
-| **Description** | /redpacket sends a red packet (lucky/normal/targeted/password types) broadcast in chat with a clickable claim link; unclaimed shares are refunded on expiry; server-side vanilla GUI, no client install needed |
-| **Type** | `boolean` |
-| **Default Value** | `false` |
-| **Suggested Options** | `false`, `true` |
-| **Categories** | `PRIMARYUAN`, `FEATURE`, `COMMAND` |
-
-**How it works**: command syntax, the four distribution rules and GUI slots are documented under `/redpacket` in the commands doc. Claimed-out and expired packets are announced server-wide in gray (later clicks get proper "fully claimed/expired" feedback instead of silence); items inside the item-input GUI on disconnect go to the offline refund storage (re-delivered on next join); sending and claiming play a sound (experience orb, same verified recipe as the pat rule). The whole flow runs on a server-side custom menu with Slot-level protection (protected slots are mayPlace/mayPickup=false, removeItem returns empty, set is a no-op, and clicked only lets left clicks through as callbacks — shift-click/number-swap/drag/throw/clone are all blocked; container-level interception alone is bypassed by quickMoveStack/moveItemStackTo/doClick SWAP, causing icon duplication and item evaporation in production). The chat broadcast is a bright-red clickable component (RUN_COMMAND opening `/redpacket claim <id>`); password packets are claimed by typing the exact password in chat (reusing ServerMessageEvents.CHAT_MESSAGE). Shares are split once at send time per type with guaranteed conservation (stars-and-bars random composition / random remainder placement, covered by JUnit contract tests); validity is 3 minutes, unclaimed shares are returned to the sender on expiry, stored while they are offline and re-delivered on their next join; a packet is marked claimed-out once fully claimed (kept for a while so later clicks still see the feedback). Abuse guards: 10-tick claim-click debounce, 10-second send cooldown, at most 3 unfinished packets per player. Player heads use the PROFILE component resolved asynchronously by name (ResolvableProfile factory since 1.21.10, record constructor on 1.21-1.21.8, javap-verified fork); since 26.2 dyed item constants live in ColorCollection picked by DyeColor. **Restart semantics**: running packets, offline refund storage, cooldowns and debounce state are in-memory only and cleared on server restart (same documented behavior as fake player brain keep).
 
 ---
 

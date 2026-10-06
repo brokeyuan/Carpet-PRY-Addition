@@ -36,7 +36,6 @@
 - [/pvp - Peaceful Players](#pvp---peaceful-players)
 - [/patnod - Pat Interaction Toggle](#patnod---pat-interaction-toggle)
 - [/text - MiSide Subtitles](#text---miside-subtitles)
-- [/redpacket - Red Packet](#redpacket---red-packet)
 
 ---
 
@@ -725,61 +724,4 @@ Use `||` for a literal `|`; legacy color codes use `&` (e.g. `&c`), `&&` for a l
 /text @a Static text|drop=false           # fade in place, no drop
 /text @a Glowing|glow=true;sound=false    # glow, no sound
 /text brokeyuan private ping              # direct at a single player
-```
-
-## /redpacket - Red Packet
-
-> **Related rule**: `redPacket`
-
-Sends a red packet: share count + blessing message -> type selection -> put in items -> a clickable chat broadcast. Four distribution types: Lucky (random split, total conserved), Normal (even split with random remainder placement), Exclusive (chosen player only, items given whole, share count forced to 1), Password (claim by typing the password in chat, split like Lucky).
-
-### Syntax
-
-- `/redpacket`: all defaults — share count = current online players (fakes excluded), message "Happy New Year"
-- `/redpacket <count> [message]`: specify the share count (1-100); message optional (default "Happy New Year")
-- `/redpacket [count] @player [message]`: exclusive shortcut — skips type selection and the head list (the only entry when more than 53 players are online; target must be online and not yourself, share count forced to 1)
-- `/redpacket claim <id>`: claim from the chat link (internal, delivered with every broadcast)
-- `/redpacket list`: list your ongoing packets (id/type/message/shares left)
-- `/redpacket again`: reopen the item-input GUI with your last successful type/count/message
-- `/redpacket mute`: toggle muting yourself (the reply shows the new state); `/redpacket unmute`: explicitly unmute. Muted players no longer receive red packet broadcasts (including claimed-out/expired notices) and can no longer claim; persisted in config/carpet-pry-redpacket.json
-
-### Permission
-
-- Available to all players
-- The whole command tree is hidden while the `redPacket` rule is disabled
-
-### GUI Flow
-
-1. **Type selection** (title "Red Packet"): 4 red shulker box icons — Lucky / Normal / Exclusive / Password
-2. **Item input** (6-row chest): slots 0-44 for items, 45 cancel, 49 confirm, 53 clear (items returned); sending requires at least one item; closing without confirming returns everything to your inventory (overflow drops at your feet); after confirming the items belong to the packet
-3. **Exclusive**: first an online-player head list (excluding yourself; clicking a head twice selects and confirms), then the item input; other players clicking the broadcast see "This packet is exclusively for xxx"
-4. **Password**: after confirming the items an anvil opens to set the password (1-32 characters, no XP cost); closing without setting it returns the items
-
-### Claiming & Validity
-
-- Click the bright-red `[Red Packet: message]` link in chat to claim; validation order: exists -> not expired -> shares left -> not your own -> not claimed yet -> exclusive check -> password check
-- One claim per player per packet; a packet ends immediately when fully claimed; validity is 3 minutes, unclaimed shares return to the sender on expiry, stored while offline and re-delivered on the next join (overflow drops at feet)
-- Hover shows message/type/shares left/time left plus a rules hint (one share per player; passwords typed in chat); feedback covers already-claimed, own packet, fully claimed, expired and wrong password (with its character count)
-- Every claim is **broadcast to everyone**: "xx claimed yy's red packet (share n/m): items" (exclusive packets without the share index; muted players don't receive it)
-- Settlement on fully-claimed/expired: the **Lucky King** is broadcast server-wide (random-split types **with a single item kind only** — mixed-item packets have no fair luck to rank; ranked by **rarity**: five built-in tiers structurally guarantee that one item of a higher tier beats any quantity of a lower tier (1 diamond > a whole cargo of dirt); within a tier, value table x count decides, ties go to the earlier claimer; config/carpet-pry-values.json customizes per-item values within a tier, restart to apply)
-- The **target** of an exclusive packet gets a golden "sent to you" broadcast with a chime; other players see the regular broadcast
-- A warning broadcast fires 30 seconds before expiry (when shares remain); item-input confirmation warns when the total item count is smaller than the share count (non-blocking)
-
-### Guards & Limits
-
-- Count 1-100 (validated manually inside the greedy argument, rejected at execution rather than parse time), message 1-32 characters
-- 10-tick claim-click debounce; 10-second send cooldown (the error shows the remaining seconds); at most 3 unfinished packets per player
-- Running packets and offline refund storage are in-memory and cleared on server restart (documented restart semantics)
-
-### Examples
-
-```
-/redpacket 1 Happy New Year                # 1 share
-/redpacket 10 Good luck                    # 10 shares, split by the chosen type
-/redpacket                                # all defaults: one share per online player
-/redpacket 15                             # 15 shares, "Happy New Year"
-/redpacket 20 Good luck                   # 20 shares, custom message
-/redpacket 1 @player just for you          # exclusive shortcut, skips type selection
-/redpacket claim 3                         # claim packet #3 (usually via chat click)
-/redpacket mute                           # mute red packet broadcasts
 ```

@@ -11,7 +11,7 @@
 
 ## Introduction
 
-**Carpet-PRY-Addition** is a server-side Fabric extension for [Fabric Carpet](https://github.com/gnembon/fabric-carpet), developed for the **Primaryuan Server**; it also enhances the experience when installed client-side. It adds **34** configurable Carpet rules and **10** commands, covering fake player enhancements, player scaling, server management, mod compatibility fixes, ported features, player interactions, and survival gameplay expansion.
+**Carpet-PRY-Addition** is a server-side Fabric extension for [Fabric Carpet](https://github.com/gnembon/fabric-carpet), developed for the **Primaryuan Server**; it also enhances the experience when installed client-side. It adds **33** configurable Carpet rules and **9** commands, covering fake player enhancements, player scaling, server management, mod compatibility fixes, ported features, player interactions, and survival gameplay expansion.
 
 All rules are off by default except the client-side rule `ridingPlayersClientInteract`; enable what you need.
 
@@ -100,7 +100,6 @@ All rules are off by default except the client-side rule `ridingPlayersClientInt
 
 - `sleepingDuringTheDay`: sleep during daytime, wake to night
 - `textAnimation`: `/text` pops up MiSide-style animated subtitles in front of online players (fake players excluded; `@a` for everyone or a player name to direct — a target is required) — characters pop in one by one, hold, then the sentence drops and fades; more trailing exclamation marks make the whole sentence bigger (works on vanilla clients)
-- `redPacket`: `/redpacket` sends red packets (lucky/normal/exclusive/password) claimed via a clickable chat broadcast (with an `@player` exclusive shortcut, claim receipts and `/redpacket mute`), unclaimed shares refunded on expiry (works on vanilla clients)
 - `playerHat`: `/hat` to wear items on head, Totem of Undying in head slot triggers death protection
 - `betterSnowball`: snowballs deal knockback and damage to players
 - `invisibleInTallGrass`: auto-invisibility when head is inside tall grass

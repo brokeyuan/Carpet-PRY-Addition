@@ -219,13 +219,6 @@ public class CarpetPrimaryuanSettings {
     )
     public static boolean textAnimation = false;
 
-    // 红包：/redpacket 发红包（拼手气/普通/专属/口令四类），聊天框广播可点击领取，
-    // 服务端原版容器 GUI 实现，客户端无需安装任何模组
-    @Rule(
-            categories = {PRIMARYUAN, FEATURE, COMMAND}
-    )
-    public static boolean redPacket = false;
-
     // 穿透点击：右键墙告示牌/挂墙木牌/墙横幅/展示框/画直接打开背后贴挂的容器；
     // 潜行时保持原版交互（编辑/染色告示牌、旋转展示框），背后无容器也走原版
     @Rule(

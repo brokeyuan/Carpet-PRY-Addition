@@ -75,6 +75,10 @@ All notable changes to **Carpet-PRY-Addition** are documented in this file.
 - **末地水晶活塞推动位置不同步**（`fixEndCrystalSync`）：用活塞推动末地水晶（含无敌水晶）一段距离后，客户端显示的位置与服务端真实位置永久不同步，只有重进/重启才恢复。根因是原版把末地水晶的跟踪间隔注册为 `updateInterval=Integer.MAX_VALUE`，服务端除出生包外从不向客户端同步其位置，活塞推动由两端在 `PistonMovingBlockEntity` 里各自独立模拟，模拟分歧后无任何自愈途径（`Entity.needsSync` 只有 `Entity.push`/`Entity.load` 会写入，活塞路径不写）。现开启规则后，服务端检测到水晶位置变化即把 `ServerEntity.tickCount` 归零命中原版位置同步分支（26.2 起自增移至门控前，按版本预处理置 -1），客户端 1 tick 内自动对齐，重进服务器时的出生时序竞争同样被覆盖
 - **与 Axiom 的创造飞行速度冲突**（[#8](https://github.com/brokeyuan/Carpet-PRY-Addition/issues/8)）：同时安装 Axiom 时，其"创造模式飞行速度"调整会被快速打回 100%。根因是 `playerScalePhysics` 的每 tick 物理联动无条件管理 `Abilities.flyingSpeed`：Axiom 并非纯客户端调速——其服务端部分（单人存档的内置服务端同样加载）会通过 `axiom:set_fly_speed` 自定义包把调速值直接写入服务端玩家能力值，而本模组规则处于默认关闭时，只要发现该值偏离默认（0.05 = 100%）就立即复位并发送能力包，把 Axiom 的调整打回原形（Axiom 的 HUD 按当前值实时渲染百分比，故显示"回到 100%"）。现改为"所有权让位"策略：只接管原版默认值或本模组自己写入过的值；第三方的自定义速度（如 Axiom 调速）不改写、不发能力包，该值回到默认后自动重新接管。规则关闭 / scale 回 1.0 时对残留联动速度的清理行为不变，scale≠1 的飞行速度联动语义不变
 
+### 移除
+
+- **红包（`redPacket`）**：整体下架封存——规则与 /redpacket 命令退出构建，待完善后回归（历史版本与实现见 git 历史 d5aab44..855bb6f）
+
 ## [1.2.2] - 2026-09-14
 
 **与 1.2.1 代码完全相同，无功能性变更**，为验证更新后的 CurseForge 凭证重新走发布流水线。
