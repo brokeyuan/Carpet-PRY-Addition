@@ -699,19 +699,19 @@ Use `||` for a literal `|`; legacy color codes use `&` (e.g. `&c`), `&&` for a l
 | `distance` | float | `2.5` | Spawn distance from each player's view direction (blocks) |
 | `scale` | float | `2.2` | Character scale (final pop state) |
 | `spacing` | float | auto (0.15×scale) | Letter spacing unit (blocks per width unit) |
-| `hold` | int | `40` | Hold between typing and the drop (ticks) |
+| `hold` | int | `80` | Hold between typing and the drop (ticks) |
 | `glow` | true/false | `false` | Glowing outline on characters |
 | `sound` | true/false | `true` | Click sound per character |
 | `drop` | true/false | `true` | Drop after holding (false = fade in place) |
 
 ### Behavior Details
 
-- Pop-in: 1 char/tick, each with a random ±45° tilt, 1.8x scale settling and a random y jitter, plus a click sound (volume 1.0 / pitch 1.2)
+- Pop-in: one character every 2 ticks, each with a random ±45° tilt, 1.8x scale settling and a random y jitter, plus a click sound (volume 1.0 / pitch 1.2)
 - **Exclamation gain, uncapped**: the more trailing `!`/`！`, the bigger the whole sentence and the farther its spawn point — scale +0.3 each (no cap), spawn distance ×1.15 each; trailing spaces don't interrupt, other characters do
 - Default color white (#FFFFFF), use `&` codes to change
-- Drop: gravity 0.03/tick², drag 0.99, one 0.28 bounce on landing, a one-shot random tumble; fading from tick 24 of the drop at -8 opacity/tick
+- Drop: gravity 0.03/tick², drag 0.99, one 0.28 bounce then a resting fade on landing, a one-shot random tumble; fading from tick 24 of the drop at -8 opacity/tick
 - Grouping: ≤25 characters per group, break point pushed to a punctuation mark within 10 characters ahead; non-final groups get a " - " connector; the next group starts as the previous one drops, with a random ±22.5° yaw and height jitter between groups
-- Spawn point: each online player's feet + view direction × distance, at feet +1.3 (one independent copy per player, based on their own position and view); the whole group follows that player's live view (position and orientation) while typing and freezes in world coordinates once typing completes
+- Spawn point: each online player's feet + view direction × distance, at feet +1.3 (one independent copy per player, based on their own position and view); the glyph plane stays upright and fixed (never tilts with pitch), with position and orientation locked at spawn — they no longer track the sender's movement or view
 - Guards: ≤128 characters per sentence, ≤8 concurrent broadcasts server-wide; "no online players can receive subtitles" when no humans are online, players with unloaded chunks are skipped
 
 ### Examples

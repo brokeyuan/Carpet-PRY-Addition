@@ -28,14 +28,14 @@ import java.util.Random;
 
 /**
  * 一条 /text 的播放会话：逐字弹出（2 tick 一字，随机歪斜 + 放大插值收拢 + 逐字点击音，
- * 打字期间整组跟随玩家实时视角、打字完成即冻结在世界坐标）→ 停留 → 结局（坠落：
- * 服务端自算重力/阻力/地面反弹 + 随机翻滚，同时逐字渐隐）。
+ * 字符平面竖直固定——不随执行者俯仰倾斜）→ 停留 → 结局（坠落：服务端自算重力/阻力/
+ * 地面反弹 + 随机翻滚，落地静止渐隐）。
  *
  * <p>长文本按标点分组接续播放：上一组开始坠落时下一组才开打（组间随机偏航/抬高）。
  * 时间线与观感配方对齐 maplegrove-misidechat（弹出 1.8 倍→终态 10 tick 插值、坠落
  * 重力 0.03/阻力 0.99/一次反弹、渐隐 -8/tick）并整体放慢（打字 2 tick 一字、停留
- * 80 tick）；坠落物理不复用掉落物骑乘（那是 Bukkit 平台的限制），由本会话每 tick
- * 直接驱动实体坐标。</p>
+ * 80 tick）；字幕出现时定死位置与朝向（打字期跟随视角已按拍板回退）；坠落物理
+ * 不复用掉落物骑乘（那是 Bukkit 平台的限制），由本会话每 tick 直接驱动实体坐标。</p>
  */
 final class TextSession implements ServerTickScheduler.TickTask {
 
@@ -118,11 +118,6 @@ final class TextSession implements ServerTickScheduler.TickTask {
             }
         }
 
-        // 打字期间整组跟随玩家实时视角，打字完成（HOLDING）即冻结在世界坐标
-        if (current != null && current.phase == Group.Phase.TYPING) {
-            followView(current);
-        }
-
         // 推进当前组（弹出过渡）与坠落组（物理+渐隐）
         if (current != null) {
             current.glyphs.removeIf(this::tickGlyph);
@@ -146,7 +141,10 @@ final class TextSession implements ServerTickScheduler.TickTask {
         group.phase = Group.Phase.TYPING;
     }
 
-    /** 锚点重算：脚部 + 视线方向 × distance，高度脚部 +1.3 */
+    /**
+     * 锚点重算：脚部 + 视线方向 × distance，高度脚部 +1.3（俯仰只影响生成点的前后
+     * 距离，不参与字符旋转——字符平面永远竖直）
+     */
     private void anchorGroup(Group group, Vec3 anchor, float anchorYaw, float anchorPitch) {
         group.yaw = anchorYaw + group.yawJitter;
         group.pitch = anchorPitch;
@@ -154,58 +152,6 @@ final class TextSession implements ServerTickScheduler.TickTask {
         Vec3 view = Vec3.directionFromRotation(group.pitch, group.yaw);
         group.baseX = anchor.x + view.x * options.distance;
         group.baseZ = anchor.z + view.z * options.distance;
-    }
-
-    /**
-     * 打字期间整组跟随玩家实时视角：锚点重算到玩家当前位置/朝向，已生成字形同步
-     * 平移并转向（共享组朝向，整行保持刚性不扇形张开）。玩家未动时零包（变更检测），
-     * 跟随时位移与转向分别走 posRot/变换插值（2 tick）保证平滑。刚生成的字形同样
-     * 被重锚，其弹出变换（1.8 倍→终态）在玩家转动视角时会缩短为 2 tick——可接受取舍。
-     */
-    private void followView(Group group) {
-        Vec3 live = target.position();
-        float newYaw = target.getYRot() + group.yawJitter;
-        float newPitch = target.getXRot();
-        double newBaseY = live.y + 1.3 + group.yLift;
-        Vec3 view = Vec3.directionFromRotation(newPitch, newYaw);
-        double newBaseX = live.x + view.x * options.distance;
-        double newBaseZ = live.z + view.z * options.distance;
-        boolean posChanged = Math.abs(newBaseX - group.baseX) > 1.0e-3
-                || Math.abs(newBaseY - group.baseY) > 1.0e-3
-                || Math.abs(newBaseZ - group.baseZ) > 1.0e-3;
-        boolean viewChanged = Math.abs(newYaw - group.yaw) > 0.01f
-                || Math.abs(newPitch - group.pitch) > 0.01f;
-        if (!posChanged && !viewChanged) {
-            return;
-        }
-        group.yaw = newYaw;
-        group.pitch = newPitch;
-        group.baseX = newBaseX;
-        group.baseY = newBaseY;
-        group.baseZ = newBaseZ;
-        double rightX = Math.cos(Math.toRadians(group.yaw + 180.0));
-        double rightZ = Math.sin(Math.toRadians(group.yaw + 180.0));
-        for (Glyph glyph : group.glyphs) {
-            double x = group.baseX + rightX * glyph.offset;
-            double z = group.baseZ + rightZ * glyph.offset;
-            glyph.x = x;
-            glyph.y = group.baseY;
-            glyph.z = z;
-            if (posChanged) {
-                glyph.entity.setPos(x, group.baseY, z);
-            }
-            if (viewChanged) {
-                glyph.finalRot = new Quaternionf()
-                        .rotateY((float) Math.toRadians(-(group.yaw + 180f)))
-                        .rotateX((float) Math.toRadians(group.pitch));
-                DisplayInvoker display = (DisplayInvoker) glyph.entity;
-                display.pry$setTransformationInterpolationDelay(0);
-                display.pry$setTransformationInterpolationDuration(POS_ROT_INTERP);
-                display.pry$setTransformation(new Transformation(
-                        new Vector3f(0, 0, 0), glyph.finalRot,
-                        new Vector3f(options.scale), new Quaternionf()));
-            }
-        }
     }
 
     private void spawnGlyph(Group group, Segment seg) {
@@ -234,7 +180,7 @@ final class TextSession implements ServerTickScheduler.TickTask {
 
         // 初始弹出变换：随机歪斜 ±45° + 1.8 倍放大 + 随机 y 抖动；下一 tick 插值收拢到终态
         float startRotYaw = -(group.yaw + 180f) + (random.nextInt(90) - 45);
-        float startRotPitch = group.pitch + (random.nextInt(90) - 45);
+        float startRotPitch = random.nextInt(90) - 45;
         float startOffsetY = random.nextFloat(0.25f) - 0.125f;
         display.pry$setTransformation(new Transformation(
                 new Vector3f(0, startOffsetY, 0),
@@ -251,9 +197,9 @@ final class TextSession implements ServerTickScheduler.TickTask {
                     SoundSource.BLOCKS, 1.0f, 1.2f);
         }
 
+        // 终态朝向：绕 Y 轴面向发起者，无俯仰分量——字符平面永远竖直
         Quaternionf finalRot = new Quaternionf()
-                .rotateY((float) Math.toRadians(-(group.yaw + 180f)))
-                .rotateX((float) Math.toRadians(group.pitch));
+                .rotateY((float) Math.toRadians(-(group.yaw + 180f)));
         group.glyphs.add(new Glyph(entity, x, y, z, off, finalRot));
     }
 
