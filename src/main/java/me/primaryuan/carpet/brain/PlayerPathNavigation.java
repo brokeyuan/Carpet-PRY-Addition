@@ -242,7 +242,7 @@ public class PlayerPathNavigation {
         return this.nodeIndex;
     }
 
-    /** 从 feet 直线步进到节点格，检查途经格子均可站（粗视野裁剪） */
+    /** 从 feet 直线步进到节点格，检查途经格子均可站且无禁行危险（粗视野裁剪） */
     private boolean isStraightWalkable(Vec3 feet, BlockPos target) {
         double dx = target.getX() + 0.5 - feet.x;
         double dz = target.getZ() + 0.5 - feet.z;
@@ -252,6 +252,11 @@ public class PlayerPathNavigation {
             double t = (double) i / steps;
             int x = Mth.floor(feet.x + dx * t);
             int z = Mth.floor(feet.z + dz * t);
+            // 禁行危险（熔岩/火焰）必须与 A* expand 同口径：熔岩/火焰无碰撞箱，
+            // 可站立判定不排除它们——漏查会把安全绕行路径直抄成穿火直线
+            if (this.isHazardCell(x, y, z) || this.isHazardCell(x, y + 1, z)) {
+                return false;
+            }
             if (!this.isWalkableCell(x, y, z)) {
                 return false;
             }

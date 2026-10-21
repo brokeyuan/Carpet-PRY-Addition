@@ -59,6 +59,13 @@ public class CarpetPrimaryuanSettings {
     public static boolean playerHat = false;
 
     @Rule(
+            options = {"false", "true"},
+            strict = true,
+            categories = {PRIMARYUAN, SURVIVAL, FEATURE}
+    )
+    public static boolean playerHeadSkin = false;
+
+    @Rule(
             categories = {PRIMARYUAN, SURVIVAL, FEATURE}
     )
     public static boolean ridingPlayers = false;
@@ -174,6 +181,13 @@ public class CarpetPrimaryuanSettings {
     )
     public static boolean fixEndCrystalSync = false;
 
+    // 修复 26.3 方块重发时序，并取消站空 INFO 日志
+    // （回移植 26.4 Snapshot 1 官方修复，仅 26.3 生效）
+    @Rule(
+            categories = {PRIMARYUAN, BUGFIX}
+    )
+    public static boolean fixStandingOnAir = false;
+
     // 摸摸头：右键其他玩家的头部摸摸头（爱心粒子+轻响+被摸提示），纯服务端实现；
     // 不要求空手、恒不消费交互（火后不管，原版行为不受影响）
     @Rule(
@@ -192,21 +206,25 @@ public class CarpetPrimaryuanSettings {
     )
     public static String whoCalledMe = "false";
 
-    // 谁在叫我音效开关（title 与聊天高亮不受影响）
+    // 谁在叫我提示音（三连叮结构不变，title 与聊天高亮不受影响）；false=无音效，
+    // true 为旧开关兼容值等同 ding
     @Rule(
-            options = {"true", "false"},
+            options = {"false", "true", "ding", "levelup", "bell", "pling", "hit"},
             strict = false,
             categories = {PRIMARYUAN, SURVIVAL, FEATURE}
     )
-    public static boolean whoCalledMeSound = true;
+    public static String whoCalledMeSound = "ding";
 
-    // 谁在叫我名字高亮色（title 与聊天框一致）；none=不高亮
+    // 谁在叫我名字高亮色（title 与聊天框一致）；false=不改变颜色，
+    // rainbow=名字逐字符彩虹渐变
     @Rule(
-            options = {"gold", "yellow", "aqua", "green", "red", "none"},
+            options = {"rainbow", "gold", "yellow", "aqua", "green", "red", "blue", "light_purple",
+                    "dark_aqua", "dark_green", "dark_red", "dark_blue", "dark_purple", "white",
+                    "black", "gray", "dark_gray", "false"},
             strict = false,
             categories = {PRIMARYUAN, SURVIVAL, FEATURE}
     )
-    public static String whoCalledMeHighlight = "gold";
+    public static String whoCalledMeHighlight = "aqua";
 
     // 米塔字幕：/text 在执行者眼前逐字弹出对话文本，停留后整句坠落消散（米塔游戏的文字显示效果）；
     // 原版 text_display 实体逐字驱动，纯服务端实现，客户端无需安装任何模组
@@ -215,11 +233,11 @@ public class CarpetPrimaryuanSettings {
     )
     public static boolean textAnimation = false;
 
-    // 红包：/redpacket 发红包（拼手气/普通/专属/口令四类），聊天框广播可点击领取，
-    // 服务端原版容器 GUI 实现，客户端无需安装任何模组
+    // 穿透点击：右键墙告示牌/挂墙木牌/墙横幅/展示框/画直接打开背后贴挂的容器；
+    // 潜行时保持原版交互（编辑/染色告示牌、旋转展示框），背后无容器也走原版
     @Rule(
-            categories = {PRIMARYUAN, FEATURE, COMMAND}
+            categories = {PRIMARYUAN, SURVIVAL, FEATURE}
     )
-    public static boolean redPacket = false;
+    public static boolean clickThrough = false;
 
 }

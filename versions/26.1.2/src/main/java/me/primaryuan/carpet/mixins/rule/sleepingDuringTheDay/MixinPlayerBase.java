@@ -90,8 +90,13 @@ public abstract class MixinPlayerBase {
         int total = 0;
         int sleeping = 0;
         for (ServerPlayer p : serverLevel.players()) {
+            if (p.isSpectator()) {
+                continue; // 旁观者不计入分母（对齐原版 SleepStatus 口径）
+            }
             total++;
-            if (p.isSleeping()) {
+            // 只统计睡满者（sleepTimer>=100）：刚入睡的玩家不应把比例提前推过阈值，
+            // 否则多人错开入睡时会在他人未睡满前跳夜
+            if (p.isSleeping() && p.getSleepTimer() >= 100) {
                 sleeping++;
             }
         }

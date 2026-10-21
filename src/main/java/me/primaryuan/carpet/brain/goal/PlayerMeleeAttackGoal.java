@@ -49,10 +49,8 @@ public class PlayerMeleeAttackGoal extends PlayerGoal {
     @Override
     public boolean canUse() {
         LivingEntity target = this.mob.getTarget();
-        if (target == null) {
-            return false;
-        }
-        if (!target.isAlive()) {
+        if (target == null || !target.isAlive() || target.level() != this.mob.level()) {
+            // 跨维度目标：/tp 换世界后旧世界引用失效，不得再算路或攻击
             return false;
         }
         // 先试算一条路；算不出来但目标已在攻击距离内则仍然可以打
@@ -66,7 +64,7 @@ public class PlayerMeleeAttackGoal extends PlayerGoal {
     @Override
     public boolean canContinueToUse() {
         LivingEntity target = this.mob.getTarget();
-        if (target == null || !target.isAlive()) {
+        if (target == null || !target.isAlive() || target.level() != this.mob.level()) {
             return false;
         }
         if (!this.followingTargetEvenIfNotSeen && !this.mob.getSensing().hasLineOfSight(target)) {
@@ -146,9 +144,15 @@ public class PlayerMeleeAttackGoal extends PlayerGoal {
         this.checkAndPerformAttack(target, distSq);
     }
 
-    /** 距离足够且攻击冷却结束 → 挥砍（转写为玩家原生 attack） */
+    /**
+     * 距离、冷却、视线三重门 → 挥砍（转写为玩家原生 attack）。
+     * 视线门必查：{@code Player#attack} 入口本身不做视线检查，而
+     * {@code followingTargetEvenIfNotSeen} 模式的 {@code canContinueToUse} 放行
+     * 不可见目标——缺此门会隔墙命中近处目标。
+     */
     protected void checkAndPerformAttack(LivingEntity target, double distSq) {
-        if (distSq <= this.getAttackReachSqr(target) && this.ticksUntilNextAttack <= 0) {
+        if (distSq <= this.getAttackReachSqr(target) && this.ticksUntilNextAttack <= 0
+                && this.mob.getSensing().hasLineOfSight(target)) {
             this.resetAttackCooldown();
             this.mob.doHurtTarget(target);
         }

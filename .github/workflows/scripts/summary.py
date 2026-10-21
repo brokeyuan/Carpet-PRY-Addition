@@ -54,6 +54,7 @@ def main():
 			file_paths = list(filter(lambda fp: not fp.endswith('-sources.jar') and not fp.endswith('-dev.jar') and not fp.endswith('-shadow.jar'), file_paths))
 			if len(file_paths) == 0:
 				file_name = '*not found*'
+				file_size = '*N/A*'
 				sha256 = '*N/A*'
 			else:
 				file_name = '`{}`'.format(os.path.basename(file_paths[0]))

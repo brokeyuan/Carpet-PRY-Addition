@@ -13,12 +13,14 @@ import net.minecraft.world.phys.Vec3;
 public class InvisibleInTallGrassHandler {
 
     /**
-     * 本功能添加的隐身效果标记：无限时长（-1，与 /effect ... infinite 同款表示）。
-     * 有限时长会被原版每 tick 递减（MobEffectInstance.tickDownDuration），MAX_VALUE 标记
+     * 本功能添加的隐身效果标记：无限时长 + 无粒子 + <b>ambient</b>。有限时长会被
+     * 原版每 tick 递减（MobEffectInstance.tickDownDuration），MAX_VALUE 标记
      * 在添加后的第一 tick 即失效，导致离开草地时无法识别归属、隐身效果永久残留；
-     * 无限时长不参与递减，标记稳定。叠加"无粒子"位（添加时 visible=false，药水默认
-     * 显示粒子）进一步区分药水来源。残留边界：外部授予的"无限 + 无粒子"隐身
-     * （/effect give ... infinite 0 true）会被误判为本功能的，离开草地时一并移除。
+     * 无限时长不参与递减，标记稳定。ambient 位是关键归属标记：原版 /effect give
+     * 无法设置 ambient（只能给有限时长 + 可选无粒子），数据包也造不出
+     * "无限 + 无粒子 + ambient"的玩家效果——外部授予的同类隐身不会被误判为
+     * 本功能的（旧标记只看"无限 + 无粒子"，规则关闭时会误删管理员授予的隐身）。
+     * 视觉不变：ambient + visible=false 同样无粒子、无 HUD 图标。
      */
     private static final int MARKER_DURATION = MobEffectInstance.INFINITE_DURATION;
 
@@ -33,7 +35,8 @@ public class InvisibleInTallGrassHandler {
         MobEffectInstance current = player.getEffect(MobEffects.INVISIBILITY);
         boolean hasOwnEffect = current != null
                 && current.getDuration() == MARKER_DURATION
-                && !current.isVisible();
+                && !current.isVisible()
+                && current.isAmbient();
 
         // 规则关闭：仅清理本功能残留的效果，不触碰药水等外部来源的隐身
         if (!CarpetPrimaryuanSettings.invisibleInTallGrass) {
@@ -46,16 +49,17 @@ public class InvisibleInTallGrassHandler {
         boolean inGrass = isInTallGrass(player);
 
         if (inGrass && current == null) {
-            // 仅在无任何隐身时添加（药水隐身在场时不覆盖；药水失效后下一 tick 自动补上）
+            // 仅在无任何隐身时添加（药水隐身在场时不覆盖；药水失效后下一 tick 自动补上）；
+            // ambient=true 是归属标记（见类注释），命令/数据包不可伪造
             player.addEffect(new MobEffectInstance(
                     MobEffects.INVISIBILITY,
                     MARKER_DURATION,
                     0,
-                    false,
+                    true,
                     false
             ));
         } else if (!inGrass && hasOwnEffect) {
-            // 只移除本功能添加的隐身，保留药水效果
+            // 只移除本功能添加的隐身，保留药水/指令效果
             player.removeEffect(MobEffects.INVISIBILITY);
         }
     }

@@ -1,7 +1,6 @@
 package me.primaryuan.carpet.command;
 
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import me.primaryuan.carpet.handler.patPatPlayers.PatPatPlayersHandler;
 import me.primaryuan.carpet.i18n.ServerI18n;
@@ -41,15 +40,17 @@ public final class PatNodCommand {
     // ==================== 执行 ====================
 
     /** 无参：翻转本人被摸许可并回执新状态 */
-    private static int toggle(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        ServerPlayer player = context.getSource().getPlayerOrException();
+    private static int toggle(CommandContext<CommandSourceStack> context) {
+        ServerPlayer player = CommandSupport.requirePlayer(context);
+        if (player == null) return 0;
         boolean accept = !PatPatPlayersHandler.acceptsPat(player);
         set(context, accept);
         return 1;
     }
 
-    private static int set(CommandContext<CommandSourceStack> context, boolean accept) throws CommandSyntaxException {
-        ServerPlayer player = context.getSource().getPlayerOrException();
+    private static int set(CommandContext<CommandSourceStack> context, boolean accept) {
+        ServerPlayer player = CommandSupport.requirePlayer(context);
+        if (player == null) return 0;
         PatPatPlayersHandler.setPatAccept(player, accept);
         player.sendSystemMessage(ServerI18n.tr(accept
                 ? "carpetprimaryuan.command.patnod.on"

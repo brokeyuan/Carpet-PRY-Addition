@@ -54,3 +54,16 @@ libs/
 .gradle-user/
 versions/*/logs/
 .zcode/
+
+# local editor settings and workflow monitoring
+.zcodeignore
+backfill-watch.log
+canary-watch.log
+
+# local verification logs
+/audit-*.log
+/boot-*.log
+/build-*.log
+/gh-watch*.log
+/test-*.log
+/logs/

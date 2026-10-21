@@ -1,7 +1,6 @@
 package me.primaryuan.carpet.command;
 
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import me.primaryuan.carpet.handler.entitiesRidingPlayers.EntitiesRidingPlayersHandler;
 import me.primaryuan.carpet.i18n.ServerI18n;
@@ -41,8 +40,9 @@ public class RidingCommand {
 
     /** 无参入口：翻转本人对应类型的许可并按新状态广播 */
     private static int toggleBare(CommandContext<CommandSourceStack> context,
-                                  EntitiesRidingPlayersHandler.Permission type) throws CommandSyntaxException {
-        ServerPlayer player = context.getSource().getPlayerOrException();
+                                  EntitiesRidingPlayersHandler.Permission type) {
+        ServerPlayer player = CommandSupport.requirePlayer(context);
+        if (player == null) return 0;
         boolean allow = !EntitiesRidingPlayersHandler.isAllowed(type, player.getName().getString());
         toggle(context, allow, type, allow
                 ? (type == EntitiesRidingPlayersHandler.Permission.RIDE
@@ -57,8 +57,9 @@ public class RidingCommand {
     /** on/off 共用入口：设置本人对应类型的许可并广播 */
     private static int toggle(CommandContext<CommandSourceStack> context, boolean allow,
                               EntitiesRidingPlayersHandler.Permission type,
-                              String messageKey) throws CommandSyntaxException {
-        ServerPlayer player = context.getSource().getPlayerOrException();
+                              String messageKey) {
+        ServerPlayer player = CommandSupport.requirePlayer(context);
+        if (player == null) return 0;
         EntitiesRidingPlayersHandler.setPermission(type, player.getName().getString(), allow);
         broadcast(context.getSource(), messageKey, player.getName().getString());
         return 1;

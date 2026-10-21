@@ -1,45 +1,27 @@
 # Commands Documentation
 
 > **Mod ID**: carpet-pry-addition  
-> **Version**: 1.2.0
+> **Version**: 1.3.0
 
 ---
 
 ## Quick Navigation
 
 - [Fake Player Pearl Teleport Commands](#fake-player-pearl-teleport-commands)
-  - [/tpp - Fake Player Pearl Teleport](#tpp---fake-player-pearl-teleport)
-  - [/tppset - Station Management](#tppset---station-management)
+  - [/tpp](#tpp---fake-player-pearl-teleport)
+  - [/tppset](#tppset---station-management)
 - [/hat - Player Hat](#hat---player-hat)
-  - [Syntax](#syntax)
-  - [Permission](#permission)
-  - [Description](#description)
-  - [Related Rules](#related-rules)
-  - [Usage Examples](#usage-examples)
 - [Fake Player Continuous Inventory Drop](#fake-player-continuous-inventory-drop)
-  - [Command Syntax](#command-syntax)
-  - [Permission](#permission)
-  - [Related Rule](#related-rule)
-  - [Relationship with Vanilla dropStack](#relationship-with-vanilla-dropstack)
-  - [Examples](#examples)
-  - [Auto-Stop Conditions](#auto-stop-conditions)
 - [/player sendto - Fake Player Inventory Link](#player-sendto---fake-player-inventory-link)
 - [/player brain - Fake Player Brain](#player-brain---fake-player-brain)
-  - [Command Syntax](#command-syntax)
-  - [Transfer Behavior](#transfer-behavior)
-  - [Usage Examples](#usage-examples)
 - [Player Scale Modifiers](#player-scale-modifiers)
-  - [/scale - Player Scale Adjustment](#scale---player-scale-adjustment)
+  - [/scale](#scale---player-scale-adjustment)
 - [Riding Permission Commands](#riding-permission-commands)
-  - [/riding - Riding Permission Management](#riding---riding-permission-management)
-  - [/picking - Pickup Permission Management](#picking---pickup-permission-management)
+  - [/riding](#riding---riding-permission-management)
+  - [/picking](#picking---pickup-permission-management)
 - [/pvp - Peaceful Players](#pvp---peaceful-players)
 - [/patnod - Pat Interaction Toggle](#patnod---pat-interaction-toggle)
 - [/text - MiSide Subtitles](#text---miside-subtitles)
-- [/redpacket - Red Packet](#redpacket---red-packet)
-  - [Command Syntax](#command-syntax)
-  - [Permission Modes (peacefulPlayers values)](#permission-modes-peacefulplayers-values)
-  - [Server-wide Switch Behavior](#server-wide-switch-behavior)
 
 ---
 
@@ -52,8 +34,11 @@
 #### Syntax
 
 ```
+/tpp
 /tpp <station>
 ```
+
+With no argument, lists all available stations (display names preferred).
 
 #### Permission
 
@@ -136,7 +121,7 @@ Set a fake player teleport alias for a player.
 - **Permission**: Admin only
 - **Parameters**:
   - `player` - Player's real name
-  - `alias` - Alias (up to 10 characters)
+  - `alias` - Alias (up to 10 characters, no spaces, Chinese supported)
 
 ##### `/tppset rename <player> remove`
 
@@ -222,10 +207,13 @@ Wears the main-hand item on the head, swapping it with the item currently on the
 
 ### Related Rules
 
-**playerHat** - When enabled, placing a Totem of Undying in the head slot first triggers the normal Totem of Undying revive effect upon fatal damage, then additionally grants:
-- Regeneration II
-- Absorption II
-- Fire Resistance I
+**playerHat** - If neither hand triggers totem protection, a head-slot totem can prevent fatal damage. It consumes one totem, removes harmful effects, restores 1 health point and grants:
+
+- Regeneration II (45 seconds)
+- Absorption II (5 seconds)
+- Fire Resistance I (40 seconds)
+
+**playerHeadSkin** - With both rules enabled, hold a player head and run `/hat` to use its full skin; removing it or disabling the rule restores the original skin. This rule works independently of `playerHat`: equipping a player head normally is enough. Mob heads and heads without a valid skin do not trigger it.
 
 ### Usage Examples
 
@@ -253,11 +241,11 @@ Adds an independent `dropall` sub-command to Carpet's `/player <name>` command t
 | Modifier | Syntax | Behavior |
 |----------|--------|----------|
 | (none) | `dropall` | Drop once immediately (equivalent to `once`) |
-| `once` | `dropall once` | Drop once immediately |
-| `continuous` | `dropall continuous` | Drop once per server tick until inventory is empty |
-| `interval` | `dropall interval <ticks>` | Drop once every `<ticks>` ticks |
-| `after` | `dropall after <ticks>` | Drop once after `<ticks>` ticks (one-shot) |
-| `perTick` | `dropall perTick <times>` | Drop `<times>` times per second (20 ticks) |
+| `once` | `dropall once` | Empty the whole inventory immediately |
+| `continuous` | `dropall continuous` | Drop one stack per tick; wait for new items when empty |
+| `interval` | `dropall interval <ticks>` | Drop one stack every `<ticks>` ticks |
+| `after` | `dropall after <ticks>` | Drop one stack after `<ticks>` ticks (one-shot) |
+| `perTick` | `dropall perTick <times>` | Drop one stack `<times>` times per second (20 ticks) |
 | `randomly` | `dropall randomly <min> <max>` | Use a random value in `[min, max]` ticks as the next interval (re-rolled each time) |
 | `stop` | `dropall stop` | Stop the continuous drop task |
 
@@ -285,16 +273,16 @@ Reuses Carpet's own permission check on the `/player` command (controlled by Car
 # Drop everything once (equivalent to vanilla dropStack all)
 /player Steve dropall
 
-# Fake player drops inventory every tick (keeps waiting when empty, stop anytime)
+# Fake player drops one stack every tick (keeps waiting when empty, stop anytime)
 /player Steve dropall continuous
 
-# Drop once every 10 ticks
+# Drop one stack every 10 ticks
 /player Steve dropall interval 10
 
-# Drop once after 20 ticks (one-shot)
+# Drop one stack after 20 ticks (one-shot)
 /player Steve dropall after 20
 
-# Drop 4 times per second
+# Drop one stack 4 times per second
 /player Steve dropall perTick 4
 
 # Drop at random intervals between 5 and 20 ticks
@@ -310,7 +298,7 @@ Reuses Carpet's own permission check on the `/player` command (controlled by Car
 ### Auto-Stop Conditions
 
 - `continuous`/`interval`/`perTick`/`randomly` modes: when inventory is empty, the task keeps running and waits for new items to be added; only a manual `stop` will stop it.
-- `after` mode: auto-stops after a successful drop; if inventory is empty at the scheduled time, the task keeps checking every tick until an item is available to drop.
+- `after` mode: drops one stack, then stops; if inventory is empty at the scheduled time, the task keeps checking every tick until an item is available to drop.
 - Target fake player disconnects: all related tasks are cleaned up automatically to avoid tick listener leaks.
 - If a dropall task is already running for the same fake player, a new trigger is rejected with a hint to `stop` first.
 
@@ -363,26 +351,26 @@ Mode names follow `/carpet language`: with a Chinese language (zh_cn/zh_tw) comp
 | Argument | Behavior |
 |----------|----------|
 | (none) | Query the current AI mode |
-| `<mode> keep` | Keep the brain: automatically restored when the fake player relogs (owner included for wolf); `brain off` clears it |
-| `zombie` | Zombie mode: melee-chases the nearest player, swings via native `attack()` |
-| `skeleton` | Skeleton mode: ranged attacks + kiting while holding a bow, native bow draw consumes inventory arrows |
-| `pillager` | Pillager mode: same as skeleton but with a crossbow (25-tick charge) |
-| `irongolem` | Iron golem mode: attacks hostile mobs (creepers excluded) and hostile fake players (also retaliates against its attackers) |
-| `spider` | Spider mode: neutral in daylight, hostile at night |
-| `wolf` | Wolf mode: follows the executing player and syncs aggro (bites whoever hurts the owner) |
-| `villager` | Villager mode: random strolling, panics when attacked, flees from zombies |
-| `enderman` | Enderman mode: provoked by being stared at, then sprints at the starer |
-| `babyzombie` | Baby zombie mode: faster melee pursuit |
-| `witherskeleton` | Wither skeleton mode: melee-chases players/iron golems and piglins, avoids wolves |
-| `drowned` | Drowned mode: ranged trident throws + bare-hand melee, group anger broadcast |
-| `zombiepiglin` | Zombified piglin mode: neutral; retaliates when hurt and alerts same-mode fakes |
-| `vindicator` | Vindicator mode: melee-chases players/villagers/iron golems |
-| `piglinbrute` | Piglin brute mode: always-hostile melee, ignores gold armor |
-| `slime` | Slime mode: hop-based movement and hop pursuit |
-| `magmacube` | Magma cube mode: same as slime |
-| `fish` | Fish mode: swims and avoids players in water, flops when beached, surfaces for air |
-| `pig` | Pig mode: fully neutral, panics when attacked |
-| `piglin` | Piglin mode: hostile to players without gold armor, weapon decides combat style, picks up gear |
+| `<mode> keep` | Restore the mode and wolf owner when the fake rejoins during this server run; restarting or `brain off` clears it |
+| `zombie` | Chases players in melee. |
+| `skeleton` | Shoots with a bow and kites targets; consumes inventory arrows. |
+| `pillager` | Shoots with a crossbow; 25-tick charge. |
+| `irongolem` | Attacks hostile mobs and hostile fake players, excluding creepers; retaliates when hurt. |
+| `spider` | Neutral by day, hostile at night with sprinting pursuit. |
+| `wolf` | Follows the command executor and assists in combat; does not teleport to follow. |
+| `villager` | Strolls, panics when hurt and avoids zombies. |
+| `enderman` | Becomes hostile when stared at and sprints in pursuit. |
+| `babyzombie` | Faster melee pursuit than the zombie mode. |
+| `witherskeleton` | Melee-chases players, iron golems and piglins; avoids wolves. Hits do not apply Wither. |
+| `drowned` | Throws a held trident, otherwise uses melee; alerts nearby drowned and zombified-piglin fakes when hurt. |
+| `zombiepiglin` | Retaliates when hurt and alerts nearby same-mode fakes. |
+| `vindicator` | Melee-chases players, villagers and iron golems. |
+| `piglinbrute` | Always hostile; uses melee and ignores gold armor. |
+| `slime` | Hops while idle and pursues targets in a straight line. |
+| `magmacube` | Uses the same hopping movement and pursuit as slime. |
+| `fish` | Swims, avoids players within 8 blocks, flees when hurt, surfaces for air and flops on land. |
+| `pig` | Strolls when idle and flees when hurt. |
+| `piglin` | Hostile to players without gold armor; uses melee, crossbows or spears by held weapon, and picks up and equips gear. |
 | `off` | Detaches the brain, restoring Carpet manual control |
 
 ### Permission
@@ -460,7 +448,7 @@ scale
 |------------|----------|
 | `false`    | Entire `/scale` command is invisible |
 | `self`     | Everyone (even OPs) can only `set/reset/info` themselves. Tab-completion shows only own name |
-| `true`     | Players can only `set/reset` self; only OP can `set/reset/info` others. Tab-completion after `set <value>` shows only own name |
+| `true`     | Players can only `set/reset` self; OPs can `set/reset` others; everyone can `info` others. Non-OP completion for `set` shows only self |
 | `everyone` | Any player can `set/reset/info` any online player; tab-completion shows all online players |
 
 - Rule changes take effect immediately via Carpet `RuleObserver` refreshing the command tree, no relogin required
@@ -468,14 +456,14 @@ scale
 
 #### Range Control
 
-- Hard bound: value only needs to be greater than 0 (no fixed bounds), applied uniformly to all paths
+- Hard bound: value must be finite and greater than 0, applied uniformly to all paths
 - `playerScaleMin` (default 0.1): minimum allowed value for all players
 - `playerScaleMax` (default 1.5): maximum allowed value for all players
 - The soft bounds apply to everyone (including admins, on self and on others); admins who need a wider range can adjust the bounds themselves via `/carpet playerScaleMin` / `/carpet playerScaleMax`
 
 #### Description
 
-Registers the `minecraft:scale` attribute for `Player` and manages it through a unified three-tier subcommand `/scale set|reset|info`. Supports four modes (false / self / true / everyone). In `self` mode everyone (even OPs) can only adjust themselves; in `true` mode admins can adjust anyone; in `everyone` mode anyone can adjust anyone. Tab-completion filters players by current identity; range limits apply per-identity tier.
+Registers the `minecraft:scale` attribute for `Player` and manages it through a unified three-tier subcommand `/scale set|reset|info`. Supports four modes (false / self / true / everyone). In `self` mode everyone (even OPs) can only adjust themselves; in `true` mode admins can adjust anyone; in `everyone` mode anyone can adjust anyone. Tab-completion filters players by current identity; the same size bounds apply to everyone.
 
 > **Version note**: the `minecraft:scale` attribute has been provided by vanilla since Minecraft 1.20.5 (snapshot 23w51a); every version this mod supports (1.21~1.21.4, 1.21.5+) can use it, with no version restriction.
 >
@@ -507,7 +495,7 @@ Registers the `minecraft:scale` attribute for `Player` and manages it through a 
 /scale info
 
 # Admin / everyone mode: adjust another player (not available in self mode)
-/scale set 2.0 Steve
+/scale set 1.5 Steve
 /scale reset Steve
 
 # View another player's scale (not available in self mode)
@@ -666,7 +654,7 @@ Toggles the per-player preference for accepting pats: declined players cannot be
 ### Examples
 
 ```
-/patnod          # status: Pat interactions: accepted
+/patnod          # toggle: accepted ↔ declined (reply shows the new state)
 /patnod off      # declined: players cannot pat you
 /patnod on       # accept again
 ```
@@ -697,22 +685,23 @@ Use `||` for a literal `|`; legacy color codes use `&` (e.g. `&c`), `&&` for a l
 
 | Key | Type | Default | Description |
 |------|------|------|------|
-| `distance` | float | `2.5` | Spawn distance from each player's view direction (blocks) |
+| `distance` | float | `2.5` | Offset along the view direction, with a spawn height of feet +1.3 blocks |
 | `scale` | float | `2.2` | Character scale (final pop state) |
 | `spacing` | float | auto (0.15×scale) | Letter spacing unit (blocks per width unit) |
-| `hold` | int | `40` | Hold between typing and the drop (ticks) |
+| `hold` | int | `80` | Hold between typing and the drop (ticks) |
 | `glow` | true/false | `false` | Glowing outline on characters |
 | `sound` | true/false | `true` | Click sound per character |
 | `drop` | true/false | `true` | Drop after holding (false = fade in place) |
 
 ### Behavior Details
 
-- Pop-in: 1 char/tick, each with a random ±45° tilt, 1.8x scale settling and a random y jitter, plus a click sound (volume 1.0 / pitch 1.2)
-- **Exclamation gain, uncapped**: the more trailing `!`/`！`, the bigger the whole sentence and the farther its spawn point — scale +0.3 each (no cap), spawn distance ×1.15 each; trailing spaces don't interrupt, other characters do
+- Pop-in: one character every 2 ticks, each with a random ±45° tilt, 1.8x scale settling and a random y jitter, plus a click sound (volume 1.0 / pitch 1.2)
+- **Exclamation gain, uncapped**: the more trailing `!`/`！`, the bigger the whole sentence and the farther its spawn point — final scale = base scale × (1 + 0.3 × count), distance = base distance × (1 + 0.15 × count); trailing spaces don't interrupt, other characters do
 - Default color white (#FFFFFF), use `&` codes to change
-- Drop: gravity 0.03/tick², drag 0.99, one 0.28 bounce on landing, a one-shot random tumble; fading from tick 24 of the drop at -8 opacity/tick
+- Drop: gravity 0.03/tick², drag 0.99, one 0.28 bounce then a resting fade on landing, a one-shot random tumble; fading from tick 24 of the drop at -8 opacity/tick
 - Grouping: ≤25 characters per group, break point pushed to a punctuation mark within 10 characters ahead; non-final groups get a " - " connector; the next group starts as the previous one drops, with a random ±22.5° yaw and height jitter between groups
-- Spawn point: each online player's feet + view direction × distance, at feet +1.3 (one independent copy per player, based on their own position and view); the whole group follows that player's live view (position and orientation) while typing and freezes in world coordinates once typing completes
+- Spawn point: each online player's feet + view direction × distance, at feet +1.3 (one independent copy per player, based on their own position and view); the glyph plane stays upright and fixed (never tilts with pitch), with position and orientation locked at spawn — they no longer track the sender's movement or view
+- Recipient limit: the first 12 eligible recipients get entity subtitles; the rest get an actionbar typewriter.
 - Guards: ≤128 characters per sentence, ≤8 concurrent broadcasts server-wide; "no online players can receive subtitles" when no humans are online, players with unloaded chunks are skipped
 
 ### Examples
@@ -725,61 +714,4 @@ Use `||` for a literal `|`; legacy color codes use `&` (e.g. `&c`), `&&` for a l
 /text @a Static text|drop=false           # fade in place, no drop
 /text @a Glowing|glow=true;sound=false    # glow, no sound
 /text brokeyuan private ping              # direct at a single player
-```
-
-## /redpacket - Red Packet
-
-> **Related rule**: `redPacket`
-
-Sends a red packet: share count + blessing message -> type selection -> put in items -> a clickable chat broadcast. Four distribution types: Lucky (random split, total conserved), Normal (even split with random remainder placement), Exclusive (chosen player only, items given whole, share count forced to 1), Password (claim by typing the password in chat, split like Lucky).
-
-### Syntax
-
-- `/redpacket`: all defaults — share count = current online players (fakes excluded), message "Happy New Year"
-- `/redpacket <count> [message]`: specify the share count (1-100); message optional (default "Happy New Year")
-- `/redpacket [count] @player [message]`: exclusive shortcut — skips type selection and the head list (the only entry when more than 53 players are online; target must be online and not yourself, share count forced to 1)
-- `/redpacket claim <id>`: claim from the chat link (internal, delivered with every broadcast)
-- `/redpacket list`: list your ongoing packets (id/type/message/shares left)
-- `/redpacket again`: reopen the item-input GUI with your last successful type/count/message
-- `/redpacket mute`: toggle muting yourself (the reply shows the new state); `/redpacket unmute`: explicitly unmute. Muted players no longer receive red packet broadcasts (including claimed-out/expired notices) and can no longer claim; persisted in config/carpet-pry-redpacket.json
-
-### Permission
-
-- Available to all players
-- The whole command tree is hidden while the `redPacket` rule is disabled
-
-### GUI Flow
-
-1. **Type selection** (title "Red Packet"): 4 red shulker box icons — Lucky / Normal / Exclusive / Password
-2. **Item input** (6-row chest): slots 0-44 for items, 45 cancel, 49 confirm, 53 clear (items returned); sending requires at least one item; closing without confirming returns everything to your inventory (overflow drops at your feet); after confirming the items belong to the packet
-3. **Exclusive**: first an online-player head list (excluding yourself; clicking a head twice selects and confirms), then the item input; other players clicking the broadcast see "This packet is exclusively for xxx"
-4. **Password**: after confirming the items an anvil opens to set the password (1-32 characters, no XP cost); closing without setting it returns the items
-
-### Claiming & Validity
-
-- Click the bright-red `[Red Packet: message]` link in chat to claim; validation order: exists -> not expired -> shares left -> not your own -> not claimed yet -> exclusive check -> password check
-- One claim per player per packet; a packet ends immediately when fully claimed; validity is 3 minutes, unclaimed shares return to the sender on expiry, stored while offline and re-delivered on the next join (overflow drops at feet)
-- Hover shows message/type/shares left/time left plus a rules hint (one share per player; passwords typed in chat); feedback covers already-claimed, own packet, fully claimed, expired and wrong password (with its character count)
-- Every claim is **broadcast to everyone**: "xx claimed yy's red packet (share n/m): items" (exclusive packets without the share index; muted players don't receive it)
-- Settlement on fully-claimed/expired: the **Lucky King** is broadcast server-wide (random-split types **with a single item kind only** — mixed-item packets have no fair luck to rank; ranked by **rarity**: five built-in tiers structurally guarantee that one item of a higher tier beats any quantity of a lower tier (1 diamond > a whole cargo of dirt); within a tier, value table x count decides, ties go to the earlier claimer; config/carpet-pry-values.json customizes per-item values within a tier, restart to apply)
-- The **target** of an exclusive packet gets a golden "sent to you" broadcast with a chime; other players see the regular broadcast
-- A warning broadcast fires 30 seconds before expiry (when shares remain); item-input confirmation warns when the total item count is smaller than the share count (non-blocking)
-
-### Guards & Limits
-
-- Count 1-100 (Brigadier bounds), message 1-32 characters
-- 10-tick claim-click debounce; 10-second send cooldown (the error shows the remaining seconds); at most 3 unfinished packets per player
-- Running packets and offline refund storage are in-memory and cleared on server restart (documented restart semantics)
-
-### Examples
-
-```
-/redpacket 1 Happy New Year                # 1 share
-/redpacket 10 Good luck                    # 10 shares, split by the chosen type
-/redpacket                                # all defaults: one share per online player
-/redpacket 15                             # 15 shares, "Happy New Year"
-/redpacket 20 Good luck                   # 20 shares, custom message
-/redpacket 1 @player just for you          # exclusive shortcut, skips type selection
-/redpacket claim 3                         # claim packet #3 (usually via chat click)
-/redpacket mute                           # mute red packet broadcasts
 ```

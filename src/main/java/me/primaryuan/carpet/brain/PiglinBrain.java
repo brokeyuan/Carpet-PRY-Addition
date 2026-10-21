@@ -94,11 +94,13 @@ public class PiglinBrain extends PlayerBrainController {
             return;
         }
         // Wiki：被攻击后 20 秒（400 tick）内不再尝试捡起/装备。
-        // lastHurtByMobTimestamp 新实体默认 0（仅 setLastHurtByMob/读档两处写点），
-        // 必须先判 getLastHurtByMob() 非空——否则出生后前 400 tick 恒判"刚被打"，
-        // 表现为猪灵开局 20 秒不捡物、不装备
-        if (this.player.getLastHurtByMob() != null
-                && this.player.tickCount - this.player.getLastHurtByMobTimestamp() < 400) {
+        // 纯时间戳门控：lastHurtByMob 引用会被原版约 100 tick 后清除，引用非空判断
+        // 让 400 tick 窗口提前失效。时间戳新实体默认 0（仅 setLastHurtByMob/读档两处
+        // 写点），须先判非零——否则出生后前 400 tick 恒判"刚被打"不捡物、不装备。
+        // 口径披露：1.21.x 的清除调用会刷新时间戳，实际窗口 ≈ 400+101 tick（26.x
+        // 无定时清除，恒为 400）；20 秒语义的 ±5 秒内漂移
+        int hurtTimestamp = this.player.getLastHurtByMobTimestamp();
+        if (hurtTimestamp > 0 && this.player.tickCount - hurtTimestamp < 400) {
             return;
         }
 

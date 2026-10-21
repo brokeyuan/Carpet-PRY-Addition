@@ -141,13 +141,8 @@ public final class PvpCommand {
 
     private static int setSelf(CommandContext<CommandSourceStack> ctx, String state) {
         CommandSourceStack source = ctx.getSource();
-        ServerPlayer self;
-        try {
-            self = source.getPlayerOrException();
-        } catch (CommandSyntaxException e) {
-            source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.pvp.player_only"));
-            return 0;
-        }
+        ServerPlayer self = CommandSupport.requirePlayer(ctx);
+        if (self == null) return 0;
         if (requireNotGlobalLocked(source)) return 0;
 
         PvpManager.setPlayerState(CommandSupport.profileName(self), state);
@@ -253,7 +248,7 @@ public final class PvpCommand {
             self = source.getPlayerOrException();
         } catch (CommandSyntaxException e) {
             // 控制台等非玩家来源：无自身状态可切换，提示子命令
-            source.sendSuccess(() -> ServerI18n.tr("carpetprimaryuan.command.pvp.console_hint"), false);
+            source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.pvp.console_hint"));
             return 0;
         }
         if (requireNotGlobalLocked(source)) return 0;

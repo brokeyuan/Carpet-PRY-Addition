@@ -41,8 +41,8 @@ import java.util.UUID;
  * 插值、透明度经 {@code TextDisplayInvoker}/{@code DisplayInvoker} 驱动
  * （原版无程序化接口，成员签名 1.21~26.3 一致）。每名玩家一份独立会话，
  * 生成点 = 该玩家脚部 + 视线方向 × distance、高度脚部 +1.3（与参考实现
- * maplegrove-misidechat 一致），打字期间整组跟随玩家实时视角、打字完成即冻结；
- * 坠落物理服务端自算（重力/阻力/地面反弹）。</p>
+ * maplegrove-misidechat 一致），字幕出现时定死位置与朝向，字符平面竖直固定；
+ * 坠落物理服务端自算（重力/阻力/地面反弹，落地静止渐隐）。</p>
  *
  * <p>防滥用护栏：单句字数上限、全局并发广播上限；实体带 {@link #ENTITY_TAG}
  * 标记，服务器启动时清扫上次崩溃残留的孤儿实体，停服时清空进行中的会话。</p>
@@ -54,6 +54,8 @@ public final class TextAnimationHandler {
 
     /** 感叹号整句增益：尾部每连发一个 +0.3（无封顶，感叹号越多字越大） */
     static final float BANG_GAIN_STEP = 0.3f;
+    /** 打字节奏：每 N tick 弹出一字（字幕会话与降级 actionbar 同口径） */
+    static final int TYPE_INTERVAL_TICKS = 2;
     /** 感叹号距离增益：尾部每连发一个 ×(1+0.15) 生成距离（越多越远，防大字怼脸；
      *  增速低于字号增益，保持"更大"的观感） */
     static final float BANG_DIST_STEP = 0.15f;
@@ -143,6 +145,7 @@ public final class TextAnimationHandler {
         }
         SESSION_TO_BROADCAST.clear();
         ACTIVE_BROADCASTS.clear();
+        LAST_TEXT.clear();
     }
 
     /**
@@ -393,6 +396,8 @@ public final class TextAnimationHandler {
         final List<Segment> segments;
         final List<Glyph> glyphs = new ArrayList<>();
         int typed;
+        /** 打字节流倒计时（tick）：1 = 下个 typing tick 立即弹首字，其后按 TYPE_INTERVAL_TICKS */
+        int typeCooldown = 1;
         int holdLeft;
         Phase phase;
         double baseX;

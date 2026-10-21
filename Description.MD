@@ -1,8 +1,8 @@
-Carpet PRY Addition is a server-side Fabric extension for the [fabric-carpet](https://github.com/gnembon/fabric-carpet) mod, developed for the **Primaryuan Server**. It adds 33 configurable Carpet rules and 10 new commands (plus `/player` extensions) covering bug fixes, fake player enhancements, player interaction, and survival gameplay expansion.
+Carpet PRY Addition is a server-side Fabric extension for the [fabric-carpet](https://github.com/gnembon/fabric-carpet) mod, developed for the **Primaryuan Server**. It adds 35 configurable Carpet rules and 9 new commands (plus `/player` extensions) covering bug fixes, fake player enhancements, player interaction, and survival gameplay expansion.
 
 ---
 
-## Fix
+## Bug Fixes
 
 ### Xaero Minimap + LuckPerms Compatibility Fix (`fixXaeroLib`)
 
@@ -23,6 +23,19 @@ Related upstream issues:
 - [fabric-carpet #1962](https://github.com/gnembon/fabric-carpet/issues/1962) — Compatibility issue with Bluemap
 - [BlueMap #598](https://github.com/BlueMap-Minecraft/BlueMap/issues/598) — Unable to properly handle fake players who go offline
 
+### End Crystal Position Sync (`fixEndCrystalSync`)
+
+Fixes client-side position desync when end crystals are pushed by pistons, including invulnerable crystals.
+
+### Standing On Air Misjudgment Fix (`fixStandingOnAir`)
+
+Moves support-block resends after player movement, matching the official 26.4 Snapshot 1 fix, and additionally suppresses the standing-on-air INFO log. Resends and the 200-tick cooldown remain active. Only affects 26.3.
+
+Related upstream issues:
+
+- [MC-311474](https://bugs.mojang.com/browse/MC/issues/MC-311474) — standing on air log false positives
+- [MC-311727](https://mojira.dev/MC-311727) — root cause (check runs before movement), fixed in 26.4 Snapshot 1
+
 ---
 
 ## Fake Player Enhancements
@@ -36,7 +49,7 @@ Customize the appearance of carpet fake players by integrating with the optional
 - **`summon` mode** — the fake player uses the skin of the player who summoned it.
 - **`same_skin` mode** — all fake players share a unified skin, specified by `fakePlayerSkinSet` (default: `Brokeyuan`).
 - Skins apply to the fake player's session only — nothing is persisted to skinrestorer's storage, so real players sharing the same name (same UUID on offline-mode servers) never get reskinned.
-- Every fake player (including ones named after real players) wears its target skin from the first frame — the skin is injected before the spawn packet is sent, so observers never see a flash from the old skin to the new one. Real players themselves are never affected.
+- Skins are applied before spawn when available. A pending lookup may briefly show the default skin; real players are unaffected.
 - With [Carpet TIS Addition](https://modrinth.com/mod/carpet-tis-addition) installed, `/player <name> rejoin` gets the same skin treatment — rejoin reuses Carpet's spawn logic, where the skin hook applies.
 
 ### Fake Player Name Suggestions (`fakePlayerNameSuggestions`)
@@ -47,7 +60,7 @@ Customize the name suggestion list shown when using the `/player` command to spa
 
 ### Fake Player Pearl Teleport System (`fakePlayerTpp`)
 
-A fully custom teleport network powered by fake players and ender pearls. Admins set up stations at key locations, and players teleport between them by having a temporary fake player right-click a pearl at the destination.
+A teleport network using fake players and ender pearls. Admins set up stations at key locations, and players teleport between them by having a temporary fake player right-click a pearl at the destination.
 
 Commands:
 
@@ -58,7 +71,7 @@ Commands:
 
 ### Fake Player Continuous Drop (`fakePlayerDropAll`)
 
-Adds a `/player <name> dropall` sub-command that drops the fake player's whole inventory at a configurable pace: once, every tick, at fixed intervals, after a delay, N times per second, or at random intervals — with `/player <name> dropall stop` to cancel.
+Use `/player <name> dropall` (or `dropall once`) to empty the inventory immediately. Timed modes drop one stack per trigger: every tick, at a fixed or random interval, after a delay, or N times per second. `dropall stop` cancels the task.
 
 ### Fake Player Inventory Link (`fakePlayerSendto`)
 
@@ -66,7 +79,7 @@ Adds a `/player <name> sendto <target>` sub-command creating a one-way item flow
 
 ### Fake Player Brain (`fakePlayerBrain`)
 
-Adds a `/player <name> brain <mode>` sub-command injecting vanilla-mob-style AI into fake players — 19 modes (zombie, babyzombie, skeleton, wither skeleton, pillager, vindicator, iron golem, spider, wolf, villager, enderman, drowned, fish, pig, piglin, piglin brute, slime, magma cube, zombie piglin). Pure server-side with zero extra entities: AI movement is translated into native player movement input, coordinates are never touched. Supports CJK fake player names, a `keep` suffix that re-attaches the brain after respawn, and a colored name suffix showing the active mode.
+Give fake players one of 19 mob behavior modes with `/player <name> brain <mode>`. They keep their player body and inventory; no extra entities or items are created. Supports CJK mode names, colored name suffixes and `keep` for rejoins during the current server run.
 
 ---
 
@@ -76,7 +89,11 @@ Adds a `/player <name> brain <mode>` sub-command injecting vanilla-mob-style AI 
 
 ![](https://cdn.modrinth.com/data/cached_images/a53fc27b646fd4d9b41b911e25161a0a7a42d165_0.webp)
 
-Wear any main-hand item on your head with the `/hat` command. When a **Totem of Undying** is placed in the helmet slot, taking fatal damage triggers a survival effect: **Regeneration II + Absorption II + Fire Resistance I**, giving you a second chance.
+Wear any main-hand item on your head with the `/hat` command. When a **Totem of Undying** is placed in the helmet slot, taking fatal damage triggers a survival effect: **Regeneration II + Absorption II + Fire Resistance I**.
+
+### Player Head Skin (`playerHeadSkin`)
+
+Real and Carpet fake players wear a player head to use its full skin; swapping heads updates it, and removing it or disabling the rule restores the previous skin. The head stays visible. Server-side, with no skin mod or `playerHat` required.
 
 ### Riding Players (`ridingPlayers`)
 
@@ -105,15 +122,15 @@ Enables the `/pvp` command: each player can turn their own PVP on or off. Player
 
 ### Who Called Me (`whoCalledMe`)
 
-When a chat message contains another player's name, the mentioned player gets three notification dings and a title showing the message text; names appearing in chat are also rendered gold for everyone via the vanilla chat decorator. Name matching is case-insensitive with word boundaries, so substrings never trigger for the wrong player; mentioning yourself and fake players (as receivers) is ignored. Purely server-side — works on vanilla clients.
+Naming a player in chat triggers three sounds and a title; self-mentions also work and fake players are excluded. Matching is case-insensitive, with longer names taking precedence; `mention` mode requires @name. `whoCalledMeSound` chooses the sound, and `whoCalledMeHighlight` chooses one of 16 colors, `rainbow` or `false` (default aqua).
 
 ### MiSide Subtitles (`textAnimation`)
 
-The `/text` command plays dialogue text in front of online players (fake players excluded; `@a` broadcasts to everyone, a player name directs at one — a target is required) with the text display effect from the game MiSide (the more trailing exclamation marks, the bigger the whole sentence): characters pop in one by one (random tilt, scale settling, click sounds), hold, then the whole sentence drops with server-side gravity/bounce physics while fading out. Long texts are split into groups at punctuation and played sequentially. One vanilla text_display entity per character, removed after play; default MiSide yellow with legacy color code support; pure server-side — works on vanilla clients.
+Use `/text @a|player <message>` to play MiSide-style subtitles on vanilla clients. Text types in, holds, then drops and fades; trailing exclamation marks enlarge it. Defaults to white, supports `&` color codes and inline options. The first 12 eligible recipients get entity subtitles; the rest get an actionbar typewriter. Fake players are excluded.
 
-### Red Packet (`redPacket`)
+### Click Through (`clickThrough`)
 
-The `/redpacket <count> <message>` command sends a red packet with four distribution types — Lucky (random, total conserved), Normal (even split with random remainder), Exclusive (a chosen player claims everything, also reachable via `/redpacket <count> @player <message>`) and Password (claim by typing the password in chat). Items are placed in a vanilla chest GUI, and a bright-red clickable chat broadcast lets players claim with one click; senders get per-claim receipts, unclaimed shares return to the sender after 3 minutes (stored while offline), and `/redpacket mute` opts out of broadcasts. Server-side vanilla menus only — works on vanilla clients.
+Right-click wall signs, wall hanging signs, wall banners, item frames or paintings to open the container directly behind them. Sneaking keeps normal interaction, and blocked containers remain blocked. Works on vanilla clients; installing ClickThrough Server disables this handler.
 
 ---
 
@@ -135,19 +152,11 @@ Living entities spawned directly by a player using an item (armor stands, spawn-
 
 ## Other Features
 
+- **More End Crystal Types** (`moreEndCrystalTypes`) — place end crystals on crying obsidian; `invulnerable` places an invulnerable crystal. Their beams point to `(0, 128, 0)`.
 - **Daydreaming** (`sleepingDuringTheDay`) — sleep in a bed during daytime to skip forward to night (inspired by PCA).
 - **Better Snowball** (`betterSnowball`) — snowballs deal knockback and damage to players ("stones hidden in snow").
 - **Invisibility Grass** (`invisibleInTallGrass`) — standing with your head inside tall grass grants automatic invisibility.
 - **Unicode Command Arguments** (`unicodeArgumentsSupport`) — allows non-ASCII characters (Chinese, Japanese, Korean, etc.) in command arguments, enabling fake players with CJK names (ported from YACA).
-
----
-
-## Why Download
-
-- **All features are toggleable** — every mechanic is a Carpet rule. Everything is off by default except `ridingPlayersClientInteract` (a client-side quality-of-life rule that is on by default).
-- **Wide version coverage** — supports Minecraft 1.21 through the latest snapshots (26.3), with 11 versions actively maintained.
-- **Server-side only** — players do not need to install the mod on their clients (except for the FOV compensation of the player scaling feature and the optional `ridingPlayersClientInteract` client rule).
-- **Lightweight and focused** — built on the Carpet framework, integrates naturally with existing Carpet setups.
 
 ---
 

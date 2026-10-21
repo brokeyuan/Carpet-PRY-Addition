@@ -1,8 +1,8 @@
 # Carpet Pry Addition Rules Documentation
 
-> Mod ID: `carpet-pry-addition` | Version: `1.2.0`
+> Mod ID: `carpet-pry-addition` | Version: `1.3.0`
 >
-> Total: **33 rules** (`whoCalledMeSound` / `whoCalledMeHighlight` are documented inline as companion rules in the whoCalledMe section)
+> Total: **35 rules** (`whoCalledMeSound` / `whoCalledMeHighlight` are documented inline as companion rules in the whoCalledMe section)
 >
 > **Tip: Use `Ctrl+F` to quickly find the rule you want**
 
@@ -22,6 +22,7 @@
   - [fixXaeroLib - XaeroLib Compatibility Patch](#fixxaerolib---xaerolib-compatibility-patch)
   - [fixBlueMap - BlueMap Compatibility Patch](#fixbluemap---bluemap-compatibility-patch)
   - [fixEndCrystalSync - Fix End Crystal Sync](#fixendcrystalsync---fix-end-crystal-sync)
+  - [fixStandingOnAir - Fix Standing On Air](#fixstandingonair---fix-standing-on-air)
 - [Ported Features (PORTING)](#ported-features-porting)
   - [sleepingDuringTheDay - Daydreaming](#sleepingduringtheday---daydreaming)
   - [unicodeArgumentsSupport - Unicode Argument Support](#unicodeargumentssupport---unicode-argument-support)
@@ -36,11 +37,11 @@
   - [whoCalledMe - Who Called Me](#whocalledme---who-called-me)
 - [Survival Features](#survival-features)
   - [playerHat - Player Hat](#playerhat---player-hat)
+  - [playerHeadSkin - Player Head Skin](#playerheadskin---player-head-skin)
   - [betterSnowball - Better Snowball](#bettersnowball---better-snowball)
   - [invisibleInTallGrass - Invisibility Grass](#invisibleintallgrass---invisibility-grass)
   - [moreEndCrystalTypes - More End Crystal Types](#moreendcrystaltypes---more-end-crystal-types)
   - [textAnimation - MiSide Subtitles](#textanimation---miside-subtitles)
-  - [redPacket - Red Packet](#redpacket---red-packet)
 - [Player Scaling](#player-scaling)
   - [playerScale - Player Scale](#playerscale---player-scale)
   - [playerScaleMin - Player Scale Min](#playerscalemin---player-scale-min)
@@ -59,7 +60,7 @@ Use fake players to quickly use pearl teleport stations. When set to true, enabl
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `fakePlayerTpp` |
-| **Description** | Use fake players to trigger pearl teleport stations; enables the /tppset station manager and the /tpp teleport command. /tpp requires Carpet TIS Addition (provides /player rejoin); everything else works without it |
+| **Description** | Use fake players to trigger pearl teleport stations with /tpp and /tppset. /tpp requires Carpet TIS Addition. |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
@@ -84,12 +85,12 @@ Customize the fake player list suggested by /player. Use ',' to separate each na
 
 ### fakePlayerSkinMode - Fake Player Skin Setting
 
-After installing the [skinrestorer](https://modrinth.com/mod/skinrestorer) dependency, you can set the skin of fake players. default=no change to fake player skin, summon=fake player uses the summoner's skin, same_skin=fake player uses a unified skin. Every fake player (including ones named after real players) wears its target skin from the first frame, so observers never see a flash from the old skin to the new one; nothing is persisted to skinrestorer's storage and real players are never affected.
+After installing the [skinrestorer](https://modrinth.com/mod/skinrestorer) dependency, you can set the skin of fake players. default=no change to fake player skin, summon=fake player uses the summoner's skin, same_skin=fake player uses a unified skin. The target skin is applied before spawn when available; a pending lookup may show the default skin briefly. Skins are session-only and do not affect real players.
 
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `fakePlayerSkinMode` |
-| **Description** | Set fake player skins with the skinrestorer dependency: default=keep as-is; summon=use the summoner's skin; same_skin=use the skin of the player set in fakePlayerSkinSet. Skins apply to the fake player's session only and are never persisted to skinrestorer's storage, so real players sharing the name are never affected |
+| **Description** | Use skinrestorer to give fake players the summoner’s or a specified player’s skin. Changes are session-only and do not affect real players. |
 | **Type** | `string` |
 | **Default Value** | `default` |
 | **Suggested Options** | `default`, `summon`, `same_skin` |
@@ -103,11 +104,11 @@ After installing the [skinrestorer](https://modrinth.com/mod/skinrestorer) depen
 | `summon` | Fake player uses the summoner's skin |
 | `same_skin` | Fake player uses a unified skin |
 
-> `summon` copies the summoner's skin texture directly from their live profile (no network request); if the summoner's profile carries no textures (common on offline-mode servers, where real players' skins are applied by skinrestorer on join), it falls back to resolving the skin by the summoner's name through the provider; when run from console/command blocks, it falls back to the `fakePlayerSkinSet` unified skin. `same_skin` is pre-resolved through skinrestorer's mojang provider at startup and cached. If the skin source is not ready yet, that spawn falls back to a post-spawn skin swap (the fake briefly shows the default skin); every fallback is logged.
+> `summon` uses the summoner’s current skin, falling back to a name lookup when textures are missing. Console and command-block summons use `fakePlayerSkinSet`. `same_skin` resolves that configured player at startup; a pending lookup may briefly show the default skin.
 
-> Skins apply to the fake player's current session only and are never persisted to skinrestorer's storage: a fake player shares the UUID of a real player with the same name (when the name is in the server's user cache, or on offline-mode servers), so persisting would reskin that player on their next join, overriding even a skin they set via `/skin`. Fake player skins are therefore never saved, and real players' skins are never touched.
+> Changes apply only to the fake player’s current session. They are not saved to skinrestorer and do not overwrite a same-name real player’s skin.
 
-> If [Carpet TIS Addition](https://modrinth.com/mod/carpet-tis-addition) is installed, its `/player <name> rejoin` (respawning the fake player where it logged off) applies these skins as well: rejoin internally reuses Carpet's vanilla spawn logic and the fake player creation path — behavior is identical to a plain spawn (`summon` mode uses the skin of whoever ran the rejoin command).
+> [Carpet TIS Addition](https://modrinth.com/mod/carpet-tis-addition)’s `/player <name> rejoin` applies the same skin rules. In `summon` mode, the command executor is the summoner.
 
 ---
 
@@ -128,12 +129,12 @@ When fakePlayerSkinMode is same_skin, sets the player name used for the fake pla
 
 ### fakePlayerDropAll - Fake Player Continuous Drop
 
-Adds a dropall sub-command to /player <name> that drops the fake player's whole inventory at a configured pace.
+Adds a dropall sub-command to /player `<name>` that drops the fake player's whole inventory at a configured pace.
 
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `fakePlayerDropAll` |
-| **Description** | Adds a dropall sub-command to /player <name> that drops the fake player's whole inventory at a configured pace |
+| **Description** | Add /player dropall to empty a fake player’s inventory immediately or drop its contents one stack at a time at a chosen pace. |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
@@ -143,12 +144,12 @@ Adds a dropall sub-command to /player <name> that drops the fake player's whole 
 
 ### fakePlayerSendto - Fake Player Inventory Link
 
-Adds a sendto sub-command to /player <name> creating one-way inventory item flow between fake players.
+Adds a sendto sub-command to /player `<name>` creating one-way inventory item flow between fake players.
 
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `fakePlayerSendto` |
-| **Description** | Adds a sendto sub-command to /player <name> creating one-way inventory item flow between fake players (one stack per trigger, default every tick, round-robin across targets, source buffers when a target is full) with adjustable pace; sendto stop removes all links, links do not survive restarts |
+| **Description** | Add /player sendto to transfer inventory items between fake players at a chosen pace. Links do not survive restarts. |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
@@ -158,41 +159,41 @@ Adds a sendto sub-command to /player <name> creating one-way inventory item flow
 
 ### fakePlayerBrain - Fake Player Brain
 
-Adds a brain sub-command to `/player <name>` attaching vanilla-mob-style AI to fake players (19 modes). Core design: **swap the brain, keep the body, zero extra entities** — the fake player always stays a `ServerPlayer` with native health/attack/inventory/interactions; every AI movement command is translated into native player movement input (`zza/xxa` + rate-limited turning + native jumping) and executed by the player's native `travel()` physics, never by directly writing coordinates or velocity. Pathfinding is a self-contained compact A* (vanilla `MobNavigation` is hard-bound to a `Mob` instance in its constructor; to honor the zero-extra-entity rule, node advancement and stuck-recompute semantics are faithfully re-implemented on the block grid). Architecture is strategy pattern: a mixin grafts the `PryMob` facade interface onto `ServerPlayer` at init (navigation/move-control/look-control/dual goal selectors are lazily attached, zero cost for real players); each mode assembles ported Goals into the dual selectors. Purely server-side, no client mod required.
+Adds 19 mob behavior modes to Carpet fake players with `/player <name> brain`. Fake players keep their player body, inventory and combat; no extra entities or items are created. Server-side only.
 
-Available modes (`/player <name> brain <mode>`, `off` detaches; on 26.1.2+ the zombie/zombified-piglin modes additionally support vanilla spears: with a spear in main hand a ported `SpearUseGoal` takes over — approach, draw, sprint-stab via vanilla kinetic-weapon damage, then retreat; 1.21.x has no spear items and is unaffected):
+Available modes (`off` restores Carpet manual control). Zombie and zombified-piglin modes also use spears on 26.1.2+:
 
 | Mode | Behavior |
 |------|----------|
-| `zombie` | Melee-chases the nearest player (vanilla `MeleeAttackGoal` semantics) and swings via the native `attack()` once in player reach |
-| `skeleton` | Active while holding a bow: ranged lock-on + kiting; native `startUsingItem → releaseUsingItem` draws the bow and consumes real arrows from the inventory |
-| `pillager` | Same as skeleton but with a crossbow (25-tick charge) |
-| `irongolem` | Attacks nearby hostile mobs (`Monster`, creepers excluded, matching vanilla iron golems) and hostile fake players (fake players in hostile AI modes, plus retaliating against whoever attacked it) |
-| `spider` | Neutral in daylight, hostile at night (matching vanilla spiders); sprints in pursuit at night |
-| `wolf` | Follows its owner (the command executor) and syncs aggro: bites whoever hurts the owner; no vanilla >12-block teleport follow (coordinates are never touched, it walks back) |
-| `villager` | No aggro: random strolling, panics when attacked, flees from zombies (vanilla `PanicGoal`/`AvoidEntityGoal` semantics) |
-| `enderman` | Provoked by being stared at (vanilla `isStaredAt` dot-product algorithm), locks the starer and sprints via `setSprinting(true)` |
-| `babyzombie` | Baby zombie: faster melee pursuit (1.25 sprint) |
-| `witherskeleton` | Wither skeleton: melee-chases players/iron golems and piglins (real piglins + piglin-brain fakes), avoids wolves; hits apply no Wither effect (body-side effect, red-lined out) |
-| `drowned` | Drowned: ranged trident throws while holding one (10-tick charge, native throw — loyalty/durability all vanilla) + bare-hand melee; getting hurt alerts nearby drowned/zombified-piglin-brain fakes |
-| `zombiepiglin` | Zombified piglin: neutral; retaliates when hurt and broadcasts group anger to nearby same-mode fakes (vanilla anger-broadcast semantics) |
-| `vindicator` | Vindicator: melee-chases players/villagers/iron golems |
-| `piglinbrute` | Piglin brute: always-hostile melee, ignores gold armor |
-| `slime` | Slime: hop-based movement — no pathfinding, constant idle hopping, straight-line hop pursuit (matching vanilla) |
-| `magmacube` | Magma cube: same as slime (vanilla inherits the assembly, attributes differ) |
-| `fish` | Fish (cod/salmon/tropical fish share one AI): swims in water, flees when hurt, avoids players within 8 blocks; flops when beached (never walks away); dolphin-style surfacing — automatically rises for air when breath runs low (the fake player's body has player lungs; no body data is touched). Upward swimming is translated by the move-control's swim layer into the vanilla jump input (effective for ALL modes: any brain can swim across rivers) |
-| `pig` | Pig: fully neutral, panics when attacked, strolls when idle |
-| `piglin` | Piglin: hostile to players not wearing gold, weapon decides combat style (golden sword melee / crossbow / 26.1.2+ golden spear charge), picks up and equips gear |
+| `zombie` | Chases players in melee. |
+| `skeleton` | Shoots with a bow and kites targets; consumes inventory arrows. |
+| `pillager` | Shoots with a crossbow; 25-tick charge. |
+| `irongolem` | Attacks hostile mobs and hostile fake players, excluding creepers; retaliates when hurt. |
+| `spider` | Neutral by day, hostile at night with sprinting pursuit. |
+| `wolf` | Follows the command executor and assists in combat; does not teleport to follow. |
+| `villager` | Strolls, panics when hurt and avoids zombies. |
+| `enderman` | Becomes hostile when stared at and sprints in pursuit. |
+| `babyzombie` | Faster melee pursuit than the zombie mode. |
+| `witherskeleton` | Melee-chases players, iron golems and piglins; avoids wolves. Hits do not apply Wither. |
+| `drowned` | Throws a held trident, otherwise uses melee; alerts nearby drowned and zombified-piglin fakes when hurt. |
+| `zombiepiglin` | Retaliates when hurt and alerts nearby same-mode fakes. |
+| `vindicator` | Melee-chases players, villagers and iron golems. |
+| `piglinbrute` | Always hostile; uses melee and ignores gold armor. |
+| `slime` | Hops while idle and pursues targets in a straight line. |
+| `magmacube` | Uses the same hopping movement and pursuit as slime. |
+| `fish` | Swims, avoids players within 8 blocks, flees when hurt, surfaces for air and flops on land. |
+| `pig` | Strolls when idle and flees when hurt. |
+| `piglin` | Hostile to players without gold armor; uses melee, crossbows or spears by held weapon, and picks up and equips gear. |
 | `off` | Detaches the brain, restoring Carpet manual control |
 
-While attached, Carpet manual move/attack actions (`/player <name> move|attack|use` etc.) are suppressed (actionPack suspended) and restored immediately on `brain off` or disabling the rule; rule toggle-off, mode switch, fake player logoff or death all detach automatically. Visual sync (walking/sprinting/swing/bow draw/looking) is driven entirely by vanilla entity synchronization — zero client dependency.
+While a brain is attached, Carpet manual movement, attack and use actions are paused. `brain off` or disabling the rule restores manual control; death, logoff and mode changes detach the old brain.
 
-**Name suffix & keep**: when attached, the fake player's name tag (and the Tab list) gains a `[mode]` suffix, colored by hostility — red (always hostile: zombie/skeleton/drowned/vindicator etc.), blue (neutral: spider/enderman/piglin/zombified piglin/wolf), green (non-hostile: iron golem/villager/pig/fish); the suffix text follows `/carpet language` ([僵尸]/[Zombie]/[殭屍]). Implemented as one scoreboard team per fake (`pry_brain_<mode>_<uuid>`): the original team's **prefix is carried onto the name tag while attached** (rank-style prefixes don't disappear), the original team is remembered on attach and restored on detach, and this mod's team is deleted on detach — the original team's settings are never touched. `brain <mode> keep` keeps the brain: after the fake relogs (respawn), the same mode and suffix (original prefix included) are automatically restored within a second; `brain off` clears it; keep lasts for the current server run only: it is invalidated by a restart, and respawned fakes must be re-attached. With a Chinese carpet language, mode names accept Chinese input directly (`brain 僵尸`); English keys always work.
+**Name suffix and keep**: the name tag and Tab list show the mode in red (hostile), blue (neutral) or green (non-hostile). The suffix follows `/carpet language`; English mode keys always work. Original team prefixes are retained, and team membership is restored on detach. `brain <mode> keep` restores the mode and wolf owner within one second after the fake player rejoins, during the current server run only. Restarting the server or running `brain off` clears it.
 
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `fakePlayerBrain` |
-| **Description** | Adds a brain sub-command to /player <name> injecting vanilla-style mob AI into fake players: 19 modes (zombie/babyzombie/skeleton/witherskeleton/drowned/zombiepiglin/pillager/vindicator/irongolem/spider/piglin/piglinbrute/slime/magmacube/fish/enderman/wolf/villager/pig). Pure server-side, zero extra entities, coordinates are never touched; unload with brain off or by disabling the rule. Per-mode behavior in the table above |
+| **Description** | Add /player brain to let fake players act using vanilla mob behavior. |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
@@ -251,13 +252,35 @@ Fixes the client-side position desync when an end crystal (including invulnerabl
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `fixEndCrystalSync` |
-| **Description** | Fixes client-side position desync when end crystals are pushed by pistons. Cause: vanilla never streams position updates for end crystals and both sides simulate piston pushes independently, so any divergence never self-corrects (only a relog/restart recovers). When enabled, the server forces the vanilla position-sync branch whenever a tracked crystal's position changes, realigning clients within 1 tick; the spawn-order race on relogin is covered too |
+| **Description** | Fix client-side position desync when end crystals are pushed by pistons. |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
 | **Categories** | `PRIMARYUAN`, `BUGFIX` |
 
-**How it works**: vanilla registers the end crystal with `updateInterval=Integer.MAX_VALUE`, so the server position-sync branch never runs for crystals (except the initial spawn packet); during piston pushes, client and server simulate independently in `PistonMovingBlockEntity` with no self-healing path once they diverge. When enabled, the server zeroes `ServerEntity.tickCount` whenever a tracked crystal's position changes, making the current sync run the vanilla position-sync branch — packet construction and broadcasting are entirely vanilla, and clients realign within 1 tick. Since 26.2 the `tickCount` increment moved before the gate, so the preprocessor sets -1 per version.
+Position changes are synchronized to observers, including invulnerable crystals. Disable the rule to restore vanilla behavior.
+
+---
+
+### fixStandingOnAir - Fix Standing On Air
+
+Fixes incorrect support-block resends and suppresses the `Player <x> standing on air - force-sending blocks below` INFO log. Only affects 26.3.
+
+| Property | Value |
+|----------|-------|
+| **Rule Name** | `fixStandingOnAir` |
+| **Description** | Fixes incorrect support-block resends and suppresses the standing-on-air INFO log. Only affects 26.3. |
+| **Type** | `boolean` |
+| **Default Value** | `false` |
+| **Suggested Options** | `false`, `true` |
+| **Categories** | `PRIMARYUAN`, `BUGFIX` |
+
+Defers support-block resends until after player movement and suppresses the standing-on-air INFO log. Resends and the 200-tick cooldown remain active. Disabling the rule restores vanilla behavior; only 26.3 is affected.
+
+#### Related Issues
+
+- [MC-311474](https://bugs.mojang.com/browse/MC/issues/MC-311474) — standing on air log false positives
+- [MC-311727](https://mojira.dev/MC-311727) — root cause (check runs before movement), fixed in 26.4 Snapshot 1
 
 ---
 
@@ -377,7 +400,7 @@ Enables /pvp to toggle PVP per player: two-way protection, self-damage unaffecte
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `peacefulPlayers` |
-| **Description** | Enables /pvp to toggle PVP per player: two-way protection, self-damage unaffected, blocked attacks play a notice sound. false=hide command; self=adjust self only; true=admins adjust anyone; everyone=anyone adjusts anyone; /pvp on\|off @a is a server-wide switch (admin-only), per-player toggles are locked while the global switch is off, states persist across restarts |
+| **Description** | Toggle PVP per player with /pvp. Disabled players cannot damage or be damaged by other players; settings survive restarts. |
 | **Type** | `string` |
 | **Default Value** | `"false"` |
 | **Suggested Options** | `false`, `true`, `self`, `everyone` |
@@ -387,22 +410,22 @@ Enables /pvp to toggle PVP per player: two-way protection, self-damage unaffecte
 
 ### patPatPlayers - Pat Pat Players
 
-Pat other **real** players on the head, cat-petting style: each right-click is one stroking pulse — the target bobs down and up with the rhythm, hearts pop above their head, the actor swings; the patted player sees a heart in front of their eyes, hears a soft sound coming from the patter's direction, and gets a gentle camera nod. Similar to the [PatPat](https://github.com/LopyMine/PatPat-Plugin) plugin but purely server-side — vanilla clients work as-is. Works with any item in hand and never consumes the interaction. Carpet fake players are excluded at the entry and cannot be patted.
+Right-click another real player’s head to pat them: hearts, a soft directional sound and a brief crouch visible to others. Both players must be non-spectators. Works with any item and preserves vanilla interactions; Carpet fake players are excluded. Inspired by [PatPat](https://github.com/LopyMine/PatPat-Plugin).
 
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `patPatPlayers` |
-| **Description** | Pat other players on the head, cat-petting style: the target bobs down and up with the rhythm with hearts above their head; the patted player gets a heart in front of their eyes, a soft sound, a gentle camera nod and a one-time action-bar notice. Works with any item in hand and never consumes the interaction. true=pat freely; sneak=only while sneaking. Pure server-side, real players only (fake players excluded) |
+| **Description** | Right-click another real player’s head to pat them, with hearts, a soft sound and a brief crouch. Works with any item and preserves vanilla interactions. |
 | **Type** | `string` |
 | **Default Value** | `"false"` |
 | **Suggested Options** | `false`, `true`, `sneak` |
 | **Categories** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
 
-**How it works**: reuses the same Fabric `UseEntityCallback` as ridingPlayers (zero mixins), registered after riding/pickup. Only interaction packets **carrying a hit position** count — the client use flow sends `INTERACT_AT` first (with the hit location; 26.x merged this into a single located packet), while the follow-up bare `INTERACT` packet has a `null` `hitResult` and falls through to vanilla, so each right-click triggers exactly once. The hit point must be within the top ~1/3 of the target bounding box (the head zone; holds proportionally for sneaking/scaled players), the target must be a **real** player (carpet fake players are excluded at the entry), neither party may be a spectator, and a combo-accelerating cooldown applies (slow taps fire once per 10 ticks; each hit while comboing reduces the cooldown by 2 ticks down to a 3-tick floor ≈ 6.6 strokes/second; idle for 20 ticks resets it); the vanilla interaction range (3 blocks, silently rejected beyond it before the event fires) also applies. **Always returns PASS (fire-and-forget)**: the Fabric event chain short-circuits on the first non-PASS return, so consuming the interaction would suppress both the vanilla dispatch and later listeners — patting only adds effects and never blocks.
+`true` allows patting freely; `sneak` requires sneaking. Cooldown starts at 10 ticks, shortens by 2 per combo hit to a 3-tick minimum, and resets after 20 idle ticks. Vanilla interaction reach applies.
 
-**Effects (per stroke)**: the actor swings (`swing(hand, true)` with the trailing flag = send-to-self, visible to the patting player and everyone nearby; `broadcastAndSend` on 1.21.x, `sendToTrackingPlayersAndSelf` on 26.3, the three-arg 26.3 signature `swing(hand, SwingAnimation.DEFAULT, true)` selected by preprocessor); one heart above the target head; a visible crouch bob on the target (see below); the soft sound (`ClientboundSoundPacket` higher-pitched version sent only to the patted player **originating from the patter position** — turn your head to see who patted you, everyone else hears the broadcast); a heart in front of the patted player eyes (spawned 0.75 blocks along their **horizontal** look, 0.05 above eye level — always rises through the center of their view, never inside the target model); a gentle camera nod (-2°×2 steps down, hold 2 ticks, +2°×2 steps back up, each step applied relative to the current view so mouse movement is never yanked back).
+Players can opt out with `/patnod off`; the preference survives restarts. The patted player hears the sound from the patter’s direction.
 
-**Crouch-pulse state machine (the press-down petting feel)**: each stroke checks how the target is sneaking — if the target **holds shift themselves**, the stroke skips crouching (they stay down, never popping up); if the target is **standing**, the server force-crouches them for 3 ticks then releases, so their model bobs down and up with the stroking rhythm. States migrate freely while petting: releasing shift returns to bobbing, pressing shift stops it; when petting stops the forced crouch expires automatically and full control returns. The bob is a server-side entity flag sync — bystanders see it, the patted player sees nothing themselves, and their client overrides the flag on their own shift changes (documented as-is). Real players only (carpet fake players are excluded at the entry). When the target is involved in player riding (as a vehicle or a passenger) the crouch pulse is skipped — a forced crouch would trigger the riding side's sneak-eject / the vanilla passenger sneak-dismount and break the tower; ride/pick-up also release any in-flight crouch pulse before mounting, so a crouched target never dismounts the moment it gets mounted.
+The forced crouch lasts 3 ticks and is visible to other players. Holding sneak keeps the player crouched; riding or carrying passengers skips the crouch to avoid dismounting. Hearts and sound still play.
 
 ---
 
@@ -413,17 +436,17 @@ When a chat message contains a player's name, the mentioned player gets a remind
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `whoCalledMe` |
-| **Description** | when a player's name appears in chat, the mentioned player gets three dings and a title showing the message (name highlighted); true=substring matching (longest name wins), mention=only @name triggers |
+| **Description** | Notify players by sound and title when named in chat, and highlight their names. Can be limited to @mentions. |
 | **Type** | `string` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true`, `mention` |
 | **Categories** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
 
-**How it works**: hooks Fabric `ServerMessageEvents.CHAT_MESSAGE` (injected at the HEAD of `PlayerManager.broadcast` — the common funnel for both signed and unsigned chat, so unsigned chat on offline-mode servers triggers too), zero mixins, pure server-side. Name matching is a case-insensitive **substring with longest-name-wins** — the mention fires whenever the name appears in the message, even glued to letters/digits ("Brokeyuan1", "abcBrokeyuan"); a hit fully covered by a longer player name does not fire (with Tim and Timy both online, "timy 来一下" pings only Timy, while the standalone "tim" in "timy tim" still pings Tim), favoring the complete name. The `mention` mode fires only on `@name` (highlighting the @name as a whole), suited to busy servers. Mentioning yourself notifies you too; only carpet fake players (as receivers) are ignored. The ding is an experience-orb chime sent as a directed packet (originating at the receiver's own position, audible only to them; pitches 1.2/1.6/2.0 in sequence); the first ding is sent immediately and synchronously, the rest follow every 6 ticks (300 ms), three in total — toggleable via `whoCalledMeSound`. The title uses a fixed 0.25 s fade-in / 3 s stay / 0.5 s fade-out with the typed message text as its content — the mentioned player's own name is highlighted in bold per `whoCalledMeHighlight` and the rest is white, so who called you is visible at a glance.
+Matching is case-insensitive. In `true` mode, any substring matches, with longer names taking precedence (`timy` does not also notify `Tim`). In `mention` mode only `@name` matches. Mentioning yourself works; fake players are not notified.
 
-**Companion rules**: `whoCalledMeSound` (boolean, default true) toggles the three-ding sound (title and chat highlight unaffected); `whoCalledMeHighlight` (string, default `gold`, options `yellow`/`aqua`/`green`/`red`/`none`) controls the highlight color of the mentioned name in chat and title — `none` disables highlighting and the chat decorator passes messages through unchanged.
+**Companion rules**: `whoCalledMeSound` defaults to `ding`; options are `false`, `true` (alias of `ding`), `ding`, `levelup`, `bell`, `pling` and `hit`. Sounds play three times, 6 ticks apart. `whoCalledMeHighlight` defaults to `aqua` and accepts all 16 vanilla colors, `rainbow` or `false`. `false` disables recoloring; unknown values, including old `none`, fall back to the default.
 
-**Chat name highlight**: via the vanilla `ChatDecorator` official extension point (@Inject over `MinecraftServer.getChatDecorator`, call site `handleChat`, signatures identical on all three endpoints per javap), player names appearing in the message text are rendered gold — send "xxx come here" and every player sees xxx in gold in chat. Ranges use greedy longest-first non-overlapping selection ("timy tim" highlights both, same-position overlap picks the longest name), other text keeps its original style; only player chat passes through the decorator (/say, join/leave and other system messages are unaffected), and messages without any player name pass through unchanged. On signed (premium) environments decorated content carries an "unverified" badge (offline servers without signatures are unaffected).
+Online player names are highlighted in player chat and the notification title. Other message styles are retained; system messages such as `/say` are unaffected. Titles fade in for 0.25 s, stay for 3 s, and fade out for 0.5 s. Long titles are cropped to 40 display-width units (CJK characters count as 2), retaining the first matched name. Decorated signed chat may carry an “unverified” badge; unsigned offline-mode chat is unaffected.
 
 ## Survival Features
 
@@ -439,6 +462,25 @@ Allows players to wear items on their head and adds the /hat command. When a Tot
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
 | **Categories** | `PRIMARYUAN`, `SURVIVAL`, `COMMAND` |
+
+---
+
+### playerHeadSkin - Player Head Skin
+
+Real players and Carpet fake players use a player head's full skin while wearing it in the head slot. Swapping heads updates the skin; removing the head, equipping another item, or disabling the rule restores the previous skin, including a configured fake player skin. Also applies when enabling the rule, joining, or respawning with a head equipped.
+
+| Property | Value |
+|----------|-------|
+| **Rule Name** | `playerHeadSkin` |
+| **Description** | Real and fake players use a worn player head's full skin; removing it or disabling the rule restores their original skin |
+| **Type** | `boolean` |
+| **Default Value** | `false` |
+| **Suggested Options** | `false`, `true` |
+| **Categories** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
+
+- Uses the head's embedded skin first; name-only or UUID-only heads are resolved asynchronously through vanilla services. Keeps the original skin while waiting or on failure. Mob heads and player heads without a valid skin source do not change the skin.
+- Changes only the skin: name, UUID, and game state stay intact, and the equipped head remains visible. Server-side; no skin mod required. Works independently of `playerHat`: equipping a player head normally is enough.
+- Refreshing a real player's own view may briefly show a loading screen. With an external container open or an item held by the cursor, self-refresh waits until the container is closed and the item is put back; other players see the change immediately.
 
 ---
 
@@ -479,13 +521,13 @@ Allows placing end crystals on crying obsidian. In vanilla, end crystals can onl
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `moreEndCrystalTypes` |
-| **Description** | Allows placing end crystals on crying obsidian: true=places a normal (vulnerable) crystal; invulnerable=places an invulnerable one (Invulnerable=1 with the bottom slab shown, identical to the invulnerable crystal obtainable by pushing it off a pillar mid dragon resurrection). In both modes the crystal's beam points to the fixed position (0,128,0). Crystals placed on obsidian/bedrock are unaffected |
+| **Description** | Allow end crystals, including invulnerable ones, on crying obsidian. Placement on obsidian and bedrock is unaffected. |
 | **Type** | `string` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true`, `invulnerable` |
 | **Categories** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
 
-**How it works**: vanilla `EndCrystalItem.useOn` only accepts obsidian/bedrock as the base; when the rule is enabled, the clicked crying obsidian is swapped for an obsidian state to pass the check, and all remaining placement logic (space check, entity collision check, spawning, item consumption) is reused from vanilla. The spawned crystal gets its beam target set to `(0, 128, 0)`; in invulnerable mode it is additionally set `Invulnerable` (immune to attacks/explosions, still pushable by pistons and breakable in creative) and renders its bottom slab. The same `useOn` runs on both client and server, so the local prediction matches the server; vanilla clients on a dedicated server work too (1.19+ clients send the interaction packet before the local prediction).
+Works on vanilla clients. Crying-obsidian crystals point their beam at `(0, 128, 0)`; invulnerable crystals retain their bottom slab, can be pushed by pistons and can be broken in creative. Ordinary placement checks and item consumption still apply.
 
 ---
 
@@ -496,30 +538,30 @@ Allows placing end crystals on crying obsidian. In vanilla, end crystals can onl
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `textAnimation` |
-| **Description** | /text pops dialogue text up character by character in front of online players (fake players excluded; `@a` for everyone or an online player name to direct — a target is required), holds, then lets the whole sentence drop and fade (MiSide-style text effect); one vanilla text_display entity per character, removed after play, pure server-side |
+| **Description** | Use /text to play MiSide-style subtitles in front of selected players, typing in before dropping and fading out. Works on vanilla clients. |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
 | **Categories** | `PRIMARYUAN`, `FEATURE`, `COMMAND` |
 
-**How it works**: command syntax and parameters are documented under `/text` in the commands doc (one greedy argument with inline `|` options; spaces free, no quotes). Every /text is one broadcast: each online human player (carpet fake players excluded at the entry) gets an independent session based on their own position and view direction; the console and command blocks work too, and an explicit error is returned when nobody can receive it. Timeline: character-by-character pop-in (1 char/tick, one vanilla text_display entity per character, spawned with a random ±45° tilt at 1.8x scale that tweens to the final state over 10 client-side transformation interpolation ticks, plus a click sound per character; **the whole group follows the player's live view while typing** — anchor re-computed from position and orientation each tick, already-spawned glyphs translate and rotate with it while staying a rigid line, zero packets when the player stands still, frozen in world coordinates once typing completes) → hold for 40 ticks → drop (server-side physics: gravity 0.03/tick², drag 0.99, one 0.28 bounce on landing, a one-shot random tumble at drop start, and fading from tick 24 of the drop at -8 opacity/tick; entities are removed once played out). Long texts are split into groups at punctuation (≤25 characters per group, with the break point pushed to a punctuation mark within 10 characters ahead); non-final groups get a " - " connector, the next group starts typing as soon as the previous one starts dropping, and groups get a random ±22.5° yaw and height jitter. The spawn point is each player's feet + view direction × distance, at feet +1.3; the default color is white #FFFFFF, and legacy & color codes are supported (&c etc., && for a literal &, color codes reset style flags like vanilla §); **trailing exclamation gain, uncapped** — each consecutive trailing `!`/`！` adds +0.3 to the whole sentence's scale (the more exclamation marks, the bigger) and multiplies the spawn distance by ×1.15 (the more, the farther, keeping oversized text out of the player's face; the distance gain is gentler than the scale gain so the text still reads as bigger) (trailing spaces don't interrupt, other characters do), and letter spacing defaults to a proportional 0.15×final scale to prevent overlap after enlargement (an explicit spacing wins). Guards: ≤128 characters per sentence, ≤8 concurrent broadcasts server-wide; each player's spawn chunk must be ENTITY_TICKING (guaranteed by the player ticket while online; players whose chunks are not loaded are skipped — vanilla writes entities added to non-entity-ticking chunks back to the chunk as UNLOADED_TO_CHUNK, verified by local E2E). Vanilla never offered a programmatic interface for display entities (text/transformation/interpolation/opacity setters are all private; signatures verified identical on 1.21/1.21.11/26.3 via javap), so two @Invoker mixin accessors drive them; entity tag reads were renamed to entityTags in 26.1.2 and entity type constants moved to EntityTypes (plural) in 26.2, handled by preprocessor forks. Orphan entities left by crashes/kills carry the `pry_textanim` tag and are swept at server start plus every 100 ticks (skipped while sessions are active, so playing glyphs are never swept — a sweep-kills-live-glyphs bug was reproduced and fixed locally).
+Use `/text @a <message>` or `/text <player> <message>`; the target is required. The console and command blocks work too. Default text is white, with `&` color codes supported. Up to 12 eligible recipients get display-entity subtitles; remaining recipients get an actionbar typewriter. Limit: 128 characters per message and 8 concurrent broadcasts. See [command syntax and options](commands_en.md#text---miside-subtitles).
 
 ---
 
-### redPacket - Red Packet
+### clickThrough - Click Through
 
-/redpacket sends a red packet (lucky/normal/exclusive/password types) broadcast in chat with a clickable claim link; unclaimed shares are refunded on expiry.
+Right-clicking a wall sign, wall hanging sign, wall banner, item frame or painting opens the container mounted directly behind it; sneaking keeps the vanilla interaction.
 
 | Property | Value |
 |----------|-------|
-| **Rule Name** | `redPacket` |
-| **Description** | /redpacket sends a red packet (lucky/normal/targeted/password types) broadcast in chat with a clickable claim link; unclaimed shares are refunded on expiry; server-side vanilla GUI, no client install needed |
+| **Rule Name** | `clickThrough` |
+| **Description** | Right-clicking a wall sign, wall hanging sign, wall banner, item frame or painting opens the container mounted directly behind it; sneaking keeps the vanilla interaction, so does having no container behind |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
-| **Categories** | `PRIMARYUAN`, `FEATURE`, `COMMAND` |
+| **Categories** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
 
-**How it works**: command syntax, the four distribution rules and GUI slots are documented under `/redpacket` in the commands doc. Claimed-out and expired packets are announced server-wide in gray (later clicks get proper "fully claimed/expired" feedback instead of silence); items inside the item-input GUI on disconnect go to the offline refund storage (re-delivered on next join); sending and claiming play a sound (experience orb, same verified recipe as the pat rule). The whole flow runs on a server-side custom menu with Slot-level protection (protected slots are mayPlace/mayPickup=false, removeItem returns empty, set is a no-op, and clicked only lets left clicks through as callbacks — shift-click/number-swap/drag/throw/clone are all blocked; container-level interception alone is bypassed by quickMoveStack/moveItemStackTo/doClick SWAP, causing icon duplication and item evaporation in production). The chat broadcast is a bright-red clickable component (RUN_COMMAND opening `/redpacket claim <id>`); password packets are claimed by typing the exact password in chat (reusing ServerMessageEvents.CHAT_MESSAGE). Shares are split once at send time per type with guaranteed conservation (stars-and-bars random composition / random remainder placement, covered by JUnit contract tests); validity is 3 minutes, unclaimed shares are returned to the sender on expiry, stored while they are offline and re-delivered on their next join; a packet is marked claimed-out once fully claimed (kept for a while so later clicks still see the feedback). Abuse guards: 10-tick claim-click debounce, 10-second send cooldown, at most 3 unfinished packets per player. Player heads use the PROFILE component resolved asynchronously by name (ResolvableProfile factory since 1.21.10, record constructor on 1.21-1.21.8, javap-verified fork); since 26.2 dyed item constants live in ColorCollection picked by DyeColor. **Restart semantics**: running packets, offline refund storage, cooldowns and debounce state are in-memory only and cleared on server restart (same documented behavior as fake player brain keep).
+Sneaking retains sign editing and frame rotation. Standing signs and banners are not handled; spectators cannot trigger it. Containers still follow vanilla blocked-opening checks. Installing ClickThrough Server (`clickthrough_server`) disables this rule’s handler to avoid duplicate interactions.
 
 ---
 
@@ -527,12 +569,12 @@ Allows placing end crystals on crying obsidian. In vanilla, end crystals can onl
 
 ### playerScale - Player Scale
 
-Registers the `minecraft:scale` attribute for Player and manages player size through the `/scale set|reset|info` command (value only needs to be greater than 0, with no fixed bounds; this mod lets any finite positive value through the SCALE attribute, keeping the command feedback consistent with the effective value); also compensates the scaling-induced FOV change (requires the mod installed client-side).
+Adjust player size with `/scale set|reset|info`. Values must be finite and greater than 0, within `playerScaleMin` and `playerScaleMax`; FOV compensation requires client installation.
 
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `playerScale` |
-| **Description** | Registers the minecraft:scale attribute for Player and enables /scale set\|reset\|info; value only needs to be greater than 0, bounded by playerScaleMin/Max. false=hide command; self=adjust self only; true=adjust self, admins adjust anyone; everyone=anyone adjusts anyone. FOV compensation requires client install |
+| **Description** | Adjust player size with /scale within playerScaleMin and playerScaleMax. FOV compensation requires client installation. |
 | **Type** | `string` |
 | **Default Value** | `"false"` |
 | **Suggested Options** | `false`, `true`, `self`, `everyone` |
@@ -583,8 +625,10 @@ Maximum scale value all players can set via `/scale set`; admins are limited too
 
 Player physics scale with size in one of four modes. Requires the playerScale rule to adjust size.
 
+| Property | Value |
+|----------|-------|
 | **Rule Name** | `playerScalePhysics` |
-| **Description** | Player physics scale with size (requires playerScale): true=gentle, key attributes scale with sqrt(scale); safety=gentle + small-size floors (speed/gravity 0.3x, jump/step/interaction/fall 0.5x, recommended); strict=strictly proportional, jump height proportional to size. Details in the rules doc |
+| **Description** | Scale movement, jumping, reach and gravity with player size, with optional minimum values for small players. |
 | **Type** | `string` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true`, `safety`, `strict` |
@@ -595,7 +639,7 @@ Player physics scale with size in one of four modes. Requires the playerScale ru
 | `false` | Disabled (default) |
 | `true` | Gentle: every linked quantity scales with the √scale curve, no floors |
 | `safety` | Gentle+floors (recommended): same curve as true, with small-size (scale<1.0) floors so tiny sizes stay playable |
-| `strict` | Strictly proportional: every linked quantity scales exactly with size, no floors at all |
+| `strict` | Movement, reach and jump height scale proportionally; gravity remains √scale; no floors |
 
 | Linked dimension | true / safety (gentle) | strict (proportional) | safety floor (scale<1.0 only) |
 |-------------------|------------------------|------------------------|-------------------------------|
@@ -609,13 +653,11 @@ Player physics scale with size in one of four modes. Requires the playerScale ru
 | Safe fall distance | √scale | ×scale | 0.5× |
 | Fall speed (gravity) | √scale | √scale | 0.3× |
 
-All attribute modifications use transient modifiers (not persisted to save data) and are removed automatically when the rule is disabled or size returns to 1.0. Design intent of the three modes:
+Modifiers are temporary and are removed when the rule is disabled or size returns to 1.0.
 
-- **true / safety (gentle)**: the √scale curve keeps large players restrained (a 16× player moves 4× faster instead of 16×) and small players floaty; `safety` adds scale<1.0 floors on top (speed/flying/gravity 0.3×, jump/step/interaction/fall 0.5×), keeping extreme sizes (e.g., 0.1) playable — recommended for most servers.
-- **strict (proportional)**: movement speed, step height, interaction ranges and safe fall distance scale exactly ×scale; jump strength scales ×scale^0.75 which, paired with gravity ×√scale, keeps jump height proportional to size (a 2× player jumps 2× as high); no floors at all — tiny players may be too weak to interact with blocks. For geometry-focused play.
-- **Gravity**: ×√scale in every mode — gravity is an acceleration rather than a size quantity; the square-root curve pairs with the jump curve and keeps terminal velocity under control (linear scaling would give a 16× player a terminal velocity of about 62 blocks/tick, tunneling through the world).
+- `safety` applies the floors in the table only below size 1.0.
+- Creative flight overrides vertical gravity. Elytra flight and firework movement follow the movement multiplier; wall-collision damage uses vanilla stored speed and is not scaled with displacement.
 
-During creative flight vanilla overrides the vertical velocity, so gravity has no effect; during elytra gliding the gravity term does follow the gravity attribute, and gliding/firework movement distance is scaled by the elytra mixin using the same factor as movement speed (mode-dependent, see table above) — larger players glide and boost faster with wider turning radii (geometric similarity), smaller ones slower and floatier. Known trade-off: elytra wall-crash damage is computed from stored velocity (vanilla magnitude) and does not scale with the displacement.
 
 ### playerScaleLinkedEntities - Player Scale Linked Entities
 
@@ -624,17 +666,16 @@ Living entities spawned directly by a player using an item inherit the player's 
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `playerScaleLinkedEntities` |
-| **Description** | Living entities spawned directly by a player using an item inherit the player's size snapshot (armor stands, spawn-egg mobs, built iron/snow/copper golems; ratios stack with existing modifiers such as babies). Living entities from the player's hand only; dispensers/spawners and non-living entities are not linked |
+| **Description** | Living entities spawned by a player using an item inherit that player’s size at spawn. Dispensers, spawners and non-living entities are unaffected. |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
 | **Categories** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
 
-**How it works**: every server-side "player uses item" goes through the ServerPlayerGameMode funnels useItem / useItemOn, and spawned entities are added via ServerLevel.addFreshEntity (addFreshEntityWithPassengers delegates to it per passenger). While the funnel is active the acting player is recorded; on entity add, the player's current `minecraft:scale` value is written into the spawned living entity's scale base value.
+Size is captured at spawn and does not track later player changes. Existing modifiers, including baby size, still apply. A player at size 1.0 leaves custom entity sizes untouched.
 
 **Coverage**:
 
-- ✅ Living entities (minecraft:scale base value written; model + hitbox follow the vanilla attribute and sync to clients): armor stands, spawn-egg mobs (baby modifiers stack proportionally), built iron/snow/copper golems (pumpkin-place construction happens synchronously inside the use funnel)
-- ❌ Projectiles, dropped items, item frames, boats, minecarts, TNT, end crystals, paintings: not linked (rendering and hitboxes untouched)
-- ❌ Entities produced by dispensers, spawners and other block devices — not a player-use path, not linked
-- The written value is a snapshot at spawn time and does not follow later size changes; players at size 1.0 never modify anything (mod-defined entity sizes are untouched)
+- Armor stands, spawn-egg mobs and player-built golems inherit size.
+- Projectiles, dropped items, frames, boats, minecarts, TNT, end crystals and paintings are unaffected.
+- Dispensers, spawners and other block devices do not trigger it.

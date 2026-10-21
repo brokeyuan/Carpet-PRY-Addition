@@ -10,16 +10,16 @@ import com.google.gson.JsonParser;
 import me.primaryuan.carpet.brain.BrainManager;
 import me.primaryuan.carpet.command.HatCommand;
 import me.primaryuan.carpet.command.PvpCommand;
-import me.primaryuan.carpet.command.RedPacketCommand;
 import me.primaryuan.carpet.command.PatNodCommand;
 import me.primaryuan.carpet.command.RidingCommand;
 import me.primaryuan.carpet.command.ScaleCommand;
 import me.primaryuan.carpet.command.TextCommand;
 import me.primaryuan.carpet.command.TppCommand;
+import me.primaryuan.carpet.handler.clickThrough.ClickThroughHandler;
 import me.primaryuan.carpet.handler.entitiesRidingPlayers.EntitiesRidingPlayersHandler;
 import me.primaryuan.carpet.handler.patPatPlayers.PatPatPlayersHandler;
 import me.primaryuan.carpet.handler.peacefulPlayers.PvpManager;
-import me.primaryuan.carpet.handler.redPacket.RedPacketManager;
+import me.primaryuan.carpet.handler.playerHeadSkin.PlayerHeadSkinHandler;
 import me.primaryuan.carpet.handler.textAnimation.TextAnimationHandler;
 import me.primaryuan.carpet.handler.whoCalledMe.WhoCalledMeHandler;
 import me.primaryuan.carpet.settings.CarpetRuleRegistrar;
@@ -28,6 +28,7 @@ import me.primaryuan.carpet.util.SendtoLinkManager;
 //#if MC < 12111
 //$$ import net.fabricmc.fabric.api.entity.event.v1.EntitySleepEvents;
 //#endif
+import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.world.InteractionResult;
@@ -62,8 +63,7 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
             "playerScale",                    // /scale
             "patPatPlayers",                  // /patnod
             "peacefulPlayers",                // /pvp
-            "textAnimation",                  // /text
-            "redPacket"                       // /redpacket
+            "textAnimation"                   // /text
     );
 
     @Override
@@ -91,7 +91,6 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         PvpCommand.register();
         PatNodCommand.register();
         TextCommand.register();
-        RedPacketCommand.register();
 
         // 和平的玩家（pvp）：加载持久化状态、注册 PVP 伤害拦截与玩家加入登记
         PvpManager.init();
@@ -108,15 +107,15 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         // 米塔字幕：孤儿实体清扫（启动）与停服清理
         TextAnimationHandler.init();
 
-        // 红包：口令聊天监听、上线补发、过期检查与停服清理
-        RedPacketManager.init();
-
         // 假人背包链接（sendto）：初始化 tick 转移调度、假人下线清理与服务器停止清空监听
         SendtoLinkManager.init();
 
         // 假人脑子（brain）：初始化会话周期扫描与停服清理
         // （跨维度不在此处重挂——由 MobFields 检测维度变化重建寻路器并作废旧路径）
         BrainManager.init();
+
+        // 玩家头部皮肤：头颅变化检测、皮肤还原与异步会话清理
+        PlayerHeadSkinHandler.init();
 
         // require=0 注入点自检：规则开启但注入被静默跳过时以 error 点名（MixinSanityCheck）
         MixinSanityCheck.init();
@@ -127,7 +126,19 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
             EntitiesRidingPlayersHandler.onLogOut(handler.player);
         });
 
+        // 穿透点击：右键墙告示牌/挂墙木牌/墙横幅直接打开背后容器（展示框/画在下方 UseEntityCallback 内）
+        UseBlockCallback.EVENT.register(ClickThroughHandler::useBlock);
+
         UseEntityCallback.EVENT.register((player, level, hand, entity, hitResult) -> {
+            // 穿透点击最先处理：展示框/发光展示框/画命中且背后有容器时消费交互（打开背后容器），
+            // 原版旋转/放置不再走、其余监听短路；PASS 时自然落到骑乘/摸摸头（目标类型互斥）
+            if (CarpetPrimaryuanSettings.clickThrough) {
+                InteractionResult clickResult = ClickThroughHandler.useEntity(player, level, hand, entity, hitResult);
+                if (clickResult != InteractionResult.PASS) {
+                    return clickResult;
+                }
+            }
+
             if (CarpetPrimaryuanSettings.ridingPlayers || CarpetPrimaryuanSettings.pickupPlayers) {
                 InteractionResult rideResult =
                         EntitiesRidingPlayersHandler.rideOrPickUp(player, entity, level, hand, hitResult);

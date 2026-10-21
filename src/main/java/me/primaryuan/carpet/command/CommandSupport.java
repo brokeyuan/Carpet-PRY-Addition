@@ -2,6 +2,7 @@ package me.primaryuan.carpet.command;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import me.primaryuan.carpet.i18n.ServerI18n;
@@ -23,6 +24,19 @@ import java.util.concurrent.CompletableFuture;
 public final class CommandSupport {
 
     private CommandSupport() {}
+
+    /**
+     * 解析命令来源为玩家；控制台/RCON 等非玩家来源发送统一失败提示并返回 null。
+     * 统一此前各命令各自的裸 getPlayerOrException 原版提示与 /pvp 的自定义提示。
+     */
+    public static ServerPlayer requirePlayer(CommandContext<CommandSourceStack> ctx) {
+        try {
+            return ctx.getSource().getPlayerOrException();
+        } catch (CommandSyntaxException e) {
+            ctx.getSource().sendFailure(ServerI18n.tr("carpetprimaryuan.command.support.player_only"));
+            return null;
+        }
+    }
 
     /**
      * 从 CommandContext 中解析目标 ServerPlayer。

@@ -112,11 +112,16 @@ public final class DropSlotScheduler {
     }
 
     /**
-     * 立即丢一次（用于命令层 once 子节点）。
+     * 立即丢出指定槽位；SLOT_ALL 一次清空背包，定时任务仍每次只丢一组。
      * 返回丢出的物品数量（0 表示没有可丢的物品）。
      */
     public static int dropOnce(ServerPlayer player, int slot) {
-        return dropOneStack(player, slot);
+        if (slot != SLOT_ALL) return dropOneStack(player, slot);
+        int dropped = 0;
+        for (int index = 0; index < player.getInventory().getContainerSize(); index++) {
+            dropped += dropOneStack(player, index);
+        }
+        return dropped;
     }
 
     // ===== Internal =====
