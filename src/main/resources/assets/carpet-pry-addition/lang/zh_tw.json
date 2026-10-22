@@ -1,6 +1,6 @@
 {
   "carpet.rule.fakePlayerTpp.name": "假人珍珠站傳送",
-  "carpet.rule.fakePlayerTpp.desc": "用假人觸發珍珠傳送站，提供 /tpp 和 /tppset。/tpp 需要 Carpet TIS Addition。",
+  "carpet.rule.fakePlayerTpp.desc": "用假人觸發珍珠傳送站，站點支援內部名和顯示名補全。/tpp 需要 Carpet TIS Addition。",
   "carpet.rule.fakePlayerNameSuggestions.name": "假人名稱建議",
   "carpet.rule.fakePlayerNameSuggestions.desc": "自訂 /player 命令建議的假人名稱清單，使用 ',' 分隔",
   "carpet.rule.fakePlayerSkinMode.name": "假人皮膚設定",

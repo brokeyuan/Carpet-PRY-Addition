@@ -1,6 +1,6 @@
 {
   "carpet.rule.fakePlayerTpp.name": "Fake Player Pearl Station TP",
-  "carpet.rule.fakePlayerTpp.desc": "Use fake players to trigger pearl teleport stations with /tpp and /tppset. /tpp requires Carpet TIS Addition.",
+  "carpet.rule.fakePlayerTpp.desc": "Use fake players to trigger pearl teleport stations, with station completion by internal or display name. /tpp requires Carpet TIS Addition.",
   "carpet.rule.fakePlayerNameSuggestions.name": "Fake Player Name Suggestions",
   "carpet.rule.fakePlayerNameSuggestions.desc": "Customize the fake player names suggested by the /player command, separated by ','",
   "carpet.rule.fakePlayerSkinMode.name": "Fake Player Skin Mode",

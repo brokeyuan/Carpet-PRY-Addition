@@ -13,6 +13,7 @@
 
 - 配置分层：`/tppset` 站点、`/pvp` 和平名单、`/patnod` 偏好随存档迁移至 `<存档>/carpet-pry-addition/`，旧版 `config/carpet-pry-*.json` 首次启动自动收编；配置文件懒创建，未使用功能不再生成空文件
 - 规则注册改用 carpet 官方注解解析（`parseSettingsClass`），移除反射注册器；启动不再逐条输出 `Registered rule` 日志
+- TPP 站点支持按内部名或显示名前缀补全显示名，如 `qwp` 补全为 `全物品`
 
 ## [1.3.1] - 2026-10-21
 

@@ -412,10 +412,12 @@ public class TppCommand {
     }
 
     /**
-     * 自动补全：从 TppConfigManager 获取所有站点显示名称
+     * 自动补全：匹配内部名或显示名，填入显示名。
      */
     private static CompletableFuture<Suggestions> suggestStations(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
-        CommandSupport.suggestMatching(builder, TppConfigManager.getDisplayNames());
+        for (String displayName : TppConfigManager.getMatchingDisplayNames(builder.getRemaining())) {
+            builder.suggest(displayName);
+        }
         return builder.buildFuture();
     }
 }

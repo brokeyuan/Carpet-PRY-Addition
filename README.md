@@ -83,7 +83,7 @@
 
 ### 假人增强
 
-- `fakePlayerTpp`：假人珍珠传送站，附 `/tpp` / `/tppset` 命令
+- `fakePlayerTpp`：假人珍珠传送站，附 `/tpp` / `/tppset` 命令，支持内部名补全显示名
 - `fakePlayerSkinMode` / `fakePlayerSkinSet`：假人皮肤模式（默认 / 召唤时 / 统一皮肤）与统一皮肤玩家名；皮肤就绪时在出生前应用，解析中可能短暂显示默认皮肤，不影响真人
 - `fakePlayerDropAll`：`/player dropall` 按设定节奏持续丢出假人背包物品
 - `fakePlayerSendto`：`/player sendto` 建立假人间单向背包物品流

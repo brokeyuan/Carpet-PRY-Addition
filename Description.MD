@@ -67,6 +67,8 @@ Commands:
 - `/tpp <station>` — teleport to a station.
 - `/tppset` — manage stations, player aliases, and per-station pearl use counts. Data lives in the world save at `carpet-pry-addition/tpp.json` (auto-migrated from the old config path).
 
+Station completion matches internal-name or display-name prefixes, ignoring case, and inserts the display name. With `/tppset set qwp 全物品`, typing `/tpp qwp` suggests `全物品`.
+
 `/tpp` requires [Carpet TIS Addition](https://modrinth.com/mod/carpet-tis-addition) — its `/player rejoin` respawns the station's fake player at its logged-off position and orientation. This is a soft dependency: without it, `/tpp` immediately reports the missing requirement, while `/tppset` and everything else work normally.
 
 ### Fake Player Continuous Drop (`fakePlayerDropAll`)
