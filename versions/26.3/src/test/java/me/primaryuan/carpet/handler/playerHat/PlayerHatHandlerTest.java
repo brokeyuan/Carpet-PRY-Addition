@@ -55,6 +55,15 @@ class PlayerHatHandlerTest {
         assertFalse(PlayerHatHandler.tryEquip(p, InteractionHand.MAIN_HAND, before));
     }
 
+    @Test void useRayFollowsCurrentPacketRotationRatherThanHeadAnimation() throws Exception {
+        var p = player();
+        p.setYRot(0); p.setXRot(0); p.setYHeadRot(180);
+        assertTrue(p.getViewVector(1).z < -.99);
+        assertEquals(1, PlayerHatHandler.useDirection(p).z, .00001);
+        p.setXRot(-90);
+        assertEquals(1, PlayerHatHandler.useDirection(p).y, .00001);
+    }
+
     private static Fixture player() throws Exception {
         var field = Unsafe.class.getDeclaredField("theUnsafe"); field.setAccessible(true);
         var p = (Fixture) ((Unsafe) field.get(null)).allocateInstance(Fixture.class);
