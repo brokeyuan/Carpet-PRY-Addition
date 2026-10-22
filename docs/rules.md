@@ -60,7 +60,7 @@
 | 属性 | 值 |
 |------|-----|
 | **规则名** | `fakePlayerTpp` |
-| **描述** | 用假人触发珍珠传送站，提供 /tpp 和 /tppset。/tpp 需要 Carpet TIS Addition。 |
+| **描述** | 用假人触发珍珠传送站，站点支持内部名和显示名补全。/tpp 需要 Carpet TIS Addition。 |
 | **类型** | `boolean` |
 | **默认值** | `false` |
 | **参考选项** | `false`, `true` |

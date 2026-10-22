@@ -75,7 +75,7 @@ All rules are off by default except the client-side rule `ridingPlayersClientInt
 
 ### Fake Player Enhancements
 
-- `fakePlayerTpp`: fake player pearl teleport stations with `/tpp` / `/tppset`
+- `fakePlayerTpp`: fake player pearl teleport stations with `/tpp` / `/tppset`; internal-name prefixes complete to display names
 - `fakePlayerSkinMode` / `fakePlayerSkinSet`: fake player skin mode (default / summon / same skin) and the shared skin player name; applied before spawn when available, with a possible brief default skin during lookup; real players are unaffected
 - `fakePlayerDropAll`: paced `/player dropall` dropping of the fake player's inventory
 - `fakePlayerSendto`: `/player sendto` one-way inventory item flow between fake players

@@ -60,7 +60,7 @@ Use fake players to quickly use pearl teleport stations. When set to true, enabl
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `fakePlayerTpp` |
-| **Description** | Use fake players to trigger pearl teleport stations with /tpp and /tppset. /tpp requires Carpet TIS Addition. |
+| **Description** | Use fake players to trigger pearl teleport stations, with station completion by internal or display name. /tpp requires Carpet TIS Addition. |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |

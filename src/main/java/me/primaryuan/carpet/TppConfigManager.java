@@ -285,12 +285,21 @@ public class TppConfigManager {
     }
 
     /**
-     * 获取所有站点的显示名称列表（用于 Tab 补全）
+     * 获取所有站点的显示名称列表。
      */
     public static List<String> getDisplayNames() {
+        return getMatchingDisplayNames("");
+    }
+
+    /** 按内部名或显示名的前缀匹配站点，忽略大小写，返回显示名供补全。 */
+    public static List<String> getMatchingDisplayNames(String prefix) {
         List<String> result = new ArrayList<>();
         for (String key : stationMap.keySet()) {
-            result.add(getDisplayName(key));
+            String displayName = getDisplayName(key);
+            if (key.regionMatches(true, 0, prefix, 0, prefix.length())
+                    || displayName.regionMatches(true, 0, prefix, 0, prefix.length())) {
+                result.add(displayName);
+            }
         }
         return result;
     }

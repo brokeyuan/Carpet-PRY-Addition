@@ -40,6 +40,8 @@
 
 With no argument, lists all available stations (display names preferred).
 
+Station completion matches internal-name or display-name prefixes, ignoring case, and inserts the display name (or the internal name if unset). After `/tppset set qwp 全物品`, `/tpp q`, `/tpp qwp` and `/tpp 全` all suggest `全物品`. Abbreviations come from internal names; pinyin is not generated. Station arguments in `/tppset spawn`, `remove` and `rule use` share this completion.
+
 #### Permission
 
 Requires the `fakePlayerTpp` rule to be enabled.
