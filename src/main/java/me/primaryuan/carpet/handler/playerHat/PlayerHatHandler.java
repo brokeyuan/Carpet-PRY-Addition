@@ -8,6 +8,7 @@ import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.EnchantmentEffectComponents;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
@@ -44,12 +45,19 @@ public final class PlayerHatHandler {
     }
 
     private static boolean aimsAtAir(ServerPlayer player) {
-        if (player.pick(player.blockInteractionRange(), 1.0F, false).getType() != HitResult.Type.MISS) return false;
         Vec3 start = player.getEyePosition();
-        Vec3 ray = player.getViewVector(1.0F).scale(player.entityInteractionRange());
+        Vec3 direction = useDirection(player);
+        if (player.level().clip(new ClipContext(start, start.add(direction.scale(player.blockInteractionRange())),
+                ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player)).getType() != HitResult.Type.MISS) return false;
+        Vec3 ray = direction.scale(player.entityInteractionRange());
         return ProjectileUtil.getEntityHitResult(player, start, start.add(ray),
                 player.getBoundingBox().expandTowards(ray).inflate(1.0),
                 entity -> !entity.isSpectator() && entity.isPickable(), ray.lengthSqr()) == null;
+    }
+
+    static Vec3 useDirection(ServerPlayer player) {
+        // 使用包更新当前视角；getViewVector 会读可能滞后的头部动画朝向。
+        return player.calculateViewVector(player.getXRot(), player.getYRot());
     }
 
     public record Snapshot(ItemStack main, ItemStack mainCopy, ItemStack head, ItemStack headCopy) {}
