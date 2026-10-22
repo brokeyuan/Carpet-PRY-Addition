@@ -103,7 +103,7 @@ All rules are off by default except the client-side rule `ridingPlayersClientInt
 
 - `sleepingDuringTheDay`: sleep during daytime, wake to night
 - `textAnimation`: `/text @a|player <message>` plays MiSide-style subtitles on vanilla clients; the first 12 recipients get entity subtitles and the rest get an actionbar typewriter
-- `playerHat`: `/hat` to wear items on head, Totem of Undying in head slot triggers death protection
+- `playerHat`: `/hat` or main-hand air use swaps whole hat stacks; the shortcut excludes tools, usable items and a nonempty offhand; head-slot totems retain death protection
 - `playerHeadSkin`: real and fake players wear a player head to use its full skin; removing it restores the original skin, server-side
 - `betterSnowball`: snowballs deal knockback and damage to players
 - `invisibleInTallGrass`: auto-invisibility when head is inside tall grass

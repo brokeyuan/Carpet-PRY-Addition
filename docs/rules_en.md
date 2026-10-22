@@ -452,16 +452,22 @@ Online player names are highlighted in player chat and the notification title. O
 
 ### playerHat - Player Hat
 
-Allows players to wear items on their head and adds the /hat command. When a Totem of Undying is placed in the head slot, the death protection effect is triggered.
+Right-click air with the main hand to swap whole hat stacks; tools, usable items and a nonempty offhand disable this shortcut. Includes /hat and head-slot totem protection.
 
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `playerHat` |
-| **Description** | Allows players to wear items on their head and adds the /hat command. When a Totem of Undying is placed in the head slot, the death protection effect is triggered |
+| **Description** | Right-click air with the main hand to swap whole hat stacks; tools, usable items and a nonempty offhand disable this shortcut. Includes /hat and head-slot totem protection |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
 | **Categories** | `PRIMARYUAN`, `SURVIVAL`, `COMMAND` |
+
+Right-click air with an ordinary main-hand item to exchange the complete hand and head stacks. No hold duration is required. The offhand must be empty; Binding Curse prevents survival swaps, and identical items with identical components do not swap repeatedly. Dragging items into the inventory head slot retains its vanilla capacity of one.
+
+The shortcut excludes tools, weapons, food, drinks, blocking, charging and native right-click equipment, preserving their use behavior. Mod items with custom air, block or entity interactions are conservatively excluded; standard block placement still permits wearing ordinary blocks when aiming at air. `/hat` remains available for manual use with these items.
+
+Datapacks can exclude item IDs through `data/carpet-pry-addition/tags/item/hat_use_blacklist.json`; changes apply on reload. The default tag is empty, for example `{"values":["minecraft:diamond"]}`. External scripts returning `PASS` without observable state changes or use components cannot be detected universally and should use this tag. Exclusions apply to the entire item type, not individual custom stacks.
 
 ---
 
