@@ -25,6 +25,7 @@
     "rule.fixXaeroLib.PlayerConfigChannelPermissionUpdaterMixin",
     "rule.fixBluemap.PlayerListFakePlayerEventsMixin",
     "rule.playerHat.LivingEntityMixin",
+    "rule.playerHat.ServerPlayerGameModeMixin",
     "rule.betterSnowball.SnowballMixin",
     "rule.fakePlayerDropAll.EntityPlayerActionPackMixin",
     "rule.fakePlayerCommandExtensions.PlayerCommandExtensionsMixin",

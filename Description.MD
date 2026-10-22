@@ -91,7 +91,7 @@ Give fake players one of 19 mob behavior modes with `/player <name> brain <mode>
 
 ![](https://cdn.modrinth.com/data/cached_images/a53fc27b646fd4d9b41b911e25161a0a7a42d165_0.webp)
 
-Wear any main-hand item on your head with the `/hat` command. When a **Totem of Undying** is placed in the helmet slot, taking fatal damage triggers a survival effect: **Regeneration II + Absorption II + Fire Resistance I**.
+Use `/hat` to swap whole main-hand and head stacks, or right-click air with an empty offhand. The shortcut excludes tools and usable items, respects Binding Curse, and supports the `carpet-pry-addition:hat_use_blacklist` item tag. When a **Totem of Undying** is placed in the helmet slot, taking fatal damage triggers a survival effect: **Regeneration II + Absorption II + Fire Resistance I**.
 
 ### Player Head Skin (`playerHeadSkin`)
 

@@ -110,7 +110,7 @@
 ### 生存功能
 
 - `sleepingDuringTheDay`：白天睡觉，睡醒切换至夜晚
-- `playerHat`：`/hat` 将物品戴在头上，头部不死图腾可触发死亡保护
+- `playerHat`：`/hat` 或主手对空气右键整组换帽；右键入口排除工具、功能物品和副手非空，保留头部图腾保护
 - `playerHeadSkin`：真人与假人戴玩家头颅切换全身皮肤，摘下恢复原皮肤，纯服务端
 - `betterSnowball`：雪球对玩家造成击退与伤害
 - `invisibleInTallGrass`：头部位于高草丛时自动隐身
