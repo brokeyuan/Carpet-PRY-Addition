@@ -2,6 +2,7 @@ package me.primaryuan.carpet.handler.countdown;
 
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.UUID;
 
@@ -15,12 +16,20 @@ import java.util.UUID;
  *
  * <p>进度分母（有效总时长）初始为启动时长；set/add 使剩余超过分母时同步扩展，
  * 保证进度恒在 [0,1]；remove 不收缩分母。</p>
+ *
+ * <p>长程节拍（里程碑）：固定节拍表按剩余秒数逐点触发一次中央提示。仅"真实
+ * 变小"的秒数跨越才会触发；一次跨越多个节拍时只发最接近落点的一个（其余静默
+ * 标记已触发）；时间变长（add/set time 上调）不回滚已触发状态；禁用后重新启用
+ * 按当前剩余重新武装（小于当前秒的节拍才武装，避免瞬间连响）。</p>
  */
 public final class CountdownSession {
 
     public enum State { IDLE, RUNNING, PAUSED, COMPLETING }
 
     private static final long NANOS_PER_SECOND = 1_000_000_000L;
+
+    /** 长程节拍表（秒），递减排列；10..1 的逐秒倒数由 last 窗口 + 音效承担，不入表 */
+    public static final long[] MILESTONE_BEATS = {1800, 900, 600, 300, 60, 30, 15};
 
     private State state = State.IDLE;
     private long durationNanos;
@@ -36,6 +45,13 @@ public final class CountdownSession {
     private String label;
     private boolean dynamicAll;
     private final Set<UUID> snapshotTargets = new HashSet<>();
+
+    private boolean milestonesEnabled = true;
+    private boolean soundEnabled = true;
+    /** 上次节拍检测的剩余整秒（跨越检测基线） */
+    private long lastMilestoneSecond;
+    /** 尚未触发的节拍集合 */
+    private final Set<Long> armedMilestones = new HashSet<>();
 
     private CountdownSession() {}
 
@@ -61,6 +77,13 @@ public final class CountdownSession {
         s.dynamicAll = dynamicAll;
         if (snapshot != null) {
             s.snapshotTargets.addAll(snapshot);
+        }
+        // 节拍武装：小于启动时长的节拍才生效（等于或大于的按"启动即在节拍上"跳过）
+        s.lastMilestoneSecond = durationSeconds;
+        for (long m : MILESTONE_BEATS) {
+            if (m < durationSeconds) {
+                s.armedMilestones.add(m);
+            }
         }
         return s;
     }
@@ -121,6 +144,58 @@ public final class CountdownSession {
         if (snapshot != null) {
             this.snapshotTargets.addAll(snapshot);
         }
+    }
+
+    // ==================== 节拍与音效开关 ====================
+
+    public boolean milestonesEnabled() {
+        return milestonesEnabled;
+    }
+
+    public boolean soundEnabled() {
+        return soundEnabled;
+    }
+
+    public void setSoundEnabled(boolean on) {
+        soundEnabled = on;
+    }
+
+    /** 开关节拍提示：启用时按当前剩余整秒重新武装（小于当前秒的节拍才武装） */
+    public void setMilestonesEnabled(boolean on, int currentSec) {
+        milestonesEnabled = on;
+        armedMilestones.clear();
+        lastMilestoneSecond = currentSec;
+        if (on) {
+            for (long m : MILESTONE_BEATS) {
+                if (m < currentSec) {
+                    armedMilestones.add(m);
+                }
+            }
+        }
+    }
+
+    /**
+     * 整秒变化时推进节拍检测（RUNNING 下每次显示秒变化调用，双向都要调以维护基线）。
+     *
+     * @return 本次触发的节拍值（被跨越的已武装节拍中最接近落点者），无则 0；
+     *         一次跨越多个节拍只发一个，其余静默标记已触发
+     */
+    public long advanceMilestones(int newSec) {
+        long fired = 0;
+        if (milestonesEnabled && newSec < lastMilestoneSecond) {
+            Iterator<Long> it = armedMilestones.iterator();
+            while (it.hasNext()) {
+                long m = it.next();
+                if (m >= newSec) {
+                    it.remove();
+                    if (fired == 0 || m < fired) {
+                        fired = m;
+                    }
+                }
+            }
+        }
+        lastMilestoneSecond = newSec;
+        return fired;
     }
 
     // ==================== 状态流转 ====================

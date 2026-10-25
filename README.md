@@ -115,7 +115,7 @@
 - `invisibleInTallGrass`：头部位于高草丛时自动隐身
 - `moreEndCrystalTypes`：允许把末地水晶放在哭泣的黑曜石上（`invulnerable` 放出无敌水晶）
 - `textAnimation`：`/text @a|玩家名 <文本>` 播放米塔字幕，原版客户端可用；前 12 名接收者显示实体字幕，其余使用 actionbar 打字机
-- `countdown`：`/countdown start 60s` 向全服或指定玩家播放 BossBar/标题/副标题/动作栏倒计时，支持暂停恢复与运行中修改，默认开启
+- `countdown`：`/countdown start 60s` 向全服或指定玩家播放 BossBar/标题/副标题/动作栏倒计时，支持暂停恢复与运行中修改；长程节拍提示与倒数音效内置（可关），默认开启
 
 
 ## 致谢

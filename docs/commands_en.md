@@ -736,8 +736,10 @@ A single server-wide countdown instance: BossBar, Title (center screen), Subtitl
 - `/countdown set time <time>` — set the remaining time directly (at least 1s)
 - `/countdown set display <combo>` — change channels (e.g. `bossbar+subtitle`)
 - `/countdown set players <selector>` — change targets (vanilla player selector)
-- `/countdown set last <time|all>` — change when the center display (Title/Subtitle) starts, default the last 5 seconds
+- `/countdown set last <time|all>` — change when the center display (Title/Subtitle) starts, default the last 10 seconds
 - `/countdown set label <text>` — change the label (default "Countdown", max 128 characters)
+- `/countdown set milestones <on|off>` — toggle long-range beat prompts (one at 30m/15m/10m/5m/1m/30s/15s, on by default)
+- `/countdown set sound <on|off>` — toggle countdown sounds (on by default)
 
 ### Time Format
 
@@ -748,7 +750,7 @@ A single server-wide countdown instance: BossBar, Title (center screen), Subtitl
 | Channel | Default behavior |
 |------|------|
 | `bossbar` | Purple bar shown the whole time, text `label MM:SS`, progress = remaining / effective total (the denominator grows when time is added) |
-| `title` | By default big digits 5, 4, 3, 2, 1 in the last 5 seconds; with `set last all` it shows the whole time, switching to MM:SS above 59 seconds |
+| `title` | By default big digits 10, 9, …, 1 in the last 10 seconds; with `set last all` it shows the whole time, switching to MM:SS above 59 seconds |
 | `subtitle` | Shows MM:SS; together with title the title shows the label and the subtitle the time; alone it sends an empty title |
 | `actionbar` | Shows `Remaining MM:SS` the whole time, refreshed once per second |
 
@@ -767,7 +769,8 @@ Omitting display defaults to `bossbar+title`; combine with `+` (e.g. `bossbar+ti
 
 ### Behavior Details
 
-- Default: `/countdown start 60s` shows every real player a purple BossBar counting down `Countdown 01:00`, big center digits in the last 5 seconds, "Time's up!" on zero, all UI gone after about 2 seconds
+- Default: `/countdown start 60s` shows every real player a purple BossBar counting down `Countdown 01:00`, big center digits in the last 10 seconds, "Time's up!" on zero, all UI gone after about 2 seconds
+- Beats and sounds: one prompt (center text + a bell) when remaining time passes 30m/15m/10m/5m/1m/30s/15s; the 10-to-1 countdown ticks with a rising pitch; a strong cue on zero. Time jumps (set time/remove) do not replay skipped beats, adding time never refires; both switchable via set
 - Completion fires exactly once; `stop`, disabling the rule and server shutdown clean up immediately without the completion prompt
 - Time/display/target/window/label changes refresh immediately without resetting the timer or changing run state
 - While paused the BossBar freezes at its progress; Title/ActionBar are re-sent by the server to stay visible
@@ -791,6 +794,7 @@ Omitting display defaults to `bossbar+title`; combine with `+` (e.g. `bossbar+ti
 /countdown set display bossbar+subtitle       # change channels
 /countdown set players @a                     # change targets
 /countdown set last all                       # center digits the whole time
+/countdown set sound off                      # disable sounds
 /countdown set label Get ready                # change label
 /countdown status                             # inspect state
 /countdown stop                               # cancel

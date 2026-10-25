@@ -80,7 +80,13 @@ public final class CountdownCommand {
                                     .suggests(CountdownCommand::suggestTimeOrAll)
                                     .executes(CountdownCommand::executeSetLast)))
                             .then(Commands.literal("label").then(Commands.argument("label", StringArgumentType.greedyString())
-                                    .executes(CountdownCommand::executeSetLabel))));
+                                    .executes(CountdownCommand::executeSetLabel)))
+                            .then(Commands.literal("milestones").then(Commands.argument("mode", StringArgumentType.word())
+                                    .suggests(CountdownCommand::suggestOnOff)
+                                    .executes(CountdownCommand::executeSetMilestones)))
+                            .then(Commands.literal("sound").then(Commands.argument("mode", StringArgumentType.word())
+                                    .suggests(CountdownCommand::suggestOnOff)
+                                    .executes(CountdownCommand::executeSetSound))));
             dispatcher.register(root);
         });
     }
@@ -198,6 +204,18 @@ public final class CountdownCommand {
     private static CompletableFuture<Suggestions> suggestTimeOrAll(
             CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
         suggestTimeCandidates(builder, true);
+        return builder.buildFuture();
+    }
+
+    private static CompletableFuture<Suggestions> suggestOnOff(
+            CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
+        String remaining = builder.getRemainingLowerCase();
+        if ("on".startsWith(remaining)) {
+            builder.suggest("on");
+        }
+        if ("off".startsWith(remaining)) {
+            builder.suggest("off");
+        }
         return builder.buildFuture();
     }
 
@@ -481,6 +499,57 @@ public final class CountdownCommand {
             return 0;
         }
         source.sendSuccess(() -> ServerI18n.tr("carpetprimaryuan.command.countdown.label_set", label), false);
+        return 1;
+    }
+
+    private static Boolean parseOnOff(CommandSourceStack source, String raw) {
+        if (raw.equalsIgnoreCase("on")) {
+            return true;
+        }
+        if (raw.equalsIgnoreCase("off")) {
+            return false;
+        }
+        source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.countdown.bad_mode", raw));
+        return null;
+    }
+
+    private static int executeSetMilestones(CommandContext<CommandSourceStack> ctx) {
+        CommandSourceStack source = ctx.getSource();
+        if (checkDisabled(source)) {
+            return 0;
+        }
+        Boolean on = parseOnOff(source, StringArgumentType.getString(ctx, "mode"));
+        if (on == null) {
+            return 0;
+        }
+        CountdownManager manager = CountdownManager.get();
+        if (manager.setMilestones(source.getServer(), on) != 0) {
+            source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.countdown.no_active"));
+            return 0;
+        }
+        source.sendSuccess(() -> ServerI18n.tr(on
+                ? "carpetprimaryuan.command.countdown.milestones_on"
+                : "carpetprimaryuan.command.countdown.milestones_off"), false);
+        return 1;
+    }
+
+    private static int executeSetSound(CommandContext<CommandSourceStack> ctx) {
+        CommandSourceStack source = ctx.getSource();
+        if (checkDisabled(source)) {
+            return 0;
+        }
+        Boolean on = parseOnOff(source, StringArgumentType.getString(ctx, "mode"));
+        if (on == null) {
+            return 0;
+        }
+        CountdownManager manager = CountdownManager.get();
+        if (manager.setSound(on) != 0) {
+            source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.countdown.no_active"));
+            return 0;
+        }
+        source.sendSuccess(() -> ServerI18n.tr(on
+                ? "carpetprimaryuan.command.countdown.sound_on"
+                : "carpetprimaryuan.command.countdown.sound_off"), false);
         return 1;
     }
 }

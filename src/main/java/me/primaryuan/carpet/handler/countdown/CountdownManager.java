@@ -82,7 +82,7 @@ public final class CountdownManager implements ServerTickScheduler.TickTask {
             return -1;
         }
         String label = ServerI18n.tr("carpetprimaryuan.countdown.default_label").getString();
-        session = CountdownSession.start(seconds, channels, label, 5L, dynamicAll, snapshotTargets,
+        session = CountdownSession.start(seconds, channels, label, 10L, dynamicAll, snapshotTargets,
                 System.nanoTime());
         pauseKeepaliveCounter = 0;
         display.applyChannels(channels);
@@ -205,6 +205,31 @@ public final class CountdownManager implements ServerTickScheduler.TickTask {
         return 0;
     }
 
+    /** @return 0 成功；-1 无活动倒计时或处于完成阶段 */
+    public int setMilestones(MinecraftServer server, boolean on) {
+        if (!isActiveCountdown()) {
+            return -1;
+        }
+        session.setMilestonesEnabled(on, session.remainingCeilSeconds(System.nanoTime()));
+        return 0;
+    }
+
+    public int setSound(boolean on) {
+        if (!isActiveCountdown()) {
+            return -1;
+        }
+        session.setSoundEnabled(on);
+        return 0;
+    }
+
+    public boolean milestonesEnabled() {
+        return session != null && session.milestonesEnabled();
+    }
+
+    public boolean soundEnabled() {
+        return session != null && session.soundEnabled();
+    }
+
     // ==================== 状态查询（命令层反馈用） ====================
 
     public boolean hasActiveSession() {
@@ -272,8 +297,26 @@ public final class CountdownManager implements ServerTickScheduler.TickTask {
                 if (sec == -1) {
                     enterCompletion(server);
                 } else if (sec != lastShownSecond) {
+                    int prev = lastShownSecond;
                     lastShownSecond = sec;
-                    display.sendCountdown(s, now, audience(server));
+                    List<ServerPlayer> audience = audience(server);
+                    display.sendCountdown(s, now, audience);
+                    if (sec < prev) {
+                        // 剩余真实变小：检测节拍跨越与 10..1 逐秒倒数音
+                        long beat = s.advanceMilestones(sec);
+                        if (beat > 0) {
+                            display.showMilestone(beat, audience);
+                            if (s.soundEnabled()) {
+                                display.playMilestoneSound(audience);
+                            }
+                        }
+                        if (s.soundEnabled() && sec <= 10 && sec > 0) {
+                            display.playTickSound(audience, sec);
+                        }
+                    } else {
+                        // 时间变长（add/set time）：仅同步节拍基线，不回滚已触发
+                        s.advanceMilestones(sec);
+                    }
                 }
             }
             case PAUSED -> {
@@ -324,7 +367,11 @@ public final class CountdownManager implements ServerTickScheduler.TickTask {
         }
         lastShownSecond = -1;
         String doneText = ServerI18n.tr("carpetprimaryuan.countdown.finished").getString();
-        display.showCompletion(session, audience(server), doneText);
+        List<ServerPlayer> audience = audience(server);
+        display.showCompletion(session, audience, doneText);
+        if (session.soundEnabled()) {
+            display.playFinishSound(audience);
+        }
     }
 
     /** 终局清理：回 IDLE 并移除本系统全部显示资源；下一 tick 任务自注销 */

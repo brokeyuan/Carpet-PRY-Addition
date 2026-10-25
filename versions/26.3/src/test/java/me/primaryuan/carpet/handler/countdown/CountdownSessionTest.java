@@ -159,4 +159,67 @@ class CountdownSessionTest {
         assertThrows(IllegalArgumentException.class,
                 () -> CountdownSession.start(86401, EnumSet.of(CountdownChannel.TITLE), "l", 5L, true, null, 0));
     }
+
+    @Test
+    void milestonesArmBelowDurationAndFireOnCrossing() {
+        // 5 分钟启动：1800/900/600 大于等于总时长被跳过，armed = {60, 30, 15}
+        CountdownSession s = start300();
+        assertEquals(0, s.advanceMilestones(300), "启动点本身不触发节拍");
+        assertEquals(0, s.advanceMilestones(240));
+        assertEquals(0, s.advanceMilestones(61));
+        assertEquals(60, s.advanceMilestones(60));
+        assertEquals(0, s.advanceMilestones(59));
+        assertEquals(30, s.advanceMilestones(30));
+        assertEquals(0, s.advanceMilestones(16));
+        assertEquals(15, s.advanceMilestones(15));
+        assertEquals(0, s.advanceMilestones(14));
+    }
+
+    @Test
+    void jumpCrossingFiresClosestBeatOnly() {
+        // 1 小时启动后 set time 跳到 29 秒：跨过 1800..30 六个节拍，只发最接近落点的 30
+        CountdownSession s = startHour();
+        assertEquals(0, s.advanceMilestones(3600));
+        assertEquals(30, s.advanceMilestones(29));
+        assertEquals(15, s.advanceMilestones(15));
+        assertEquals(0, s.advanceMilestones(14), "被跨越节拍已静默清除，不补发");
+    }
+
+    @Test
+    void addUpwardDoesNotRefireBeats() {
+        CountdownSession s = start60Milestones();
+        assertEquals(0, s.advanceMilestones(60));
+        assertEquals(30, s.advanceMilestones(30));
+        // add 后时间变长：基线上调，已触发的 30 不回滚
+        assertEquals(0, s.advanceMilestones(130));
+        assertEquals(15, s.advanceMilestones(15));
+        assertEquals(0, s.advanceMilestones(130));
+        assertEquals(0, s.advanceMilestones(29), "30 已触发过，二次下探不再响");
+    }
+
+    @Test
+    void milestoneAndSoundSwitches() {
+        CountdownSession s = startHour();
+        assertTrue(s.milestonesEnabled());
+        assertTrue(s.soundEnabled());
+        assertEquals(0, s.advanceMilestones(2000));
+        s.setMilestonesEnabled(false, 2000);
+        assertFalse(s.milestonesEnabled());
+        assertEquals(0, s.advanceMilestones(1500), "禁用期间不触发");
+        s.setMilestonesEnabled(true, 1500);
+        // 重新武装：小于当前秒的节拍生效，已流逝的 1800 不再响
+        assertEquals(900, s.advanceMilestones(900));
+    }
+
+    private static CountdownSession start300() {
+        return CountdownSession.start(300, EnumSet.of(CountdownChannel.BOSSBAR), "l", 5L, true, null, 0);
+    }
+
+    private static CountdownSession startHour() {
+        return CountdownSession.start(3600, EnumSet.of(CountdownChannel.BOSSBAR), "l", 5L, true, null, 0);
+    }
+
+    private static CountdownSession start60Milestones() {
+        return CountdownSession.start(60, EnumSet.of(CountdownChannel.BOSSBAR), "l", 5L, true, null, 0);
+    }
 }

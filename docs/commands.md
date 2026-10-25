@@ -735,8 +735,10 @@ scale
 - `/countdown set time <时间>`：直接设置剩余时间（至少 1 秒）
 - `/countdown set display <组合>`：修改显示渠道（如 `bossbar+subtitle`）
 - `/countdown set players <选择器>`：修改显示对象（原版玩家选择器）
-- `/countdown set last <时间|all>`：修改中央大字（Title/Subtitle）开始显示的剩余窗口，默认最后 5 秒
+- `/countdown set last <时间|all>`：修改中央大字（Title/Subtitle）开始显示的剩余窗口，默认最后 10 秒
 - `/countdown set label <文本>`：修改标题（默认"倒计时"，最多 128 字符）
+- `/countdown set milestones <on|off>`：开关长程节拍提示（30m/15m/10m/5m/1m/30s/15s 各提示一次，默认开）
+- `/countdown set sound <on|off>`：开关倒计时音效（默认开）
 
 ### 时间格式
 
@@ -747,7 +749,7 @@ scale
 | 渠道 | 默认行为 |
 |------|------|
 | `bossbar` | 紫色进度条全程显示，文本 `标题 MM:SS`，进度=剩余/有效总时长（中途加时自动扩展分母） |
-| `title` | 默认最后 5 秒中央大字 5、4、3、2、1；`set last all` 全程显示，剩余超过 59 秒时用 MM:SS |
+| `title` | 默认最后 10 秒中央大字 10、9、…、1；`set last all` 全程显示，剩余超过 59 秒时用 MM:SS |
 | `subtitle` | 显示 MM:SS，与 title 同开时 title 显示标题、subtitle 显示时间；单独开时空 title 配合发送 |
 | `actionbar` | 全程显示 `剩余 MM:SS`，每秒刷新一次 |
 
@@ -766,7 +768,8 @@ scale
 
 ### 行为细节
 
-- 默认效果：`/countdown start 60s` → 全服真人看到紫色 BossBar（`倒计时 01:00` 递减），最后 5 秒中央大字倒数，归零显示"时间到！"约 2 秒后全部 UI 自动消失
+- 默认效果：`/countdown start 60s` → 全服真人看到紫色 BossBar（`倒计时 01:00` 递减），最后 10 秒中央大字倒数，归零显示"时间到！"约 2 秒后全部 UI 自动消失
+- 节拍与音效：剩余时间经过 30m/15m/10m/5m/1m/30s/15s 各提示一次（中央大字 + 钟声一声）；10..1 逐秒倒数伴随音高递增的提示音；归零一声强音收尾。跳过修改（set time/remove 大幅下调）不补发节拍，加时不重响；两项均可用 set 关闭
 - 完成仅触发一次；`stop`、规则关闭、服务器停止均立即清理且无完成提示
 - 修改时间/显示/对象/窗口/标题均立即刷新显示，不重置计时、不改变运行状态
 - 暂停期 BossBar 冻结在当前进度，Title/ActionBar 由服务端保活重发
@@ -790,6 +793,7 @@ scale
 /countdown set display bossbar+subtitle       # 换显示组合
 /countdown set players @a                     # 换目标
 /countdown set last all                       # 中央大字全程显示
+/countdown set sound off                      # 关闭音效
 /countdown set label 活动即将开始              # 换标题
 /countdown status                             # 查看状态
 /countdown stop                               # 取消

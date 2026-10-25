@@ -572,7 +572,7 @@ Sneaking retains sign editing and frame rotation. Standing signs and banners are
 
 ### countdown - Countdown
 
-`/countdown` runs a countdown via BossBar/title/subtitle/actionbar (any combination of the four channels) for everyone or selected players, with pause, resume, stop and live adjustment of time, display, targets, center window and label.
+`/countdown` runs a countdown via BossBar/title/subtitle/actionbar (any combination of the four channels) for everyone or selected players, with pause, resume, stop and live adjustment of time, display, targets, center window and label; built-in beat prompts and countdown sounds, both switchable.
 
 | Property | Value |
 |----------|-------|
@@ -583,7 +583,7 @@ Sneaking retains sign editing and frame rotation. Standing signs and banners are
 | **Suggested Options** | `true`, `false` |
 | **Categories** | `PRIMARYUAN`, `COMMAND` |
 
-Permission level 2, command blocks supported. When the rule is off the command stays visible and reports that it is disabled; a running countdown is cleaned up immediately. Timing follows real elapsed time (low TPS does not stretch it); only one countdown exists per server and it is cancelled on restart. Full syntax and behavior in the [command documentation](commands_en.md#countdown---countdown).
+Permission level 2, command blocks supported. When the rule is off the command stays visible and reports that it is disabled; a running countdown is cleaned up immediately. Timing follows real elapsed time (low TPS does not stretch it); only one countdown exists per server and it is cancelled on restart. A beat prompt with sound fires once when remaining time passes 30m/15m/10m/5m/1m/30s/15s, and the last 10 seconds tick every second. Full syntax and behavior in the [command documentation](commands_en.md#countdown---countdown).
 
 ---
 

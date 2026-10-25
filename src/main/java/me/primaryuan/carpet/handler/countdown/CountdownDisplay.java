@@ -1,14 +1,19 @@
 package me.primaryuan.carpet.handler.countdown;
 
 import me.primaryuan.carpet.i18n.ServerI18n;
+import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
+import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.BossEvent;
 
 import java.util.EnumSet;
@@ -30,6 +35,14 @@ final class CountdownDisplay {
     private static final int COMPLETION_FADE_IN_TICKS = 5;
     private static final int COMPLETION_STAY_TICKS = 40;
     private static final int COMPLETION_FADE_OUT_TICKS = 10;
+    /** 节拍提示的 title 动画：约 2 秒存在感 */
+    private static final int MILESTONE_FADE_IN_TICKS = 5;
+    private static final int MILESTONE_STAY_TICKS = 35;
+    private static final int MILESTONE_FADE_OUT_TICKS = 10;
+
+    /* 音效配方沿用 whoCalledMe 已验证的 Holder 方案（音效常量跨版本一致） */
+    private static final Holder<SoundEvent> MILESTONE_SOUND = Holder.direct(SoundEvents.BELL_BLOCK);
+    private static final Holder<SoundEvent> FINISH_SOUND = Holder.direct(SoundEvents.PLAYER_LEVELUP);
 
     private ServerBossEvent bossbar;
 
@@ -119,6 +132,43 @@ final class CountdownDisplay {
         }
         sendCentral(session, 0, audience, true, doneText);
         sendActionBar(session, 0, audience, true, doneText);
+    }
+
+    // ==================== 节拍与音效 ====================
+
+    /** 长程节拍提示：中央大字显示节拍值（约 2 秒），节拍触发即显示，独立于 title 渠道的常规刷新 */
+    void showMilestone(long beatSeconds, List<ServerPlayer> audience) {
+        MutableComponent text = Component.literal(CountdownTime.formatTitleNumber(beatSeconds));
+        for (ServerPlayer player : audience) {
+            player.connection.send(new ClientboundSetTitlesAnimationPacket(
+                    MILESTONE_FADE_IN_TICKS, MILESTONE_STAY_TICKS, MILESTONE_FADE_OUT_TICKS));
+            player.connection.send(new ClientboundSetTitleTextPacket(text));
+        }
+    }
+
+    /** 节拍钟声（一声） */
+    void playMilestoneSound(List<ServerPlayer> audience) {
+        playSound(audience, MILESTONE_SOUND, 1.0F);
+    }
+
+    /** 10..1 逐秒倒数音：pitch 按半音阶递增（10→1.0，1→约 1.68） */
+    void playTickSound(List<ServerPlayer> audience, int sec) {
+        playSound(audience, SoundEvents.NOTE_BLOCK_PLING, (float) Math.pow(2.0, (10 - sec) / 12.0));
+    }
+
+    /** 归零强音 */
+    void playFinishSound(List<ServerPlayer> audience) {
+        playSound(audience, FINISH_SOUND, 1.0F);
+    }
+
+    /** 定向单发（发声点在听者头顶，仅本人可闻）——whoCalledMe 同款配方 */
+    private static void playSound(List<ServerPlayer> audience, Holder<SoundEvent> sound, float pitch) {
+        for (ServerPlayer player : audience) {
+            player.connection.send(new ClientboundSoundPacket(
+                    sound, SoundSource.PLAYERS,
+                    player.getX(), player.getY(), player.getZ(),
+                    0.8F, pitch, player.getRandom().nextLong()));
+        }
     }
 
     /** 停用渠道的残留清除（仅在渠道切换时一次性发送，不逐秒清除他人内容） */
