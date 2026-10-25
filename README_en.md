@@ -35,6 +35,12 @@ All rules are off by default except the client-side rule `ridingPlayersClientInt
 5. This is a **server-side** mod — players do not need it installed. Optional client install provides two client-side features: `ridingPlayersClientInteract` (keep interacting while carrying a passenger) and the player-scaling FOV compensation
 6. Rules are **off by default** (except `ridingPlayersClientInteract`) — use `/carpet` or config files to enable what you need
 
+## Configuration Storage
+
+- Rule values are stored per world in `<world>/carpet.conf` (native carpet); rules tagged with the `SERVER` category follow the server instead, pinned in `config/carpet-pry-addition/server-rules.json` and overriding the world's values on startup
+- `/tppset` stations, the `/pvp` peaceful list and `/patnod` preferences live in `<world>/carpet-pry-addition/`; legacy `config/carpet-pry-*.json` files are auto-migrated on first boot
+- Data files carry a version envelope; running an older mod version will not corrupt newer-format files
+
 ## Dependencies
 
 | Name | Type | Links |

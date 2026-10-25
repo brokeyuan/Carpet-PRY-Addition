@@ -65,7 +65,7 @@ A teleport network using fake players and ender pearls. Admins set up stations a
 Commands:
 
 - `/tpp <station>` — teleport to a station.
-- `/tppset` — manage stations, player aliases, and per-station pearl use counts. Data is persisted in `config/carpet-pry-tpp.json`.
+- `/tppset` — manage stations, player aliases, and per-station pearl use counts. Data lives in the world save at `carpet-pry-addition/tpp.json` (auto-migrated from the old config path).
 
 `/tpp` requires [Carpet TIS Addition](https://modrinth.com/mod/carpet-tis-addition) — its `/player rejoin` respawns the station's fake player at its logged-off position and orientation. This is a soft dependency: without it, `/tpp` immediately reports the missing requirement, while `/tppset` and everything else work normally.
 
@@ -114,11 +114,11 @@ Hold a **Totem of Undying** in your main hand and right-click another player's *
 
 ### Pat Players (`patPatPlayers`)
 
-Pat other real players on the head, cat-petting style: each right-click is a stroking pulse — the target bobs down and up with the rhythm with hearts above their head, while the patted player gets a heart in front of their eyes, a soft directional sound and a per-player opt-out (`/patnod`, persisted in config/carpet-pry-patnod.json). Fake players are excluded; works with any item in hand and never consumes the interaction.
+Pat other real players on the head, cat-petting style: each right-click is a stroking pulse — the target bobs down and up with the rhythm with hearts above their head, while the patted player gets a heart in front of their eyes, a soft directional sound and a per-player opt-out (`/patnod`, persisted in the world save at `carpet-pry-addition/patnod.json`). Fake players are excluded; works with any item in hand and never consumes the interaction.
 
 ### Peaceful Players (`peacefulPlayers`)
 
-Enables the `/pvp` command: each player can turn their own PVP on or off. Players with PVP off cannot attack players and take no damage from players (self-inflicted damage unaffected); blocked attacks play a cue sound so the "poke" signal is preserved. Admins can toggle PVP for anyone or server-wide with `/pvp on|off @a`, and `/pvp list` shows everyone who currently has PVP off. States persist across restarts in `config/carpet-pry-pvp.json`.
+Enables the `/pvp` command: each player can turn their own PVP on or off. Players with PVP off cannot attack players and take no damage from players (self-inflicted damage unaffected); blocked attacks play a cue sound so the "poke" signal is preserved. Admins can toggle PVP for anyone or server-wide with `/pvp on|off @a`, and `/pvp list` shows everyone who currently has PVP off. States persist across restarts in the world save at `carpet-pry-addition/pvp.json`.
 
 ### Who Called Me (`whoCalledMe`)
 

@@ -634,7 +634,7 @@ Toggle PVP per player: players with PVP off cannot attack players and take no da
 
 > **Rule**: `patPatPlayers`
 
-Toggles the per-player preference for accepting pats: declined players cannot be patted at all (pats have no effect on them). The state is persisted per player name in config/carpet-pry-patnod.json and survives restarts.
+Toggles the per-player preference for accepting pats: declined players cannot be patted at all (pats have no effect on them). The state is persisted per player name in the world save at `carpet-pry-addition/patnod.json` (follows the world; the old config path is auto-migrated) and survives restarts.
 
 ### Syntax
 

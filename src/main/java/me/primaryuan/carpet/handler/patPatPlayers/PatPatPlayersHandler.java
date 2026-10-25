@@ -1,15 +1,17 @@
 package me.primaryuan.carpet.handler.patPatPlayers;
 
 import carpet.patches.EntityPlayerMPFake;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
+import me.primaryuan.carpet.config.PryJsonStore;
 import me.primaryuan.carpet.util.ServerTickScheduler;
 import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -27,15 +29,6 @@ import net.minecraft.world.phys.Vec3;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.Reader;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -69,7 +62,7 @@ import java.util.Set;
  * ridingPlayers/pickupPlayers 的冲突修复点），其余抚摸效果不受影响。
  * 仅真人可被摸：carpet 假人（EntityPlayerMPFake）在入口
  * 即被排除；玩家可用 /patnod on|off 开关接不接受被摸（拒绝时摸头对其完全不
- * 生效，状态持久化于 config/carpet-pry-patnod.json）。</p>
+ * 生效，状态持久化于 &lt;存档&gt;/carpet-pry-addition/patnod.json，随存档走）。</p>
  */
 public class PatPatPlayersHandler {
 
@@ -90,12 +83,54 @@ public class PatPatPlayersHandler {
 
     private static final Logger LOGGER = LogManager.getLogger("CarpetPrimaryuan");
 
-    /** 被摸接受偏好持久化文件（模式同 carpet-pry-pvp.json：UTF-8 + 临时文件原子替换） */
-    private static final Path PAT_CONFIG_FILE = Path.of("config/carpet-pry-patnod.json");
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    /** 被摸接受偏好存储：随存档走（<存档>/carpet-pry-addition/patnod.json，旧平铺文件自动收编） */
+    private static final PatStore STORE = new PatStore();
 
-    /** 已拒绝被摸的玩家名（缺省 = 接受）；仅服务器主线程访问 */
-    private static final Set<String> patDeclined = new HashSet<>();
+    private static final class PatStore extends PryJsonStore {
+        /** 已拒绝被摸的玩家名（缺省 = 接受）；仅服务器主线程访问 */
+        private final Set<String> patDeclined = new HashSet<>();
+
+        private PatStore() {
+            super("Pat", "patnod.json", Scope.WORLD, 1, "carpet-pry-patnod.json");
+        }
+
+        @Override
+        protected void applyData(JsonObject data) {
+            Set<String> parsed = new HashSet<>();
+            JsonElement declinedElem = data.get("declined");
+            if (declinedElem != null && declinedElem.isJsonArray()) {
+                for (JsonElement element : declinedElem.getAsJsonArray()) {
+                    if (element.isJsonPrimitive()) {
+                        parsed.add(element.getAsString());
+                    }
+                }
+            }
+            patDeclined.clear();
+            patDeclined.addAll(parsed);
+        }
+
+        @Override
+        protected JsonObject collectData() {
+            JsonObject data = new JsonObject();
+            JsonArray declinedArr = new JsonArray();
+            for (String name : patDeclined) {
+                declinedArr.add(new JsonPrimitive(name));
+            }
+            data.add("declined", declinedArr);
+            return data;
+        }
+
+        @Override
+        protected JsonObject fromLegacy(JsonObject legacyRoot) {
+            // 旧平铺文件（v0）schema 与 v1 data 相同，直接透传
+            return legacyRoot.deepCopy();
+        }
+
+        @Override
+        protected void clearData() {
+            patDeclined.clear();
+        }
+    }
 
     /** 正处于强制蹲脉冲中的目标名（脉冲飞完自清；骑乘/捡起挂塔前据此提前释放） */
     private static final Set<String> forcedCrouch = new HashSet<>();
@@ -112,11 +147,10 @@ public class PatPatPlayersHandler {
 
     private static boolean sweepRegistered = false;
 
-    /** CarpetPrimaryuanServer.onGameStarted 调用：加载被摸偏好 + 注册过期条目的周期清理 */
+    /** CarpetPrimaryuanServer.onGameStarted 调用：注册过期条目的周期清理（状态加载在 onServerLoaded） */
     public static void init() {
         if (sweepRegistered) return;
         sweepRegistered = true;
-        loadPatConfig();
         ServerTickScheduler.register(server -> {
             if (actorStrokes.isEmpty()) {
                 return true;
@@ -125,6 +159,14 @@ public class PatPatPlayersHandler {
             actorStrokes.values().removeIf(st -> gameTime - st[0] > 200);
             return true;
         });
+    }
+
+    public static void onServerLoaded(MinecraftServer server) {
+        STORE.attach(server);
+    }
+
+    public static void onServerClosed() {
+        STORE.detach();
     }
 
     /**
@@ -247,7 +289,7 @@ public class PatPatPlayersHandler {
 
     /** 目标是否接受被摸（默认接受；/patnod off 后拒绝） */
     public static boolean acceptsPat(Player target) {
-        return !patDeclined.contains(target.getName().getString());
+        return !STORE.patDeclined.contains(target.getName().getString());
     }
 
     /**
@@ -266,61 +308,15 @@ public class PatPatPlayersHandler {
     public static void setPatAccept(ServerPlayer player, boolean accept) {
         String name = player.getName().getString();
         if (accept) {
-            patDeclined.remove(name);
+            STORE.patDeclined.remove(name);
         } else {
-            patDeclined.add(name);
+            STORE.patDeclined.add(name);
         }
-        savePatConfig();
+        STORE.save();
     }
 
     /** 查询某玩家名是否拒绝被摸（含离线玩家，供命令展示用） */
     public static boolean isPatDeclined(String name) {
-        return patDeclined.contains(name);
-    }
-
-    // ===== 被摸接受偏好持久化（模式同 PvpManager：UTF-8 + 临时文件原子替换） =====
-
-    private static void loadPatConfig() {
-        if (!Files.exists(PAT_CONFIG_FILE)) {
-            return;
-        }
-        try (Reader reader = Files.newBufferedReader(PAT_CONFIG_FILE, StandardCharsets.UTF_8)) {
-            JsonObject json = GSON.fromJson(reader, JsonObject.class);
-            if (json == null) {
-                return;
-            }
-            patDeclined.clear();
-            JsonElement declinedElem = json.get("declined");
-            if (declinedElem != null && declinedElem.isJsonArray()) {
-                declinedElem.getAsJsonArray().forEach(e -> {
-                    if (e.isJsonPrimitive()) {
-                        patDeclined.add(e.getAsString());
-                    }
-                });
-            }
-        } catch (Exception e) {
-            LOGGER.error("[Pat] Failed to load config file", e);
-        }
-    }
-
-    private static void savePatConfig() {
-        JsonObject config = new JsonObject();
-        com.google.gson.JsonArray declinedArr = new com.google.gson.JsonArray();
-        for (String name : patDeclined) {
-            declinedArr.add(new com.google.gson.JsonPrimitive(name));
-        }
-        config.add("declined", declinedArr);
-
-        try {
-            // 原子写：先写临时文件再原子替换，避免写一半崩溃/断电留下损坏的 JSON
-            Path tmp = PAT_CONFIG_FILE.resolveSibling(PAT_CONFIG_FILE.getFileName() + ".tmp");
-            Files.createDirectories(PAT_CONFIG_FILE.getParent());
-            try (Writer writer = Files.newBufferedWriter(tmp, StandardCharsets.UTF_8)) {
-                GSON.toJson(config, writer);
-            }
-            Files.move(tmp, PAT_CONFIG_FILE, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        } catch (IOException e) {
-            LOGGER.error("[Pat] Failed to save config file", e);
-        }
+        return STORE.patDeclined.contains(name);
     }
 }

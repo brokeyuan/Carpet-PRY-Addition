@@ -1,122 +1,83 @@
 package me.primaryuan.carpet;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import me.primaryuan.carpet.config.PryJsonStore;
+import net.minecraft.server.MinecraftServer;
 
-import java.io.IOException;
-import java.io.Reader;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class TppConfigManager {
+/**
+ * 假人珍珠站传送（/tpp /tppset）的站点配置。
+ *
+ * <p>数据跟随存档：&lt;存档&gt;/carpet-pry-addition/tpp.json（站点本质是"本存档假人
+ * 下线点"的名字表，坐标存于该存档假人 playerdata 的 rejoin 位置，脱离原存档无意义）。
+ * 旧版平铺文件 config/carpet-pry-tpp.json 首次启动自动收编。所有状态仅在服务器
+ * 主线程访问（Carpet 命令与 tick 事件均在主线程），普通集合即可。</p>
+ */
+public final class TppConfigManager {
 
-    private static final Logger LOGGER = LogManager.getLogger("CarpetPrimaryuan");
+    private static final TppStore STORE = new TppStore();
 
-    // 以下状态仅在服务器主线程访问（Carpet 命令与 tick 事件均在主线程），普通集合即可
+    private TppConfigManager() {}
 
-    /**
-     * 站点映射：key=内部名（用于假人命名），value=显示名称/备注（null 表示无备注，显示时等同内部名）
-     * 使用 LinkedHashMap 保持添加顺序
-     */
-    private static final LinkedHashMap<String, String> stationMap = new LinkedHashMap<>();
+    private static final class TppStore extends PryJsonStore {
+        /**
+         * 站点映射：key=内部名（用于假人命名），value=显示名称/备注
+         * （null 表示无备注，显示时等同内部名）。LinkedHashMap 保持添加顺序
+         */
+        private final LinkedHashMap<String, String> stationMap = new LinkedHashMap<>();
 
-    private static final Map<String, String> aliases = new HashMap<>();
+        /** 玩家名 → 别名（用于假人命名） */
+        private final Map<String, String> aliases = new HashMap<>();
 
-    /** 全局默认传送时假人右键使用珍珠的次数（默认 1），站点未单独设置时使用此值 */
-    private static int useCount = 1;
+        /** 全局默认传送时假人右键使用珍珠的次数（默认 1），站点未单独设置时使用此值 */
+        private int useCount = 1;
 
-    /** 站点级右键次数配置：key=站点内部名，value=右键次数 */
-    private static final Map<String, Integer> stationUseCount = new HashMap<>();
+        /** 站点级右键次数配置：key=站点内部名，value=右键次数 */
+        private final Map<String, Integer> stationUseCount = new HashMap<>();
 
-    /** 配置文件路径（统一以 UTF-8 读写，避免 Windows 默认 GBK 编码导致中文站点名乱码） */
-    private static final Path CONFIG_FILE = Path.of("config/carpet-pry-tpp.json");
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-
-    public static void load() {
-        if (!Files.exists(CONFIG_FILE)) {
-            // 创建默认空配置
-            JsonObject defaultConfig = new JsonObject();
-            defaultConfig.add("stations", new JsonObject());
-            defaultConfig.add("aliases", new JsonObject());
-
-            try {
-                Files.createDirectories(CONFIG_FILE.getParent());
-                try (Writer writer = Files.newBufferedWriter(CONFIG_FILE, StandardCharsets.UTF_8)) {
-                    GSON.toJson(defaultConfig, writer);
-                }
-            } catch (IOException e) {
-                System.err.println("[TPP] Failed to create default config file: " + e.getMessage());
-            }
-            return;
+        private TppStore() {
+            super("TPP", "tpp.json", Scope.WORLD, 1, "carpet-pry-tpp.json");
         }
 
-        try (Reader reader = Files.newBufferedReader(CONFIG_FILE, StandardCharsets.UTF_8)) {
-            JsonObject json = GSON.fromJson(reader, JsonObject.class);
-            if (json == null) {
-                LOGGER.warn("[TPP] Config file is empty, using defaults");
-                return;
-            }
-
+        @Override
+        protected void applyData(JsonObject data) {
             // 先解析到临时结构、全部成功后再原子提交内存态——
-            // 边解析边清空时中途抛异常（如 aliases 被手改成数组）会留下
-            // "站点新、别名空、计数旧"的残缺内存态，之后任意一次 save()
-            // 会把残缺态全量写盘（别名/计数从磁盘静默抹除）
-            Map<String, String> newStations = new LinkedHashMap<>();
-            JsonElement stationsElem = json.get("stations");
-            if (stationsElem != null) {
-                if (stationsElem.isJsonArray()) {
-                    // 旧格式兼容：JsonArray → 转为 stations（value=null）
-                    JsonArray arr = stationsElem.getAsJsonArray();
-                    for (int i = 0; i < arr.size(); i++) {
-                        newStations.put(arr.get(i).getAsString(), null);
-                    }
-                } else if (stationsElem.isJsonObject()) {
-                    // 新格式：JsonObject
-                    JsonObject obj = stationsElem.getAsJsonObject();
-                    for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
-                        String value = entry.getValue().isJsonNull() ? null : entry.getValue().getAsString();
-                        newStations.put(entry.getKey(), value);
-                    }
+            // 中途抛异常（如手改成错误类型）不破坏现有内存态，之后任意一次 save()
+            // 不会把残缺态全量写盘
+            LinkedHashMap<String, String> newStations = new LinkedHashMap<>();
+            JsonElement stationsElem = data.get("stations");
+            if (stationsElem != null && stationsElem.isJsonObject()) {
+                for (Map.Entry<String, JsonElement> entry : stationsElem.getAsJsonObject().entrySet()) {
+                    String value = entry.getValue().isJsonNull() ? null : entry.getValue().getAsString();
+                    newStations.put(entry.getKey(), value);
                 }
             }
 
             Map<String, String> newAliases = new LinkedHashMap<>();
-            JsonObject aliasesObj = json.getAsJsonObject("aliases");
-            if (aliasesObj != null) {
-                for (Map.Entry<String, JsonElement> entry : aliasesObj.entrySet()) {
+            JsonElement aliasesElem = data.get("aliases");
+            if (aliasesElem != null && aliasesElem.isJsonObject()) {
+                for (Map.Entry<String, JsonElement> entry : aliasesElem.getAsJsonObject().entrySet()) {
                     newAliases.put(entry.getKey(), entry.getValue().getAsString());
                 }
             }
 
-            // 加载 useCount（未配置时保留当前默认值 1）
-            int newUseCount = useCount;
-            if (json.has("useCount")) {
-                newUseCount = json.get("useCount").getAsInt();
-            }
+            int newUseCount = data.has("useCount") ? data.get("useCount").getAsInt() : 1;
 
-            // 加载站点级右键次数配置
             Map<String, Integer> newStationUseCount = new HashMap<>();
-            JsonObject stationUseCountObj = json.getAsJsonObject("stationUseCount");
-            if (stationUseCountObj != null) {
-                for (Map.Entry<String, JsonElement> entry : stationUseCountObj.entrySet()) {
+            JsonElement countsElem = data.get("stationUseCount");
+            if (countsElem != null && countsElem.isJsonObject()) {
+                for (Map.Entry<String, JsonElement> entry : countsElem.getAsJsonObject().entrySet()) {
                     newStationUseCount.put(entry.getKey(), entry.getValue().getAsInt());
                 }
             }
 
-            // 全部解析成功：原子提交内存态
             stationMap.clear();
             stationMap.putAll(newStations);
             aliases.clear();
@@ -124,51 +85,69 @@ public class TppConfigManager {
             useCount = newUseCount;
             stationUseCount.clear();
             stationUseCount.putAll(newStationUseCount);
-        } catch (Exception e) {
-            // 解析失败时内存态保持原样（首次启动为空默认），绝不以残缺态覆盖磁盘
-            LOGGER.error("[TPP] Failed to load config (live state untouched)", e);
+        }
+
+        @Override
+        protected JsonObject collectData() {
+            JsonObject data = new JsonObject();
+
+            JsonObject stationsObj = new JsonObject();
+            for (Map.Entry<String, String> entry : stationMap.entrySet()) {
+                if (entry.getValue() == null) {
+                    stationsObj.add(entry.getKey(), JsonNull.INSTANCE);
+                } else {
+                    stationsObj.addProperty(entry.getKey(), entry.getValue());
+                }
+            }
+            data.add("stations", stationsObj);
+
+            JsonObject aliasesObj = new JsonObject();
+            for (Map.Entry<String, String> entry : aliases.entrySet()) {
+                aliasesObj.addProperty(entry.getKey(), entry.getValue());
+            }
+            data.add("aliases", aliasesObj);
+            data.addProperty("useCount", useCount);
+
+            JsonObject countsObj = new JsonObject();
+            for (Map.Entry<String, Integer> entry : stationUseCount.entrySet()) {
+                countsObj.addProperty(entry.getKey(), entry.getValue());
+            }
+            data.add("stationUseCount", countsObj);
+            return data;
+        }
+
+        @Override
+        protected JsonObject fromLegacy(JsonObject legacyRoot) {
+            // 旧平铺文件（v0）：更早期格式的 stations 为 JsonArray，统一收编为对象格式
+            JsonObject data = legacyRoot.deepCopy();
+            JsonElement stationsElem = data.get("stations");
+            if (stationsElem != null && stationsElem.isJsonArray()) {
+                JsonObject obj = new JsonObject();
+                for (JsonElement element : stationsElem.getAsJsonArray()) {
+                    obj.add(element.getAsString(), JsonNull.INSTANCE);
+                }
+                data.add("stations", obj);
+            }
+            return data;
+        }
+
+        @Override
+        protected void clearData() {
+            stationMap.clear();
+            aliases.clear();
+            useCount = 1;
+            stationUseCount.clear();
         }
     }
 
-    /** 持久化到配置文件（UTF-8）；由各领域变更方法在变更后自动调用 */
-    private static void save() {
-        JsonObject config = new JsonObject();
+    // ===== 服务器生命周期（CarpetPrimaryuanServer 调用） =====
 
-        JsonObject stationsObj = new JsonObject();
-        for (Map.Entry<String, String> entry : stationMap.entrySet()) {
-            if (entry.getValue() == null) {
-                stationsObj.add(entry.getKey(), null);  // JSON null
-            } else {
-                stationsObj.addProperty(entry.getKey(), entry.getValue());
-            }
-        }
-        config.add("stations", stationsObj);
+    public static void onServerLoaded(MinecraftServer server) {
+        STORE.attach(server);
+    }
 
-        JsonObject aliasesObj = new JsonObject();
-        for (Map.Entry<String, String> entry : aliases.entrySet()) {
-            aliasesObj.addProperty(entry.getKey(), entry.getValue());
-        }
-        config.add("aliases", aliasesObj);
-        config.addProperty("useCount", useCount);
-
-        // 保存站点级右键次数配置
-        JsonObject stationUseCountObj = new JsonObject();
-        for (Map.Entry<String, Integer> entry : stationUseCount.entrySet()) {
-            stationUseCountObj.addProperty(entry.getKey(), entry.getValue());
-        }
-        config.add("stationUseCount", stationUseCountObj);
-
-        try {
-            // 原子写：先写临时文件再原子替换，避免写一半崩溃/断电留下损坏的 JSON
-            Path tmp = CONFIG_FILE.resolveSibling(CONFIG_FILE.getFileName() + ".tmp");
-            Files.createDirectories(CONFIG_FILE.getParent());
-            try (Writer writer = Files.newBufferedWriter(tmp, StandardCharsets.UTF_8)) {
-                GSON.toJson(config, writer);
-            }
-            Files.move(tmp, CONFIG_FILE, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        } catch (IOException e) {
-            LOGGER.error("[TPP] Failed to save config", e);
-        }
+    public static void onServerClosed() {
+        STORE.detach();
     }
 
     // ===== 领域方法：所有状态变更经由此处，并自动持久化 =====
@@ -181,11 +160,11 @@ public class TppConfigManager {
      * @return false 表示站点已存在（不覆盖）
      */
     public static boolean addStation(String name, String displayName) {
-        if (stationMap.containsKey(name)) {
+        if (STORE.stationMap.containsKey(name)) {
             return false;
         }
-        stationMap.put(name, displayName);
-        save();
+        STORE.stationMap.put(name, displayName);
+        STORE.save();
         return true;
     }
 
@@ -193,24 +172,24 @@ public class TppConfigManager {
      * 删除站点，同时清理其站点级右键次数配置（避免残留孤儿配置）。
      */
     public static void removeStation(String internalName) {
-        stationMap.remove(internalName);
-        stationUseCount.remove(internalName);
-        save();
+        STORE.stationMap.remove(internalName);
+        STORE.stationUseCount.remove(internalName);
+        STORE.save();
     }
 
     /**
      * 获取玩家别名；未设置返回 null。
      */
     public static String getAlias(String playerName) {
-        return aliases.get(playerName);
+        return STORE.aliases.get(playerName);
     }
 
     /**
      * 设置玩家别名。
      */
     public static void setAlias(String playerName, String alias) {
-        aliases.put(playerName, alias);
-        save();
+        STORE.aliases.put(playerName, alias);
+        STORE.save();
     }
 
     /**
@@ -219,10 +198,10 @@ public class TppConfigManager {
      * @return false 表示该玩家未设置别名
      */
     public static boolean removeAlias(String playerName) {
-        if (aliases.remove(playerName) == null) {
+        if (STORE.aliases.remove(playerName) == null) {
             return false;
         }
-        save();
+        STORE.save();
         return true;
     }
 
@@ -230,37 +209,37 @@ public class TppConfigManager {
      * 设置全局默认右键次数。
      */
     public static void setGlobalUseCount(int count) {
-        useCount = count;
-        save();
+        STORE.useCount = count;
+        STORE.save();
     }
 
     /**
      * 设置站点级右键次数。
      */
     public static void setStationUseCount(String station, int count) {
-        stationUseCount.put(station, count);
-        save();
+        STORE.stationUseCount.put(station, count);
+        STORE.save();
     }
 
     /**
      * 获取全局默认右键次数。
      */
     public static int getGlobalUseCount() {
-        return useCount;
+        return STORE.useCount;
     }
 
     /**
      * 获取站点级右键次数配置快照（用于 /tppset rule 展示）。
      */
     public static Map<String, Integer> getStationUseCountSnapshot() {
-        return Map.copyOf(stationUseCount);
+        return Map.copyOf(STORE.stationUseCount);
     }
 
     /**
      * 获取站点的显示名称。无备注时返回内部名本身。
      */
     public static String getDisplayName(String internalName) {
-        String display = stationMap.get(internalName);
+        String display = STORE.stationMap.get(internalName);
         return (display == null || display.isEmpty()) ? internalName : display;
     }
 
@@ -273,9 +252,9 @@ public class TppConfigManager {
     public static String getInternalName(String input) {
         if (input == null || input.isEmpty()) return null;
         // 先精确匹配内部名
-        if (stationMap.containsKey(input)) return input;
+        if (STORE.stationMap.containsKey(input)) return input;
         // 再匹配显示名（忽略大小写）
-        for (Map.Entry<String, String> entry : stationMap.entrySet()) {
+        for (Map.Entry<String, String> entry : STORE.stationMap.entrySet()) {
             String display = entry.getValue();
             if (display != null && !display.isEmpty() && display.equalsIgnoreCase(input)) {
                 return entry.getKey();
@@ -289,7 +268,7 @@ public class TppConfigManager {
      */
     public static List<String> getDisplayNames() {
         List<String> result = new ArrayList<>();
-        for (String key : stationMap.keySet()) {
+        for (String key : STORE.stationMap.keySet()) {
             result.add(getDisplayName(key));
         }
         return result;
@@ -299,7 +278,7 @@ public class TppConfigManager {
      * 获取所有站点内部名的逗号分隔字符串
      */
     public static String getStationsString() {
-        return String.join(",", stationMap.keySet());
+        return String.join(",", STORE.stationMap.keySet());
     }
 
     /**
@@ -310,6 +289,6 @@ public class TppConfigManager {
      * @return 该站点的右键次数
      */
     public static int getUseCount(String station) {
-        return stationUseCount.getOrDefault(station, useCount);
+        return STORE.stationUseCount.getOrDefault(station, STORE.useCount);
     }
 }

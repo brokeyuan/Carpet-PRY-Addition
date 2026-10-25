@@ -1,12 +1,11 @@
 package me.primaryuan.carpet.handler.peacefulPlayers;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import carpet.patches.EntityPlayerMPFake;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import carpet.patches.EntityPlayerMPFake;
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import me.primaryuan.carpet.command.CommandSupport;
+import me.primaryuan.carpet.config.PryJsonStore;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.server.MinecraftServer;
@@ -16,13 +15,6 @@ import net.minecraft.sounds.SoundSource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
-import java.io.Reader;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -45,8 +37,9 @@ import java.util.UUID;
  * 入口处、护甲等减伤计算前触发），规则开启时玩家间伤害的双方任一处于 off 即取消，
  * 自伤（伤害来源为自身）不受限制。不使用 mixin，无跨版本签名问题。
  *
- * 持久化：config/carpet-pry-pvp.json（UTF-8，临时文件原子替换，模式同 TppConfigManager），
- * 玩家状态跨重启、跨重登保留；玩家加入时按当前默认状态登记，保证 /pvp list 完整。
+ * 持久化：&lt;存档&gt;/carpet-pry-addition/pvp.json（PVP 状态是存档玩法状态，随备份走；
+ * 旧版平铺文件 config/carpet-pry-pvp.json 首次启动自动收编），玩家状态跨重启、
+ * 跨重登保留；玩家加入时按当前默认状态登记，保证 /pvp list 完整。
  */
 public final class PvpManager {
 
@@ -56,20 +49,70 @@ public final class PvpManager {
 
     private static final Logger LOGGER = LogManager.getLogger("CarpetPrimaryuan");
 
-    /** 配置文件路径（统一以 UTF-8 读写，避免 Windows 默认 GBK 编码导致玩家名乱码） */
-    private static final Path CONFIG_FILE = Path.of("config/carpet-pry-pvp.json");
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final PvpStore STORE = new PvpStore();
 
-    /** 全服默认 PVP 状态（仅 /pvp set @a 时更新；此后新登记玩家跟随此值） */
-    private static String defaultState = STATE_ON;
+    private static final class PvpStore extends PryJsonStore {
+        /** 全服默认 PVP 状态（仅 /pvp set @a 时更新；此后新登记玩家跟随此值） */
+        private String defaultState = STATE_ON;
 
-    /**
-     * 玩家名 → PVP 状态（"on"/"off"）。
-     * 仅服务器主线程访问（Carpet 命令与 Fabric 服务器事件均在主线程），普通集合即可。
-     */
-    private static final Map<String, String> playerStates = new HashMap<>();
+        /**
+         * 玩家名 → PVP 状态（"on"/"off"）。
+         * 仅服务器主线程访问（Carpet 命令与 Fabric 服务器事件均在主线程），普通集合即可。
+         */
+        private final Map<String, String> playerStates = new HashMap<>();
 
-    private static boolean initialized = false;
+        private PvpStore() {
+            super("PVP", "pvp.json", Scope.WORLD, 1, "carpet-pry-pvp.json");
+        }
+
+        @Override
+        protected void applyData(JsonObject data) {
+            // 临时结构全部解析成功后再原子提交内存态：
+            // 坏文件（如手改 JSON 类型错误）在中途抛异常时不清空现有状态，
+            // 避免之后任意一次 save() 把空玩家表写回磁盘
+            String parsedDefault = defaultState;
+            JsonElement defaultElem = data.get("default");
+            if (defaultElem != null && defaultElem.isJsonPrimitive() && isValidState(defaultElem.getAsString())) {
+                parsedDefault = defaultElem.getAsString();
+            }
+            Map<String, String> parsedStates = new HashMap<>();
+            JsonElement playersElem = data.get("players");
+            if (playersElem != null && playersElem.isJsonObject()) {
+                for (Map.Entry<String, JsonElement> entry : playersElem.getAsJsonObject().entrySet()) {
+                    if (entry.getValue().isJsonPrimitive() && isValidState(entry.getValue().getAsString())) {
+                        parsedStates.put(entry.getKey(), entry.getValue().getAsString());
+                    }
+                }
+            }
+            defaultState = parsedDefault;
+            playerStates.clear();
+            playerStates.putAll(parsedStates);
+        }
+
+        @Override
+        protected JsonObject collectData() {
+            JsonObject data = new JsonObject();
+            data.addProperty("default", defaultState);
+            JsonObject playersObj = new JsonObject();
+            for (Map.Entry<String, String> entry : playerStates.entrySet()) {
+                playersObj.addProperty(entry.getKey(), entry.getValue());
+            }
+            data.add("players", playersObj);
+            return data;
+        }
+
+        @Override
+        protected JsonObject fromLegacy(JsonObject legacyRoot) {
+            // 旧平铺文件（v0）schema 与 v1 data 相同，直接透传
+            return legacyRoot.deepCopy();
+        }
+
+        @Override
+        protected void clearData() {
+            defaultState = STATE_ON;
+            playerStates.clear();
+        }
+    }
 
     /** 上次播放拦截提示音的 game time（按受害方节流——攻击冷却不限制挥空尝试，无节流可被刷屏） */
     private static final Map<UUID, Long> soundCooldowns = new HashMap<>();
@@ -78,17 +121,14 @@ public final class PvpManager {
 
     private PvpManager() {}
 
-    // ===== 初始化 =====
+    // ===== 初始化与服务器生命周期 =====
 
     /**
-     * 初始化：加载持久化状态，注册 PVP 伤害拦截与玩家加入登记。
-     * 由 CarpetPrimaryuanServer.onGameStarted 调用一次。
+     * 初始化：注册 PVP 伤害拦截与玩家加入登记。
+     * 由 CarpetPrimaryuanServer.onGameStarted 调用一次；状态加载在
+     * {@link #onServerLoaded}（此时才知道存档路径）。
      */
     public static void init() {
-        if (initialized) return;
-        initialized = true;
-        load();
-
         // 玩家间伤害拦截：规则开启（非 false 模式）时，双方任一玩家 PVP 为 off 即取消（双向保护，自伤除外）。
         // 拦截时播放提示音——玩家常以攻击作为"有事找你"的提醒信号，伤害被取消后信号会丢失，
         // 因此每次被拦截的攻击都在受击方位置播放一次提示音（攻击者与被攻击者都能听到）
@@ -110,6 +150,14 @@ public final class PvpManager {
                 registerPlayer(handler.player);
             }
         });
+    }
+
+    public static void onServerLoaded(MinecraftServer server) {
+        STORE.attach(server);
+    }
+
+    public static void onServerClosed() {
+        STORE.detach();
     }
 
     // ===== 状态查询 =====
@@ -134,14 +182,14 @@ public final class PvpManager {
      * 玩家当前是否允许 PVP（未单独设置时跟随全服默认状态）。
      */
     public static boolean isPvpOn(ServerPlayer player) {
-        return STATE_ON.equals(playerStates.getOrDefault(CommandSupport.profileName(player), defaultState));
+        return STATE_ON.equals(STORE.playerStates.getOrDefault(CommandSupport.profileName(player), STORE.defaultState));
     }
 
     /**
      * 获取全服默认 PVP 状态（"on"/"off"）。
      */
     public static String getDefaultState() {
-        return defaultState;
+        return STORE.defaultState;
     }
 
     /**
@@ -154,7 +202,7 @@ public final class PvpManager {
                 result.add(CommandSupport.profileName(player));
             }
         }
-        for (Map.Entry<String, String> entry : playerStates.entrySet()) {
+        for (Map.Entry<String, String> entry : STORE.playerStates.entrySet()) {
             if (STATE_OFF.equals(entry.getValue())
                     && server.getPlayerList().getPlayerByName(entry.getKey()) == null) {
                 result.add(entry.getKey());
@@ -171,9 +219,9 @@ public final class PvpManager {
      */
     public static void registerPlayer(ServerPlayer player) {
         String name = CommandSupport.profileName(player);
-        if (!playerStates.containsKey(name)) {
-            playerStates.put(name, defaultState);
-            save();
+        if (!STORE.playerStates.containsKey(name)) {
+            STORE.playerStates.put(name, STORE.defaultState);
+            STORE.save();
         }
     }
 
@@ -181,8 +229,8 @@ public final class PvpManager {
      * 设置单个玩家的 PVP 状态（"on"/"off"）。
      */
     public static void setPlayerState(String playerName, String state) {
-        playerStates.put(playerName, state);
-        save();
+        STORE.playerStates.put(playerName, state);
+        STORE.save();
     }
 
     /**
@@ -194,9 +242,9 @@ public final class PvpManager {
      * 新加入的玩家始终跟随默认状态。
      */
     public static void setGlobalState(String state) {
-        defaultState = state;
-        playerStates.clear();
-        save();
+        STORE.defaultState = state;
+        STORE.playerStates.clear();
+        STORE.save();
     }
 
     /**
@@ -204,70 +252,10 @@ public final class PvpManager {
      * 禁言期间所有个人开关操作均被锁定（含管理员），仅 /pvp on @a 可解除全局。
      */
     public static boolean isGlobalOff() {
-        return STATE_OFF.equals(defaultState);
-    }
-
-    // ===== 持久化 =====
-
-    private static void load() {
-        if (!Files.exists(CONFIG_FILE)) {
-            return;
-        }
-        try (Reader reader = Files.newBufferedReader(CONFIG_FILE, StandardCharsets.UTF_8)) {
-            JsonObject json = GSON.fromJson(reader, JsonObject.class);
-            if (json == null) {
-                LOGGER.warn("[PVP] State file is empty, using defaults");
-                return;
-            }
-
-            // 临时结构全部解析成功后再原子提交内存态（模式同 TppConfigManager）：
-            // 坏文件（如手改 JSON 类型错误）在中途抛异常时不清空现有状态，
-            // 避免之后任意一次 save() 把空玩家表写回磁盘
-            String parsedDefault = defaultState;
-            if (json.has("default") && isValidState(json.get("default").getAsString())) {
-                parsedDefault = json.get("default").getAsString();
-            }
-            Map<String, String> parsedStates = new HashMap<>();
-            JsonElement playersElem = json.get("players");
-            if (playersElem != null && playersElem.isJsonObject()) {
-                for (Map.Entry<String, JsonElement> entry : playersElem.getAsJsonObject().entrySet()) {
-                    if (entry.getValue().isJsonPrimitive() && isValidState(entry.getValue().getAsString())) {
-                        parsedStates.put(entry.getKey(), entry.getValue().getAsString());
-                    }
-                }
-            }
-            defaultState = parsedDefault;
-            playerStates.clear();
-            playerStates.putAll(parsedStates);
-        } catch (Exception e) {
-            LOGGER.error("[PVP] Failed to load state file", e);
-        }
+        return STATE_OFF.equals(STORE.defaultState);
     }
 
     private static boolean isValidState(String state) {
         return STATE_ON.equals(state) || STATE_OFF.equals(state);
-    }
-
-    private static void save() {
-        JsonObject config = new JsonObject();
-        config.addProperty("default", defaultState);
-
-        JsonObject playersObj = new JsonObject();
-        for (Map.Entry<String, String> entry : playerStates.entrySet()) {
-            playersObj.addProperty(entry.getKey(), entry.getValue());
-        }
-        config.add("players", playersObj);
-
-        try {
-            // 原子写：先写临时文件再原子替换，避免写一半崩溃/断电留下损坏的 JSON
-            Path tmp = CONFIG_FILE.resolveSibling(CONFIG_FILE.getFileName() + ".tmp");
-            Files.createDirectories(CONFIG_FILE.getParent());
-            try (Writer writer = Files.newBufferedWriter(tmp, StandardCharsets.UTF_8)) {
-                GSON.toJson(config, writer);
-            }
-            Files.move(tmp, CONFIG_FILE, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        } catch (IOException e) {
-            LOGGER.error("[PVP] Failed to save state file", e);
-        }
     }
 }

@@ -1,6 +1,6 @@
 package me.primaryuan.carpet;
 
-import me.primaryuan.carpet.settings.Rule;
+import carpet.api.settings.Rule;
 
 import static carpet.api.settings.RuleCategory.*;
 
@@ -10,6 +10,12 @@ public class CarpetPrimaryuanSettings {
     public static final String PORTING = "PORTING";
     public static final String COMMAND = "COMMAND";
     public static final String BUGFIX = "BUGFIX";
+
+    /**
+     * 服务器级规则类别：规则值持久化于 config/carpet-pry-addition/server-rules.json，
+     * 启动时压过存档 carpet.conf（不随存档漂移）。其余规则跟随存档 carpet.conf。
+     */
+    public static final String SERVER = "SERVER";
 
     @Rule(
             categories = {PRIMARYUAN, BOT, COMMAND}

@@ -209,5 +209,6 @@
   "carpet.rule.whoCalledMeSound.name": "谁在叫我音效",
   "carpet.rule.whoCalledMeSound.desc": "谁在叫我规则的提示音，false=无音效；title 与聊天高亮不受影响",
   "carpet.rule.whoCalledMeHighlight.name": "谁在叫我高亮色",
-  "carpet.rule.whoCalledMeHighlight.desc": "聊天框与 title 中被点名玩家名字的高亮色，false=不改变颜色"
+  "carpet.rule.whoCalledMeHighlight.desc": "聊天框与 title 中被点名玩家名字的高亮色，false=不改变颜色",
+  "carpet.category.SERVER": "服务器"
 }

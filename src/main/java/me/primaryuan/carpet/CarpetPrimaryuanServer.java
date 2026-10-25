@@ -22,7 +22,7 @@ import me.primaryuan.carpet.handler.peacefulPlayers.PvpManager;
 import me.primaryuan.carpet.handler.playerHeadSkin.PlayerHeadSkinHandler;
 import me.primaryuan.carpet.handler.textAnimation.TextAnimationHandler;
 import me.primaryuan.carpet.handler.whoCalledMe.WhoCalledMeHandler;
-import me.primaryuan.carpet.settings.CarpetRuleRegistrar;
+import me.primaryuan.carpet.config.ServerRuleOverrides;
 import me.primaryuan.carpet.util.MixinSanityCheck;
 import me.primaryuan.carpet.util.SendtoLinkManager;
 //#if MC < 12111
@@ -31,6 +31,7 @@ import me.primaryuan.carpet.util.SendtoLinkManager;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.InteractionResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -82,10 +83,11 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
     @Override
     public void onGameStarted() {
         LOGGER.info(fancyName + " " + CarpetPrimaryuanMod.getVersion() + " loaded");
-        CarpetRuleRegistrar.register(CarpetPrimaryuanSettings.class);
+        // 规则注册走 carpet 官方注解解析（carpet.api.settings.Rule），挂默认
+        // settingsManager：命令为 /carpet，持久值随存档写入 carpet.conf
+        CarpetServer.settingsManager.parseSettingsClass(CarpetPrimaryuanSettings.class);
         TppCommand.register();
         HatCommand.register();
-        TppConfigManager.load();
         RidingCommand.register();
         ScaleCommand.register();
         PvpCommand.register();
@@ -176,7 +178,29 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
                 CommandHelper.notifyPlayersCommandsChanged(source.getServer());
             }
             MixinSanityCheck.onRuleChanged(changedRule.name());
+            // SERVER 类规则改即持久化（server-rules.json，不随存档漂移）
+            ServerRuleOverrides.onRuleChanged(changedRule);
         });
+    }
+
+    @Override
+    public void onServerLoaded(MinecraftServer server) {
+        // 存档级数据加载：此时 carpet 已读入存档 carpet.conf（attachServer 先于扩展
+        // 回调）、getWorldPath 可用；单人多次进出世界各自加载、互不残留
+        TppConfigManager.onServerLoaded(server);
+        PvpManager.onServerLoaded(server);
+        PatPatPlayersHandler.onServerLoaded(server);
+        // SERVER 类规则钉值：晚于 carpet 读存档 carpet.conf，服务器值永远优先
+        ServerRuleOverrides.apply(server);
+    }
+
+    @Override
+    public void onServerClosed(MinecraftServer server) {
+        // 存档级内存态清空：单人切换世界不残留上一世界数据
+        TppConfigManager.onServerClosed();
+        PvpManager.onServerClosed();
+        PatPatPlayersHandler.onServerClosed();
+        ServerRuleOverrides.onServerClosed();
     }
 
     /** 语言翻译缓存：canHasTranslations 会被反复调用，按语言缓存解析结果 */

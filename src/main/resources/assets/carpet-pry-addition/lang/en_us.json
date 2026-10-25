@@ -209,5 +209,6 @@
   "carpet.rule.whoCalledMeSound.name": "Who Called Me Sound",
   "carpet.rule.whoCalledMeSound.desc": "the sound of Who Called Me; false=silent; title and chat highlight are unaffected",
   "carpet.rule.whoCalledMeHighlight.name": "Who Called Me Highlight",
-  "carpet.rule.whoCalledMeHighlight.desc": "highlight color of the mentioned player's name in chat and title; false=no highlight"
+  "carpet.rule.whoCalledMeHighlight.desc": "highlight color of the mentioned player's name in chat and title; false=no highlight",
+  "carpet.category.SERVER": "Server"
 }

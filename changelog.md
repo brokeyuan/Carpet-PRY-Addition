@@ -1,5 +1,17 @@
 # Changelog
 
+## [未发布]
+
+### 新增
+
+- `SERVER` 规则类别：标记该类别的规则值跟随服务器（钉值存于 `config/carpet-pry-addition/server-rules.json`，启动时压过存档 carpet.conf），权限类规则不再随存档漂移
+- 数据文件版本号信封：降级运行旧版模组不回写、不破坏新格式文件
+
+### 变更
+
+- 配置分层：`/tppset` 站点、`/pvp` 和平名单、`/patnod` 偏好随存档迁移至 `<存档>/carpet-pry-addition/`，旧版 `config/carpet-pry-*.json` 首次启动自动收编；配置文件懒创建，未使用功能不再生成空文件
+- 规则注册改用 carpet 官方注解解析（`parseSettingsClass`），移除反射注册器；启动不再逐条输出 `Registered rule` 日志
+
 ## [1.3.1] - 2026-10-21
 
 ### 新增

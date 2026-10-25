@@ -35,6 +35,12 @@
 5. 本模组为**服务端模组**，玩家无需安装；客户端可选安装，提供两项客户端功能——`ridingPlayersClientInteract`（头上有乘客时仍可交互）与玩家缩放的视野（FOV）补偿
 6. 规则默认关闭（`ridingPlayersClientInteract` 除外），使用 `/carpet` 命令或配置文件按需启用
 
+## 配置存储
+
+- 规则值随存档存于 `<存档>/carpet.conf`（carpet 原生）；标记 `SERVER` 分类的规则跟随服务器，钉值存于 `config/carpet-pry-addition/server-rules.json`，启动时压过存档值
+- `/tppset` 站点、`/pvp` 和平名单、`/patnod` 偏好随存档存于 `<存档>/carpet-pry-addition/`，旧版 `config/carpet-pry-*.json` 首次启动自动迁移
+- 数据文件带版本号信封，降级运行旧版模组不会破坏新格式文件
+
 ## 依赖
 
 | 名称 | 类型 | 链接 |
