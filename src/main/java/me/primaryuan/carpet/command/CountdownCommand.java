@@ -3,25 +3,24 @@ package me.primaryuan.carpet.command;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
-import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.context.ParsedCommandNode;
+import com.mojang.brigadier.context.StringRange;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
-import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import me.primaryuan.carpet.handler.countdown.CountdownChannel;
 import me.primaryuan.carpet.handler.countdown.CountdownManager;
-import me.primaryuan.carpet.handler.countdown.CountdownSelectorType;
 import me.primaryuan.carpet.handler.countdown.CountdownTargets;
 import me.primaryuan.carpet.handler.countdown.CountdownTime;
 import me.primaryuan.carpet.i18n.ServerI18n;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.commands.arguments.selector.EntitySelector;
 
-import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
@@ -30,14 +29,19 @@ import java.util.concurrent.CompletableFuture;
 /**
  * /countdown 命令：服务端全局单实例倒计时（规则 countdown 控制可用性）。
  *
- * <p>树形结构（时间参数自带格式校验与补全；display 用 + 组合、增量补全；
- * players 为原版玩家选择器，raw 文本用于判定独立 @a 的动态全服模式）：</p>
+ * <p>树形结构（display 用 + 组合、增量补全；players 为原版 EntityArgument，
+ * 补全与校验均为原生行为）：</p>
  * <pre>
  * /countdown start &lt;time&gt; [display] [players]
  * /countdown pause | resume | stop | status
  * /countdown add &lt;time&gt; | remove &lt;time&gt;
- * /countdown set time|display|players|last|label ...
+ * /countdown set time|display|players|last|label|milestones|sound ...
  * </pre>
+ *
+ * <p>参数类型只允许原版已注册类型（自定义 ArgumentType 未注册 ArgumentTypeInfos
+ * 时，玩家登录构建命令树同步包会抛 Unrecognized argument type 并踢出玩家）。
+ * 时间参数因此用 word 字符串在执行体内解析（非法输入给专用提示，体验不受损）；
+ * "独立 @a = 动态全服"的判定经 Brigadier 节点 range 从原始输入截取参数文本。</p>
  *
  * <p>权限等级 2（命令方块可用）。规则关闭时命令树保持可见以便给出明确提示
  * "功能已关闭"（任务书要求，区别于其他 PRY 命令的静默隐藏）；管理器拒绝
@@ -74,9 +78,9 @@ public final class CountdownCommand {
                             .then(Commands.literal("display").then(Commands.argument("display", StringArgumentType.word())
                                     .suggests(CountdownCommand::suggestDisplay)
                                     .executes(CountdownCommand::executeSetDisplay)))
-                            .then(Commands.literal("players").then(Commands.argument("players", CountdownSelectorType.players())
+                            .then(Commands.literal("players").then(Commands.argument("players", EntityArgument.players())
                                     .executes(CountdownCommand::executeSetPlayers)))
-                            .then(Commands.literal("last").then(Commands.argument("last", TimeArgumentType.timeOrAll())
+                            .then(Commands.literal("last").then(Commands.argument("last", StringArgumentType.word())
                                     .suggests(CountdownCommand::suggestTimeOrAll)
                                     .executes(CountdownCommand::executeSetLast)))
                             .then(Commands.literal("label").then(Commands.argument("label", StringArgumentType.greedyString())
@@ -92,21 +96,23 @@ public final class CountdownCommand {
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> startBranch() {
-        RequiredArgumentBuilder<CommandSourceStack, ?> players = Commands.argument("players", CountdownSelectorType.players())
-                .executes(ctx -> executeStart(ctx, StringArgumentType.getString(ctx, "display"),
-                        CountdownSelectorType.get(ctx, "players")));
+        RequiredArgumentBuilder<CommandSourceStack, ?> players = Commands.argument("players", EntityArgument.players())
+                .executes(ctx -> executeStart(ctx, StringArgumentType.getString(ctx, "display"), true));
         RequiredArgumentBuilder<CommandSourceStack, ?> display = Commands.argument("display", StringArgumentType.word())
                 .suggests(CountdownCommand::suggestDisplay)
-                .executes(ctx -> executeStart(ctx, StringArgumentType.getString(ctx, "display"), null))
+                .executes(ctx -> executeStart(ctx, StringArgumentType.getString(ctx, "display"), false))
                 .then(players);
-        RequiredArgumentBuilder<CommandSourceStack, ?> time = Commands.argument("time", TimeArgumentType.time())
-                .executes(ctx -> executeStart(ctx, null, null))
+        RequiredArgumentBuilder<CommandSourceStack, ?> time = Commands.argument("time", StringArgumentType.word())
+                .suggests(CountdownCommand::suggestTime)
+                .executes(ctx -> executeStart(ctx, null, false))
                 .then(display);
         return Commands.literal("start").then(time);
     }
 
     private static RequiredArgumentBuilder<CommandSourceStack, ?> timeNode(Execute handler) {
-        return Commands.argument("time", TimeArgumentType.time()).executes(ctx -> handler.run(ctx));
+        return Commands.argument("time", StringArgumentType.word())
+                .suggests(CountdownCommand::suggestTime)
+                .executes(ctx -> handler.run(ctx));
     }
 
     @FunctionalInterface
@@ -114,53 +120,12 @@ public final class CountdownCommand {
         int run(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException;
     }
 
-    // ==================== 参数类型 ====================
+    // ==================== 补全 ====================
 
-    /**
-     * 时间参数：解析共用 CountdownTime（非法输入报"合法格式"提示）；
-     * allowAll 变体额外接受 all（以 -1 哨兵返回，调用方映射为"全程"）。
-     */
-    private static final class TimeArgumentType implements ArgumentType<Long> {
-        private static final long ALL_SENTINEL = -1L;
-
-        private final boolean allowAll;
-
-        private TimeArgumentType(boolean allowAll) {
-            this.allowAll = allowAll;
-        }
-
-        static TimeArgumentType time() {
-            return new TimeArgumentType(false);
-        }
-
-        static TimeArgumentType timeOrAll() {
-            return new TimeArgumentType(true);
-        }
-
-        @Override
-        public Long parse(StringReader reader) throws CommandSyntaxException {
-            String raw = reader.readUnquotedString();
-            if (allowAll && raw.equalsIgnoreCase("all")) {
-                return ALL_SENTINEL;
-            }
-            try {
-                return CountdownTime.parseSeconds(raw);
-            } catch (IllegalArgumentException e) {
-                throw new SimpleCommandExceptionType(
-                        ServerI18n.tr("carpetprimaryuan.command.countdown.bad_time", raw)).create();
-            }
-        }
-
-        @Override
-        public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> context, SuggestionsBuilder builder) {
-            suggestTimeCandidates(builder, allowAll);
-            return builder.buildFuture();
-        }
-
-        @Override
-        public Collection<String> getExamples() {
-            return List.of("60", "1m30s", "2h");
-        }
+    private static CompletableFuture<Suggestions> suggestTime(
+            CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
+        suggestTimeCandidates(builder, false);
+        return builder.buildFuture();
     }
 
     private static void suggestTimeCandidates(SuggestionsBuilder builder, boolean allowAll) {
@@ -238,22 +203,55 @@ public final class CountdownCommand {
         return false;
     }
 
-    private static long getSeconds(CommandContext<CommandSourceStack> ctx, String name) {
-        return ctx.getArgument(name, Long.class);
+    /**
+     * 时间参数在执行体内解析（word 字符串，非法输入给专用提示）；
+     * allowAll 支持 all，以 -1 哨兵返回，调用方映射为"全程"。
+     *
+     * @return 秒数；输入非法时已发送失败提示并返回 null
+     */
+    private static Long parseTime(CommandSourceStack source, String raw, boolean allowAll) {
+        if (allowAll && raw.equalsIgnoreCase("all")) {
+            return -1L;
+        }
+        try {
+            return CountdownTime.parseSeconds(raw);
+        } catch (IllegalArgumentException e) {
+            source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.countdown.bad_time", raw));
+            return null;
+        }
+    }
+
+    /** 从命令原始输入截取参数节点的文本（Brigadier 公开 API），用于判定独立 @a 的动态全服模式 */
+    private static String nodeText(CommandContext<CommandSourceStack> ctx, String name) {
+        String input = ctx.getInput();
+        for (ParsedCommandNode<CommandSourceStack> node : ctx.getNodes()) {
+            if (name.equals(node.getNode().getName())) {
+                StringRange range = node.getRange();
+                return input.substring(Math.min(range.getStart(), input.length()),
+                        Math.min(range.getEnd(), input.length()));
+            }
+        }
+        return null;
     }
 
     private static int executeStart(CommandContext<CommandSourceStack> ctx, String displayRaw,
-                                    CountdownSelectorType.SelectorInput targets) {
+                                    boolean hasPlayers) {
         CommandSourceStack source = ctx.getSource();
         if (checkDisabled(source)) {
             return 0;
         }
-        long seconds = getSeconds(ctx, "time");
+        Long seconds = parseTime(source, StringArgumentType.getString(ctx, "time"), false);
+        if (seconds == null) {
+            return 0;
+        }
         EnumSet<CountdownChannel> channels = parseChannels(source, displayRaw, DEFAULT_DISPLAY);
         if (channels == null) {
             return 0;
         }
-        CountdownTargets.Resolved resolved = CountdownTargets.resolve(targets, source);
+        CountdownTargets.Resolved resolved = CountdownTargets.resolve(
+                hasPlayers ? nodeText(ctx, "players") : null,
+                hasPlayers ? ctx.getArgument("players", EntitySelector.class) : null,
+                source);
         if (!resolved.dynamicAll() && resolved.realCount() == 0) {
             source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.countdown.no_match"));
             return 0;
@@ -362,7 +360,10 @@ public final class CountdownCommand {
         if (checkDisabled(source)) {
             return 0;
         }
-        long seconds = getSeconds(ctx, "time");
+        Long seconds = parseTime(source, StringArgumentType.getString(ctx, "time"), false);
+        if (seconds == null) {
+            return 0;
+        }
         CountdownManager manager = CountdownManager.get();
         int result = manager.addTime(source.getServer(), seconds);
         if (result == -2) {
@@ -384,7 +385,10 @@ public final class CountdownCommand {
         if (checkDisabled(source)) {
             return 0;
         }
-        long seconds = getSeconds(ctx, "time");
+        Long seconds = parseTime(source, StringArgumentType.getString(ctx, "time"), false);
+        if (seconds == null) {
+            return 0;
+        }
         CountdownManager manager = CountdownManager.get();
         if (manager.removeTime(source.getServer(), seconds) != 0) {
             source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.countdown.no_active"));
@@ -401,7 +405,10 @@ public final class CountdownCommand {
         if (checkDisabled(source)) {
             return 0;
         }
-        long seconds = getSeconds(ctx, "time");
+        Long seconds = parseTime(source, StringArgumentType.getString(ctx, "time"), false);
+        if (seconds == null) {
+            return 0;
+        }
         CountdownManager manager = CountdownManager.get();
         if (manager.setTime(source.getServer(), seconds) != 0) {
             source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.countdown.no_active"));
@@ -447,7 +454,9 @@ public final class CountdownCommand {
             return 0;
         }
         CountdownTargets.Resolved resolved = CountdownTargets.resolve(
-                CountdownSelectorType.get(ctx, "players"), source);
+                nodeText(ctx, "players"),
+                ctx.getArgument("players", EntitySelector.class),
+                source);
         if (!resolved.dynamicAll() && resolved.realCount() == 0) {
             source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.countdown.no_match"));
             return 0;
@@ -469,8 +478,11 @@ public final class CountdownCommand {
         if (checkDisabled(source)) {
             return 0;
         }
-        long value = getSeconds(ctx, "last");
-        Long seconds = value == TimeArgumentType.ALL_SENTINEL ? null : value;
+        Long value = parseTime(source, StringArgumentType.getString(ctx, "last"), true);
+        if (value == null) {
+            return 0;
+        }
+        Long seconds = value == -1L ? null : value;
         CountdownManager manager = CountdownManager.get();
         if (manager.setLastWindow(source.getServer(), seconds) != 0) {
             source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.countdown.no_active"));
