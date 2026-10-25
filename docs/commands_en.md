@@ -22,6 +22,7 @@
 - [/pvp - Peaceful Players](#pvp---peaceful-players)
 - [/patnod - Pat Interaction Toggle](#patnod---pat-interaction-toggle)
 - [/text - MiSide Subtitles](#text---miside-subtitles)
+- [/countdown - Countdown](#countdown---countdown)
 
 ---
 
@@ -714,4 +715,83 @@ Use `||` for a literal `|`; legacy color codes use `&` (e.g. `&c`), `&&` for a l
 /text @a Static text|drop=false           # fade in place, no drop
 /text @a Glowing|glow=true;sound=false    # glow, no sound
 /text brokeyuan private ping              # direct at a single player
+```
+
+
+---
+
+## /countdown - Countdown
+
+> **Related rule**: `countdown` (on by default)
+
+A single server-wide countdown instance: BossBar, Title (center screen), Subtitle and ActionBar channels freely combined; one command is enough by default. Timing follows real elapsed time (low TPS does not stretch it), with pause, resume, stop and live adjustment. Command blocks supported.
+
+### Command Syntax
+
+- `/countdown start <time> [display] [players]` — start; rejected while a countdown is running
+- `/countdown pause` / `resume` — pause / resume (the frozen display is kept while paused)
+- `/countdown stop` — cancel immediately and clean up (no "time's up" prompt)
+- `/countdown status` — state, remaining, total, display and targets
+- `/countdown add <time>` / `remove <time>` — add / remove remaining time (removing to zero completes)
+- `/countdown set time <time>` — set the remaining time directly (at least 1s)
+- `/countdown set display <combo>` — change channels (e.g. `bossbar+subtitle`)
+- `/countdown set players <selector>` — change targets (vanilla player selector)
+- `/countdown set last <time|all>` — change when the center display (Title/Subtitle) starts, default the last 5 seconds
+- `/countdown set label <text>` — change the label (default "Countdown", max 128 characters)
+
+### Time Format
+
+`60`, `60s`, `1m`, `1m30s`, `2h`, `1h30m` — a bare integer means seconds; units s/m/h in h>m>s order, each at most once, positive integers only; range 1s to 24h; invalid input explains the valid formats.
+
+### Display Modes
+
+| Channel | Default behavior |
+|------|------|
+| `bossbar` | Purple bar shown the whole time, text `label MM:SS`, progress = remaining / effective total (the denominator grows when time is added) |
+| `title` | By default big digits 5, 4, 3, 2, 1 in the last 5 seconds; with `set last all` it shows the whole time, switching to MM:SS above 59 seconds |
+| `subtitle` | Shows MM:SS; together with title the title shows the label and the subtitle the time; alone it sends an empty title |
+| `actionbar` | Shows `Remaining MM:SS` the whole time, refreshed once per second |
+
+Omitting display defaults to `bossbar+title`; combine with `+` (e.g. `bossbar+title+subtitle+actionbar`), case-insensitive, duplicates removed.
+
+### Target Players
+
+- Omitted or a bare `@a`: dynamic everyone (joining players get the display automatically)
+- Any other selector is snapshotted once at execution (`@s`, player names, `@a[team=red]`, `@a[distance=..32]`, etc.; distance/teams judged at execution time); players who leave lose the display and it is restored on rejoin while still in the snapshot
+- Carpet fake players are always excluded; selectors matching no real player report an error
+
+### Permissions
+
+- All subcommands require permission level 2 (command blocks supported)
+- While the `countdown` rule is off the command stays visible and reports that it is disabled (unlike other commands that hide the whole tree)
+
+### Behavior Details
+
+- Default: `/countdown start 60s` shows every real player a purple BossBar counting down `Countdown 01:00`, big center digits in the last 5 seconds, "Time's up!" on zero, all UI gone after about 2 seconds
+- Completion fires exactly once; `stop`, disabling the rule and server shutdown clean up immediately without the completion prompt
+- Time/display/target/window/label changes refresh immediately without resetting the timer or changing run state
+- While paused the BossBar freezes at its progress; Title/ActionBar are re-sent by the server to stay visible
+- Coexists safely with MiSide subtitles (/text) and whoCalledMe: this feature only cleans up its own displays and never clears Title/ActionBar content owned by other features
+- Countdowns are cancelled by a server restart (no persistence)
+
+### Examples
+
+```
+/countdown start 60s                          # default bossbar+title for everyone
+/countdown start 30s title                    # center digits only
+/countdown start 90s bossbar+actionbar        # BossBar + actionbar
+/countdown start 60s bossbar+title @a         # explicit dynamic everyone
+/countdown start 30s title Steve              # one player
+/countdown start 2m bossbar @a[team=red]      # red team
+/countdown start 10s title @a[distance=..32]  # players within 32 blocks
+/countdown pause                              # pause
+/countdown resume                             # resume
+/countdown set time 10s                       # 10 seconds remaining
+/countdown add 30s                            # add 30 seconds
+/countdown set display bossbar+subtitle       # change channels
+/countdown set players @a                     # change targets
+/countdown set last all                       # center digits the whole time
+/countdown set label Get ready                # change label
+/countdown status                             # inspect state
+/countdown stop                               # cancel
 ```

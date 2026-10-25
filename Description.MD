@@ -1,4 +1,4 @@
-Carpet PRY Addition is a server-side Fabric extension for the [fabric-carpet](https://github.com/gnembon/fabric-carpet) mod, developed for the **Primaryuan Server**. It adds 35 configurable Carpet rules and 9 new commands (plus `/player` extensions) covering bug fixes, fake player enhancements, player interaction, and survival gameplay expansion.
+Carpet PRY Addition is a server-side Fabric extension for the [fabric-carpet](https://github.com/gnembon/fabric-carpet) mod, developed for the **Primaryuan Server**. It adds 36 configurable Carpet rules and 10 new commands (plus `/player` extensions) covering bug fixes, fake player enhancements, player interaction, and survival gameplay expansion.
 
 ---
 
@@ -127,6 +127,10 @@ Naming a player in chat triggers three sounds and a title; self-mentions also wo
 ### MiSide Subtitles (`textAnimation`)
 
 Use `/text @a|player <message>` to play MiSide-style subtitles on vanilla clients. Text types in, holds, then drops and fades; trailing exclamation marks enlarge it. Defaults to white, supports `&` color codes and inline options. The first 12 eligible recipients get entity subtitles; the rest get an actionbar typewriter. Fake players are excluded.
+
+### Countdown (`countdown`)
+
+Use `/countdown start 60s` to run a server-wide countdown through any combination of BossBar, title, subtitle and actionbar for everyone or selected players (fake players excluded). Supports pause, resume, stop and live adjustment of time, display, targets, center window and label, all in game. Times by real elapsed time; disabled or stopped instantly cleans up every display.
 
 ### Click Through (`clickThrough`)
 

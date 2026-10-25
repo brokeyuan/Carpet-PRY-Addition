@@ -2,7 +2,7 @@
 
 > Mod ID: `carpet-pry-addition` | 版本: `1.3.1`
 >
-> 共 **35 条**规则（`whoCalledMeSound` / `whoCalledMeHighlight` 作为配套子规则内联在 whoCalledMe 节）
+> 共 **36 条**规则（`whoCalledMeSound` / `whoCalledMeHighlight` 作为配套子规则内联在 whoCalledMe 节）
 >
 > **提示：可以使用 `Ctrl+F` 快速查找自己想要的规则**
 
@@ -46,6 +46,7 @@
   - [invisibleInTallGrass - 隐身草](#invisibleintallgrass---隐身草)
   - [moreEndCrystalTypes - 更多种类的末地水晶](#moreendcrystaltypes---更多种类的末地水晶)
   - [textAnimation - 米塔字幕](#textanimation---米塔字幕)
+  - [countdown - 通用倒计时](#countdown---通用倒计时)
 - [玩家缩放](#玩家缩放)
   - [playerScale - 玩家随地大小变](#playerscale---玩家随地大小变)
   - [playerScaleMin - 玩家大小最小值](#playerscalemin---玩家大小最小值)
@@ -565,6 +566,23 @@
 | **分类** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
 
 潜行保留编辑告示牌、旋转展示框等交互；立式告示牌和横幅不处理，旁观者不能触发。容器仍遵循猫占、顶部被堵等原版限制。安装 ClickThrough Server（`clickthrough_server`）时停用本规则的处理，避免重复交互。
+
+---
+
+### countdown - 通用倒计时
+
+`/countdown` 向全服或指定玩家播放 BossBar/标题/副标题/动作栏倒计时（四种渠道任意组合），支持暂停、恢复、停止与运行中修改时间、显示方式、对象、中央显示窗口与标题。
+
+| 属性 | 值 |
+|------|-----|
+| **规则名** | `countdown` |
+| **描述** | 用 /countdown 向全服或指定玩家播放 BossBar/标题/副标题/动作栏倒计时，支持暂停恢复与运行中修改。 |
+| **类型** | `boolean` |
+| **默认值** | `true` |
+| **参考选项** | `true`, `false` |
+| **分类** | `PRIMARYUAN`, `COMMAND` |
+
+权限等级 2，命令方块可用。规则关闭时命令保留并提示"功能已关闭"，进行中的倒计时立即清理；计时基于真实经过时间（TPS 低不拉长时长），服务端仅允许一个倒计时，停服即取消。完整语法与行为见[命令文档](commands.md#countdown---通用倒计时)。
 
 ---
 

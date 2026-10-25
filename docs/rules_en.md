@@ -2,7 +2,7 @@
 
 > Mod ID: `carpet-pry-addition` | Version: `1.3.1`
 >
-> Total: **35 rules** (`whoCalledMeSound` / `whoCalledMeHighlight` are documented inline as companion rules in the whoCalledMe section)
+> Total: **36 rules** (`whoCalledMeSound` / `whoCalledMeHighlight` are documented inline as companion rules in the whoCalledMe section)
 >
 > **Tip: Use `Ctrl+F` to quickly find the rule you want**
 
@@ -46,6 +46,7 @@ Rule values are stored per world in `<world>/carpet.conf` by default. Rules tagg
   - [invisibleInTallGrass - Invisibility Grass](#invisibleintallgrass---invisibility-grass)
   - [moreEndCrystalTypes - More End Crystal Types](#moreendcrystaltypes---more-end-crystal-types)
   - [textAnimation - MiSide Subtitles](#textanimation---miside-subtitles)
+  - [countdown - Countdown](#countdown---countdown)
 - [Player Scaling](#player-scaling)
   - [playerScale - Player Scale](#playerscale---player-scale)
   - [playerScaleMin - Player Scale Min](#playerscalemin---player-scale-min)
@@ -566,6 +567,23 @@ Right-clicking a wall sign, wall hanging sign, wall banner, item frame or painti
 | **Categories** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE` |
 
 Sneaking retains sign editing and frame rotation. Standing signs and banners are not handled; spectators cannot trigger it. Containers still follow vanilla blocked-opening checks. Installing ClickThrough Server (`clickthrough_server`) disables this rule’s handler to avoid duplicate interactions.
+
+---
+
+### countdown - Countdown
+
+`/countdown` runs a countdown via BossBar/title/subtitle/actionbar (any combination of the four channels) for everyone or selected players, with pause, resume, stop and live adjustment of time, display, targets, center window and label.
+
+| Property | Value |
+|----------|-------|
+| **Rule Name** | `countdown` |
+| **Description** | Adds /countdown: a BossBar/title/subtitle/actionbar countdown for everyone or selected players, with pause and live adjustments. |
+| **Type** | `boolean` |
+| **Default Value** | `true` |
+| **Suggested Options** | `true`, `false` |
+| **Categories** | `PRIMARYUAN`, `COMMAND` |
+
+Permission level 2, command blocks supported. When the rule is off the command stays visible and reports that it is disabled; a running countdown is cleaned up immediately. Timing follows real elapsed time (low TPS does not stretch it); only one countdown exists per server and it is cancelled on restart. Full syntax and behavior in the [command documentation](commands_en.md#countdown---countdown).
 
 ---
 

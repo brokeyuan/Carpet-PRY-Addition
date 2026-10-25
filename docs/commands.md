@@ -22,6 +22,7 @@
 - [/pvp - 和平的玩家](#pvp---和平的玩家)
 - [/patnod - 被摸互动开关](#patnod---被摸互动开关)
 - [/text - 米塔字幕](#text---米塔字幕)
+- [/countdown - 通用倒计时](#countdown---通用倒计时)
 
 ---
 
@@ -714,4 +715,82 @@ scale
 /text @a 静止文本|drop=false                # 原地渐隐，不坠落
 /text @a 发光字幕|glow=true;sound=false      # 发光、无声
 /text brokeyuan 私发提醒                     # 定向单个玩家
+```
+
+---
+
+## /countdown - 通用倒计时
+
+> **所属规则**：`countdown`（默认开启）
+
+服务端全局单实例倒计时：BossBar、Title（屏幕中央大字）、Subtitle、ActionBar 四种显示渠道自由组合，默认一条指令即可使用。计时基于真实经过时间（TPS 低不拉长时长），支持暂停、恢复、停止与运行中修改。命令方块可用。
+
+### 命令语法
+
+- `/countdown start <时间> [显示方式] [目标玩家]`：启动倒计时；进行中时拒绝重复启动
+- `/countdown pause` / `resume`：暂停 / 恢复（暂停期保留当前显示）
+- `/countdown stop`：立即取消并清理显示（无"时间到"提示）
+- `/countdown status`：查看状态、剩余时间、总时长、显示方式与显示对象
+- `/countdown add <时间>` / `remove <时间>`：增加 / 减少剩余时间（减至归零触发完成）
+- `/countdown set time <时间>`：直接设置剩余时间（至少 1 秒）
+- `/countdown set display <组合>`：修改显示渠道（如 `bossbar+subtitle`）
+- `/countdown set players <选择器>`：修改显示对象（原版玩家选择器）
+- `/countdown set last <时间|all>`：修改中央大字（Title/Subtitle）开始显示的剩余窗口，默认最后 5 秒
+- `/countdown set label <文本>`：修改标题（默认"倒计时"，最多 128 字符）
+
+### 时间格式
+
+`60`、`60s`、`1m`、`1m30s`、`2h`、`1h30m`——无单位整数按秒；单位 s/m/h 顺序 h>m>s 各至多一次，每段正整数；范围 1 秒 ~ 24 小时，非法输入提示合法格式。
+
+### 显示方式
+
+| 渠道 | 默认行为 |
+|------|------|
+| `bossbar` | 紫色进度条全程显示，文本 `标题 MM:SS`，进度=剩余/有效总时长（中途加时自动扩展分母） |
+| `title` | 默认最后 5 秒中央大字 5、4、3、2、1；`set last all` 全程显示，剩余超过 59 秒时用 MM:SS |
+| `subtitle` | 显示 MM:SS，与 title 同开时 title 显示标题、subtitle 显示时间；单独开时空 title 配合发送 |
+| `actionbar` | 全程显示 `剩余 MM:SS`，每秒刷新一次 |
+
+省略显示方式时默认 `bossbar+title`；组合用 `+` 连接（如 `bossbar+title+subtitle+actionbar`），大小写不敏感、重复自动去重。
+
+### 目标玩家
+
+- 省略或独立 `@a`：动态全服（新加入玩家自动获得显示）
+- 其余选择器执行时快照一次（`@s`、玩家名、`@a[team=red]`、`@a[distance=..32]` 等，距离/队伍按执行当时判定）；退出玩家移除显示，快照内重新上线自动恢复
+- Carpet 假人一律排除；选择器无匹配真人时报错
+
+### 权限
+
+- 所有子命令需要权限等级 2（命令方块可用）
+- `countdown` 规则关闭时命令保留，执行提示"功能已关闭"（区别于其他命令的整树隐藏）
+
+### 行为细节
+
+- 默认效果：`/countdown start 60s` → 全服真人看到紫色 BossBar（`倒计时 01:00` 递减），最后 5 秒中央大字倒数，归零显示"时间到！"约 2 秒后全部 UI 自动消失
+- 完成仅触发一次；`stop`、规则关闭、服务器停止均立即清理且无完成提示
+- 修改时间/显示/对象/窗口/标题均立即刷新显示，不重置计时、不改变运行状态
+- 暂停期 BossBar 冻结在当前进度，Title/ActionBar 由服务端保活重发
+- 与米塔字幕（/text）、谁在叫我（whoCalledMe）共存安全：本功能只清理自己拥有的显示，不主动清除其他功能正在显示的 Title/ActionBar 内容
+- 服务端重启后倒计时取消（无持久化）
+
+### 使用示例
+
+```
+/countdown start 60s                          # 默认 bossbar+title 全服倒计时
+/countdown start 30s title                    # 仅中央大字
+/countdown start 90s bossbar+actionbar        # BossBar + 动作栏
+/countdown start 60s bossbar+title @a         # 显式全服（动态）
+/countdown start 30s title Steve              # 定向玩家
+/countdown start 2m bossbar @a[team=red]      # 红队
+/countdown start 10s title @a[distance=..32]  # 32 格内玩家
+/countdown pause                              # 暂停
+/countdown resume                             # 恢复
+/countdown set time 10s                       # 剩余设为 10 秒
+/countdown add 30s                            # 加 30 秒
+/countdown set display bossbar+subtitle       # 换显示组合
+/countdown set players @a                     # 换目标
+/countdown set last all                       # 中央大字全程显示
+/countdown set label 活动即将开始              # 换标题
+/countdown status                             # 查看状态
+/countdown stop                               # 取消
 ```

@@ -239,6 +239,13 @@ public class CarpetPrimaryuanSettings {
     )
     public static boolean textAnimation = false;
 
+    // 通用倒计时：/countdown 全服或指定玩家的 BossBar/标题/副标题/动作栏倒计时，
+    // 支持暂停恢复与运行中修改时间、显示方式与对象；纯服务端数据包实现
+    @Rule(
+            categories = {PRIMARYUAN, COMMAND}
+    )
+    public static boolean countdown = true;
+
     // 穿透点击：右键墙告示牌/挂墙木牌/墙横幅/展示框/画直接打开背后贴挂的容器；
     // 潜行时保持原版交互（编辑/染色告示牌、旋转展示框），背后无容器也走原版
     @Rule(

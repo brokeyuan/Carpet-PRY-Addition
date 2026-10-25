@@ -11,9 +11,9 @@
 
 ## Introduction
 
-**Carpet-PRY-Addition** is a server-side Fabric extension for [Fabric Carpet](https://github.com/gnembon/fabric-carpet), developed for the **Primaryuan Server**; it also enhances the experience when installed client-side. It adds **35** configurable Carpet rules and **9** commands, covering fake player enhancements, player scaling, server management, mod compatibility fixes, ported features, player interactions, and survival gameplay expansion.
+**Carpet-PRY-Addition** is a server-side Fabric extension for [Fabric Carpet](https://github.com/gnembon/fabric-carpet), developed for the **Primaryuan Server**; it also enhances the experience when installed client-side. It adds **36** configurable Carpet rules and **10** commands, covering fake player enhancements, player scaling, server management, mod compatibility fixes, ported features, player interactions, and survival gameplay expansion.
 
-All rules are off by default except the client-side rule `ridingPlayersClientInteract`; enable what you need.
+All rules are off by default except the client-side rule `ridingPlayersClientInteract` and `countdown`; enable what you need.
 
 ## Documentation
 
@@ -109,6 +109,7 @@ All rules are off by default except the client-side rule `ridingPlayersClientInt
 
 - `sleepingDuringTheDay`: sleep during daytime, wake to night
 - `textAnimation`: `/text @a|player <message>` plays MiSide-style subtitles on vanilla clients; the first 12 recipients get entity subtitles and the rest get an actionbar typewriter
+- `countdown`: `/countdown start 60s` runs a BossBar/title/subtitle/actionbar countdown for everyone or selected players, with pause and live adjustments; on by default
 - `playerHat`: `/hat` to wear items on head, Totem of Undying in head slot triggers death protection
 - `playerHeadSkin`: real and fake players wear a player head to use its full skin; removing it restores the original skin, server-side
 - `betterSnowball`: snowballs deal knockback and damage to players
