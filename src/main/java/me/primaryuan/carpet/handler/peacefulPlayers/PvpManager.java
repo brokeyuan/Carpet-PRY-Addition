@@ -12,8 +12,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -46,8 +44,6 @@ public final class PvpManager {
     /** PVP 状态取值：开启 / 关闭（关闭 = 和平状态） */
     public static final String STATE_ON = "on";
     public static final String STATE_OFF = "off";
-
-    private static final Logger LOGGER = LogManager.getLogger("CarpetPrimaryuan");
 
     private static final PvpStore STORE = new PvpStore();
 

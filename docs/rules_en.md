@@ -10,7 +10,7 @@
 
 ## Rule Scope
 
-Rule values are stored per world in `<world>/carpet.conf` by default. Rules tagged with the `SERVER` category follow the server instead: pinned values live in `config/carpet-pry-addition/server-rules.json` and override the world's values on startup (for permission-style rules that must not drift with a synced world).
+Rule values are stored per world in `<world>/carpet.conf` by default. Rules tagged with the `SERVER` category follow the server instead: pinned values live in `config/carpet-pry-addition/server-rules.json` and override the world's values on startup (for permission-style rules that must not drift with a synced world). To unpin, edit or delete the entry in server-rules.json directly; `/carpet removeDefault` on a SERVER rule merely re-pins the default value.
 
 ## Quick Navigation
 

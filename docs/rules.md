@@ -10,7 +10,7 @@
 
 ## 规则作用域
 
-规则值默认随存档存于 `<存档>/carpet.conf`。标记 `SERVER` 分类的规则跟随服务器：钉值存于 `config/carpet-pry-addition/server-rules.json`，启动时压过存档值，不随存档漂移（适用于权限类等不应随存档同步的规则）。
+规则值默认随存档存于 `<存档>/carpet.conf`。标记 `SERVER` 分类的规则跟随服务器：钉值存于 `config/carpet-pry-addition/server-rules.json`，启动时压过存档值，不随存档漂移（适用于权限类等不应随存档同步的规则）。解除钉值须直接编辑或删除 server-rules.json 中的条目，`/carpet removeDefault` 对 SERVER 规则只会把默认值重新钉入。
 
 ## 快速导航
 

@@ -146,16 +146,20 @@ public abstract class PryJsonStore {
                 }
                 data = root.getAsJsonObject("data");
                 if (data == null) {
-                    LOGGER.error("[{}] Config missing 'data' object, using defaults; file untouched", tag);
+                    LOGGER.error("[{}] Config missing 'data' object, using defaults; "
+                            + "file will be rewritten on next save", tag);
                     clearData();
                     return;
                 }
             } else {
-                // 新路径下出现无信封文件：按 v0 旧格式收编（自我修复手改文件）
+                // 新路径下出现无信封文件：按 v0 旧格式收编（自我修复丢失信封的手改文件）。
+                // 不认识的键会被丢弃，下次 save 以信封格式重写整个文件
                 fileVersion = 0;
+                LOGGER.warn("[{}] Config has no version envelope, importing as legacy v0", tag);
                 data = fromLegacy(root);
                 if (data == null) {
-                    LOGGER.error("[{}] Unversioned config not recognized, using defaults; file untouched", tag);
+                    LOGGER.error("[{}] Unversioned config not recognized, using defaults; "
+                            + "file will be rewritten on next save", tag);
                     clearData();
                     return;
                 }
@@ -204,8 +208,10 @@ public abstract class PryJsonStore {
                 Files.move(legacyFile, legacyFile.resolveSibling(legacyFile.getFileName() + ".bak"),
                         StandardCopyOption.REPLACE_EXISTING);
             } catch (IOException e) {
-                LOGGER.warn("[{}] Legacy config migrated but rename failed (will re-import next boot): {}",
-                        tag, legacyFile, e);
+                // 走到这里说明新文件已写入成功（改名在写入之后），下次启动加载新文件、
+                // 不会再收编；旧文件滞留原地，仅提示手动清理
+                LOGGER.warn("[{}] Legacy config migrated but rename failed; legacy file kept at {}, "
+                        + "safe to delete manually", tag, legacyFile, e);
             }
             LOGGER.info("[{}] Migrated legacy config {} -> {}", tag, legacyFile, file);
         } catch (Exception e) {

@@ -26,8 +26,6 @@ import net.minecraft.world.phys.Vec3;
 //#if MC >= 260300
 //$$ import net.minecraft.world.item.component.SwingAnimation;
 //#endif
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -80,8 +78,6 @@ public class PatPatPlayersHandler {
 
     /** key=发起者名，value={上次抚摸 tick, 当前冷却}；仅服务器主线程访问 */
     private static final Map<String, long[]> actorStrokes = new HashMap<>();
-
-    private static final Logger LOGGER = LogManager.getLogger("CarpetPrimaryuan");
 
     /** 被摸接受偏好存储：随存档走（<存档>/carpet-pry-addition/patnod.json，旧平铺文件自动收编） */
     private static final PatStore STORE = new PatStore();
