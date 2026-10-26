@@ -215,7 +215,7 @@ Fixes the issue where higher versions of Xaero combined with LuckPerms cause fak
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `fixXaeroLib` |
-| **Description** | Fixes the issue where higher versions of Xaero combined with LuckPerms cause fake player data loss |
+| **Description** | Fix fake player data loss issue with newer Xaero versions when used with LuckPerms |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
@@ -236,7 +236,7 @@ Fixes fake players not triggering Fabric API connection events, causing mods lik
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `fixBlueMap` |
-| **Description** | Fixes fake players not triggering Fabric API connection events, causing mods like BlueMap to fail tracking fake player join/leave |
+| **Description** | Fix fake players not triggering Fabric API connection events, causing mods like BlueMap to fail tracking fake player join/leave |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
@@ -298,7 +298,7 @@ Allows players to sleep during the day. After sleeping, the time switches to nig
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `sleepingDuringTheDay` |
-| **Description** | Allows players to sleep during the day. After sleeping, the time switches to night (referenced from PCA) |
+| **Description** | Allow players to sleep during the day, switches to night after sleeping (referenced from PCA) |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
@@ -313,7 +313,7 @@ Allows the use of non-ASCII characters in command arguments (Chinese, Japanese, 
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `unicodeArgumentsSupport` |
-| **Description** | Allows the use of non-ASCII characters in command arguments (Chinese, Japanese, Korean, etc., can be used to summon fake players with Chinese names) (ported from YACA) |
+| **Description** | Allow non-ASCII characters (Chinese, Japanese, Korean, etc.) in command arguments, can be used to summon fake players with Chinese names (ported from YACA) |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
@@ -360,7 +360,7 @@ The maximum number of players that can be stacked when riding and picking up. Th
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `ridingPlayersStackLimit` |
-| **Description** | The maximum number of players that can be stacked when riding and picking up. This limit is shared between riding and picking up |
+| **Description** | Maximum number of players that can be stacked when riding or picking up (shared limit) |
 | **Type** | `int` |
 | **Default Value** | `16` |
 | **Suggested Options** | `16`, `32` |
@@ -375,7 +375,7 @@ When a player's game mode changes, players on top will dismount.
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `ridingPlayersAutoDismount` |
-| **Description** | When a player's game mode changes, players on top will dismount |
+| **Description** | When the player's game mode changes, dismount passengers on head |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
@@ -390,7 +390,7 @@ Requires client installation. When there are passengers on top, you can still in
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `ridingPlayersClientInteract` |
-| **Description** | Requires client installation. When there are passengers on top, you can still interact with blocks/entities |
+| **Description** | Client-side required: allows interacting with blocks/entities while having passengers on head |
 | **Type** | `boolean` |
 | **Default Value** | `true` |
 | **Suggested Options** | `false`, `true` |
@@ -462,7 +462,7 @@ Allows players to wear items on their head and adds the /hat command. When a Tot
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `playerHat` |
-| **Description** | Allows players to wear items on their head and adds the /hat command. When a Totem of Undying is placed in the head slot, the death protection effect is triggered |
+| **Description** | Allow players to wear items on their head, adds /hat command. Totem of Undying on head can trigger death protection |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
@@ -496,7 +496,7 @@ Stones in snow. Allows snowballs to deal knockback and damage to players.
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `betterSnowball` |
-| **Description** | Stones in snow. Allows snowballs to deal knockback and damage to players |
+| **Description** | Stone hidden in snow. Allows snowballs to deal knockback and damage to players |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
@@ -511,7 +511,7 @@ Automatically makes the player invisible when their head is located in tall gras
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `invisibleInTallGrass` |
-| **Description** | Automatically makes the player invisible when their head is located in tall grass |
+| **Description** | Players become invisible when their head is in tall grass |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |

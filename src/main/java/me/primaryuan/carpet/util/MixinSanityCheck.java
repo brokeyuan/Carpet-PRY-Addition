@@ -12,6 +12,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.ItemStack;
@@ -66,7 +67,9 @@ public final class MixinSanityCheck {
         if (ruleName.equals("playerHat") || ruleName.equals("ridingPlayers")
                 || ruleName.equals("pickupPlayers")
                 || ruleName.equals("ridingPlayersClientInteract") || ruleName.equals("fixXaeroLib")
-                || ruleName.equals("fakePlayerSkinMode") || ruleName.equals("fakePlayerSkinSet")) {
+                || ruleName.equals("fakePlayerSkinMode") || ruleName.equals("fakePlayerSkinSet")
+                || ruleName.equals("playerScale") || ruleName.equals("playerScalePhysics")
+                || ruleName.equals("playerScaleLinkedEntities")) {
             checkAll();
         }
         if (ruleName.equals("fakePlayerSkinMode") || ruleName.equals("fakePlayerSkinSet")) {
@@ -80,6 +83,7 @@ public final class MixinSanityCheck {
         checkTowerCrossDimensionCarry();
         checkFixXaeroLib();
         checkFakePlayerSkin();
+        checkPlayerScale();
     }
 
     /** playerHat：LivingEntity.isEquippableInSlot(ItemStack, EquipmentSlot)Z（实例方法） */
@@ -236,6 +240,30 @@ public final class MixinSanityCheck {
         if (!applySkinFound && reported.add("fakePlayerSkin:applySkin")) {
             LOGGER.warn("[pry] fakePlayerSkinMode 规则：skinrestorer 的 SkinService.applySkin 签名漂移，"
                     + "存储皮覆盖压制失效（历史落库残留可能盖回注入皮肤），请向模组作者反馈");
+        }
+    }
+
+    /**
+     * playerScale：Player.createAttributes() 静态无参且返回 AttributeSupplier.Builder（幂等兜底注入）。
+     * minecraft:scale 自 1.20.5 起已由原版注册且 base 为 1.0，注入被跳过不影响功能，故缺失只告警；
+     * scale 相关规则全关时不核验。
+     */
+    private static void checkPlayerScale() {
+        boolean scaleActive = !"false".equals(CarpetPrimaryuanSettings.playerScale)
+                || !"false".equals(CarpetPrimaryuanSettings.playerScalePhysics)
+                || CarpetPrimaryuanSettings.playerScaleLinkedEntities;
+        if (!scaleActive) {
+            return;
+        }
+        for (Method m : Player.class.getDeclaredMethods()) {
+            if (Modifier.isStatic(m.getModifiers()) && m.getParameterCount() == 0
+                    && m.getReturnType() == AttributeSupplier.Builder.class) {
+                return;
+            }
+        }
+        if (reported.add("playerScale")) {
+            LOGGER.warn("[pry] playerScale 规则：Player.createAttributes 缺失，scale 属性兜底注入被跳过"
+                    + "（原版自带该属性时不影响功能）");
         }
     }
 

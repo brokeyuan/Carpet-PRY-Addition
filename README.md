@@ -33,7 +33,7 @@
 3. 可选前置：[skinrestorer](https://modrinth.com/mod/skinrestorer)（仅假人皮肤功能需要）
 4. 将 mod JAR 文件放入服务器的 `mods/` 文件夹
 5. 本模组为**服务端模组**，玩家无需安装；客户端可选安装，提供两项客户端功能——`ridingPlayersClientInteract`（头上有乘客时仍可交互）与玩家缩放的视野（FOV）补偿
-6. 规则默认关闭（`ridingPlayersClientInteract` 除外），使用 `/carpet` 命令或配置文件按需启用
+6. 除 `ridingPlayersClientInteract` 与 `countdown` 默认开启外，其余规则默认关闭，使用 `/carpet` 命令或配置文件按需启用
 
 ## 配置存储
 

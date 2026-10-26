@@ -33,7 +33,7 @@ All rules are off by default except the client-side rule `ridingPlayersClientInt
 3. Optional: [skinrestorer](https://modrinth.com/mod/skinrestorer) (only needed for fake player skin features)
 4. Place the mod JAR in the server's `mods/` folder
 5. This is a **server-side** mod — players do not need it installed. Optional client install provides two client-side features: `ridingPlayersClientInteract` (keep interacting while carrying a passenger) and the player-scaling FOV compensation
-6. Rules are **off by default** (except `ridingPlayersClientInteract`) — use `/carpet` or config files to enable what you need
+6. All rules are **off by default** except `ridingPlayersClientInteract` and `countdown` — use `/carpet` or config files to enable what you need
 
 ## Configuration Storage
 

@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        💬 **提交前请务必 / Before submitting, please:**
+        **提交前请务必 / Before submitting, please:**
         - 使用 **最新的开发构建（Dev Build）** 测试； / Use the **latest Dev Build** to test;
         - 搜索已有 Issue，避免重复。 / Search existing issues to avoid duplicates.
 
@@ -86,7 +86,7 @@ body:
         If it's a crash, provide logs from the `logs` folder or `crash-reports`.
         请将日志上传至 [Pastebin](https://pastebin.com/) 或 [mclo.gs](https://mclo.gs/)，并在此粘贴链接。
         Please upload logs to Pastebin or mclo.gs and paste the link here.
-        ❌ 请勿直接粘贴整份日志内容。/ DO NOT paste full logs directly.
+        请勿直接粘贴整份日志内容。/ DO NOT paste full logs directly.
       placeholder: https://pastebin.com/J6b7lKxR
 
   - type: textarea
