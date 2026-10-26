@@ -23,6 +23,9 @@
 - [/patnod - 被摸互动开关](#patnod---被摸互动开关)
 - [/text - 米塔字幕](#text---米塔字幕)
 - [/countdown - 通用倒计时](#countdown---通用倒计时)
+- [跨服传送命令](#跨服传送命令)
+  - [/tpto](#tpto---跨服传送)
+  - [/tptoset](#tptoset---服务器管理)
 
 ---
 
@@ -797,4 +800,93 @@ scale
 /countdown set label 活动即将开始              # 换标题
 /countdown status                             # 查看状态
 /countdown stop                               # 取消
+```
+
+---
+
+## 跨服传送命令
+
+### /tpto - 跨服传送
+
+> **所属规则**：`serverTransfer`（默认关闭）
+
+#### 语法
+
+```
+/tpto
+/tpto <server>
+```
+
+无参数时列出全部可转移服务器，每行是一个可点击的服务器名，点击即以本人身份转移到该服务器；hover 显示目标地址。
+
+#### 权限
+
+所有玩家可用（规则开启时）。
+
+#### 参数说明
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| `server` | 字符串 | 服务器内部名或显示名 |
+
+#### 行为
+
+- 传送走原版 transfer 协议：服务端向执行玩家本人下发目标地址，客户端断开并直接连入目标服；无需代理端与客户端模组
+- 命令永远只转移执行者本人，不能指定他人；控制台 / RCON 等非玩家来源不可用
+- 名称未找到时失败并列出可用服务器
+- **目标服必须在 `server.properties` 开启 `accepts-transfers=true`**，否则转移连接会被目标服以 `transfers_disabled` 踢出
+
+### /tptoset - 服务器管理
+
+> **所属规则**：`serverTransfer`（默认关闭）
+
+#### 语法
+
+```
+/tptoset
+/tptoset add <address> <port> <name> [<displayName>]
+/tptoset remove <name>
+/tptoset reload
+```
+
+#### 权限
+
+管理员（权限等级 4）。规则关闭时整棵命令不可见。
+
+#### 子命令说明
+
+| 子命令 | 说明 |
+|--------|------|
+| `/tptoset` | 展示已配置服务器（显示名、内部名、地址），每行 `[删除]` 可点击 |
+| `/tptoset add <address> <port> <name> [<displayName>]` | 添加服务器；`name` 为唯一内部名，`displayName` 可含空格（缺省回退内部名）。内部名重复时拒绝，修改须先 remove 再 add |
+| `/tptoset remove <name>` | 删除服务器（内部名或显示名均可） |
+| `/tptoset reload` | 从盘重读配置（手改 tpto.json 后无需重启） |
+
+`address` 支持域名与 IP，IPv6 字面地址含冒号，须加引号（如 `"::1"`）。`port` 范围 1–65535。
+
+#### 配置文件
+
+`config/carpet-pry-addition/tpto.json`（跟随服务器，不随存档迁移）：
+
+```json
+{
+  "version": 1,
+  "data": {
+    "servers": {
+      "lobby": { "host": "mc.example.com", "port": 25565, "displayName": "大厅" }
+    }
+  }
+}
+```
+
+#### 使用示例
+
+```
+/tpto                                        # 列出服务器（点击传送）
+/tpto lobby                                  # 直接传送到内部名 lobby
+/tptoset                                     # 查看已配置服务器
+/tptoset add mc.example.com 25565 lobby 大厅  # 添加（显示名"大厅"）
+/tptoset add "::1" 25565 local6              # IPv6 地址加引号
+/tptoset remove lobby                        # 删除
+/tptoset reload                              # 手改 tpto.json 后重读
 ```

@@ -2,7 +2,7 @@
 
 > Mod ID: `carpet-pry-addition` | 版本: `1.3.1`
 >
-> 共 **36 条**规则（`whoCalledMeSound` / `whoCalledMeHighlight` 作为配套子规则内联在 whoCalledMe 节）
+> 共 **37 条**规则（`whoCalledMeSound` / `whoCalledMeHighlight` 作为配套子规则内联在 whoCalledMe 节）
 >
 > **提示：可以使用 `Ctrl+F` 快速查找自己想要的规则**
 
@@ -47,6 +47,8 @@
   - [moreEndCrystalTypes - 更多种类的末地水晶](#moreendcrystaltypes---更多种类的末地水晶)
   - [textAnimation - 米塔字幕](#textanimation---米塔字幕)
   - [countdown - 通用倒计时](#countdown---通用倒计时)
+- [服务器管理](#服务器管理)
+  - [serverTransfer - 跨服传送](#servertransfer---跨服传送)
 - [玩家缩放](#玩家缩放)
   - [playerScale - 玩家随地大小变](#playerscale---玩家随地大小变)
   - [playerScaleMin - 玩家大小最小值](#playerscalemin---玩家大小最小值)
@@ -583,6 +585,25 @@
 | **分类** | `PRIMARYUAN`, `COMMAND` |
 
 权限等级 2，命令方块可用。规则关闭时命令保留并提示"功能已关闭"，进行中的倒计时立即清理；计时基于真实经过时间（TPS 低不拉长时长），服务端仅允许一个倒计时，停服即取消。剩余时间经过 30m/15m/10m/5m/1m/30s/15s 节拍点各提示一次并伴随音效，最后 10 秒逐秒倒数。完整语法与行为见[命令文档](commands.md#countdown---通用倒计时)。
+
+---
+
+## 服务器管理
+
+### serverTransfer - 跨服传送
+
+提供 `/tpto` 与 `/tptoset`：管理员维护服务器列表，玩家在聊天栏点击服务器名即以本人身份转移到该服务器（原版 transfer 协议，客户端断开后直连目标服，无需代理端与客户端模组）。
+
+| 属性 | 值 |
+|------|-----|
+| **规则名** | `serverTransfer` |
+| **描述** | 提供 /tpto 与 /tptoset：玩家点击列表即以本人身份转移到其他服务器。 |
+| **类型** | `boolean` |
+| **默认值** | `false` |
+| **参考选项** | `false`, `true` |
+| **分类** | `PRIMARYUAN`, `COMMAND` |
+
+规则关闭时两棵命令整棵不可见。`/tpto` 所有玩家可用，`/tptoset` 仅管理员（权限等级 4）。**目标服必须在 `server.properties` 开启 `accepts-transfers=true`**，否则转移连接会被目标服以 `transfers_disabled` 踢出。服务器列表存于 `config/carpet-pry-addition/tpto.json`（跟随服务器，不随存档迁移）。完整语法与行为见[命令文档](commands.md#tpto---跨服传送)。
 
 ---
 

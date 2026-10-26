@@ -2,7 +2,7 @@
 
 > Mod ID: `carpet-pry-addition` | Version: `1.3.1`
 >
-> Total: **36 rules** (`whoCalledMeSound` / `whoCalledMeHighlight` are documented inline as companion rules in the whoCalledMe section)
+> Total: **37 rules** (`whoCalledMeSound` / `whoCalledMeHighlight` are documented inline as companion rules in the whoCalledMe section)
 >
 > **Tip: Use `Ctrl+F` to quickly find the rule you want**
 
@@ -47,6 +47,8 @@ Rule values are stored per world in `<world>/carpet.conf` by default. Rules tagg
   - [moreEndCrystalTypes - More End Crystal Types](#moreendcrystaltypes---more-end-crystal-types)
   - [textAnimation - MiSide Subtitles](#textanimation---miside-subtitles)
   - [countdown - Countdown](#countdown---countdown)
+- [Server Management](#server-management)
+  - [serverTransfer - Server Transfer](#servertransfer---server-transfer)
 - [Player Scaling](#player-scaling)
   - [playerScale - Player Scale](#playerscale---player-scale)
   - [playerScaleMin - Player Scale Min](#playerscalemin---player-scale-min)
@@ -584,6 +586,25 @@ Sneaking retains sign editing and frame rotation. Standing signs and banners are
 | **Categories** | `PRIMARYUAN`, `COMMAND` |
 
 Permission level 2, command blocks supported. When the rule is off the command stays visible and reports that it is disabled; a running countdown is cleaned up immediately. Timing follows real elapsed time (low TPS does not stretch it); only one countdown exists per server and it is cancelled on restart. A beat prompt with sound fires once when remaining time passes 30m/15m/10m/5m/1m/30s/15s, and the last 10 seconds tick every second. Full syntax and behavior in the [command documentation](commands_en.md#countdown---countdown).
+
+---
+
+## Server Management
+
+### serverTransfer - Server Transfer
+
+Adds `/tpto` and `/tptoset`: admins maintain a server list; players click a server name in chat to transfer themselves there (vanilla transfer protocol — the client disconnects and connects directly to the target, no proxy and no client mod).
+
+| Property | Value |
+|----------|-------|
+| **Rule Name** | `serverTransfer` |
+| **Description** | Adds /tpto and /tptoset: players click a server in the list to transfer themselves to another server. |
+| **Type** | `boolean` |
+| **Default Value** | `false` |
+| **Suggested Options** | `false`, `true` |
+| **Categories** | `PRIMARYUAN`, `COMMAND` |
+
+While the rule is off both command trees are hidden. `/tpto` is available to all players; `/tptoset` is admin-only (permission level 4). **The target server must set `accepts-transfers=true` in `server.properties`**, otherwise the connection is kicked with `transfers_disabled`. The server list lives in `config/carpet-pry-addition/tpto.json` (follows the server, not the world). Full syntax and behavior in the [command documentation](commands_en.md#tpto---server-transfer).
 
 ---
 

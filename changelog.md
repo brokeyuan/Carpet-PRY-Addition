@@ -4,6 +4,7 @@
 
 ### 新增
 
+- 跨服传送（`serverTransfer`）：`/tpto` 展示可点击的服务器列表，点击即以本人身份走原版 transfer 协议转移到他服；`/tptoset` 管理服务器列表（add / remove / reload），配置存于 `config/carpet-pry-addition/tpto.json`；目标服需开启 `accepts-transfers`
 - 通用倒计时（`countdown`）：`/countdown start 60s` 向全服或指定玩家播放 BossBar/标题/副标题/动作栏倒计时（渠道任意组合），支持暂停、恢复、停止与运行中修改时间、显示方式、对象、中央显示窗口与标题；剩余时间经过 30m/15m/10m/5m/1m/30s/15s 节拍点各提示一次（中央大字 + 钟声），最后 10 秒逐秒倒数音高递增，归零强音收尾，`set milestones`/`set sound` 可关；默认开启，规则关闭立即清理显示
 - `SERVER` 规则类别：标记该类别的规则值跟随服务器（钉值存于 `config/carpet-pry-addition/server-rules.json`，启动时压过存档 carpet.conf），权限类规则不再随存档漂移
 - 数据文件版本号信封：降级运行旧版模组不回写、不破坏新格式文件

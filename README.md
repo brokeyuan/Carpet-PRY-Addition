@@ -11,7 +11,7 @@
 
 ## 简介
 
-**Carpet-PRY-Addition** 是一个基于 [Fabric Carpet](https://github.com/gnembon/fabric-carpet) 的服务端扩展模组，主要为 PRY 服务器（Primaryuan Server）开发，在客户端安装时能增加使用体验。新增 **36 条**可配置 Carpet 规则和 **10 个**命令，涵盖假人管理增强、玩家缩放、服务器管理、模组兼容性修复、功能移植、玩家交互和生存特性扩展。
+**Carpet-PRY-Addition** 是一个基于 [Fabric Carpet](https://github.com/gnembon/fabric-carpet) 的服务端扩展模组，主要为 PRY 服务器（Primaryuan Server）开发，在客户端安装时能增加使用体验。新增 **37 条**可配置 Carpet 规则和 **12 个**命令，涵盖假人管理增强、玩家缩放、服务器管理、模组兼容性修复、功能移植、玩家交互和生存特性扩展。
 
 除 `ridingPlayersClientInteract` 客户端规则与 `countdown` 默认开启外，其余规则默认关闭，按需启用。
 
@@ -39,6 +39,7 @@
 
 - 规则值随存档存于 `<存档>/carpet.conf`（carpet 原生）；标记 `SERVER` 分类的规则跟随服务器，钉值存于 `config/carpet-pry-addition/server-rules.json`，启动时压过存档值
 - `/tppset` 站点、`/pvp` 和平名单、`/patnod` 偏好随存档存于 `<存档>/carpet-pry-addition/`，旧版 `config/carpet-pry-*.json` 首次启动自动迁移
+- `serverTransfer` 服务器列表跟随服务器，存于 `config/carpet-pry-addition/tpto.json`
 - 数据文件带版本号信封，降级运行旧版模组不会破坏新格式文件
 
 ## 依赖
@@ -116,6 +117,10 @@
 - `moreEndCrystalTypes`：允许把末地水晶放在哭泣的黑曜石上（`invulnerable` 放出无敌水晶）
 - `textAnimation`：`/text @a|玩家名 <文本>` 播放米塔字幕，原版客户端可用；前 12 名接收者显示实体字幕，其余使用 actionbar 打字机
 - `countdown`：`/countdown start 60s` 向全服或指定玩家播放 BossBar/标题/副标题/动作栏倒计时，支持暂停恢复与运行中修改；长程节拍提示与倒数音效内置（可关），默认开启
+
+### 服务器管理
+
+- `serverTransfer`：`/tpto` 点击列表即以本人身份转移到其他服务器，`/tptoset` 管理服务器列表（add / remove / reload）；目标服需开启 `accepts-transfers=true`
 
 
 ## 致谢

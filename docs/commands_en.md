@@ -23,6 +23,9 @@
 - [/patnod - Pat Interaction Toggle](#patnod---pat-interaction-toggle)
 - [/text - MiSide Subtitles](#text---miside-subtitles)
 - [/countdown - Countdown](#countdown---countdown)
+- [Server Transfer Commands](#server-transfer-commands)
+  - [/tpto](#tpto---server-transfer)
+  - [/tptoset](#tptoset---server-management)
 
 ---
 
@@ -798,4 +801,93 @@ Omitting display defaults to `bossbar+title`; combine with `+` (e.g. `bossbar+ti
 /countdown set label Get ready                # change label
 /countdown status                             # inspect state
 /countdown stop                               # cancel
+```
+
+---
+
+## Server Transfer Commands
+
+### /tpto - Server Transfer
+
+> **Related rule**: `serverTransfer` (off by default)
+
+#### Syntax
+
+```
+/tpto
+/tpto <server>
+```
+
+Without arguments it lists every transferable server; each line is a clickable server name that transfers you as yourself; hover shows the target address.
+
+#### Permissions
+
+Available to all players (while the rule is on).
+
+#### Parameters
+
+| Parameter | Type | Description |
+|------|------|------|
+| `server` | string | Server internal name or display name |
+
+#### Behavior
+
+- Uses the vanilla transfer protocol: the server sends the target address to the executing player, the client disconnects and connects directly to the target server; no proxy and no client mod required
+- Only the executing player is ever transferred — there is no way to target someone else; console / RCON sources are rejected
+- An unknown name fails and lists the available servers
+- **The target server must set `accepts-transfers=true` in `server.properties`**, otherwise the connection is kicked with `transfers_disabled`
+
+### /tptoset - Server Management
+
+> **Related rule**: `serverTransfer` (off by default)
+
+#### Syntax
+
+```
+/tptoset
+/tptoset add <address> <port> <name> [<displayName>]
+/tptoset remove <name>
+/tptoset reload
+```
+
+#### Permissions
+
+Admins (permission level 4). The whole command tree is hidden while the rule is off.
+
+#### Subcommands
+
+| Subcommand | Description |
+|--------|------|
+| `/tptoset` | List configured servers (display name, internal name, address); each row has a clickable `[remove]` |
+| `/tptoset add <address> <port> <name> [<displayName>]` | Add a server; `name` is the unique internal name, `displayName` may contain spaces (falls back to the internal name). Duplicate internal names are rejected — remove first, then add |
+| `/tptoset remove <name>` | Remove a server (internal name or display name) |
+| `/tptoset reload` | Re-read the config from disk (no restart needed after hand edits) |
+
+`address` accepts hostnames and IPs; IPv6 literals contain colons and must be quoted (e.g. `"::1"`). `port` ranges 1–65535.
+
+#### Config File
+
+`config/carpet-pry-addition/tpto.json` (follows the server, not the world):
+
+```json
+{
+  "version": 1,
+  "data": {
+    "servers": {
+      "lobby": { "host": "mc.example.com", "port": 25565, "displayName": "Lobby" }
+    }
+  }
+}
+```
+
+#### Examples
+
+```
+/tpto                                        # list servers (click to transfer)
+/tpto lobby                                  # transfer to internal name lobby
+/tptoset                                     # show configured servers
+/tptoset add mc.example.com 25565 lobby Lobby
+/tptoset add "::1" 25565 local6              # quote IPv6 addresses
+/tptoset remove lobby
+/tptoset reload                              # re-read after hand edits
 ```
