@@ -817,7 +817,7 @@ scale
 /tpto <server>
 ```
 
-无参数时列出全部可转移服务器，每行是一个可点击的服务器名，点击即以本人身份转移到该服务器；hover 显示目标地址。
+无参数时列出全部可转移服务器（按添加顺序）；名称可点击传送，悬停显示目标地址与端口。
 
 #### 权限
 
@@ -827,14 +827,15 @@ scale
 
 | 参数 | 类型 | 说明 |
 |------|------|------|
-| `server` | 字符串 | 服务器内部名或显示名 |
+| `server` | 文本 | 服务器英文标识或展示名；裸中文、含空格展示名直接可用，也可用成对引号包围整个名称 |
 
 #### 行为
 
 - 传送走原版 transfer 协议：服务端向执行玩家本人下发目标地址，客户端断开并直接连入目标服；无需代理端与客户端模组
-- 命令永远只转移执行者本人，不能指定他人；控制台 / RCON 等非玩家来源不可用
-- 名称未找到时失败并列出可用服务器
+- 命令永远只转移执行者本人，不能指定他人；控制台 / RCON 等非玩家来源不可执行
+- 按标识或展示名定位（忽略大小写），未找到时失败并列出可用项
 - **目标服必须在 `server.properties` 开启 `accepts-transfers=true`**，否则转移连接会被目标服以 `transfers_disabled` 踢出
+- 补全按标识或展示名前缀匹配（忽略大小写），插入英文标识，悬停显示展示名
 
 ### /tptoset - 服务器管理
 
@@ -844,49 +845,53 @@ scale
 
 ```
 /tptoset
-/tptoset add <address> <port> <name> [<displayName>]
-/tptoset remove <name>
+/tptoset addserver <地址:端口> <标识> [展示名]
+/tptoset removeserver <服务器>
 /tptoset reload
 ```
 
 #### 权限
 
-管理员（权限等级 4）。规则关闭时整棵命令不可见。
+管理员（权限等级 4）。规则关闭时整棵命令不可见；命令方块不获得管理权限。
 
 #### 子命令说明
 
 | 子命令 | 说明 |
 |--------|------|
-| `/tptoset` | 展示已配置服务器（显示名、内部名、地址），每行 `[删除]` 可点击 |
-| `/tptoset add <address> <port> <name> [<displayName>]` | 添加服务器；`name` 为唯一内部名，`displayName` 可含空格（缺省回退内部名）。内部名重复时拒绝，修改须先 remove 再 add |
-| `/tptoset remove <name>` | 删除服务器（内部名或显示名均可） |
-| `/tptoset reload` | 从盘重读配置（手改 tpto.json 后无需重启） |
-
-`address` 支持域名与 IP，IPv6 字面地址含冒号，须加引号（如 `"::1"`）。`port` 范围 1–65535。
+| `/tptoset` | 展示已配置服务器（标识、展示名、地址:端口），每行 `[删除]` 可点击 |
+| `/tptoset addserver <地址:端口> <标识> [展示名]` | 添加服务器（一服一地址）；`地址:端口` 裸写，支持域名、IPv4、`[IPv6]:端口`、localhost；`标识` 为唯一英文标识（字母/数字/`_-.+`）；展示名省略时用标识，可含中文与空格。标识或展示名与现有记录忽略大小写重名时拒绝；修改地址须先 removeserver 再 addserver |
+| `/tptoset removeserver <服务器>` | 删除整条记录（按唯一标识或展示名） |
+| `/tptoset reload` | 从盘重读配置（手改 tpto.json 后无需重启）；失败保留当前列表并暂停写入，修复后 reload 恢复 |
 
 #### 配置文件
 
-`config/carpet-pry-addition/tpto.json`（跟随服务器，不随存档迁移）：
+`config/carpet-pry-addition/tpto.json`（跟随服务器，不随存档迁移）。数据版本 3，一条记录对应一个地址和端口；v1（单 host）与 v2（多线路）首次加载自动扁平化：v2 取 defaultLine 指向的入口（不可用取首条有效入口），其余入口与 playerLines 不导入，首次回写前自动备份原文件为 `tpto.json.pre-v3-<时间戳>-<序号>.bak`。
 
 ```json
 {
-  "version": 1,
+  "version": 3,
   "data": {
     "servers": {
-      "lobby": { "host": "mc.example.com", "port": 25565, "displayName": "大厅" }
+      "sc": {
+        "host": "survival.example.com",
+        "port": 25565,
+        "displayName": "生存服"
+      }
     }
   }
 }
 ```
 
+手改文件须遵守：servers 必须存在且为对象；host 为字符串、port 为 1–65535 的整数；标识/展示名不得互相冲突（忽略大小写）；混入 lines/defaultLine/playerLines 或版本超前时拒绝加载并暂停写入，直到修复后 reload 成功。
+
 #### 使用示例
 
 ```
-/tpto                                        # 列出服务器（点击传送）
-/tpto lobby                                  # 直接传送到内部名 lobby
-/tptoset                                     # 查看已配置服务器
-/tptoset add mc.example.com 25565 lobby 大厅  # 添加（显示名"大厅"）
-/tptoset add "::1" 25565 local6              # IPv6 地址加引号
-/tptoset remove lobby                        # 删除
-/tptoset reload                              # 手改 tpto.json 后重读
+/tpto                                         # 列出服务器，点击传送
+/tpto sc                                      # 按标识传送（也可写展示名「生存服」）
+/tptoset                                      # 查看已配置服务器
+/tptoset addserver survival.example.com:25565 sc 生存服
+/tpto sc                                      # 一服一地址，直接转移
+/tptoset removeserver sc                      # 删除服务器
+/tptoset reload                               # 手改 tpto.json 后重读
 ```

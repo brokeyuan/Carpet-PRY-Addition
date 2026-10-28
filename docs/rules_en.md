@@ -604,7 +604,7 @@ Adds `/tpto` and `/tptoset`: admins maintain a server list; players click a serv
 | **Suggested Options** | `false`, `true` |
 | **Categories** | `PRIMARYUAN`, `COMMAND` |
 
-While the rule is off both command trees are hidden. `/tpto` is available to all players; `/tptoset` is admin-only (permission level 4). **The target server must set `accepts-transfers=true` in `server.properties`**, otherwise the connection is kicked with `transfers_disabled`. The server list lives in `config/carpet-pry-addition/tpto.json` (follows the server, not the world). Full syntax and behavior in the [command documentation](commands_en.md#tpto---server-transfer).
+While the rule is off both command trees are hidden. `/tpto` is available to all players; `/tptoset` is admin-only (permission level 4). One server record maps to one address and port (data version 3; legacy multi-line files are flattened and backed up on load). **The target server must set `accepts-transfers=true` in `server.properties`**, otherwise the connection is kicked with `transfers_disabled`. The server list lives in `config/carpet-pry-addition/tpto.json` (follows the server, not the world). Full syntax and behavior in the [command documentation](commands_en.md#tpto---server-transfer).
 
 ---
 

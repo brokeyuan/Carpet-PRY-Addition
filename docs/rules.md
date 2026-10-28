@@ -603,7 +603,7 @@
 | **参考选项** | `false`, `true` |
 | **分类** | `PRIMARYUAN`, `COMMAND` |
 
-规则关闭时两棵命令整棵不可见。`/tpto` 所有玩家可用，`/tptoset` 仅管理员（权限等级 4）。**目标服必须在 `server.properties` 开启 `accepts-transfers=true`**，否则转移连接会被目标服以 `transfers_disabled` 踢出。服务器列表存于 `config/carpet-pry-addition/tpto.json`（跟随服务器，不随存档迁移）。完整语法与行为见[命令文档](commands.md#tpto---跨服传送)。
+规则关闭时两棵命令整棵不可见。`/tpto` 所有玩家可用，`/tptoset` 仅管理员（权限等级 4）。一条服务器记录对应一个地址和端口（数据版本 3，旧多线路文件加载时自动扁平化并备份）。**目标服必须在 `server.properties` 开启 `accepts-transfers=true`**，否则转移连接会被目标服以 `transfers_disabled` 踢出。服务器列表存于 `config/carpet-pry-addition/tpto.json`（跟随服务器，不随存档迁移）。完整语法与行为见[命令文档](commands.md#tpto---跨服传送)。
 
 ---
 

@@ -158,7 +158,7 @@ Living entities spawned directly by a player using an item (armor stands, spawn-
 
 ### Play-to-Transfer (`serverTransfer`)
 
-Admins maintain a list of target servers; `/tpto` shows them as clickable chat entries, and clicking one transfers that player to the target using the vanilla transfer protocol (no proxy, no client mod). `/tptoset add|remove|reload` manages the list, persisted in `config/carpet-pry-addition/tpto.json`. The target server must set `accepts-transfers=true` in `server.properties`.
+Admins maintain a list of target servers (one address and port per server); `/tpto` shows them as clickable chat entries, and clicking one transfers that player to the target using the vanilla transfer protocol (no proxy, no client mod). `/tptoset addserver|removeserver|reload` manages the list, persisted in `config/carpet-pry-addition/tpto.json`. The target server must set `accepts-transfers=true` in `server.properties`.
 
 ---
 

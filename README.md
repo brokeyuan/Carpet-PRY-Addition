@@ -120,7 +120,7 @@
 
 ### 服务器管理
 
-- `serverTransfer`：`/tpto` 点击列表即以本人身份转移到其他服务器，`/tptoset` 管理服务器列表（add / remove / reload）；目标服需开启 `accepts-transfers=true`
+- `serverTransfer`：`/tpto` 点击列表即以本人身份转移到其他服务器（一服一地址）；`/tptoset` 管理服务器列表；目标服需开启 `accepts-transfers=true`
 
 
 ## 致谢

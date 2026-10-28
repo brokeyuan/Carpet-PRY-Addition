@@ -119,7 +119,7 @@ All rules are off by default except the client-side rule `ridingPlayersClientInt
 
 ### Server Management
 
-- `serverTransfer`: `/tpto` lists servers and transfers you as yourself when clicked; `/tptoset` manages the list (add / remove / reload); the target server needs `accepts-transfers=true`
+- `serverTransfer`: `/tpto` lists servers and transfers you as yourself when clicked (one address per server); `/tptoset` manages the server list; the target server needs `accepts-transfers=true`
 
 
 ## Credits

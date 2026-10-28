@@ -818,24 +818,25 @@ Omitting display defaults to `bossbar+title`; combine with `+` (e.g. `bossbar+ti
 /tpto <server>
 ```
 
-Without arguments it lists every transferable server; each line is a clickable server name that transfers you as yourself; hover shows the target address.
+With no arguments, lists all configured servers in add order; names are clickable to transfer, hover shows the target address and port.
 
-#### Permissions
+#### Permission
 
 Available to all players (while the rule is on).
 
-#### Parameters
+#### Arguments
 
-| Parameter | Type | Description |
-|------|------|------|
-| `server` | string | Server internal name or display name |
+| Argument | Type | Description |
+|----------|------|-------------|
+| `server` | text | Server id or display name; bare Chinese and display names with spaces work as-is, optionally wrapped in a matched pair of quotes |
 
 #### Behavior
 
-- Uses the vanilla transfer protocol: the server sends the target address to the executing player, the client disconnects and connects directly to the target server; no proxy and no client mod required
-- Only the executing player is ever transferred — there is no way to target someone else; console / RCON sources are rejected
-- An unknown name fails and lists the available servers
+- Transfer uses the vanilla transfer protocol: the server sends the target address to the executing player only; the client disconnects and connects to the target directly, no proxy and no client mod
+- Never transfers anyone but the executor; console / RCON cannot transfer
+- Resolved by id or display name (case-insensitive); failures list the available servers
 - **The target server must set `accepts-transfers=true` in `server.properties`**, otherwise the connection is kicked with `transfers_disabled`
+- Tab completion matches id or display name prefixes (case-insensitive) and inserts the id, with the display name as tooltip
 
 ### /tptoset - Server Management
 
@@ -845,49 +846,53 @@ Available to all players (while the rule is on).
 
 ```
 /tptoset
-/tptoset add <address> <port> <name> [<displayName>]
-/tptoset remove <name>
+/tptoset addserver <address:port> <id> [displayName]
+/tptoset removeserver <server>
 /tptoset reload
 ```
 
-#### Permissions
+#### Permission
 
-Admins (permission level 4). The whole command tree is hidden while the rule is off.
+Admins (permission level 4). While the rule is off the whole tree is hidden; command blocks do not gain admin.
 
 #### Subcommands
 
 | Subcommand | Description |
-|--------|------|
-| `/tptoset` | List configured servers (display name, internal name, address); each row has a clickable `[remove]` |
-| `/tptoset add <address> <port> <name> [<displayName>]` | Add a server; `name` is the unique internal name, `displayName` may contain spaces (falls back to the internal name). Duplicate internal names are rejected — remove first, then add |
-| `/tptoset remove <name>` | Remove a server (internal name or display name) |
-| `/tptoset reload` | Re-read the config from disk (no restart needed after hand edits) |
+|------------|-------------|
+| `/tptoset` | Shows configured servers (id, display name, address:port), each row with a clickable `[remove]` |
+| `/tptoset addserver <address:port> <id> [displayName]` | Adds a server (one address per server); `address:port` is written bare, accepting domains, IPv4, `[IPv6]:port` and localhost; `id` is a unique ASCII id (letters/digits/`_-.+`); displayName falls back to the id and may contain Chinese and spaces. Rejected when id or display name collides with an existing record ignoring case; to change an address, removeserver then addserver |
+| `/tptoset removeserver <server>` | Removes the whole record (by unique id or display name) |
+| `/tptoset reload` | Re-reads the config (no restart needed after hand edits); on failure the current list is kept and writes pause until a successful reload |
 
-`address` accepts hostnames and IPs; IPv6 literals contain colons and must be quoted (e.g. `"::1"`). `port` ranges 1–65535.
+#### Config file
 
-#### Config File
-
-`config/carpet-pry-addition/tpto.json` (follows the server, not the world):
+`config/carpet-pry-addition/tpto.json` (follows the server, not the world). Data version 3: one record per address and port; v1 (single host) and v2 (multi-line) files are flattened on load — v2 keeps the entry named by defaultLine (or the first valid one), other entries and playerLines are not imported, and the original file is backed up as `tpto.json.pre-v3-<timestamp>-<n>.bak` before the first write.
 
 ```json
 {
-  "version": 1,
+  "version": 3,
   "data": {
     "servers": {
-      "lobby": { "host": "mc.example.com", "port": 25565, "displayName": "Lobby" }
+      "sc": {
+        "host": "survival.example.com",
+        "port": 25565,
+        "displayName": "生存服"
+      }
     }
   }
 }
 ```
 
+Hand edits must obey: `servers` must exist and be an object; `host` a string and `port` an integer 1-65535; ids/display names must not conflict (case-insensitive); legacy `lines`/`defaultLine`/`playerLines` in a v3 file or a newer format are rejected and writes pause until a successful reload after fixing.
+
 #### Examples
 
 ```
-/tpto                                        # list servers (click to transfer)
-/tpto lobby                                  # transfer to internal name lobby
-/tptoset                                     # show configured servers
-/tptoset add mc.example.com 25565 lobby Lobby
-/tptoset add "::1" 25565 local6              # quote IPv6 addresses
-/tptoset remove lobby
-/tptoset reload                              # re-read after hand edits
+/tpto                                         # list servers, click to transfer
+/tpto sc                                      # by id (or the display name)
+/tptoset                                      # view configured servers
+/tptoset addserver survival.example.com:25565 sc 生存服
+/tpto sc                                      # one address per server, direct transfer
+/tptoset removeserver sc                      # remove a server
+/tptoset reload                               # re-read after hand edits
 ```
