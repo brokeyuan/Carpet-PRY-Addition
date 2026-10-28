@@ -2,7 +2,7 @@
 
 > Mod ID: `carpet-pry-addition` | Version: `1.3.1`
 >
-> Total: **36 rules** (`whoCalledMeSound` / `whoCalledMeHighlight` are documented inline as companion rules in the whoCalledMe section)
+> Total: **37 rules** (`whoCalledMeSound` / `whoCalledMeHighlight` are documented inline as companion rules in the whoCalledMe section)
 >
 > **Tip: Use `Ctrl+F` to quickly find the rule you want**
 
@@ -47,6 +47,8 @@ Rule values are stored per world in `<world>/carpet.conf` by default. Rules tagg
   - [moreEndCrystalTypes - More End Crystal Types](#moreendcrystaltypes---more-end-crystal-types)
   - [textAnimation - MiSide Subtitles](#textanimation---miside-subtitles)
   - [countdown - Countdown](#countdown---countdown)
+- [Server Management](#server-management)
+  - [serverTransfer - Server Transfer](#servertransfer---server-transfer)
 - [Player Scaling](#player-scaling)
   - [playerScale - Player Scale](#playerscale---player-scale)
   - [playerScaleMin - Player Scale Min](#playerscalemin---player-scale-min)
@@ -215,7 +217,7 @@ Fixes the issue where higher versions of Xaero combined with LuckPerms cause fak
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `fixXaeroLib` |
-| **Description** | Fixes the issue where higher versions of Xaero combined with LuckPerms cause fake player data loss |
+| **Description** | Fix fake player data loss issue with newer Xaero versions when used with LuckPerms |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
@@ -236,7 +238,7 @@ Fixes fake players not triggering Fabric API connection events, causing mods lik
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `fixBlueMap` |
-| **Description** | Fixes fake players not triggering Fabric API connection events, causing mods like BlueMap to fail tracking fake player join/leave |
+| **Description** | Fix fake players not triggering Fabric API connection events, causing mods like BlueMap to fail tracking fake player join/leave |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
@@ -298,7 +300,7 @@ Allows players to sleep during the day. After sleeping, the time switches to nig
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `sleepingDuringTheDay` |
-| **Description** | Allows players to sleep during the day. After sleeping, the time switches to night (referenced from PCA) |
+| **Description** | Allow players to sleep during the day, switches to night after sleeping (referenced from PCA) |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
@@ -313,7 +315,7 @@ Allows the use of non-ASCII characters in command arguments (Chinese, Japanese, 
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `unicodeArgumentsSupport` |
-| **Description** | Allows the use of non-ASCII characters in command arguments (Chinese, Japanese, Korean, etc., can be used to summon fake players with Chinese names) (ported from YACA) |
+| **Description** | Allow non-ASCII characters (Chinese, Japanese, Korean, etc.) in command arguments, can be used to summon fake players with Chinese names (ported from YACA) |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
@@ -360,7 +362,7 @@ The maximum number of players that can be stacked when riding and picking up. Th
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `ridingPlayersStackLimit` |
-| **Description** | The maximum number of players that can be stacked when riding and picking up. This limit is shared between riding and picking up |
+| **Description** | Maximum number of players that can be stacked when riding or picking up (shared limit) |
 | **Type** | `int` |
 | **Default Value** | `16` |
 | **Suggested Options** | `16`, `32` |
@@ -375,7 +377,7 @@ When a player's game mode changes, players on top will dismount.
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `ridingPlayersAutoDismount` |
-| **Description** | When a player's game mode changes, players on top will dismount |
+| **Description** | When the player's game mode changes, dismount passengers on head |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
@@ -390,7 +392,7 @@ Requires client installation. When there are passengers on top, you can still in
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `ridingPlayersClientInteract` |
-| **Description** | Requires client installation. When there are passengers on top, you can still interact with blocks/entities |
+| **Description** | Client-side required: allows interacting with blocks/entities while having passengers on head |
 | **Type** | `boolean` |
 | **Default Value** | `true` |
 | **Suggested Options** | `false`, `true` |
@@ -462,7 +464,7 @@ Allows players to wear items on their head and adds the /hat command. When a Tot
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `playerHat` |
-| **Description** | Allows players to wear items on their head and adds the /hat command. When a Totem of Undying is placed in the head slot, the death protection effect is triggered |
+| **Description** | Allow players to wear items on their head, adds /hat command. Totem of Undying on head can trigger death protection |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
@@ -496,7 +498,7 @@ Stones in snow. Allows snowballs to deal knockback and damage to players.
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `betterSnowball` |
-| **Description** | Stones in snow. Allows snowballs to deal knockback and damage to players |
+| **Description** | Stone hidden in snow. Allows snowballs to deal knockback and damage to players |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
@@ -511,7 +513,7 @@ Automatically makes the player invisible when their head is located in tall gras
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `invisibleInTallGrass` |
-| **Description** | Automatically makes the player invisible when their head is located in tall grass |
+| **Description** | Players become invisible when their head is in tall grass |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
@@ -584,6 +586,25 @@ Sneaking retains sign editing and frame rotation. Standing signs and banners are
 | **Categories** | `PRIMARYUAN`, `COMMAND` |
 
 Permission level 2, command blocks supported. When the rule is off the command stays visible and reports that it is disabled; a running countdown is cleaned up immediately. Timing follows real elapsed time (low TPS does not stretch it); only one countdown exists per server and it is cancelled on restart. A beat prompt with sound fires once when remaining time passes 30m/15m/10m/5m/1m/30s/15s, and the last 10 seconds tick every second. Full syntax and behavior in the [command documentation](commands_en.md#countdown---countdown).
+
+---
+
+## Server Management
+
+### serverTransfer - Server Transfer
+
+Adds `/tpto` and `/tptoset`: admins maintain a server list; players click a server name in chat to transfer themselves there (vanilla transfer protocol — the client disconnects and connects directly to the target, no proxy and no client mod).
+
+| Property | Value |
+|----------|-------|
+| **Rule Name** | `serverTransfer` |
+| **Description** | Adds /tpto and /tptoset: players click a server in the list to transfer themselves to another server. |
+| **Type** | `boolean` |
+| **Default Value** | `false` |
+| **Suggested Options** | `false`, `true` |
+| **Categories** | `PRIMARYUAN`, `COMMAND` |
+
+While the rule is off both command trees are hidden. `/tpto` is available to all players; `/tptoset` is admin-only (permission level 4). One server record maps to one address and port (data version 3; legacy multi-line files are flattened and backed up on load). **The target server must set `accepts-transfers=true` in `server.properties`**, otherwise the connection is kicked with `transfers_disabled`. The server list lives in `config/carpet-pry-addition/tpto.json` (follows the server, not the world). Full syntax and behavior in the [command documentation](commands_en.md#tpto---server-transfer).
 
 ---
 

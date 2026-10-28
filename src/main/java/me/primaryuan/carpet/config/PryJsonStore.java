@@ -78,6 +78,11 @@ public abstract class PryJsonStore {
         };
     }
 
+    /** 数据文件路径；单测无 fabric loader，可覆盖注入固定路径 */
+    protected Path filePath() {
+        return resolvePath();
+    }
+
     /**
      * 加载数据：无文件时内存清为默认态（绝不落盘建空文件）；有旧平铺文件时收编。
      * WORLD 作用域必须在服务器生命周期内调用（此时 getWorldPath 可用）。
@@ -95,7 +100,7 @@ public abstract class PryJsonStore {
             }
             return;
         }
-        loadRoot(readFile(file));
+        loadRoot(readFileOrNull(file));
     }
 
     /** 服务器关闭：清空内存态。单人切换世界时上一世界数据不残留 */
@@ -177,7 +182,7 @@ public abstract class PryJsonStore {
 
     /** 收编旧平铺文件：解析 → 迁移 → 写入新路径 → 旧文件改名 .bak（避免重复收编） */
     private void migrateLegacyFile(Path legacyFile) {
-        JsonObject legacy = readFile(legacyFile);
+        JsonObject legacy = readFileOrNull(legacyFile);
         if (legacy == null) {
             LOGGER.error("[{}] Legacy config {} is unreadable, using defaults; file untouched", tag, legacyFile);
             clearData();
@@ -220,7 +225,8 @@ public abstract class PryJsonStore {
         }
     }
 
-    private JsonObject readFile(Path file) {
+    /** 读取文件为 JSON 根；任何失败（含 JSON 语法错误）返回 null 并记日志 */
+    protected final JsonObject readFileOrNull(Path file) {
         try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
             return GSON.fromJson(reader, JsonObject.class);
         } catch (Exception e) {
@@ -231,6 +237,16 @@ public abstract class PryJsonStore {
 
     /** 原子写：先写临时文件再原子替换，避免写一半崩溃/断电留下损坏的 JSON（统一 UTF-8） */
     private void writeFile(Path file, JsonObject root) {
+        if (!writeFileAtomic(file, root)) {
+            LOGGER.error("[{}] Failed to save {}", tag, file);
+        }
+    }
+
+    /**
+     * 原子写并返回结果：先写临时文件再原子替换（统一 UTF-8）。
+     * 供需要明确成功/失败的子类（如 TptoStore 的候选写入）使用；失败不抛出、只返回 false。
+     */
+    protected boolean writeFileAtomic(Path file, JsonObject root) {
         try {
             Path tmp = file.resolveSibling(file.getFileName() + ".tmp");
             Files.createDirectories(file.getParent());
@@ -238,8 +254,37 @@ public abstract class PryJsonStore {
                 GSON.toJson(root, writer);
             }
             Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            return true;
         } catch (IOException e) {
             LOGGER.error("[{}] Failed to save {}", tag, file, e);
+            return false;
+        }
+    }
+
+    /**
+     * 备份当前文件到同目录唯一 .bak（文件名形如 {@code <file>.<label>-<时间戳>-<序号>.bak}）。
+     * 不覆盖已存在的备份；文件不存在视为已备份（返回 true）。失败返回 false。
+     */
+    protected boolean backupOriginalFile(String label) {
+        Path file = filePath();
+        if (file == null || Files.notExists(file)) {
+            return true;
+        }
+        String stamp = java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss")
+                .format(java.time.LocalDateTime.now());
+        for (int n = 0; ; n++) {
+            Path target = file.resolveSibling(
+                    file.getFileName() + "." + label + "-" + stamp + "-" + n + ".bak");
+            try {
+                Files.copy(file, target);
+                LOGGER.info("[{}] Backed up {} -> {}", tag, file, target);
+                return true;
+            } catch (java.nio.file.FileAlreadyExistsException e) {
+                // 时间戳撞车：递增序号重试，保证不覆盖旧备份
+            } catch (IOException e) {
+                LOGGER.error("[{}] Failed to back up {} -> {}", tag, file, target, e);
+                return false;
+            }
         }
     }
 

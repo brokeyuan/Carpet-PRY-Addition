@@ -23,6 +23,9 @@
 - [/patnod - Pat Interaction Toggle](#patnod---pat-interaction-toggle)
 - [/text - MiSide Subtitles](#text---miside-subtitles)
 - [/countdown - Countdown](#countdown---countdown)
+- [Server Transfer Commands](#server-transfer-commands)
+  - [/tpto](#tpto---server-transfer)
+  - [/tptoset](#tptoset---server-management)
 
 ---
 
@@ -798,4 +801,98 @@ Omitting display defaults to `bossbar+title`; combine with `+` (e.g. `bossbar+ti
 /countdown set label Get ready                # change label
 /countdown status                             # inspect state
 /countdown stop                               # cancel
+```
+
+---
+
+## Server Transfer Commands
+
+### /tpto - Server Transfer
+
+> **Related rule**: `serverTransfer` (off by default)
+
+#### Syntax
+
+```
+/tpto
+/tpto <server>
+```
+
+With no arguments, lists all configured servers in add order; names are clickable to transfer, hover shows the target address and port.
+
+#### Permission
+
+Available to all players (while the rule is on).
+
+#### Arguments
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `server` | text | Server id or display name; bare Chinese and display names with spaces work as-is, optionally wrapped in a matched pair of quotes |
+
+#### Behavior
+
+- Transfer uses the vanilla transfer protocol: the server sends the target address to the executing player only; the client disconnects and connects to the target directly, no proxy and no client mod
+- Never transfers anyone but the executor; console / RCON cannot transfer
+- Resolved by id or display name (case-insensitive); failures list the available servers
+- **The target server must set `accepts-transfers=true` in `server.properties`**, otherwise the connection is kicked with `transfers_disabled`
+- Tab completion matches id or display name prefixes (case-insensitive) and inserts the id, with the display name as tooltip
+
+### /tptoset - Server Management
+
+> **Related rule**: `serverTransfer` (off by default)
+
+#### Syntax
+
+```
+/tptoset
+/tptoset addserver <address:port> <id> [displayName]
+/tptoset removeserver <server>
+/tptoset reload
+```
+
+#### Permission
+
+Admins (permission level 4). While the rule is off the whole tree is hidden; command blocks do not gain admin.
+
+#### Subcommands
+
+| Subcommand | Description |
+|------------|-------------|
+| `/tptoset` | Shows configured servers (id, display name, address:port), each row with a clickable `[remove]` |
+| `/tptoset addserver <address:port> <id> [displayName]` | Adds a server (one address per server); `address:port` is written bare, accepting domains, IPv4, `[IPv6]:port` and localhost; `id` is a unique ASCII id (letters/digits/`_-.+`); displayName falls back to the id and may contain Chinese and spaces. Rejected when id or display name collides with an existing record ignoring case; to change an address, removeserver then addserver |
+| `/tptoset removeserver <server>` | Removes the whole record (by unique id or display name) |
+| `/tptoset reload` | Re-reads the config (no restart needed after hand edits); on failure the current list is kept and writes pause until a successful reload |
+
+#### Config file
+
+`config/carpet-pry-addition/tpto.json` (follows the server, not the world). Data version 3: one record per address and port; v1 (single host) and v2 (multi-line) files are flattened on load — v2 keeps the entry named by defaultLine (or the first valid one), other entries and playerLines are not imported, and the original file is backed up as `tpto.json.pre-v3-<timestamp>-<n>.bak` before the first write.
+
+```json
+{
+  "version": 3,
+  "data": {
+    "servers": {
+      "sc": {
+        "host": "survival.example.com",
+        "port": 25565,
+        "displayName": "生存服"
+      }
+    }
+  }
+}
+```
+
+Hand edits must obey: `servers` must exist and be an object; `host` a string and `port` an integer 1-65535; ids/display names must not conflict (case-insensitive); legacy `lines`/`defaultLine`/`playerLines` in a v3 file or a newer format are rejected and writes pause until a successful reload after fixing.
+
+#### Examples
+
+```
+/tpto                                         # list servers, click to transfer
+/tpto sc                                      # by id (or the display name)
+/tptoset                                      # view configured servers
+/tptoset addserver survival.example.com:25565 sc 生存服
+/tpto sc                                      # one address per server, direct transfer
+/tptoset removeserver sc                      # remove a server
+/tptoset reload                               # re-read after hand edits
 ```

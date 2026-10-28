@@ -16,6 +16,7 @@ import me.primaryuan.carpet.command.RidingCommand;
 import me.primaryuan.carpet.command.ScaleCommand;
 import me.primaryuan.carpet.command.TextCommand;
 import me.primaryuan.carpet.command.TppCommand;
+import me.primaryuan.carpet.command.TptoCommand;
 import me.primaryuan.carpet.handler.clickThrough.ClickThroughHandler;
 import me.primaryuan.carpet.handler.countdown.CountdownManager;
 import me.primaryuan.carpet.handler.entitiesRidingPlayers.EntitiesRidingPlayersHandler;
@@ -66,7 +67,8 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
             "playerScale",                    // /scale
             "patPatPlayers",                  // /patnod
             "peacefulPlayers",                // /pvp
-            "textAnimation"                   // /text
+            "textAnimation",                  // /text
+            "serverTransfer"                  // /tpto /tptoset
     );
 
     @Override
@@ -96,6 +98,7 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         PatNodCommand.register();
         TextCommand.register();
         CountdownCommand.register();
+        TptoCommand.register();
 
         // 和平的玩家（pvp）：加载持久化状态、注册 PVP 伤害拦截与玩家加入登记
         PvpManager.init();
@@ -198,6 +201,7 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         // 存档级数据加载：此时 carpet 已读入存档 carpet.conf（attachServer 先于扩展
         // 回调）、getWorldPath 可用；单人多次进出世界各自加载、互不残留
         TppConfigManager.onServerLoaded(server);
+        TptoConfigManager.onServerLoaded(server);
         PvpManager.onServerLoaded(server);
         PatPatPlayersHandler.onServerLoaded(server);
         // SERVER 类规则钉值：晚于 carpet 读存档 carpet.conf，服务器值永远优先
@@ -208,6 +212,7 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
     public void onServerClosed(MinecraftServer server) {
         // 存档级内存态清空：单人切换世界不残留上一世界数据
         TppConfigManager.onServerClosed();
+        TptoConfigManager.onServerClosed();
         PvpManager.onServerClosed();
         PatPatPlayersHandler.onServerClosed();
         ServerRuleOverrides.onServerClosed();

@@ -11,7 +11,7 @@
 
 ## Introduction
 
-**Carpet-PRY-Addition** is a server-side Fabric extension for [Fabric Carpet](https://github.com/gnembon/fabric-carpet), developed for the **Primaryuan Server**; it also enhances the experience when installed client-side. It adds **36** configurable Carpet rules and **10** commands, covering fake player enhancements, player scaling, server management, mod compatibility fixes, ported features, player interactions, and survival gameplay expansion.
+**Carpet-PRY-Addition** is a server-side Fabric extension for [Fabric Carpet](https://github.com/gnembon/fabric-carpet), developed for the **Primaryuan Server**; it also enhances the experience when installed client-side. It adds **37** configurable Carpet rules and **12** commands, covering fake player enhancements, player scaling, server management, mod compatibility fixes, ported features, player interactions, and survival gameplay expansion.
 
 All rules are off by default except the client-side rule `ridingPlayersClientInteract` and `countdown`; enable what you need.
 
@@ -33,12 +33,13 @@ All rules are off by default except the client-side rule `ridingPlayersClientInt
 3. Optional: [skinrestorer](https://modrinth.com/mod/skinrestorer) (only needed for fake player skin features)
 4. Place the mod JAR in the server's `mods/` folder
 5. This is a **server-side** mod — players do not need it installed. Optional client install provides two client-side features: `ridingPlayersClientInteract` (keep interacting while carrying a passenger) and the player-scaling FOV compensation
-6. Rules are **off by default** (except `ridingPlayersClientInteract`) — use `/carpet` or config files to enable what you need
+6. All rules are **off by default** except `ridingPlayersClientInteract` and `countdown` — use `/carpet` or config files to enable what you need
 
 ## Configuration Storage
 
 - Rule values are stored per world in `<world>/carpet.conf` (native carpet); rules tagged with the `SERVER` category follow the server instead, pinned in `config/carpet-pry-addition/server-rules.json` and overriding the world's values on startup
 - `/tppset` stations, the `/pvp` peaceful list and `/patnod` preferences live in `<world>/carpet-pry-addition/`; legacy `config/carpet-pry-*.json` files are auto-migrated on first boot
+- The `serverTransfer` server list follows the server and lives in `config/carpet-pry-addition/tpto.json`
 - Data files carry a version envelope; running an older mod version will not corrupt newer-format files
 
 ## Dependencies
@@ -115,6 +116,10 @@ All rules are off by default except the client-side rule `ridingPlayersClientInt
 - `betterSnowball`: snowballs deal knockback and damage to players
 - `invisibleInTallGrass`: auto-invisibility when head is inside tall grass
 - `moreEndCrystalTypes`: allows placing end crystals on crying obsidian (`invulnerable` places an invulnerable one)
+
+### Server Management
+
+- `serverTransfer`: `/tpto` lists servers and transfers you as yourself when clicked (one address per server); `/tptoset` manages the server list; the target server needs `accepts-transfers=true`
 
 
 ## Credits

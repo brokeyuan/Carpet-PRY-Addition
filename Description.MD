@@ -1,4 +1,4 @@
-Carpet PRY Addition is a server-side Fabric extension for the [fabric-carpet](https://github.com/gnembon/fabric-carpet) mod, developed for the **Primaryuan Server**. It adds 36 configurable Carpet rules and 10 new commands (plus `/player` extensions) covering bug fixes, fake player enhancements, player interaction, and survival gameplay expansion.
+Carpet PRY Addition is a server-side Fabric extension for the [fabric-carpet](https://github.com/gnembon/fabric-carpet) mod, developed for the **Primaryuan Server**. It adds 37 configurable Carpet rules and 12 new commands (plus `/player` extensions) covering bug fixes, fake player enhancements, player interaction, and survival gameplay expansion.
 
 ---
 
@@ -154,6 +154,14 @@ Living entities spawned directly by a player using an item (armor stands, spawn-
 
 ---
 
+## Server Transfer
+
+### Play-to-Transfer (`serverTransfer`)
+
+Admins maintain a list of target servers (one address and port per server); `/tpto` shows them as clickable chat entries, and clicking one transfers that player to the target using the vanilla transfer protocol (no proxy, no client mod). `/tptoset addserver|removeserver|reload` manages the list, persisted in `config/carpet-pry-addition/tpto.json`. The target server must set `accepts-transfers=true` in `server.properties`.
+
+---
+
 ## Other Features
 
 - **More End Crystal Types** (`moreEndCrystalTypes`) — place end crystals on crying obsidian; `invulnerable` places an invulnerable crystal. Their beams point to `(0, 128, 0)`.
@@ -171,7 +179,7 @@ Living entities spawned directly by a player using an item (armor stands, spawn-
 - **Fabric Loader >= 0.16.0** is required.
 - **Optional:** [skinrestorer](https://modrinth.com/mod/skinrestorer) is needed for the fake player skin features (`fakePlayerSkinMode` / `fakePlayerSkinSet`).
 - This is a **server-side** mod. Place it in the server's `mods` folder. Client installation is only needed for the player-scaling FOV compensation and the `ridingPlayersClientInteract` rule.
-- All rules are **off by default** (except `ridingPlayersClientInteract`) — use `/carpet` or the Carpet configuration files to enable the ones you want.
+- All rules are **off by default** except `ridingPlayersClientInteract` and `countdown` — use `/carpet` or the Carpet configuration files to enable the ones you want.
 - **Source code:** [GitHub](https://github.com/brokeyuan/Carpet-PRY-Addition)
 - **Documentation:** [Wiki](https://primaryuan.top:2026/Primaryuan/mod/PRY/readme.html) | [GitHub README](https://github.com/brokeyuan/Carpet-PRY-Addition/blob/master/README_en.md)
 

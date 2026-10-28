@@ -246,6 +246,13 @@ public class CarpetPrimaryuanSettings {
     )
     public static boolean countdown = true;
 
+    // 跨服传送：提供 /tpto 与 /tptoset，玩家点击列表以本人身份走原版 transfer 协议
+    // 转移到他服；目标服需在 server.properties 开启 accepts-transfers=true
+    @Rule(
+            categories = {PRIMARYUAN, COMMAND}
+    )
+    public static boolean serverTransfer = false;
+
     // 穿透点击：右键墙告示牌/挂墙木牌/墙横幅/展示框/画直接打开背后贴挂的容器；
     // 潜行时保持原版交互（编辑/染色告示牌、旋转展示框），背后无容器也走原版
     @Rule(
