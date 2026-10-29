@@ -213,7 +213,7 @@ Result: VIP_station (shorter and safe)
 
 Exchanges the complete main-hand and head stacks, preserving counts and components. `/hat` is not subject to automatic-hat item exclusions.
 
-With `playerHat` enabled, main-hand air use also swaps whole stacks when the offhand is empty. Tools and usable items are excluded, and survival swaps respect Binding Curse. Datapacks can add item types to `#carpet-pry-addition:hat_use_blacklist`; external scripts with no detectable use signal should use this tag. Inventory head-slot drag capacity remains one.
+With `playerHat` enabled, main-hand air use also swaps whole stacks when the offhand is empty. Tools and usable items are excluded, and survival swaps respect Binding Curse. The shortcut is blocked while the head holds a regular helmet, turtle shell or totem of undying; the command is not subject to this. Datapacks can add item types to `#carpet-pry-addition:hat_use_blacklist`; external scripts with no detectable use signal should use this tag. Inventory head-slot drag capacity remains one.
 
 ### Related Rules
 

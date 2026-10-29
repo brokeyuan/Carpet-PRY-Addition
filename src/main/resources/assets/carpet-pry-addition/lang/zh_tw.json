@@ -14,7 +14,7 @@
   "carpet.rule.invisibleInTallGrass.name": "隱身草",
   "carpet.rule.invisibleInTallGrass.desc": "玩家頭部位於高草叢時自動隱形",
   "carpet.rule.playerHat.name": "玩家帽子",
-  "carpet.rule.playerHat.desc": "主手對空氣右鍵可整組換帽，工具、有使用功能的物品或副手非空時不觸發。保留 /hat 和頭部圖騰保護。",
+  "carpet.rule.playerHat.desc": "主手對空氣右鍵可整組換帽，工具、有使用功能的物品或副手非空時不觸發。頭部已有正常頭盔、海龜殼或不死圖騰時右鍵不觸發，仍可用 /hat 交換。保留頭部圖騰保護。",
   "carpet.rule.playerHeadSkin.name": "玩家頭部皮膚",
   "carpet.rule.playerHeadSkin.desc": "真人與假人戴玩家頭顱時採用其全身皮膚，摘下或關閉規則後恢復原皮膚",
   "carpet.rule.ridingPlayers.name": "騎乘玩家",

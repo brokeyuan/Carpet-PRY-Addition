@@ -14,7 +14,7 @@
   "carpet.rule.invisibleInTallGrass.name": "Invisible in Tall Grass",
   "carpet.rule.invisibleInTallGrass.desc": "Players become invisible when their head is in tall grass",
   "carpet.rule.playerHat.name": "Player Hat",
-  "carpet.rule.playerHat.desc": "Right-click air with the main hand to swap whole hat stacks; tools, usable items and a nonempty offhand disable this shortcut. Includes /hat and head-slot totem protection.",
+  "carpet.rule.playerHat.desc": "Right-click air with the main hand to swap whole hat stacks; tools, usable items and a nonempty offhand disable this shortcut. The shortcut is blocked when the head holds a helmet, turtle shell or totem of undying; /hat still swaps. Includes head-slot totem protection.",
   "carpet.rule.playerHeadSkin.name": "Player Head Skin",
   "carpet.rule.playerHeadSkin.desc": "Real and fake players use a worn player head's full skin; removing it or disabling the rule restores their original skin",
   "carpet.rule.ridingPlayers.name": "Riding Players",
