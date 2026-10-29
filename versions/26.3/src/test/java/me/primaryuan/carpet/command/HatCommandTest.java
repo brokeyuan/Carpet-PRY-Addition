@@ -60,6 +60,7 @@ class HatCommandTest {
         assertTrue(rendered.contains("钻石头盔"));
     }
 
+    @SuppressWarnings("unchecked")
     private static int execute(ServerPlayer player) throws Exception {
         var source = new CommandSourceStack(recordSource(), Vec3.ZERO, Vec2.ZERO,
                 null, PermissionSet.NO_PERMISSIONS, null, player);

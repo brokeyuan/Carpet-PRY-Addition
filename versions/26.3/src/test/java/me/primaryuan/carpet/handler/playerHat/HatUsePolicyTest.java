@@ -64,7 +64,8 @@ class HatUsePolicyTest {
 
     @Test void blacklistRebindingIsVisibleAfterClassDecisionWasCached() throws Exception {
         var stack = new ItemStack(Items.DIAMOND);
-        var holder = Items.DIAMOND.builtInRegistryHolder();
+        var holder = net.minecraft.core.registries.BuiltInRegistries.ITEM
+                .getOrThrow(net.minecraft.core.registries.BuiltInRegistries.ITEM.getResourceKey(Items.DIAMOND).orElseThrow());
         var original = holder.tags().toList();
         var bind = holder.getClass().getDeclaredMethod("bindTags", java.util.Collection.class);
         bind.setAccessible(true);

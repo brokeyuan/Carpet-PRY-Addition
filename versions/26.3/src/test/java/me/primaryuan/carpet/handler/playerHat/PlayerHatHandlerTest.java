@@ -129,7 +129,7 @@ class PlayerHatHandlerTest {
     private static ItemStack cursedSkull() {
         var stack = new ItemStack(Items.PLAYER_HEAD);
         var definition = new net.minecraft.world.item.enchantment.Enchantment.EnchantmentDefinition(
-                net.minecraft.core.HolderSet.direct(Items.PLAYER_HEAD.builtInRegistryHolder()),
+                net.minecraft.core.HolderSet.direct(net.minecraft.core.Holder.direct(Items.PLAYER_HEAD)),
                 java.util.Optional.empty(), 1, 1,
                 net.minecraft.world.item.enchantment.Enchantment.constantCost(1),
                 net.minecraft.world.item.enchantment.Enchantment.constantCost(1), 1,
