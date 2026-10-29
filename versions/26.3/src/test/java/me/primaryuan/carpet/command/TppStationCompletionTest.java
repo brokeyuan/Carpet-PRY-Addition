@@ -25,10 +25,13 @@ class TppStationCompletionTest {
     @BeforeEach
     @SuppressWarnings("unchecked")
     void setUpStations() throws Exception {
-        // 仅替换内存站点，避免测试写入服务器配置。
-        var field = TppConfigManager.class.getDeclaredField("stationMap");
+        // 仅替换内存站点，避免测试写入服务器配置。stationMap 位于内部类 TppStore 的实例字段。
+        var storeField = TppConfigManager.class.getDeclaredField("STORE");
+        storeField.setAccessible(true);
+        var store = storeField.get(null);
+        var field = store.getClass().getDeclaredField("stationMap");
         field.setAccessible(true);
-        stations = (Map<String, String>) field.get(null);
+        stations = (Map<String, String>) field.get(store);
         savedStations = new LinkedHashMap<>(stations);
         stations.clear();
         stations.put("qwp", "全物品");
