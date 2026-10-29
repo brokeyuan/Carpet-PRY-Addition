@@ -5,6 +5,7 @@ on:
     paths:
       - "*.gradle"
       - "gradle.properties"
+      - "gradle/wrapper/**"
       - "src/**"
       - "versions/**"
       - ".github/workflows/**"
