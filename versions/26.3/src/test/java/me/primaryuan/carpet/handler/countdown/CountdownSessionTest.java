@@ -16,8 +16,8 @@ class CountdownSessionTest {
     private static final long SEC = 1_000_000_000L;
 
     private static CountdownSession start60(long now) {
-        return CountdownSession.start(60, EnumSet.of(CountdownChannel.BOSSBAR, CountdownChannel.TITLE),
-                "倒计时", 5L, true, null, now);
+        return CountdownSession.startLegacy(60, "倒计时", EnumSet.of(CountdownChannel.BOSSBAR, CountdownChannel.TITLE),
+                true, null, now);
     }
 
     @Test
@@ -30,8 +30,8 @@ class CountdownSessionTest {
         // 剩余 0.5 秒仍显示 1，不提前出现 00:00
         assertEquals(1, s.advanceRunning(t + 59 * SEC + 500_000_000L));
         assertEquals(-1, s.advanceRunning(t + 60 * SEC));
-        assertEquals(CountdownSession.State.COMPLETING, s.state());
-        // 完成阶段重复推进不再触发
+        assertEquals(CountdownSession.State.RESULT, s.state());
+        // 结果阶段重复推进不再触发
         assertEquals(-2, s.advanceRunning(t + 61 * SEC));
         assertEquals(0, s.remainingCeilSeconds(t + 61 * SEC));
     }
@@ -94,8 +94,8 @@ class CountdownSessionTest {
         assertEquals(89.0 / 90.0, s.progress(t + SEC), 1e-9);
         // 减到归零：完成一次
         assertTrue(s.removeTime(1000, t + 2 * SEC));
-        assertEquals(CountdownSession.State.COMPLETING, s.state());
-        assertFalse(s.removeTime(10, t + 3 * SEC), "COMPLETING 下不再触发完成");
+        assertEquals(CountdownSession.State.RESULT, s.state());
+        assertFalse(s.removeTime(10, t + 3 * SEC), "RESULT 下不再触发完成");
         // IDLE 下修改被拒
         s.stop();
         assertThrows(IllegalStateException.class, () -> s.setTime(30, t + 4 * SEC));
@@ -107,7 +107,7 @@ class CountdownSessionTest {
         CountdownSession s = start60(t);
         s.pause(t + 10 * SEC);
         assertTrue(s.removeTime(100, t + 11 * SEC));
-        assertEquals(CountdownSession.State.COMPLETING, s.state());
+        assertEquals(CountdownSession.State.RESULT, s.state());
     }
 
     @Test
@@ -127,7 +127,11 @@ class CountdownSessionTest {
     @Test
     void lastWindowEvaluation() {
         long t = 0;
-        CountdownSession s = CountdownSession.start(60, EnumSet.of(CountdownChannel.TITLE), "l", 5L, true, null, t);
+        CountdownSession s = CountdownSession.startLegacy(60, "l", EnumSet.of(CountdownChannel.TITLE), true, null, t);
+        // 旧入口默认窗口最后 10 秒
+        assertTrue(s.inLastWindow(10));
+        assertFalse(s.inLastWindow(11));
+        s.setLastWindow(5L);
         assertFalse(s.inLastWindow(6));
         assertTrue(s.inLastWindow(5));
         s.setLastWindow(null);
@@ -142,7 +146,7 @@ class CountdownSessionTest {
         long t = 0;
         UUID a = UUID.randomUUID();
         UUID b = UUID.randomUUID();
-        CountdownSession s = CountdownSession.start(60, EnumSet.of(CountdownChannel.BOSSBAR), "l", 5L,
+        CountdownSession s = CountdownSession.startLegacy(60, "l", EnumSet.of(CountdownChannel.BOSSBAR),
                 false, Set.of(a), t);
         assertTrue(s.shouldDisplay(a));
         assertFalse(s.shouldDisplay(b));
@@ -155,15 +159,15 @@ class CountdownSessionTest {
     @Test
     void rejectsInvalidDuration() {
         assertThrows(IllegalArgumentException.class,
-                () -> CountdownSession.start(0, EnumSet.of(CountdownChannel.TITLE), "l", 5L, true, null, 0));
+                () -> CountdownSession.startLegacy(0, "l", EnumSet.of(CountdownChannel.TITLE), true, null, 0));
         assertThrows(IllegalArgumentException.class,
-                () -> CountdownSession.start(86401, EnumSet.of(CountdownChannel.TITLE), "l", 5L, true, null, 0));
+                () -> CountdownSession.startLegacy(86401, "l", EnumSet.of(CountdownChannel.TITLE), true, null, 0));
     }
 
     @Test
     void milestonesArmBelowDurationAndFireOnCrossing() {
         // 5 分钟启动：1800/900/600 大于等于总时长被跳过，armed = {60, 30, 15}
-        CountdownSession s = start300();
+        CountdownSession s = startLegacySeconds(300);
         assertEquals(0, s.advanceMilestones(300), "启动点本身不触发节拍");
         assertEquals(0, s.advanceMilestones(240));
         assertEquals(0, s.advanceMilestones(61));
@@ -178,7 +182,7 @@ class CountdownSessionTest {
     @Test
     void jumpCrossingFiresClosestBeatOnly() {
         // 1 小时启动后 set time 跳到 29 秒：跨过 1800..30 六个节拍，只发最接近落点的 30
-        CountdownSession s = startHour();
+        CountdownSession s = startLegacySeconds(3600);
         assertEquals(0, s.advanceMilestones(3600));
         assertEquals(30, s.advanceMilestones(29));
         assertEquals(15, s.advanceMilestones(15));
@@ -187,7 +191,7 @@ class CountdownSessionTest {
 
     @Test
     void addUpwardDoesNotRefireBeats() {
-        CountdownSession s = start60Milestones();
+        CountdownSession s = startLegacySeconds(60);
         assertEquals(0, s.advanceMilestones(60));
         assertEquals(30, s.advanceMilestones(30));
         // add 后时间变长：基线上调，已触发的 30 不回滚
@@ -199,9 +203,9 @@ class CountdownSessionTest {
 
     @Test
     void milestoneAndSoundSwitches() {
-        CountdownSession s = startHour();
+        CountdownSession s = startLegacySeconds(3600);
         assertTrue(s.milestonesEnabled());
-        assertTrue(s.soundEnabled());
+        assertEquals(TimerSoundPlan.Tier.LEGACY, s.soundTier());
         assertEquals(0, s.advanceMilestones(2000));
         s.setMilestonesEnabled(false, 2000);
         assertFalse(s.milestonesEnabled());
@@ -211,15 +215,110 @@ class CountdownSessionTest {
         assertEquals(900, s.advanceMilestones(900));
     }
 
-    private static CountdownSession start300() {
-        return CountdownSession.start(300, EnumSet.of(CountdownChannel.BOSSBAR), "l", 5L, true, null, 0);
+    @Test
+    void styleSwitchDoesNotRefireBeats() {
+        long t = 0;
+        CountdownSession s = CountdownSession.startDown(300, TimerStyle.FANCY, TimerLayout.BOTH, "l", false,
+                true, null, t);
+        assertEquals(0, s.advanceMilestones(300));
+        assertEquals(60, s.advanceMilestones(60));
+        // 档位切换后重新武装：已触发的 60 不回滚重播，未触发的 30 正常经过触发
+        s.setStyle(TimerStyle.NORMAL, t + SEC);
+        s.setStyle(TimerStyle.FANCY, t + 2 * SEC);
+        assertEquals(0, s.advanceMilestones(31));
+        assertEquals(30, s.advanceMilestones(30));
+        assertEquals(0, s.advanceMilestones(29));
     }
 
-    private static CountdownSession startHour() {
-        return CountdownSession.start(3600, EnumSet.of(CountdownChannel.BOSSBAR), "l", 5L, true, null, 0);
+    // ==================== 正计时（UP） ====================
+
+    @Test
+    void upAccumulatesAndPausesWithoutDrift() {
+        long t = 0;
+        CountdownSession s = CountdownSession.startUp(TimerStyle.SIMPLE, TimerLayout.ACTIONBAR, "计时",
+                false, true, null, t);
+        assertEquals(TimerMode.UP, s.mode());
+        assertEquals(0, s.elapsedNanos(t));
+        assertEquals(1_500_000_000L, s.elapsedNanos(t + 1_500_000_000L));
+        // 暂停 10 秒不增加
+        s.pause(t + 2 * SEC);
+        assertEquals(2_000_000_000L, s.elapsedNanos(t + 12 * SEC));
+        assertEquals(2_000_000_000L, s.elapsedNanos(t + 30 * SEC), "暂停期间时钟继续走不累计");
+        // 恢复后从冻结点继续累计
+        s.resume(t + 40 * SEC);
+        assertEquals(2_000_000_000L, s.elapsedNanos(t + 40 * SEC));
+        assertEquals(2_500_000_000L, s.elapsedNanos(t + 40 * SEC + 500_000_000L));
+        assertEquals(TimerSoundPlan.Tier.NONE, s.soundTier(), "simple 默认无声");
+        // 运行中不能恢复
+        assertThrows(IllegalStateException.class, () -> s.resume(t + 41 * SEC));
     }
 
-    private static CountdownSession start60Milestones() {
-        return CountdownSession.start(60, EnumSet.of(CountdownChannel.BOSSBAR), "l", 5L, true, null, 0);
+    @Test
+    void upStopFreezesFinalElapsedOnce() {
+        long t = 0;
+        CountdownSession s = CountdownSession.startUp(TimerStyle.NORMAL, TimerLayout.BAR, "计时",
+                false, true, null, t);
+        s.pause(t + 3_200_000_000L);
+        s.resume(t + 10 * SEC);
+        s.stopToResult(t + 12_345_678_912L);
+        assertEquals(CountdownSession.State.RESULT, s.state());
+        // 最终用时 = 3.2s + 2.345678912s，冻结且只结算一次
+        assertEquals(5_545_678_912L, s.elapsedNanos(t + 100 * SEC));
+        assertEquals(5_545_678_912L, s.elapsedNanos(t + 200 * SEC));
+        assertEquals(1.0, s.progress(t + 100 * SEC), 1e-9, "正计时恒满条");
+    }
+
+    @Test
+    void upHasNoDurationCapAndNoMilestones() {
+        long t = 0;
+        CountdownSession s = CountdownSession.startUp(TimerStyle.FANCY, TimerLayout.BOTH, "计时",
+                false, true, null, t);
+        // 超过 24 小时不回卷
+        assertEquals(25L * 3600 * SEC, s.elapsedNanos(t + 25L * 3600 * SEC));
+        assertEquals(0, s.advanceMilestones(12345), "正计时不触发倒数节拍");
+    }
+
+    @Test
+    void upRejectsTimeAdjustment() {
+        long t = 0;
+        CountdownSession s = CountdownSession.startUp(TimerStyle.SIMPLE, TimerLayout.ACTIONBAR, "计时",
+                false, true, null, t);
+        assertThrows(IllegalStateException.class, () -> s.setTime(30, t));
+        assertThrows(IllegalStateException.class, () -> s.addTime(30, t));
+        assertThrows(IllegalStateException.class, () -> s.removeTime(30, t));
+    }
+
+    @Test
+    void soundTierOverrides() {
+        long t = 0;
+        CountdownSession simple = CountdownSession.startDown(60, TimerStyle.SIMPLE, TimerLayout.BAR, "l",
+                false, true, null, t);
+        assertEquals(TimerSoundPlan.Tier.NONE, simple.soundTier());
+        // silent 覆盖一切
+        CountdownSession fancy = CountdownSession.startDown(60, TimerStyle.FANCY, TimerLayout.BOTH, "l",
+                true, true, null, t);
+        assertEquals(TimerSoundPlan.Tier.NONE, fancy.soundTier());
+        // 显式 sound on 将 simple 提升到 NORMAL；显式 off 压过 fancy
+        simple.setSoundOverride(true);
+        assertEquals(TimerSoundPlan.Tier.NORMAL, simple.soundTier());
+        fancy.setSoundOverride(false);
+        assertEquals(TimerSoundPlan.Tier.NONE, fancy.soundTier());
+    }
+
+    @Test
+    void layoutChannelsDerivation() {
+        long t = 0;
+        CountdownSession s = CountdownSession.startDown(60, TimerStyle.NORMAL, TimerLayout.BOTH, "l",
+                false, true, null, t);
+        assertEquals(EnumSet.of(CountdownChannel.BOSSBAR, CountdownChannel.TITLE, CountdownChannel.SUBTITLE),
+                s.channels());
+        s.setLayout(TimerLayout.BAR);
+        assertEquals(EnumSet.of(CountdownChannel.BOSSBAR), s.channels());
+        assertTrue(s.layout().hasBar());
+        assertFalse(s.layout().hasCentral());
+    }
+
+    private static CountdownSession startLegacySeconds(int seconds) {
+        return CountdownSession.startLegacy(seconds, "l", EnumSet.of(CountdownChannel.BOSSBAR), true, null, 0);
     }
 }

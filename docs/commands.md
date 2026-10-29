@@ -26,6 +26,8 @@
 - [跨服传送命令](#跨服传送命令)
   - [/tpto](#tpto---跨服传送)
   - [/tptoset](#tptoset---服务器管理)
+- [/timer - 计时器](#timer---计时器)
+- [/countdown - 旧版倒计时（兼容入口）](#countdown---旧版倒计时兼容入口)
 
 ---
 
@@ -722,88 +724,110 @@ scale
 
 ---
 
-## /countdown - 通用倒计时
+## /timer - 计时器
 
 > **所属规则**：`countdown`（默认开启）
 
-服务端全局单实例倒计时：BossBar、Title（屏幕中央大字）、Subtitle、ActionBar 四种显示渠道自由组合，默认一条指令即可使用。计时基于真实经过时间（TPS 低不拉长时长），支持暂停、恢复、停止与运行中修改。命令方块可用。
+正计时与倒计时的统一入口：全局同一时刻只有一个活动计时，两种方向共用暂停/恢复/停止控制；四种展示位置与三档效果自由搭配，常用场景一条短命令完成。计时基于真实经过时间（TPS 低不拉长时长），纯服务端数据包实现，原版客户端可用。命令方块可用。
 
 ### 命令语法
 
-- `/countdown start <时间> [显示方式] [目标玩家]`：启动倒计时；进行中时拒绝重复启动
-- `/countdown pause` / `resume`：暂停 / 恢复（暂停期保留当前显示）
-- `/countdown stop`：立即取消并清理显示（无"时间到"提示）
-- `/countdown status`：查看状态、剩余时间、总时长、显示方式与显示对象
-- `/countdown add <时间>` / `remove <时间>`：增加 / 减少剩余时间（减至归零触发完成）
-- `/countdown set time <时间>`：直接设置剩余时间（至少 1 秒）
-- `/countdown set display <组合>`：修改显示渠道（如 `bossbar+subtitle`）
-- `/countdown set players <选择器>`：修改显示对象（原版玩家选择器）
-- `/countdown set last <时间|all>`：修改中央大字（Title/Subtitle）开始显示的剩余窗口，默认最后 10 秒
-- `/countdown set label <文本>`：修改标题（默认"倒计时"，最多 128 字符）
-- `/countdown set milestones <on|off>`：开关长程节拍提示（30m/15m/10m/5m/1m/30s/15s 各提示一次，默认开）
-- `/countdown set sound <on|off>`：开关倒计时音效（默认开）
+- `/timer down <时间> [选项…] [-- 名称]`：启动倒计时（1 秒 ~ 24 小时）
+- `/timer up [选项…] [-- 名称]`：启动正计时（从零开始，无上限，不自动结束）
+- `/timer pause` / `resume` / `stop` / `status`：暂停、恢复、停止、查看状态
+- `/timer time <时间>`：直接设置剩余时间（仅倒计时）
+- `/timer add <时间>` / `remove <时间>`：加时 / 减时（仅倒计时，减至归零视为完成）
+- `/timer style <simple|normal|fancy>`：修改效果档位
+- `/timer display <bar|center|actionbar|both>`：修改展示位置
+- `/timer sound <on|off>`：开关本会话音效
+- `/timer label <名称>`：修改名称
+- `/timer players <选择器>`：修改显示对象
+- `/timer`：有计时显示简短状态；无计时显示用法示例与上次结果
 
-### 时间格式
+### 选项与默认值
 
-`60`、`60s`、`1m`、`1m30s`、`2h`、`1h30m`——无单位整数按秒；单位 s/m/h 顺序 h>m>s 各至多一次，每段正整数；范围 1 秒 ~ 24 小时，非法输入提示合法格式。
+选项词顺序自由、大小写不敏感，每类至多一个；`--` 后整段为名称（1–128 字符），不再解析选项。
 
-### 显示方式
+| 类别 | 可输入值 | 说明 |
+|------|------|------|
+| 效果 | `simple` / `normal` / `fancy` | 默认 simple |
+| 位置 | `bar` / `center` / `actionbar` / `both` | 默认 down=bar、up=actionbar；fancy 未显式选位置时用 both |
+| 静音 | `silent` | 禁用本次计时全部声音 |
+| 目标 | `@s`、`@a`、`@a[team=red]` 等原版选择器 | down 默认动态全服；up 玩家执行默认本人，控制台/命令方块默认全服 |
 
-| 渠道 | 默认行为 |
-|------|------|
-| `bossbar` | 紫色进度条全程显示，文本 `标题 MM:SS`，进度=剩余/有效总时长（中途加时自动扩展分母） |
-| `title` | 默认最后 10 秒中央大字 10、9、…、1；`set last all` 全程显示，剩余超过 59 秒时用 MM:SS |
-| `subtitle` | 显示 MM:SS，与 title 同开时 title 显示标题、subtitle 显示时间；单独开时空 title 配合发送 |
-| `actionbar` | 全程显示 `剩余 MM:SS`，每秒刷新一次 |
+最常用：`/timer down 60s`、`/timer up`、`/timer down 5m fancy -- 活动开始`、`/timer down 5m fancy bar silent -- 安静活动`。
 
-省略显示方式时默认 `bossbar+title`；组合用 `+` 连接（如 `bossbar+title+subtitle+actionbar`），大小写不敏感、重复自动去重。
+### 展示位置
+
+| 位置 | 常态 | 事件 |
+|------|------|------|
+| `bar` | 顶部进度条"名称 · 剩余/已用 时间"，down 有进度、up 恒满条 | 全部事件只在顶部更新 |
+| `center` | 中央大字时间 + 副标题名称，全程显示；倒计时最后 10 秒改单秒数 | 暂停/继续在副标题标记 |
+| `actionbar` | 动作栏"名称 · 剩余/已用 时间" | 状态与结果只在动作栏 |
+| `both` | 顶部全程显示，中央平时不占屏 | 开始/暂停/恢复各 2 秒、结束 3 秒中央提示；倒计时最后 5 秒（fancy 10 秒）中央倒数 |
+
+### 三档效果
+
+| 内容 | simple | normal | fancy |
+|------|--------|--------|-------|
+| 配色 | 白字白条 | 青条，最后 10 秒黄、3 秒红 | 青条，60 秒内金、10 秒内黄、3 秒内红 |
+| 开始 | 直接出现 | 短淡入 | 开场过渡与钟声 |
+| 节点 | 无 | 无 | 60/30 秒各提示一次 |
+| 最后倒数 | both 最后 5 秒无声 | both 最后 5 秒，3/2/1 短音 | both 最后 10 秒，音高递增 |
+| 结束 | 静态结果无声 | 绿色结果与短音 | 绿色结果与更强结束音 |
+
+simple 默认无声，`/timer sound on` 可为当前会话显式开启；up 正计时不播放倒数音，只有开始/停止音。`silent` 与 `sound off` 始终覆盖全部声音。
 
 ### 目标玩家
 
-- 省略或独立 `@a`：动态全服（新加入玩家自动获得显示）
-- 其余选择器执行时快照一次（`@s`、玩家名、`@a[team=red]`、`@a[distance=..32]` 等，距离/队伍按执行当时判定）；退出玩家移除显示，快照内重新上线自动恢复
-- Carpet 假人一律排除；选择器无匹配真人时报错
-
-### 权限
-
-- 所有子命令需要权限等级 2（命令方块可用）
-- `countdown` 规则关闭时命令保留，执行提示"功能已关闭"（区别于其他命令的整树隐藏）
+- down 省略或独立 `@a`：动态全服（新加入玩家自动获得显示）；up 玩家执行省略时默认只给本人，减少无意打扰
+- 其余选择器执行时快照一次，退出玩家移除显示、重新上线自动恢复；Carpet 假人一律排除，无匹配真人报错
+- 选择器以 `@` 开头整体识别，括号与引号内的空格不会被拆散；裸玩家名不作为目标词（用 `-- 名称` 区分名称）
 
 ### 行为细节
 
-- 默认效果：`/countdown start 60s` → 全服真人看到紫色 BossBar（`倒计时 01:00` 递减），最后 10 秒中央大字倒数，归零显示"时间到！"约 2 秒后全部 UI 自动消失
-- 节拍与音效：剩余时间经过 30m/15m/10m/5m/1m/30s/15s 各提示一次（中央大字 + 钟声一声）；10..1 逐秒倒数伴随音高递增的提示音；归零一声强音收尾。跳过修改（set time/remove 大幅下调）不补发节拍，加时不重响；两项均可用 set 关闭
-- 完成仅触发一次；`stop`、规则关闭、服务器停止均立即清理且无完成提示
-- 修改时间/显示/对象/窗口/标题均立即刷新显示，不重置计时、不改变运行状态
-- 暂停期 BossBar 冻结在当前进度，Title/ActionBar 由服务端保活重发
-- 与米塔字幕（/text）、谁在叫我（whoCalledMe）共存安全：本功能只清理自己拥有的显示，不主动清除其他功能正在显示的 Title/ActionBar 内容
-- 服务端重启后倒计时取消（无持久化）
+- 已有计时再次 up/down 明确拒绝；结果展示 3 秒期间可直接启动新计时替换旧展示
+- 暂停冻结真实时间，所有位置显示"已暂停"；恢复后从冻结点继续
+- up 不允许 time/add/remove（报"正计时不支持修改已用时间"）；down 减至归零视为完成
+- down 自然归零：显示"名称 · 计时结束" 3 秒并播一次结束音；`/timer stop` 手动取消只给操作者反馈"已停止，剩余 xx"，不播完成音、不冒充自然结束；up stop 结算最终用时（毫秒）并展示 3 秒
+- 时间跳改（time/add/remove）不补发被跳过的数字、节点或声音；新加入玩家只补当前帧，不重播开场
+- 最后一份结束结果保存在内存，`/timer` 或 `/timer status` 可查看；重启清除
+- 与 /text、whoCalledMe 共存安全：只移除自己的显示，不主动清除其他功能的 Title/ActionBar；同一位置的其他通知可能临时覆盖计时显示
 
 ### 使用示例
 
 ```
-/countdown start 60s                          # 默认 bossbar+title 全服倒计时
-/countdown start 30s title                    # 仅中央大字
-/countdown start 90s bossbar+actionbar        # BossBar + 动作栏
-/countdown start 60s bossbar+title @a         # 显式全服（动态）
-/countdown start 30s title Steve              # 定向玩家
-/countdown start 2m bossbar @a[team=red]      # 红队
-/countdown start 10s title @a[distance=..32]  # 32 格内玩家
-/countdown pause                              # 暂停
-/countdown resume                             # 恢复
-/countdown set time 10s                       # 剩余设为 10 秒
-/countdown add 30s                            # 加 30 秒
-/countdown set display bossbar+subtitle       # 换显示组合
-/countdown set players @a                     # 换目标
-/countdown set last all                       # 中央大字全程显示
-/countdown set sound off                      # 关闭音效
-/countdown set label 活动即将开始              # 换标题
-/countdown status                             # 查看状态
-/countdown stop                               # 取消
+/timer down 60s                              # 全服倒计时（顶部进度条）
+/timer up                                    # 自己可见的正计时（动作栏）
+/timer down 5m fancy -- 活动开始              # 华丽效果，中央+顶部
+/timer down 5m fancy bar silent -- 安静活动   # 华丽视觉、仅顶部、无声
+/timer up @a[team=red] -- 红队测试            # 定向正计时
+/timer pause / resume / stop / status        # 运行控制
+/timer add 30s / remove 10s / time 60s       # 倒计时调整
+/timer style fancy / display both            # 运行中换效果与位置
+/timer sound off / label 决赛 / players @a   # 声音、名称与对象
 ```
 
 ---
 
+## /countdown - 旧版倒计时（兼容入口）
+
+> **所属规则**：`countdown`（默认开启）
+
+旧语法保留，与新 /timer 共用同一管理器与活动会话（互相查看与控制同一计时）。新用法请优先使用 /timer。
+
+### 语法
+
+- `/countdown start <时间> [显示组合] [目标]`：启动倒计时；省略显示组合时默认 `bossbar+title`、最后 10 秒中央窗口，基础效果映射 normal
+- `/countdown pause` / `resume` / `stop` / `status`：暂停、恢复、立即取消（无完成提示）、状态
+- `/countdown add <时间>` / `remove <时间>` / `set time <时间>`：调整剩余时间（对正计时会话同样拒绝）
+- `/countdown set display <bossbar+title+subtitle+actionbar 组合>`：按渠道组合渲染
+- `/countdown set players <选择器>` / `set label <文本>`：对象与标题
+- `/countdown set last <时间|all>`：中央大字窗口
+- `/countdown set milestones <on|off>`：长程节拍表（30m/15m/10m/5m/1m/30s/15s 各一次，仍遵守已选显示渠道）
+- `/countdown set sound <on|off>`：音效开关
+
+时间格式、选择器与权限同 /timer（权限等级 2，规则关闭提示"功能已关闭"）。
 ## 跨服传送命令
 
 ### /tpto - 跨服传送

@@ -11,7 +11,7 @@
 
 ## 简介
 
-**Carpet-PRY-Addition** 是一个基于 [Fabric Carpet](https://github.com/gnembon/fabric-carpet) 的服务端扩展模组，主要为 PRY 服务器（Primaryuan Server）开发，在客户端安装时能增加使用体验。新增 **37 条**可配置 Carpet 规则和 **12 个**命令，涵盖假人管理增强、玩家缩放、服务器管理、模组兼容性修复、功能移植、玩家交互和生存特性扩展。
+**Carpet-PRY-Addition** 是一个基于 [Fabric Carpet](https://github.com/gnembon/fabric-carpet) 的服务端扩展模组，主要为 PRY 服务器（Primaryuan Server）开发，在客户端安装时能增加使用体验。新增 **37 条**可配置 Carpet 规则和 **13 个**根命令（另扩展 /player 子命令），涵盖假人管理增强、玩家缩放、服务器管理、模组兼容性修复、功能移植、玩家交互和生存特性扩展。
 
 除 `ridingPlayersClientInteract` 客户端规则与 `countdown` 默认开启外，其余规则默认关闭，按需启用。
 
@@ -116,7 +116,7 @@
 - `invisibleInTallGrass`：头部位于高草丛时自动隐身
 - `moreEndCrystalTypes`：允许把末地水晶放在哭泣的黑曜石上（`invulnerable` 放出无敌水晶）
 - `textAnimation`：`/text @a|玩家名 <文本>` 播放米塔字幕，原版客户端可用；前 12 名接收者显示实体字幕，其余使用 actionbar 打字机
-- `countdown`：`/countdown start 60s` 向全服或指定玩家播放 BossBar/标题/副标题/动作栏倒计时，支持暂停恢复与运行中修改；长程节拍提示与倒数音效内置（可关），默认开启
+- `countdown`：`/timer down 60s` 倒计时、`/timer up` 正计时，统一暂停/恢复/停止与四种展示位置、三档效果；旧 /countdown 语法保留兼容，默认开启
 
 ### 服务器管理
 

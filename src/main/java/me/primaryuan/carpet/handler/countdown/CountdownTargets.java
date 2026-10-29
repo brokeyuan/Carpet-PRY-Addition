@@ -32,6 +32,17 @@ public final class CountdownTargets {
     private CountdownTargets() {}
 
     /**
+     * UP 正计时默认目标：玩家来源=本人快照（减少无意打扰）；控制台/命令方块等
+     * 非玩家来源=动态全服。
+     */
+    public static Resolved resolveUpDefault(CommandSourceStack source) {
+        if (source.getEntity() instanceof ServerPlayer player && !(player instanceof EntityPlayerMPFake)) {
+            return new Resolved(false, Set.of(player.getUUID()), 1);
+        }
+        return Resolved.dynamic();
+    }
+
+    /**
      * 解析目标参数；raw 为 null 表示目标参数缺省（动态全服），selector 为对应解析结果。
      *
      * @return Resolved；非动态且无匹配真人时 realCount == 0（调用方报"无匹配"）

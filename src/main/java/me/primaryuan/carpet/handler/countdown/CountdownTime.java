@@ -125,4 +125,34 @@ public final class CountdownTime {
         }
         return String.valueOf(seconds);
     }
+
+    /**
+     * 正计时运行显示：纳秒向下截断到十分之一秒 → {@code MM:SS.t} 或 {@code H:MM:SS.t}
+     * （>=1 小时），如 1.234s→00:01.2；截断保证不提前进位。小时可超过两位，不设 24 小时回卷。
+     */
+    public static String formatUpTenths(long elapsedNanos) {
+        long tenths = Math.max(0, elapsedNanos) / 100_000_000L;
+        return formatWithFraction(tenths, 1);
+    }
+
+    /** 正计时最终结果：向下截断到毫秒 → {@code MM:SS.mmm} 或 {@code H:MM:SS.mmm} */
+    public static String formatUpMillis(long elapsedNanos) {
+        long millis = Math.max(0, elapsedNanos) / 1_000_000L;
+        return formatWithFraction(millis, 3);
+    }
+
+    /** fractionDigits 位小数（1=十分之一秒 / 3=毫秒），整体向下截断 */
+    private static String formatWithFraction(long scaledValue, int fractionDigits) {
+        long whole = scaledValue / powersOfTen[fractionDigits];
+        long fraction = scaledValue % powersOfTen[fractionDigits];
+        long h = whole / 3600;
+        long m = whole % 3600 / 60;
+        long s = whole % 60;
+        String head = h > 0
+                ? String.format(Locale.ROOT, "%02d:%02d:%02d", h, m, s)
+                : String.format(Locale.ROOT, "%02d:%02d", m, s);
+        return String.format(Locale.ROOT, "%s.%0" + fractionDigits + "d", head, fraction);
+    }
+
+    private static final long[] powersOfTen = {1, 10, 100, 1000};
 }

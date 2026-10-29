@@ -15,6 +15,7 @@ import me.primaryuan.carpet.command.PatNodCommand;
 import me.primaryuan.carpet.command.RidingCommand;
 import me.primaryuan.carpet.command.ScaleCommand;
 import me.primaryuan.carpet.command.TextCommand;
+import me.primaryuan.carpet.command.TimerCommand;
 import me.primaryuan.carpet.command.TppCommand;
 import me.primaryuan.carpet.command.TptoCommand;
 import me.primaryuan.carpet.handler.clickThrough.ClickThroughHandler;
@@ -97,6 +98,7 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         PvpCommand.register();
         PatNodCommand.register();
         TextCommand.register();
+        TimerCommand.register();
         CountdownCommand.register();
         TptoCommand.register();
 

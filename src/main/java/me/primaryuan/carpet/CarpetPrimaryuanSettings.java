@@ -239,8 +239,9 @@ public class CarpetPrimaryuanSettings {
     )
     public static boolean textAnimation = false;
 
-    // 通用倒计时：/countdown 全服或指定玩家的 BossBar/标题/副标题/动作栏倒计时，
-    // 支持暂停恢复与运行中修改时间、显示方式与对象；纯服务端数据包实现
+    // 计时器：/timer 正计时与倒计时统一入口，四种展示位置（顶部/中央/动作栏/组合）
+    // 与三档效果（简洁/标准/华丽）；旧 /countdown 语法保留兼容，共用同一会话；
+    // 纯服务端数据包实现
     @Rule(
             categories = {PRIMARYUAN, COMMAND}
     )

@@ -63,4 +63,24 @@ class CountdownTimeTest {
         assertEquals("01:00", CountdownTime.formatTitleNumber(60));
         assertEquals("01:05", CountdownTime.formatTitleNumber(65));
     }
+
+    @Test
+    void formatsUpTenthsFloor() {
+        assertEquals("00:00.0", CountdownTime.formatUpTenths(0));
+        assertEquals("00:01.2", CountdownTime.formatUpTenths(1_234_000_000L));
+        // 向下截断，不提前进位
+        assertEquals("00:01.2", CountdownTime.formatUpTenths(1_299_999_999L));
+        assertEquals("00:01.3", CountdownTime.formatUpTenths(1_300_000_000L));
+        assertEquals("01:00.0", CountdownTime.formatUpTenths(60 * 1_000_000_000L));
+        assertEquals("01:00:00.5", CountdownTime.formatUpTenths(3600 * 1_000_000_000L + 500_000_000L));
+    }
+
+    @Test
+    void formatsUpMillisResult() {
+        assertEquals("00:00.000", CountdownTime.formatUpMillis(0));
+        assertEquals("00:05.123", CountdownTime.formatUpMillis(5_123_456_789L));
+        assertEquals("01:00:02.345", CountdownTime.formatUpMillis(3602_345_678_000L));
+        // 小时可超过两位（正计时跨天不回卷）
+        assertEquals("100:00:00.000", CountdownTime.formatUpMillis(100L * 3600 * 1_000_000_000L));
+    }
 }

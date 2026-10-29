@@ -128,9 +128,9 @@ Naming a player in chat triggers three sounds and a title; self-mentions also wo
 
 Use `/text @a|player <message>` to play MiSide-style subtitles on vanilla clients. Text types in, holds, then drops and fades; trailing exclamation marks enlarge it. Defaults to white, supports `&` color codes and inline options. The first 12 eligible recipients get entity subtitles; the rest get an actionbar typewriter. Fake players are excluded.
 
-### Countdown (`countdown`)
+### Timer (`countdown`)
 
-Use `/countdown start 60s` to run a server-wide countdown through any combination of BossBar, title, subtitle and actionbar for everyone or selected players (fake players excluded). Supports pause, resume, stop and live adjustment of time, display, targets, center window and label, all in game. Times by real elapsed time; disabled or stopped instantly cleans up every display.
+`/timer down 60s` runs a countdown, `/timer up` runs a count-up; both share one set of pause/resume/stop controls and can be styled with a display position (bar / center / actionbar / both) and an effect tier (simple / normal / fancy). Targets everyone or selected players (fake players excluded). The legacy `/countdown` syntax stays as a compatibility entry. Times by real elapsed time; disabled or stopped instantly cleans up every display.
 
 ### Click Through (`clickThrough`)
 

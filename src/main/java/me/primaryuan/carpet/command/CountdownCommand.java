@@ -27,7 +27,11 @@ import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * /countdown 命令：服务端全局单实例倒计时（规则 countdown 控制可用性）。
+ * /countdown 命令：旧版倒计时兼容入口（规则 countdown 控制可用性）。
+ *
+ * <p>与 /timer 共用同一个 CountdownManager 与活动会话：旧 start 映射 legacy 会话
+ * （按渠道组合渲染、旧节拍表与音效配方），控制类子命令直接操作共享会话。
+ * 新用法优先 /timer，本类只为既有命令方块与玩家习惯保留。</p>
  *
  * <p>树形结构（display 用 + 组合、增量补全；players 为原版 EntityArgument，
  * 补全与校验均为原生行为）：</p>
@@ -256,7 +260,7 @@ public final class CountdownCommand {
             source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.countdown.no_match"));
             return 0;
         }
-        int result = CountdownManager.get().start(source.getServer(), seconds, channels,
+        int result = CountdownManager.get().startLegacy(source.getServer(), seconds, channels,
                 resolved.dynamicAll(), resolved.targets());
         if (result != 0) {
             source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.countdown.already_running"));
@@ -273,7 +277,7 @@ public final class CountdownCommand {
             return 0;
         }
         CountdownManager manager = CountdownManager.get();
-        return switch (manager.pause()) {
+        return switch (manager.pause(source.getServer())) {
             case 0 -> {
                 source.sendSuccess(() -> ServerI18n.tr("carpetprimaryuan.command.countdown.paused",
                         CountdownTime.formatClock(manager.remainingCeilSeconds())), false);
@@ -296,7 +300,7 @@ public final class CountdownCommand {
             return 0;
         }
         CountdownManager manager = CountdownManager.get();
-        return switch (manager.resume()) {
+        return switch (manager.resume(source.getServer())) {
             case 0 -> {
                 source.sendSuccess(() -> ServerI18n.tr("carpetprimaryuan.command.countdown.resumed",
                         CountdownTime.formatClock(manager.remainingCeilSeconds())), false);
@@ -318,7 +322,7 @@ public final class CountdownCommand {
         if (checkDisabled(source)) {
             return 0;
         }
-        if (!CountdownManager.get().stop()) {
+        if (!CountdownManager.get().stopImmediate()) {
             source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.countdown.no_active"));
             return 0;
         }
@@ -344,14 +348,22 @@ public final class CountdownCommand {
         String targetsText = manager.dynamicAll()
                 ? ServerI18n.tr("carpetprimaryuan.command.countdown.targets_all").getString()
                 : ServerI18n.tr("carpetprimaryuan.command.countdown.targets_players", manager.targetCount()).getString();
-        String state = stateText;
-        String targets = targetsText;
+        if (manager.mode() == me.primaryuan.carpet.handler.countdown.TimerMode.UP) {
+            // 旧入口 status 兼容查看正计时会话：时间字段换已用时，总时长占位
+            source.sendSuccess(() -> ServerI18n.tr("carpetprimaryuan.command.countdown.status",
+                    stateText,
+                    me.primaryuan.carpet.handler.countdown.CountdownTime.formatUpTenths(manager.elapsedNanos()),
+                    "--",
+                    CountdownChannel.formatCombo(manager.channels()),
+                    targetsText), false);
+            return 1;
+        }
         source.sendSuccess(() -> ServerI18n.tr("carpetprimaryuan.command.countdown.status",
-                state,
+                stateText,
                 CountdownTime.formatClock(manager.remainingCeilSeconds()),
                 CountdownTime.formatClock(manager.durationSeconds()),
                 CountdownChannel.formatCombo(manager.channels()),
-                targets), false);
+                targetsText), false);
         return 1;
     }
 
@@ -366,6 +378,10 @@ public final class CountdownCommand {
         }
         CountdownManager manager = CountdownManager.get();
         int result = manager.addTime(source.getServer(), seconds);
+        if (result == -3) {
+            source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.timer.up_no_time"));
+            return 0;
+        }
         if (result == -2) {
             source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.countdown.time_cap"));
             return 0;
@@ -390,7 +406,12 @@ public final class CountdownCommand {
             return 0;
         }
         CountdownManager manager = CountdownManager.get();
-        if (manager.removeTime(source.getServer(), seconds) != 0) {
+        int removed = manager.removeTime(source.getServer(), seconds);
+        if (removed == -3) {
+            source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.timer.up_no_time"));
+            return 0;
+        }
+        if (removed != 0) {
             source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.countdown.no_active"));
             return 0;
         }
@@ -410,7 +431,12 @@ public final class CountdownCommand {
             return 0;
         }
         CountdownManager manager = CountdownManager.get();
-        if (manager.setTime(source.getServer(), seconds) != 0) {
+        int result = manager.setTime(source.getServer(), seconds);
+        if (result == -3) {
+            source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.timer.up_no_time"));
+            return 0;
+        }
+        if (result != 0) {
             source.sendFailure(ServerI18n.tr("carpetprimaryuan.command.countdown.no_active"));
             return 0;
         }

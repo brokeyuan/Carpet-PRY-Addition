@@ -46,7 +46,7 @@
   - [invisibleInTallGrass - 隐身草](#invisibleintallgrass---隐身草)
   - [moreEndCrystalTypes - 更多种类的末地水晶](#moreendcrystaltypes---更多种类的末地水晶)
   - [textAnimation - 米塔字幕](#textanimation---米塔字幕)
-  - [countdown - 通用倒计时](#countdown---通用倒计时)
+  - [countdown - 计时器](#countdown---计时器)
 - [服务器管理](#服务器管理)
   - [serverTransfer - 跨服传送](#servertransfer---跨服传送)
 - [玩家缩放](#玩家缩放)
@@ -571,20 +571,20 @@
 
 ---
 
-### countdown - 通用倒计时
+### countdown - 计时器
 
-`/countdown` 向全服或指定玩家播放 BossBar/标题/副标题/动作栏倒计时（四种渠道任意组合），支持暂停、恢复、停止与运行中修改时间、显示方式、对象、中央显示窗口与标题；长程节拍提示与倒数音效内置且可关。
+`/timer` 统一入口：正计时（up）与倒计时（down）共用一套暂停/恢复/停止控制，四种展示位置（bar 顶部 / center 中央 / actionbar 动作栏 / both 顶中组合）与三档效果（simple 简洁 / normal 标准 / fancy 华丽）自由搭配；旧 `/countdown` 语法保留为兼容入口。
 
 | 属性 | 值 |
 |------|-----|
 | **规则名** | `countdown` |
-| **描述** | 用 /countdown 向全服或指定玩家播放 BossBar/标题/副标题/动作栏倒计时，支持暂停恢复与运行中修改。 |
+| **描述** | 用 /timer 进行正计时或倒计时，可选展示位置（顶部/中央/动作栏/组合）与效果档位（简洁/标准/华丽），支持暂停恢复与运行中修改；旧 /countdown 语法保留兼容。 |
 | **类型** | `boolean` |
 | **默认值** | `true` |
 | **参考选项** | `true`, `false` |
 | **分类** | `PRIMARYUAN`, `COMMAND` |
 
-权限等级 2，命令方块可用。规则关闭时命令保留并提示"功能已关闭"，进行中的倒计时立即清理；计时基于真实经过时间（TPS 低不拉长时长），服务端仅允许一个倒计时，停服即取消。剩余时间经过 30m/15m/10m/5m/1m/30s/15s 节拍点各提示一次并伴随音效，最后 10 秒逐秒倒数。完整语法与行为见[命令文档](commands.md#countdown---通用倒计时)。
+权限等级 2，命令方块可用。规则关闭时命令保留并提示"功能已关闭"，活动中的计时立即清理（不产生完成结果）；计时基于真实经过时间（TPS 低不拉长时长），服务端同一时刻只有一个计时，停服即取消。fancy 档在 60/30 秒各提示一次、最后 10 秒逐秒倒数并配递增音高；声音可用 silent 或 /timer sound off 关闭。完整语法与行为见[命令文档](commands.md#timer---计时器)。
 
 ---
 

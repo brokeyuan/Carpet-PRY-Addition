@@ -46,7 +46,7 @@ Rule values are stored per world in `<world>/carpet.conf` by default. Rules tagg
   - [invisibleInTallGrass - Invisibility Grass](#invisibleintallgrass---invisibility-grass)
   - [moreEndCrystalTypes - More End Crystal Types](#moreendcrystaltypes---more-end-crystal-types)
   - [textAnimation - MiSide Subtitles](#textanimation---miside-subtitles)
-  - [countdown - Countdown](#countdown---countdown)
+  - [countdown - Timer](#countdown---timer)
 - [Server Management](#server-management)
   - [serverTransfer - Server Transfer](#servertransfer---server-transfer)
 - [Player Scaling](#player-scaling)
@@ -572,20 +572,20 @@ Sneaking retains sign editing and frame rotation. Standing signs and banners are
 
 ---
 
-### countdown - Countdown
+### countdown - Timer
 
-`/countdown` runs a countdown via BossBar/title/subtitle/actionbar (any combination of the four channels) for everyone or selected players, with pause, resume, stop and live adjustment of time, display, targets, center window and label; built-in beat prompts and countdown sounds, both switchable.
+`/timer` is the unified entry: count-up (up) and countdown (down) share one set of pause/resume/stop controls, with four display positions (bar / center / actionbar / both) and three effect tiers (simple / normal / fancy); the legacy `/countdown` syntax stays as a compatibility entry.
 
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `countdown` |
-| **Description** | Adds /countdown: a BossBar/title/subtitle/actionbar countdown for everyone or selected players, with pause and live adjustments. |
+| **Description** | Adds /timer: run a count-up or countdown with /timer, choosing display position (bar/center/actionbar/both) and effect tier (simple/normal/fancy), with pause, resume and live adjustments; legacy /countdown syntax stays as a compatibility entry. |
 | **Type** | `boolean` |
 | **Default Value** | `true` |
 | **Suggested Options** | `true`, `false` |
 | **Categories** | `PRIMARYUAN`, `COMMAND` |
 
-Permission level 2, command blocks supported. When the rule is off the command stays visible and reports that it is disabled; a running countdown is cleaned up immediately. Timing follows real elapsed time (low TPS does not stretch it); only one countdown exists per server and it is cancelled on restart. A beat prompt with sound fires once when remaining time passes 30m/15m/10m/5m/1m/30s/15s, and the last 10 seconds tick every second. Full syntax and behavior in the [command documentation](commands_en.md#countdown---countdown).
+Permission level 2, command blocks supported. When the rule is off the command stays visible and reports that it is disabled; an active timer is cleaned up immediately (no fake completion). Timing follows real elapsed time (low TPS does not stretch it); only one timer exists per server and it is cancelled on restart. The fancy tier prompts once at 60/30 seconds and ticks the last 10 seconds with rising pitch; all sounds can be silenced with silent or /timer sound off. Full syntax and behavior in the [command documentation](commands_en.md#timer---timer).
 
 ---
 

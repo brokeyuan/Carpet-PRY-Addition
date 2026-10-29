@@ -26,6 +26,8 @@
 - [Server Transfer Commands](#server-transfer-commands)
   - [/tpto](#tpto---server-transfer)
   - [/tptoset](#tptoset---server-management)
+- [/timer - Timer](#timer---timer)
+- [/countdown - Legacy Countdown](#countdown---legacy-countdown-compatibility-entry)
 
 ---
 
@@ -723,88 +725,110 @@ Use `||` for a literal `|`; legacy color codes use `&` (e.g. `&c`), `&&` for a l
 
 ---
 
-## /countdown - Countdown
+## /timer - Timer
 
 > **Related rule**: `countdown` (on by default)
 
-A single server-wide countdown instance: BossBar, Title (center screen), Subtitle and ActionBar channels freely combined; one command is enough by default. Timing follows real elapsed time (low TPS does not stretch it), with pause, resume, stop and live adjustment. Command blocks supported.
+The unified entry for count-up and countdown: one active timer per server, both directions sharing pause/resume/stop controls; four display positions and three effect tiers combine freely, and the common cases are one short command. Timing follows real elapsed time (low TPS does not stretch it), implemented purely with server packets — vanilla clients work. Command blocks supported.
 
-### Command Syntax
+### Syntax
 
-- `/countdown start <time> [display] [players]` — start; rejected while a countdown is running
-- `/countdown pause` / `resume` — pause / resume (the frozen display is kept while paused)
-- `/countdown stop` — cancel immediately and clean up (no "time's up" prompt)
-- `/countdown status` — state, remaining, total, display and targets
-- `/countdown add <time>` / `remove <time>` — add / remove remaining time (removing to zero completes)
-- `/countdown set time <time>` — set the remaining time directly (at least 1s)
-- `/countdown set display <combo>` — change channels (e.g. `bossbar+subtitle`)
-- `/countdown set players <selector>` — change targets (vanilla player selector)
-- `/countdown set last <time|all>` — change when the center display (Title/Subtitle) starts, default the last 10 seconds
-- `/countdown set label <text>` — change the label (default "Countdown", max 128 characters)
-- `/countdown set milestones <on|off>` — toggle long-range beat prompts (one at 30m/15m/10m/5m/1m/30s/15s, on by default)
-- `/countdown set sound <on|off>` — toggle countdown sounds (on by default)
+- `/timer down <time> [options…] [-- label]` — start a countdown (1s ~ 24h)
+- `/timer up [options…] [-- label]` — start a count-up (from zero, no cap, never ends by itself)
+- `/timer pause` / `resume` / `stop` / `status`
+- `/timer time <time>` — set the remaining time directly (countdown only)
+- `/timer add <time>` / `remove <time>` — add / remove time (countdown only; removing to zero completes)
+- `/timer style <simple|normal|fancy>` — change the effect tier
+- `/timer display <bar|center|actionbar|both>` — change the display position
+- `/timer sound <on|off>` — toggle sounds for this session
+- `/timer label <label>` — change the label
+- `/timer players <selector>` — change targets
+- `/timer` — brief status when a timer is active; usage examples and last result otherwise
 
-### Time Format
+### Options and defaults
 
-`60`, `60s`, `1m`, `1m30s`, `2h`, `1h30m` — a bare integer means seconds; units s/m/h in h>m>s order, each at most once, positive integers only; range 1s to 24h; invalid input explains the valid formats.
+Option words come in any order, case-insensitive, at most one per category; everything after `--` is the label (1–128 characters) and stops option parsing.
 
-### Display Modes
+| Category | Values | Notes |
+|----------|--------|-------|
+| Effect | `simple` / `normal` / `fancy` | default simple |
+| Position | `bar` / `center` / `actionbar` / `both` | default bar for down, actionbar for up; fancy without an explicit position uses both |
+| Silent | `silent` | disables all sounds for this timer |
+| Targets | vanilla selectors like `@s`, `@a`, `@a[team=red]` | down defaults to everyone; up run by a player defaults to self, console/command blocks default to everyone |
 
-| Channel | Default behavior |
-|------|------|
-| `bossbar` | Purple bar shown the whole time, text `label MM:SS`, progress = remaining / effective total (the denominator grows when time is added) |
-| `title` | By default big digits 10, 9, …, 1 in the last 10 seconds; with `set last all` it shows the whole time, switching to MM:SS above 59 seconds |
-| `subtitle` | Shows MM:SS; together with title the title shows the label and the subtitle the time; alone it sends an empty title |
-| `actionbar` | Shows `Remaining MM:SS` the whole time, refreshed once per second |
+Most common: `/timer down 60s`, `/timer up`, `/timer down 5m fancy -- Event start`, `/timer down 5m fancy bar silent -- Quiet event`.
 
-Omitting display defaults to `bossbar+title`; combine with `+` (e.g. `bossbar+title+subtitle+actionbar`), case-insensitive, duplicates removed.
+### Display positions
 
-### Target Players
+| Position | Idle | Events |
+|----------|------|--------|
+| `bar` | top boss bar "label · remaining/elapsed time"; down shows progress, up stays full | everything updates the bar only |
+| `center` | big time in the center with the label as subtitle, always visible; last 10s of a countdown switch to single seconds | pause/resume marked in the subtitle |
+| `actionbar` | action bar "label · remaining/elapsed time" | status and result shown only there |
+| `both` | bar always visible, center idle | start/pause/resume flash 2s, finish 3s; countdown ticks the last 5s centrally (fancy 10s) |
 
-- Omitted or a bare `@a`: dynamic everyone (joining players get the display automatically)
-- Any other selector is snapshotted once at execution (`@s`, player names, `@a[team=red]`, `@a[distance=..32]`, etc.; distance/teams judged at execution time); players who leave lose the display and it is restored on rejoin while still in the snapshot
-- Carpet fake players are always excluded; selectors matching no real player report an error
+### Effect tiers
 
-### Permissions
+| Content | simple | normal | fancy |
+|---------|--------|--------|-------|
+| Colors | white text and bar | cyan bar, yellow last 10s, red last 3s | cyan bar, gold under 60s, yellow under 10s, red under 3s |
+| Start | appears directly | short fade-in | opening transition and chime |
+| Milestones | none | none | one prompt each at 60s/30s |
+| Last seconds | both last 5s, silent | both last 5s with 3/2/1 ticks | both last 10s with rising pitch |
+| Finish | static result, silent | green result with a short sound | green result with a stronger finish sound |
 
-- All subcommands require permission level 2 (command blocks supported)
-- While the `countdown` rule is off the command stays visible and reports that it is disabled (unlike other commands that hide the whole tree)
+simple is silent by default; `/timer sound on` enables sounds for the running session. A count-up plays no ticking sounds, only start/stop. `silent` and `sound off` always override every sound.
 
-### Behavior Details
+### Targets
 
-- Default: `/countdown start 60s` shows every real player a purple BossBar counting down `Countdown 01:00`, big center digits in the last 10 seconds, "Time's up!" on zero, all UI gone after about 2 seconds
-- Beats and sounds: one prompt (center text + a bell) when remaining time passes 30m/15m/10m/5m/1m/30s/15s; the 10-to-1 countdown ticks with a rising pitch; a strong cue on zero. Time jumps (set time/remove) do not replay skipped beats, adding time never refires; both switchable via set
-- Completion fires exactly once; `stop`, disabling the rule and server shutdown clean up immediately without the completion prompt
-- Time/display/target/window/label changes refresh immediately without resetting the timer or changing run state
-- While paused the BossBar freezes at its progress; Title/ActionBar are re-sent by the server to stay visible
-- Coexists safely with MiSide subtitles (/text) and whoCalledMe: this feature only cleans up its own displays and never clears Title/ActionBar content owned by other features
-- Countdowns are cancelled by a server restart (no persistence)
+- down: omitted or standalone `@a` means everyone dynamically (joining players get the display automatically); up run by a player defaults to self
+- Any other selector is snapshotted at execution: quitting players lose the display and rejoining ones regain it; Carpet fake players are always excluded, no real match is an error
+- Selectors start with `@` and keep their brackets/quotes intact when split; bare player names are not target words (use `-- label` for labels)
+
+### Behavior
+
+- Starting up/down while a timer is active is rejected; during the 3-second result window a new timer may replace the old display directly
+- Pausing freezes real time; every position shows "paused"; resuming continues from the frozen point
+- up rejects time/add/remove ("count-up elapsed time cannot be modified"); down removing to zero counts as finished
+- down reaching zero naturally: shows "label · finished" for 3s with one finish sound; `/timer stop` on a countdown only reports "stopped, xx left" to the caller, no finish sound and no fake natural end; up stop settles the final elapsed time (milliseconds) and shows it for 3s
+- Time jumps (time/add/remove) never replay skipped digits, milestones or sounds; joining players only receive the current frame
+- The last result is kept in memory, visible via `/timer` or `/timer status`; cleared on restart
+- Coexists safely with /text and whoCalledMe: only its own display is removed; other notifications on the same channel may temporarily cover the timer
 
 ### Examples
 
 ```
-/countdown start 60s                          # default bossbar+title for everyone
-/countdown start 30s title                    # center digits only
-/countdown start 90s bossbar+actionbar        # BossBar + actionbar
-/countdown start 60s bossbar+title @a         # explicit dynamic everyone
-/countdown start 30s title Steve              # one player
-/countdown start 2m bossbar @a[team=red]      # red team
-/countdown start 10s title @a[distance=..32]  # players within 32 blocks
-/countdown pause                              # pause
-/countdown resume                             # resume
-/countdown set time 10s                       # 10 seconds remaining
-/countdown add 30s                            # add 30 seconds
-/countdown set display bossbar+subtitle       # change channels
-/countdown set players @a                     # change targets
-/countdown set last all                       # center digits the whole time
-/countdown set sound off                      # disable sounds
-/countdown set label Get ready                # change label
-/countdown status                             # inspect state
-/countdown stop                               # cancel
+/timer down 60s                              # server-wide countdown (top bar)
+/timer up                                    # count-up visible to yourself (action bar)
+/timer down 5m fancy -- Event start          # fancy tier, center + top
+/timer down 5m fancy bar silent -- Quiet     # fancy visuals, top only, no sound
+/timer up @a[team=red] -- Red team test      # targeted count-up
+/timer pause / resume / stop / status        # run control
+/timer add 30s / remove 10s / time 60s       # countdown adjustments
+/timer style fancy / display both            # change tier and position live
+/timer sound off / label Final / players @a  # sound, label and targets
 ```
 
 ---
 
+## /countdown - Legacy Countdown (compatibility entry)
+
+> **Related rule**: `countdown` (on by default)
+
+The legacy syntax is kept and shares the same manager and active session with /timer (both entries view and control the same timer). Prefer /timer for new usage.
+
+### Syntax
+
+- `/countdown start <time> [display combo] [targets]` — start a countdown; omitting the combo defaults to `bossbar+title` with a last-10s center window, mapped to the normal tier
+- `/countdown pause` / `resume` / `stop` / `status` — pause, resume, immediate cancel (no finish prompt), status
+- `/countdown add <time>` / `remove <time>` / `set time <time>` — adjust remaining time (rejected on count-up sessions too)
+- `/countdown set display <bossbar+title+subtitle+actionbar combo>` — render by channel combo
+- `/countdown set players <selector>` / `set label <text>` — targets and label
+- `/countdown set last <time|all>` — center window
+- `/countdown set milestones <on|off>` — legacy beat table (30m/15m/10m/5m/1m/30s/15s once each, still honoring the selected channels)
+- `/countdown set sound <on|off>` — sounds
+
+Time formats, selectors and permissions match /timer (permission level 2; the disabled rule reports "feature is off").
 ## Server Transfer Commands
 
 ### /tpto - Server Transfer
