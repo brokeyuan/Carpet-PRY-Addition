@@ -11,7 +11,7 @@
 
 ## Introduction
 
-**Carpet-PRY-Addition** is a server-side Fabric extension for [Fabric Carpet](https://github.com/gnembon/fabric-carpet), developed for the **Primaryuan Server**; it also enhances the experience when installed client-side. It adds **37** configurable Carpet rules and **13** root commands (plus /player subcommands), covering fake player enhancements, player scaling, server management, mod compatibility fixes, ported features, player interactions, and survival gameplay expansion.
+**Carpet-PRY-Addition** is a server-side Fabric extension for [Fabric Carpet](https://github.com/gnembon/fabric-carpet), developed for the **Primaryuan Server**; it also enhances the experience when installed client-side. It adds **38** configurable Carpet rules and **14** root commands (plus /player subcommands), covering fake player enhancements, player scaling, server management, mod compatibility fixes, ported features, player interactions, and survival gameplay expansion.
 
 All rules are off by default except the client-side rule `ridingPlayersClientInteract` and `countdown`; enable what you need.
 
@@ -87,6 +87,7 @@ All rules are off by default except the client-side rule `ridingPlayersClientInt
 - `fakePlayerDropAll`: paced `/player dropall` dropping of the fake player's inventory
 - `fakePlayerSendto`: `/player sendto` one-way inventory item flow between fake players
 - `fakePlayerBrain`: `/player <name> brain` injects 19 vanilla-mob-style AI modes into fake players (zombie/skeleton/piglin/wolf/enderman/...), pure server-side with zero extra entities; supports CJK names, `keep` across rejoins within the current server run and colored name suffixes
+- `fakePlayerClones`: same-UUID fake player clones — multiple real Carpet fakes share one identity and skin online at once, with independent positions/entity IDs, a shared inventory and genuine chunk loading; incremental spawn / group kill / rejoin across restarts, protected from real-player logins
 
 ### Player Scaling
 

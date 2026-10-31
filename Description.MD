@@ -79,6 +79,10 @@ Use `/player <name> dropall` (or `dropall once`) to empty the inventory immediat
 
 Adds a `/player <name> sendto <target>` sub-command creating a one-way item flow between fake players: one stack is transferred per trigger, round-robin across multiple targets, and the source buffers items when a target is full. The same pace modifiers as dropall are supported; `sendto stop` removes all links. Links live in memory only and do not survive restarts.
 
+### Fake Player Clones (`fakePlayerClones`)
+
+Lets multiple real Carpet fake players share one UUID and skin online simultaneously. Each clone keeps its own entity ID, position and dimension; the group shares one authoritative inventory (same-tick edits never duplicate); clones genuinely load chunks and count for mob spawning. `/player <name> spawn` adds a clone per invocation, `/fakeclone kill|rejoin <name>` exits/restores the whole group, snapshots survive restarts, and same-UUID real players are protected.
+
 ### Fake Player Brain (`fakePlayerBrain`)
 
 Give fake players one of 19 mob behavior modes with `/player <name> brain <mode>`. They keep their player body and inventory; no extra entities or items are created. Supports CJK mode names, colored name suffixes and `keep` for rejoins during the current server run.

@@ -4,6 +4,7 @@
 
 ### 新增
 
+- 同UUID假人分身（`fakePlayerClones`）：多个真正的 Carpet 假人共享同一 UUID 与皮肤同时在线，独立 Entity ID/位置/维度，整组共享背包（权威状态，同 Tick 修改不复制）；`/player <name> spawn` 增量生成分身，`/fakeclone kill` 全组正常退出并存档快照，`/fakeclone rejoin` 跨重启恢复整组位置与背包；同 UUID 真人登录保护；分身真实参与区块加载与怪物生成判定；规则关闭时普通假人行为不变
 - 跨服传送（`serverTransfer`）：`/tpto` 展示可点击的服务器列表，点击即以本人身份走原版 transfer 协议转移到他服（一服一地址）；`/tptoset` 管理服务器列表（addserver / removeserver / reload），配置存于 `config/carpet-pry-addition/tpto.json`；目标服需开启 `accepts-transfers`
 - 计时器（`countdown`）：新增 /timer 统一入口，正计时（up）与倒计时（down）共用暂停/恢复/停止控制，四种展示位置（bar/center/actionbar/both）与三档效果（simple/normal/fancy）自由搭配；最短 `/timer down 60s`、`/timer up` 即可用，选项词任意顺序，`--` 后整段为名称，silent 一词全静音。fancy 档 60/30 秒节点提示、最后 10 秒逐秒递增音高；倒计时归零展示 3 秒并留结果，正计时停止结算毫秒级用时；最后一份结果存内存可经 /timer 查看。旧 /countdown 语法保留为兼容入口，与 /timer 共用同一会话。默认开启，规则关闭立即清理显示且不产生虚假完成结果
 - `SERVER` 规则类别：标记该类别的规则值跟随服务器（钉值存于 `config/carpet-pry-addition/server-rules.json`，启动时压过存档 carpet.conf），权限类规则不再随存档漂移

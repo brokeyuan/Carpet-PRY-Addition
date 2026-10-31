@@ -2,7 +2,7 @@
 
 > Mod ID: `carpet-pry-addition` | 版本: `1.3.1`
 >
-> 共 **37 条**规则（`whoCalledMeSound` / `whoCalledMeHighlight` 作为配套子规则内联在 whoCalledMe 节）
+> 共 **38 条**规则（`whoCalledMeSound` / `whoCalledMeHighlight` 作为配套子规则内联在 whoCalledMe 节）
 >
 > **提示：可以使用 `Ctrl+F` 快速查找自己想要的规则**
 
@@ -22,6 +22,7 @@
   - [fakePlayerDropAll - 假人持续清空背包](#fakeplayerdropall---假人持续清空背包)
   - [fakePlayerSendto - 假人背包链接](#fakeplayersendto---假人背包链接)
   - [fakePlayerBrain - 假人脑子](#fakeplayerbrain---假人脑子)
+  - [fakePlayerClones - 同UUID假人分身](#fakeplayerclones---同uuid假人分身)
 - [漏洞修复 (BUGFIX)](#漏洞修复-bugfix)
   - [fixXaeroLib - XaeroLib兼容性修复补丁](#fixxaerolib---xaerolib兼容性修复补丁)
   - [fixBlueMap - BlueMap兼容性修复补丁](#fixbluemap---bluemap兼容性修复补丁)
@@ -205,6 +206,25 @@
 | **默认值** | `false` |
 | **参考选项** | `false`, `true` |
 | **分类** | `PRIMARYUAN`, `BOT`, `COMMAND` |
+
+### fakePlayerClones - 同UUID假人分身
+
+允许多个真正的 Carpet 假人共享同一 UUID 与皮肤同时在线：每个分身拥有独立 Entity ID、位置与维度，可分别移动、攻击、使用物品，整组共享同一份背包（权威状态，同 Tick 修改不复制物品），并真实参与区块加载与怪物生成判定。
+
+- **生成**：`/player <name> spawn` 每执行一次新增一个分身（首个即建组）；`/fakeclone spawn <name>` 等价。
+- **退出**：`/fakeclone kill <name>` 或 `/player <name> kill` 让全组正常退出（非死亡、不掉落），并存档组快照。
+- **恢复**：`/fakeclone rejoin <name>` 按快照恢复整组数量、维度、位置与背包；服务器重启后仍可恢复。
+- **管理**：`/fakeclone list|status|select` 查看与定位单个分身（`#cloneId`）。
+- **保护**：同 UUID 真人登录期间禁止生成分身；分身组创建与命令限管理员（等级 2+）。规则关闭时普通 Carpet 假人行为不变。
+
+| 属性 | 值 |
+|------|-----|
+| **规则名** | `fakePlayerClones` |
+| **描述** | 允许多个真正的假人共享同一UUID与皮肤同时在线，独立位置与操作，整组共享背包。 |
+| **类型** | `boolean` |
+| **默认值** | `false` |
+| **参考选项** | `false`, `true` |
+| **分类** | `PRIMARYUAN`, `BOT` |
 
 ---
 

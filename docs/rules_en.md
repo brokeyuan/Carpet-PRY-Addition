@@ -2,7 +2,7 @@
 
 > Mod ID: `carpet-pry-addition` | Version: `1.3.1`
 >
-> Total: **37 rules** (`whoCalledMeSound` / `whoCalledMeHighlight` are documented inline as companion rules in the whoCalledMe section)
+> Total: **38 rules** (`whoCalledMeSound` / `whoCalledMeHighlight` are documented inline as companion rules in the whoCalledMe section)
 >
 > **Tip: Use `Ctrl+F` to quickly find the rule you want**
 
@@ -22,6 +22,7 @@ Rule values are stored per world in `<world>/carpet.conf` by default. Rules tagg
   - [fakePlayerDropAll - Fake Player Continuous Drop](#fakeplayerdropall---fake-player-continuous-drop)
   - [fakePlayerSendto - Fake Player Inventory Link](#fakeplayersendto---fake-player-inventory-link)
   - [fakePlayerBrain - Fake Player Brain](#fakeplayerbrain---fake-player-brain)
+  - [fakePlayerClones - Same-UUID Fake Player Clones](#fakeplayerclones---same-uuid-fake-player-clones)
 - [Bug Fixes (BUGFIX)](#bug-fixes-bugfix)
   - [fixXaeroLib - XaeroLib Compatibility Patch](#fixxaerolib---xaerolib-compatibility-patch)
   - [fixBlueMap - BlueMap Compatibility Patch](#fixbluemap---bluemap-compatibility-patch)
@@ -205,6 +206,25 @@ While a brain is attached, Carpet manual movement, attack and use actions are pa
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
 | **Categories** | `PRIMARYUAN`, `BOT`, `COMMAND` |
+
+### fakePlayerClones - Same-UUID Fake Player Clones
+
+Allows multiple real Carpet fake players to share one UUID and skin online at the same time: each clone has its own entity ID, position and dimension, can move, attack and use items independently, the whole group shares one authoritative inventory (same-tick edits never duplicate items), and clones genuinely participate in chunk loading and mob spawning.
+
+- **Spawn**: `/player <name> spawn` adds one clone per invocation (first one creates the group); `/fakeclone spawn <name>` is equivalent.
+- **Exit**: `/fakeclone kill <name>` or `/player <name> kill` removes the whole group gracefully (no death, no drops) and saves a group snapshot.
+- **Restore**: `/fakeclone rejoin <name>` restores the previous member count, dimensions, positions and inventory; works after a server restart.
+- **Manage**: `/fakeclone list|status|select` inspect and address a single clone (`#cloneId`).
+- **Protection**: cloning is blocked while a real player with the same UUID is online; group creation and commands require operator level 2+. With the rule off, vanilla Carpet fake players behave unchanged.
+
+| Attribute | Value |
+|------|-----|
+| **Rule Name** | `fakePlayerClones` |
+| **Description** | Allow multiple real Carpet fakes sharing one UUID and skin online at once, with independent positions and a shared inventory. |
+| **Type** | `boolean` |
+| **Default Value** | `false` |
+| **Suggested Options** | `false`, `true` |
+| **Categories** | `PRIMARYUAN`, `BOT` |
 
 ---
 
