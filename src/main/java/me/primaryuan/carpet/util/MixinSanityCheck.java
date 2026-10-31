@@ -325,6 +325,8 @@ public final class MixinSanityCheck {
                 break;
             }
         }
+        // 局限：remove(ServerPlayer) 与 save(ServerPlayer) 形状重合，
+        // save 漂移而 remove 存在时假阴性（warn 级可接受）
         if (!save1 && reported.add("fakePlayerClones:save")) {
             LOGGER.warn("[pry] fakePlayerClones：PlayerList.save(ServerPlayer) 形状未匹配，"
                     + "非主实例存档防互覆失效，请向模组作者反馈");
