@@ -9,6 +9,7 @@ import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import me.primaryuan.carpet.clones.CloneGroup;
 import me.primaryuan.carpet.clones.CloneGroupRegistry;
 import me.primaryuan.carpet.clones.CloneInstanceRegistry;
+import me.primaryuan.carpet.clones.CloneSnapshotManager;
 import me.primaryuan.carpet.clones.CloneSpawnManager;
 import me.primaryuan.carpet.i18n.ServerI18n;
 import net.minecraft.commands.CommandSourceStack;
@@ -53,6 +54,9 @@ public final class FakeCloneCommand {
                 .then(Commands.literal("kill")
                         .then(Commands.argument("name", StringArgumentType.word())
                                 .executes(FakeCloneCommand::kill)))
+                .then(Commands.literal("rejoin")
+                        .then(Commands.argument("name", StringArgumentType.word())
+                                .executes(FakeCloneCommand::rejoin)))
                 .then(Commands.literal("select")
                         .then(Commands.argument("name", StringArgumentType.word())
                                 .then(Commands.argument("cloneId", IntegerArgumentType.integer(1))
@@ -126,6 +130,26 @@ public final class FakeCloneCommand {
         int n = CloneSpawnManager.killGroup(source.getServer(), g);
         source.sendSuccess(() -> Component.literal("[clones] killed " + n + " member(s) of " + name), false);
         return 1;
+    }
+
+    private static int rejoin(CommandContext<CommandSourceStack> ctx) {
+        CommandSourceStack source = ctx.getSource();
+        String name = StringArgumentType.getString(ctx, "name");
+        CloneSnapshotManager.GroupSnapshot snap = CloneSnapshotManager.load(source.getServer(), name);
+        if (snap == null) {
+            source.sendFailure(Component.literal("[clones] no snapshot for " + name));
+            return 0;
+        }
+        int n = CloneSnapshotManager.rejoin(source.getServer(), snap);
+        if (n < 0) {
+            source.sendFailure(Component.literal("[clones] rejoin " + name + " blocked: real player online"));
+            return 0;
+        }
+        final int restored = n;
+        final int total = snap.members.size();
+        source.sendSuccess(() -> Component.literal("[clones] rejoined " + name
+                + " (" + restored + "/" + total + ")"), false);
+        return restored > 0 ? 1 : 0;
     }
 
     private static int select(CommandContext<CommandSourceStack> ctx) {

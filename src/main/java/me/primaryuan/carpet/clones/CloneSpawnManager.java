@@ -66,6 +66,7 @@ public final class CloneSpawnManager {
                     new FakeClientConnection(PacketFlow.SERVERBOUND),
                     instance,
                     new CommonListenerCookie(profile, 0, instance.clientInformation(), false));
+            loadPlayerData(instance);
             instance.stopRiding();
             instance.teleportTo(level, pos.x, pos.y, pos.z, Set.of(), yaw, pitch, true);
             instance.setHealth(20.0F);
@@ -94,9 +95,12 @@ public final class CloneSpawnManager {
         }
     }
 
-    /** 整组退出（kill 语义：正常退出非死亡，无掉落） */
+    /** 整组退出（kill 语义：正常退出非死亡，无掉落）；退出前存组快照 */
     public static int killGroup(MinecraftServer server, CloneGroup group) {
         List<ServerPlayer> members = group.onlineMembers();
+        if (!members.isEmpty()) {
+            CloneSnapshotManager.save(server, group);
+        }
         int n = 0;
         for (ServerPlayer p : members) {
             if (p instanceof EntityPlayerMPFake fake) {
@@ -108,6 +112,34 @@ public final class CloneSpawnManager {
         }
         LOGGER.info("[pry:clones] killed group {} ({} members)", group.name(), n);
         return n;
+    }
+
+    /**
+     * 复刻 Carpet createFake 的 loadPlayerData：placeNewPlayer 后读回
+     * playerdata（背包/状态全部组件）。整组 rejoin 的背包持久化依赖这里
+     * （主实例 playerdata 是权威持久层）。
+     */
+    private static void loadPlayerData(EntityPlayerMPFake player) {
+        net.minecraft.util.ProblemReporter.ScopedCollector collector =
+                new net.minecraft.util.ProblemReporter.ScopedCollector(
+                        player.problemPath(), carpet.CarpetSettings.LOG);
+        try {
+            java.util.Optional<net.minecraft.nbt.CompoundTag> tag =
+                    player.level().getServer().getPlayerList()
+                            .loadPlayerData(player.nameAndId());
+            if (tag.isPresent()) {
+                net.minecraft.world.level.storage.ValueInput input =
+                        net.minecraft.world.level.storage.TagValueInput.create(
+                                collector, player.registryAccess(), tag.get());
+                player.load(input);
+                player.loadAndSpawnEnderPearls(input);
+                player.loadAndSpawnParentVehicle(input);
+            }
+        } catch (Throwable t) {
+            LOGGER.warn("[pry:clones] loadPlayerData failed for {}", player.getGameProfile().name(), t);
+        } finally {
+            collector.close();
+        }
     }
 
     private static void unsetRemoved(EntityPlayerMPFake instance) throws Exception {
