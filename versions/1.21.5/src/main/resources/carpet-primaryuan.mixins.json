@@ -48,7 +48,9 @@
     "rule.fakePlayerClones.ServerLevelAddPlayerMixin",
     "rule.fakePlayerClones.PlayerListSaveMixin",
     "rule.fakePlayerClones.PlayerListRemoveDiagMixin",
-    "rule.fakePlayerClones.PlayerListPlaceNewDiagMixin"
+    "rule.fakePlayerClones.PlayerListPlaceNewDiagMixin",
+    "rule.fakePlayerClones.PlayerListPreRegisterMixin",
+    "rule.fakePlayerClones.PlayerCommandSpawnMixin"
   ],
   "client": [
     "rule.entitiesRidingPlayers.ProjectileUtilMixin",

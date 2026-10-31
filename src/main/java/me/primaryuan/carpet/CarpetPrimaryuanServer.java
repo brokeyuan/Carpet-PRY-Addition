@@ -8,7 +8,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import me.primaryuan.carpet.brain.BrainManager;
-import me.primaryuan.carpet.command.CloneProbeCommand;
+import me.primaryuan.carpet.command.FakeCloneCommand;
 import me.primaryuan.carpet.command.CountdownCommand;
 import me.primaryuan.carpet.command.HatCommand;
 import me.primaryuan.carpet.command.PvpCommand;
@@ -102,8 +102,8 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         TimerCommand.register();
         CountdownCommand.register();
         TptoCommand.register();
-        // 同 UUID 假人分身（M1 原型验证命令）
-        CloneProbeCommand.register();
+        // 同 UUID 假人分身
+        FakeCloneCommand.register();
 
         // 和平的玩家（pvp）：加载持久化状态、注册 PVP 伤害拦截与玩家加入登记
         PvpManager.init();

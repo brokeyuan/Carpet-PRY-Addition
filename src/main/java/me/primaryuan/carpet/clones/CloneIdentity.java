@@ -4,8 +4,6 @@ import carpet.patches.EntityPlayerMPFake;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerList;
 
-import java.util.List;
-import java.util.UUID;
 
 /**
  * 分身实例判定（M1 原型）：判断某玩家是否为分身组的"非主实例"。
@@ -18,23 +16,15 @@ public final class CloneIdentity {
 
     private CloneIdentity() {}
 
-    /** 该玩家是否为分身组中非主实例（playersByUUID 登记者不是它） */
+    /** 该玩家是否为分身组中非主实例（组内 cloneId 最小者为主实例） */
     public static boolean isNonPrimaryClone(ServerPlayer player) {
         if (!(player instanceof EntityPlayerMPFake)) {
             return false;
         }
-        UUID uuid = player.getUUID();
-        if (!CloneAllowlist.isAllowed(uuid)) {
+        CloneGroup group = CloneGroupRegistry.byUuid(player.getUUID());
+        if (group == null) {
             return false;
         }
-        // ServerPlayer#getServer 在 1.21.10+ 映射不存在，统一走 level().getServer()
-        List<ServerPlayer> players = player.level().getServer().getPlayerList().getPlayers();
-        int sameUuid = 0;
-        for (ServerPlayer p : players) {
-            if (p.getUUID().equals(uuid)) {
-                sameUuid++;
-            }
-        }
-        return sameUuid > 1;
+        return group.isNonPrimary(player);
     }
 }
