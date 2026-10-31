@@ -329,5 +329,7 @@
   "carpetprimaryuan.command.tptoset.reload_invalid": "§c配置无效: %s；已保留当前列表并暂停写入",
   "carpetprimaryuan.command.tptoset.write_protected": "§c写入已暂停：配置文件存在问题，修复后执行 /tptoset reload 恢复",
   "carpetprimaryuan.command.tptoset.save_failed": "§c写入失败，配置未变更",
-  "carpet.category.SERVER": "服务器"
+  "carpet.category.SERVER": "服务器",
+  "carpet.rule.fakePlayerClones.name": "同UUID假人分身",
+  "carpet.rule.fakePlayerClones.desc": "允许多个真正的假人共享同一UUID与皮肤同时在线，独立位置与操作，整组共享背包。"
 }

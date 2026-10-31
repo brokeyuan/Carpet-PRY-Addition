@@ -42,7 +42,14 @@
     "rule.fakePlayerBrain.ServerPlayerMobMixin",
     "rule.whoCalledMe.MinecraftServerMixin",
     "rule.textAnimation.DisplayInvoker",
-    "rule.textAnimation.TextDisplayInvoker"
+    "rule.textAnimation.TextDisplayInvoker",
+    "rule.fakePlayerClones.PersistentEntitySectionManagerMixin",
+    "rule.fakePlayerClones.EntityLookupMixin",
+    "rule.fakePlayerClones.EntityLookupAccessor",
+    "rule.fakePlayerClones.ServerLevelAddPlayerMixin",
+    "rule.fakePlayerClones.PlayerListSaveMixin",
+    "rule.fakePlayerClones.PlayerListRemoveDiagMixin",
+    "rule.fakePlayerClones.PlayerListPlaceNewDiagMixin"
   ],
   "client": [
     "rule.entitiesRidingPlayers.ProjectileUtilMixin",
