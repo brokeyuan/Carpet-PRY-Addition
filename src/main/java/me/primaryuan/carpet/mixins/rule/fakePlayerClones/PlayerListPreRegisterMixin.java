@@ -99,6 +99,9 @@ public abstract class PlayerListPreRegisterMixin {
                 player.getGameProfile().name());
         int cloneId = group.add(player);
         CloneInstanceRegistry.put(player, cloneId);
+        // 新成员初始对齐：把权威背包/装备快照到新成员（否则 give 只在主实例）
+        me.primaryuan.carpet.clones.SharedInventoryManager.syncGroup(player);
+        me.primaryuan.carpet.clones.SharedInventoryManager.syncEquipment(player);
         LOGGER.info("[pry:clones] registered {}#{} entityId={}", player.getGameProfile().name(),
                 cloneId, player.getId());
     }

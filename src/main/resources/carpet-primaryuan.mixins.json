@@ -51,7 +51,10 @@
     "rule.fakePlayerClones.PlayerListRemoveDiagMixin",
     "rule.fakePlayerClones.PlayerListPlaceNewDiagMixin",
     "rule.fakePlayerClones.PlayerListPreRegisterMixin",
-    "rule.fakePlayerClones.PlayerCommandSpawnMixin"
+    "rule.fakePlayerClones.PlayerCommandSpawnMixin",
+    "rule.fakePlayerClones.InventorySharedMixin",
+    "rule.fakePlayerClones.EntityArgumentDedupMixin",
+    "rule.fakePlayerClones.EntitySelectorDedupMixin"
   ],
   "client": [
     "rule.entitiesRidingPlayers.ProjectileUtilMixin",
