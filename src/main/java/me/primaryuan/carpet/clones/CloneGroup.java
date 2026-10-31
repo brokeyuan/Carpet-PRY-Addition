@@ -53,17 +53,25 @@ public final class CloneGroup {
         members.values().remove(player);
     }
 
+    /** 成员表只读视图（remove 钩子判定用） */
+    public Map<Integer, ServerPlayer> members() {
+        return java.util.Collections.unmodifiableMap(members);
+    }
+
     public ServerPlayer instance(int cloneId) {
         return members.get(cloneId);
     }
 
-    /** 在线成员（cloneId 升序）；1 号为主实例 */
+    /** 在线成员（cloneId 升序）；1 号为主实例。isRemoved 成员（已退出未注销）被过滤 */
     public List<ServerPlayer> onlineMembers() {
         List<Integer> ids = new ArrayList<>(members.keySet());
         ids.sort(Integer::compareTo);
         List<ServerPlayer> out = new ArrayList<>(ids.size());
         for (int id : ids) {
-            out.add(members.get(id));
+            ServerPlayer p = members.get(id);
+            if (!p.isRemoved()) {
+                out.add(p);
+            }
         }
         return out;
     }

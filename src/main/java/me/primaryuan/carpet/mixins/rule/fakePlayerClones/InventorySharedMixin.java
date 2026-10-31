@@ -129,7 +129,9 @@ public abstract class InventorySharedMixin {
 
     @Inject(method = "setItem", at = @At("RETURN"), require = 0)
     private void pry$syncAfterSetItem(int slot, ItemStack stack, CallbackInfo ci) {
+        // 26.x setItem 会路由 EntityEquipment（盔甲/副手槽位）——装备也触发对齐
         SharedInventoryManager.syncGroup((ServerPlayer) self().player);
+        SharedInventoryManager.syncEquipment((ServerPlayer) self().player);
     }
 
     @Inject(method = "removeItem(II)Lnet/minecraft/world/item/ItemStack;", at = @At("RETURN"), require = 0)

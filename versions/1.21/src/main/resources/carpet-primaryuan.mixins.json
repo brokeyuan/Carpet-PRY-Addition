@@ -47,13 +47,12 @@
     "rule.fakePlayerClones.EntityLookupAccessor",
     "rule.fakePlayerClones.ServerLevelAddPlayerMixin",
     "rule.fakePlayerClones.PlayerListSaveMixin",
-    "rule.fakePlayerClones.PlayerListRemoveDiagMixin",
-    "rule.fakePlayerClones.PlayerListPlaceNewDiagMixin",
     "rule.fakePlayerClones.PlayerListPreRegisterMixin",
     "rule.fakePlayerClones.PlayerCommandSpawnMixin",
     "rule.fakePlayerClones.InventorySharedMixin",
     "rule.fakePlayerClones.EntityArgumentDedupMixin",
-    "rule.fakePlayerClones.EntitySelectorDedupMixin"
+    "rule.fakePlayerClones.EntitySelectorDedupMixin",
+    "rule.fakePlayerClones.ServerPlayerSetItemSlotMixin"
   ],
   "client": [
     "rule.entitiesRidingPlayers.ProjectileUtilMixin",

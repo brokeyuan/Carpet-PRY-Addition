@@ -34,8 +34,6 @@ public abstract class ServerLevelAddPlayerMixin {
             ServerLevel instance, UUID uuid
     ) {
         boolean guard = CarpetPrimaryuanSettings.fakePlayerClones && CloneAllowlist.isAllowed(uuid);
-        org.apache.logging.log4j.LogManager.getLogger("CarpetPrimaryuan").info(
-                "[pry:clones][DIAG] ServerLevel.addPlayer getEntity({}) guard={}", uuid, guard);
         if (guard) {
             return null;
         }

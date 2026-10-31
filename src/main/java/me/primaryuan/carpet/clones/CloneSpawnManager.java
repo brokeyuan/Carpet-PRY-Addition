@@ -72,7 +72,13 @@ public final class CloneSpawnManager {
             instance.setHealth(20.0F);
             unsetRemoved(instance);
             instance.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.STEP_HEIGHT).setBaseValue(0.6F);
-            instance.gameMode.changeGameModeForPlayer(GameType.SURVIVAL);
+            // 模式继承组内主实例（会话中期 spawn 与组一致）；全新组保持 SURVIVAL 缺省
+            GameType mode = GameType.SURVIVAL;
+            ServerPlayer primaryNow = group.primary();
+            if (primaryNow != null && primaryNow != instance) {
+                mode = primaryNow.gameMode.getGameModeForPlayer();
+            }
+            instance.gameMode.changeGameModeForPlayer(mode);
             server.getPlayerList().broadcastAll(
                     new net.minecraft.network.protocol.game.ClientboundRotateHeadPacket(instance, (byte) (instance.yHeadRot * 256.0F / 360.0F)),
                     level.dimension());
@@ -107,6 +113,10 @@ public final class CloneSpawnManager {
             }
             CloneInstanceRegistry.remove(p);
             group.remove(p);
+        }
+        // 组记录保留供 rejoin；组空时撤 allowlist（rejoin 的 spawnClone 重新登记）
+        if (group.allOffline()) {
+            CloneAllowlist.revoke(group.uuid(), group.name());
         }
         LOGGER.info("[pry:clones] killed group {} ({} members)", group.name(), n);
         return n;

@@ -58,6 +58,37 @@ public abstract class PlayerListPreRegisterMixin {
         }
     }
 
+    /**
+     * PlayerList.remove HEAD：组内成员退出统一注销（覆盖 kill/断连/重复登录
+     * 踢出等一切路径——修复 Review R1 F1：此前只有 killGroup 一个清理出口，
+     * 真人登录踢出整组后组映射残留，primary() 指向死实例导致背包写丢失）。
+     * 组空时撤销 allowlist 并清组注册。
+     */
+    @Inject(
+            method = "remove(Lnet/minecraft/server/level/ServerPlayer;)V",
+            at = @At("HEAD"),
+            require = 0
+    )
+    private void pry$unregisterCloneOnRemove(ServerPlayer player, CallbackInfo ci) {
+        if (!CarpetPrimaryuanSettings.fakePlayerClones) {
+            return;
+        }
+        CloneGroup group = CloneGroupRegistry.byUuid(player.getUUID());
+        if (group == null || !group.members().containsValue(player)) {
+            return;
+        }
+        int cloneId = CloneInstanceRegistry.cloneIdOf(player);
+        group.remove(player);
+        CloneInstanceRegistry.remove(player);
+        // 组记录保留（供 /fakeclone rejoin），只撤 allowlist——
+        // rejoin 的 spawnClone 会重新登记。组内还有存活成员（如重复登录
+        // 只踢出部分实例）时 allowlist 必须保留。
+        if (group.allOffline()) {
+            CloneAllowlist.revoke(player.getUUID(), group.name());
+        }
+        LOGGER.info("[pry:clones] unregistered {}#{} on remove", group.name(), cloneId);
+    }
+
     @Inject(
             method = "placeNewPlayer",
             at = @At("HEAD"),

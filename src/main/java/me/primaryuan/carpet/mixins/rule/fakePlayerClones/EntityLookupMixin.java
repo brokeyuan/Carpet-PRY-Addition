@@ -34,7 +34,7 @@ public abstract class EntityLookupMixin {
             return;
         }
         boolean allowed = CloneAllowlist.isAllowed(entity.getUUID());
-        org.apache.logging.log4j.LogManager.getLogger("CarpetPrimaryuan").info(
+        org.apache.logging.log4j.LogManager.getLogger("CarpetPrimaryuan").debug(
                 "[pry:clones][DIAG] EntityLookup.add entity={} id={} allowed={}",
                 entity.getUUID(), entity.getId(), allowed);
         if (!allowed) {

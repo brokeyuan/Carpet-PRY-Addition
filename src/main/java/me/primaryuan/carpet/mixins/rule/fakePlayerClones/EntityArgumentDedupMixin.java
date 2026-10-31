@@ -10,9 +10,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -60,16 +58,10 @@ public abstract class EntityArgumentDedupMixin {
         if (!CarpetPrimaryuanSettings.fakePlayerClones || in.size() <= 1) {
             return in;
         }
-        Set<UUID> seen = new HashSet<>();
         List<net.minecraft.server.level.ServerPlayer> out = new ArrayList<>(in.size());
         for (net.minecraft.server.level.ServerPlayer p : in) {
             CloneGroup group = CloneGroupRegistry.byUuid(p.getUUID());
-            if (group == null) {
-                out.add(p);
-                continue;
-            }
-            // 分身组只保留主实例
-            if (p == group.primary()) {
+            if (group == null || p == group.primary()) {
                 out.add(p);
             }
         }

@@ -64,6 +64,9 @@ public final class MixinSanityCheck {
 
     /** 规则变更时回调（只需关心本类核验涉及的规则名） */
     public static void onRuleChanged(String ruleName) {
+        if (ruleName.equals("fakePlayerClones")) {
+            checkFakePlayerClones();
+        }
         if (ruleName.equals("playerHat") || ruleName.equals("ridingPlayers")
                 || ruleName.equals("pickupPlayers")
                 || ruleName.equals("ridingPlayersClientInteract") || ruleName.equals("fixXaeroLib")
@@ -78,6 +81,7 @@ public final class MixinSanityCheck {
     }
 
     private static void checkAll() {
+        checkFakePlayerClones();
         checkPlayerHat();
         checkRidingClientInteract();
         checkTowerCrossDimensionCarry();
@@ -264,6 +268,80 @@ public final class MixinSanityCheck {
         if (reported.add("playerScale")) {
             LOGGER.warn("[pry] playerScale 规则：Player.createAttributes 缺失，scale 属性兜底注入被跳过"
                     + "（原版自带该属性时不影响功能）");
+        }
+    }
+
+    /**
+     * fakePlayerClones：require=0 注入点的关键站点核验（目标方法存在性，
+     * 按参数形状匹配——命名空间无关）。漂移即规则静默失效，报 error。
+     * 覆盖：三处 UUID 拦截点、placeNewPlayer、PlayerList.save、
+     * ServerCommand.spawn（Carpet）、EntitySelector 两出口、Inventory 写方法组。
+     */
+    private static void checkFakePlayerClones() {
+        if (!CarpetPrimaryuanSettings.fakePlayerClones) {
+            return;
+        }
+        // 三处 UUID 拦截点
+        if (!methodExists(net.minecraft.world.level.entity.PersistentEntitySectionManager.class,
+                new Class<?>[]{net.minecraft.world.level.entity.EntityAccess.class}, false)
+                && reported.add("fakePlayerClones:addEntityUuid")) {
+            LOGGER.error("[pry] fakePlayerClones 无效：PersistentEntitySectionManager.addEntityUuid 签名漂移，"
+                    + "同 UUID 分身无法进入世界，请向模组作者反馈");
+        }
+        if (!methodExists(net.minecraft.world.level.entity.EntityLookup.class,
+                new Class<?>[]{net.minecraft.world.level.entity.EntityAccess.class}, false)
+                && reported.add("fakePlayerClones:lookupAdd")) {
+            LOGGER.error("[pry] fakePlayerClones 无效：EntityLookup.add 签名漂移，"
+                    + "第二个分身会被静默拒绝，请向模组作者反馈");
+        }
+        if (!methodExists(net.minecraft.server.level.ServerLevel.class,
+                new Class<?>[]{net.minecraft.world.entity.Entity.class}, false)
+                && reported.add("fakePlayerClones:addEntity")) {
+            LOGGER.warn("[pry] fakePlayerClones：ServerLevel.addEntity 形状未匹配（addPlayer 入口需人工复核），"
+                    + "同 UUID 旧实例可能被 DISCARD，请向模组作者反馈");
+        }
+        // placeNewPlayer / save
+        boolean placeNew = false;
+        for (Method m : net.minecraft.server.players.PlayerList.class.getDeclaredMethods()) {
+            if (m.getParameterCount() == 3
+                    && m.getParameterTypes()[0] == net.minecraft.network.Connection.class
+                    && m.getParameterTypes()[1] == net.minecraft.server.level.ServerPlayer.class
+                    && m.getParameterTypes()[2] == net.minecraft.server.network.CommonListenerCookie.class) {
+                placeNew = true;
+                break;
+            }
+        }
+        if (!placeNew && reported.add("fakePlayerClones:placeNewPlayer")) {
+            LOGGER.error("[pry] fakePlayerClones 无效：PlayerList.placeNewPlayer 签名漂移，"
+                    + "分身预注册与入组失效，请向模组作者反馈");
+        }
+        boolean save1 = false;
+        for (Method m : net.minecraft.server.players.PlayerList.class.getDeclaredMethods()) {
+            if (m.getParameterCount() == 1
+                    && m.getParameterTypes()[0] == net.minecraft.server.level.ServerPlayer.class
+                    && m.getReturnType() == void.class
+                    && !java.lang.reflect.Modifier.isStatic(m.getModifiers())) {
+                save1 = true;
+                break;
+            }
+        }
+        if (!save1 && reported.add("fakePlayerClones:save")) {
+            LOGGER.warn("[pry] fakePlayerClones：PlayerList.save(ServerPlayer) 形状未匹配，"
+                    + "非主实例存档防互覆失效，请向模组作者反馈");
+        }
+        // Inventory 写方法组（转发基础）
+        boolean invWrite = methodExists(net.minecraft.world.entity.player.Inventory.class,
+                new Class<?>[]{int.class, net.minecraft.world.item.ItemStack.class}, false);
+        if (!invWrite && reported.add("fakePlayerClones:invSetItem")) {
+            LOGGER.error("[pry] fakePlayerClones 无效：Inventory.setItem 签名漂移，"
+                    + "共享背包转发失效，请向模组作者反馈");
+        }
+        // 选择器出口
+        if (!methodExists(net.minecraft.commands.arguments.selector.EntitySelector.class,
+                new Class<?>[]{net.minecraft.commands.CommandSourceStack.class}, false)
+                && reported.add("fakePlayerClones:findPlayers")) {
+            LOGGER.warn("[pry] fakePlayerClones：EntitySelector.findPlayers 签名漂移，"
+                    + "组命令去重失效（give 等会对每个分身各执行一次），请向模组作者反馈");
         }
     }
 
