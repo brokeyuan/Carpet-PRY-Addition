@@ -50,7 +50,7 @@ public abstract class InventorySharedMixin {
         }
     }
 
-    @Inject(method = "removeItem", at = @At("HEAD"), cancellable = true, require = 0)
+    @Inject(method = "removeItem(II)Lnet/minecraft/world/item/ItemStack;", at = @At("HEAD"), cancellable = true, require = 0)
     private void pry$removeItem(int slot, int amount, CallbackInfoReturnable<ItemStack> cir) {
         Inventory auth = pry$authority();
         if (auth != null) {
@@ -114,7 +114,11 @@ public abstract class InventorySharedMixin {
     private void pry$addAndPickItem(ItemStack stack, CallbackInfo ci) {
         Inventory auth = pry$authority();
         if (auth != null) {
+            //#if MC >= 12111
             auth.addAndPickItem(stack);
+            //#else
+            //$$ auth.add(stack);
+            //#endif
             SharedInventoryManager.syncGroup((ServerPlayer) auth.player);
             ci.cancel();
         }
@@ -128,7 +132,7 @@ public abstract class InventorySharedMixin {
         SharedInventoryManager.syncGroup((ServerPlayer) self().player);
     }
 
-    @Inject(method = "removeItem", at = @At("RETURN"), require = 0)
+    @Inject(method = "removeItem(II)Lnet/minecraft/world/item/ItemStack;", at = @At("RETURN"), require = 0)
     private void pry$syncAfterRemoveItem(int slot, int amount, CallbackInfoReturnable<ItemStack> cir) {
         SharedInventoryManager.syncGroup((ServerPlayer) self().player);
     }
@@ -163,8 +167,10 @@ public abstract class InventorySharedMixin {
         SharedInventoryManager.syncGroup((ServerPlayer) self().player);
     }
 
-    @Inject(method = "addAndPickItem", at = @At("RETURN"), require = 0)
-    private void pry$syncAfterAddAndPickItem(ItemStack stack, CallbackInfo ci) {
-        SharedInventoryManager.syncGroup((ServerPlayer) self().player);
-    }
+    //#if MC >= 12111
+    //$$ @Inject(method = "addAndPickItem", at = @At("RETURN"), require = 0)
+    //$$ private void pry$syncAfterAddAndPickItem(ItemStack stack, CallbackInfo ci) {
+    //$$     SharedInventoryManager.syncGroup((ServerPlayer) self().player);
+    //$$ }
+    //#endif
 }

@@ -66,7 +66,7 @@ public final class SharedInventoryManager {
     }
 
     private static ItemStack[] snapshot(Inventory inv) {
-        var items = inv.getNonEquipmentItems();
+        var items = CloneVersionAdapter.itemsOf(inv);
         ItemStack[] out = new ItemStack[items.size()];
         for (int i = 0; i < items.size(); i++) {
             ItemStack s = items.get(i);
@@ -76,7 +76,7 @@ public final class SharedInventoryManager {
     }
 
     private static void applySnapshot(Inventory inv, ItemStack[] snapshot) {
-        var items = inv.getNonEquipmentItems();
+        var items = CloneVersionAdapter.itemsOf(inv);
         for (int i = 0; i < items.size() && i < snapshot.length; i++) {
             ItemStack cur = items.get(i);
             ItemStack want = snapshot[i];

@@ -61,9 +61,14 @@ public abstract class PlayerCommandSpawnMixin {
         var rot = source.getRotation();
         ServerPlayer created = CloneSpawnManager.spawnClone(source.getServer(), name, level, pos, rot.y, rot.x);
         if (created == null) {
+            source.sendFailure(net.minecraft.network.chat.Component.literal(
+                    "[clones] spawn " + name + " failed (real player online or internal error)"));
             cir.setReturnValue(0);
             return;
         }
+        int cid = me.primaryuan.carpet.clones.CloneInstanceRegistry.cloneIdOf(created);
+        source.sendSuccess(() -> net.minecraft.network.chat.Component.literal(
+                "[clones] spawned " + name + "#" + cid + " entityId=" + created.getId()), true);
         cir.setReturnValue(1);
     }
 }

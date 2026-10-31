@@ -5,6 +5,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import me.primaryuan.carpet.clones.CloneAllowlist;
 import me.primaryuan.carpet.clones.CloneDistanceManagerHelper;
+import me.primaryuan.carpet.clones.CloneVersionAdapter;
 import me.primaryuan.carpet.clones.CloneGroup;
 import me.primaryuan.carpet.clones.CloneGroupRegistry;
 import me.primaryuan.carpet.clones.CloneInstanceRegistry;
@@ -96,13 +97,13 @@ public abstract class PlayerListPreRegisterMixin {
             return;
         }
         CloneGroup group = CloneGroupRegistry.getOrCreate(player.getUUID(),
-                player.getGameProfile().name());
+                CloneVersionAdapter.profileName(player.getGameProfile()));
         int cloneId = group.add(player);
         CloneInstanceRegistry.put(player, cloneId);
         // 新成员初始对齐：把权威背包/装备快照到新成员（否则 give 只在主实例）
         me.primaryuan.carpet.clones.SharedInventoryManager.syncGroup(player);
         me.primaryuan.carpet.clones.SharedInventoryManager.syncEquipment(player);
-        LOGGER.info("[pry:clones] registered {}#{} entityId={}", player.getGameProfile().name(),
+        LOGGER.info("[pry:clones] registered {}#{} entityId={}", CloneVersionAdapter.profileName(player.getGameProfile()),
                 cloneId, player.getId());
     }
 }

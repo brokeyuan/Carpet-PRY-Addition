@@ -68,7 +68,7 @@ public final class CloneSpawnManager {
                     new CommonListenerCookie(profile, 0, instance.clientInformation(), false));
             loadPlayerData(instance);
             instance.stopRiding();
-            instance.teleportTo(level, pos.x, pos.y, pos.z, Set.of(), yaw, pitch, true);
+            CloneVersionAdapter.teleport(instance, level, pos, yaw, pitch);
             instance.setHealth(20.0F);
             unsetRemoved(instance);
             instance.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.STEP_HEIGHT).setBaseValue(0.6F);
@@ -76,9 +76,7 @@ public final class CloneSpawnManager {
             server.getPlayerList().broadcastAll(
                     new net.minecraft.network.protocol.game.ClientboundRotateHeadPacket(instance, (byte) (instance.yHeadRot * 256.0F / 360.0F)),
                     level.dimension());
-            server.getPlayerList().broadcastAll(
-                    net.minecraft.network.protocol.game.ClientboundEntityPositionSyncPacket.of(instance),
-                    level.dimension());
+            CloneVersionAdapter.broadcastPosition(server, instance, level);
 
             // 组登记由 placeNewPlayer RETURN 注入统一完成（唯一登记点，
             // 此处再 add 会造成同实例双 cloneId）。这里只取号回显。
@@ -114,32 +112,9 @@ public final class CloneSpawnManager {
         return n;
     }
 
-    /**
-     * 复刻 Carpet createFake 的 loadPlayerData：placeNewPlayer 后读回
-     * playerdata（背包/状态全部组件）。整组 rejoin 的背包持久化依赖这里
-     * （主实例 playerdata 是权威持久层）。
-     */
+    /** 读回 playerdata（版本差异见 CloneVersionAdapter） */
     private static void loadPlayerData(EntityPlayerMPFake player) {
-        net.minecraft.util.ProblemReporter.ScopedCollector collector =
-                new net.minecraft.util.ProblemReporter.ScopedCollector(
-                        player.problemPath(), carpet.CarpetSettings.LOG);
-        try {
-            java.util.Optional<net.minecraft.nbt.CompoundTag> tag =
-                    player.level().getServer().getPlayerList()
-                            .loadPlayerData(player.nameAndId());
-            if (tag.isPresent()) {
-                net.minecraft.world.level.storage.ValueInput input =
-                        net.minecraft.world.level.storage.TagValueInput.create(
-                                collector, player.registryAccess(), tag.get());
-                player.load(input);
-                player.loadAndSpawnEnderPearls(input);
-                player.loadAndSpawnParentVehicle(input);
-            }
-        } catch (Throwable t) {
-            LOGGER.warn("[pry:clones] loadPlayerData failed for {}", player.getGameProfile().name(), t);
-        } finally {
-            collector.close();
-        }
+        CloneVersionAdapter.loadPlayerData(player.level().getServer(), player);
     }
 
     private static void unsetRemoved(EntityPlayerMPFake instance) throws Exception {

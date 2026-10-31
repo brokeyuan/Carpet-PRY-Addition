@@ -42,7 +42,7 @@ public final class FakeCloneCommand {
 
     static LiteralArgumentBuilder<CommandSourceStack> build() {
         return Commands.literal("fakeclone")
-                .requires(s -> Commands.LEVEL_GAMEMASTERS.check(s.permissions())
+                .requires(s -> me.primaryuan.carpet.clones.CloneVersionAdapter.isGameMaster(s)
                         && CarpetPrimaryuanSettings.fakePlayerClones)
                 .then(Commands.literal("list").executes(FakeCloneCommand::list))
                 .then(Commands.literal("status")
