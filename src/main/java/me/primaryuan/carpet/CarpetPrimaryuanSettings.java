@@ -232,6 +232,14 @@ public class CarpetPrimaryuanSettings {
     )
     public static String whoCalledMeHighlight = "aqua";
 
+    // 聊天惩罚：管理员经 /chatpunish 对指定玩家施加聊天限制（禁言/胶带/猫娘/
+    // 呆子/屏蔽词/村民/结巴/反转，每玩家一种，支持限时）；规则关闭不改聊天、
+    // 不清已存记录
+    @Rule(
+            categories = {PRIMARYUAN, COMMAND, FEATURE}
+    )
+    public static boolean chatPunishment = false;
+
     // 米塔字幕：/text 在执行者眼前逐字弹出对话文本，停留后整句坠落消散（米塔游戏的文字显示效果）；
     // 原版 text_display 实体逐字驱动，纯服务端实现，客户端无需安装任何模组
     @Rule(

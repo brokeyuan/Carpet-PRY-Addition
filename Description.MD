@@ -1,4 +1,4 @@
-Carpet PRY Addition is a server-side Fabric extension for the [fabric-carpet](https://github.com/gnembon/fabric-carpet) mod, developed for the **Primaryuan Server**. It adds 37 configurable Carpet rules and 12 new commands (plus `/player` extensions) covering bug fixes, fake player enhancements, player interaction, and survival gameplay expansion.
+Carpet PRY Addition is a server-side Fabric extension for the [fabric-carpet](https://github.com/gnembon/fabric-carpet) mod, developed for the **Primaryuan Server**. It adds 38 configurable Carpet rules and 13 new commands (plus `/player` extensions) covering bug fixes, fake player enhancements, player interaction, and survival gameplay expansion.
 
 ---
 
@@ -125,6 +125,10 @@ Enables the `/pvp` command: each player can turn their own PVP on or off. Player
 ### Who Called Me (`whoCalledMe`)
 
 Naming a player in chat triggers three sounds and a title; self-mentions also work and fake players are excluded. Matching is case-insensitive, with longer names taking precedence; `mention` mode requires @name. `whoCalledMeSound` chooses the sound, and `whoCalledMeHighlight` chooses one of 16 colors, `rainbow` or `false` (default aqua).
+
+### Chat Punishment (`chatPunishment`)
+
+Admins can punish a player's public chat via `/chatpunish`, one mode per player with an optional duration (permanent by default): `mute` (cancels the broadcast, sender gets a notice), `tape` / `idiot` / `censor` / `villager` (fixed replacement texts), `cat` (appends `喵~`), `stutter` (deterministic syllable repeats) and `reverse` (grapheme-cluster reversal that keeps emoji intact). Punishments resolve players through the vanilla profile mechanism (same as /ban), are recorded by UUID in the world save and run on real time, so they survive restarts and relogs and lift automatically on expiry. Commands, private messages and system messages are unaffected; the rewrite goes through the vanilla ChatDecorator extension point, leaving chat signatures intact.
 
 ### MiSide Subtitles (`textAnimation`)
 

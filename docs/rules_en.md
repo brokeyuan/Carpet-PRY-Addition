@@ -2,7 +2,7 @@
 
 > Mod ID: `carpet-pry-addition` | Version: `1.3.1`
 >
-> Total: **37 rules** (`whoCalledMeSound` / `whoCalledMeHighlight` are documented inline as companion rules in the whoCalledMe section)
+> Total: **38 rules** (`whoCalledMeSound` / `whoCalledMeHighlight` are documented inline as companion rules in the whoCalledMe section)
 >
 > **Tip: Use `Ctrl+F` to quickly find the rule you want**
 
@@ -39,6 +39,7 @@ Rule values are stored per world in `<world>/carpet.conf` by default. Rules tagg
   - [peacefulPlayers - Peaceful Players](#peacefulplayers---peaceful-players)
   - [patPatPlayers - Pat Pat Players](#patpatplayers---pat-pat-players)
   - [whoCalledMe - Who Called Me](#whocalledme---who-called-me)
+  - [chatPunishment - Chat Punishment](#chatpunishment---chat-punishment)
 - [Survival Features](#survival-features)
   - [playerHat - Player Hat](#playerhat---player-hat)
   - [playerHeadSkin - Player Head Skin](#playerheadskin---player-head-skin)
@@ -454,6 +455,36 @@ Matching is case-insensitive. In `true` mode, any substring matches, with longer
 **Companion rules**: `whoCalledMeSound` defaults to `ding`; options are `false`, `true` (alias of `ding`), `ding`, `levelup`, `bell`, `pling` and `hit`. Sounds play three times, 6 ticks apart. `whoCalledMeHighlight` defaults to `aqua` and accepts all 16 vanilla colors, `rainbow` or `false`. `false` disables recoloring; unknown values, including old `none`, fall back to the default.
 
 Online player names are highlighted in player chat and the notification title. Other message styles are retained; system messages such as `/say` are unaffected. Titles fade in for 0.25 s, stay for 3 s, and fade out for 0.5 s. Long titles are cropped to 40 display-width units (CJK characters count as 2), retaining the first matched name. Decorated signed chat may carry an “unverified” badge; unsigned offline-mode chat is unaffected.
+
+### chatPunishment - Chat Punishment
+
+Admins can punish a player's public chat via /chatpunish; each player can only have one punishment at a time.
+
+| Property | Value |
+|----------|-------|
+| **Rule Name** | `chatPunishment` |
+| **Description** | Admins can punish players' public chat via /chatpunish (mute/tape/cat/idiot/censor/villager/stutter/reverse, one per player), with optional duration. Commands and private messages are unaffected. |
+| **Type** | `boolean` |
+| **Default Value** | `false` |
+| **Suggested Options** | `false`, `true` |
+| **Categories** | `PRIMARYUAN`, `COMMAND`, `FEATURE` |
+
+The eight modes, using `今晚去挖矿，谁一起？` as the example:
+
+| Mode | Effect |
+|------|--------|
+| `mute` | Cancels the broadcast; the sender sees "You have been muted" |
+| `tape` | Replaces the message with `呜呜...呜呜......呜呜........` |
+| `cat` | Keeps the message and appends `喵~` |
+| `idiot` | Replaces the message with `阿巴巴阿巴……阿巴！` |
+| `censor` | Replaces the message with `#$%%%！##！！` |
+| `villager` | Replaces the message with `嗯哼～哼嗯～` |
+| `stutter` | Stuttering repeat: `今、今晚去挖、挖矿，谁、谁一起？` (one repeat every 3 characters; punctuation and emoji are not repeated but count toward the stride) |
+| `reverse` | Reverses by grapheme cluster: `？起一谁，矿挖去晚今` (emoji sequences stay intact) |
+
+Commands are admin-only (permission level 4): `/chatpunish set <player> <mode> [duration]` sets or replaces a punishment; the duration is `number+s/m/h/d` (e.g. `10m`, `1h`, `1d`), permanent when omitted, and lifts automatically on expiry. `/chatpunish clear <player>` removes one, `/chatpunish list` lists active punishments. Player names resolve through the vanilla profile mechanism (same as /ban): online completion, offline lookup via the profile cache, recorded by UUID with no guessed profiles.
+
+Punishments run on real time (no tick or playtime dependency) and survive restarts and relogs; records are stored in `<world>/carpet-pry-addition/chatpunish.json`. With the rule off, chat stays untouched and records are kept; unexpired punishments resume when the rule is re-enabled. Rewriting goes through the vanilla ChatDecorator extension point and is broadcast as unsigned content alongside the signed message, leaving signature validation intact. Only public chat is affected — commands, private messages and system messages are untouched. With whoCalledMe enabled, name highlighting applies to the rewritten text.
 
 ## Survival Features
 

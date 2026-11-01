@@ -28,6 +28,7 @@
   - [/tptoset](#tptoset---server-management)
 - [/timer - Timer](#timer---timer)
 - [/countdown - Legacy Countdown](#countdown---legacy-countdown-compatibility-entry)
+- [/chatpunish - Chat Punishment](#chatpunish---chat-punishment)
 
 ---
 
@@ -923,4 +924,47 @@ Hand edits must obey: `servers` must exist and be an object; `host` a string and
 /tpto sc                                      # one address per server, direct transfer
 /tptoset removeserver sc                      # remove a server
 /tptoset reload                               # re-read after hand edits
+```
+
+---
+
+## /chatpunish - Chat Punishment
+
+> **Related rule**: `chatPunishment`
+
+### Syntax
+
+```
+/chatpunish set <player> <mode> [duration]
+/chatpunish clear <player>
+/chatpunish list
+```
+
+`<mode>` is one of `mute` / `tape` / `cat` / `idiot` / `censor` / `villager` / `stutter` / `reverse` (literals, tab-completed). `[duration]` is `number+s/m/h/d` (e.g. `10m`, `1h`, `1d`); permanent when omitted, lifting automatically on expiry, measured in real time.
+
+### Permissions
+
+- Admin-only (permission level 4); the console works
+- The whole command tree is hidden while the `chatPunishment` rule is off
+
+### Description
+
+Applies a punishment to a player's public chat; each player can only have one punishment at a time, and another `set` replaces it. The effects and examples of the eight modes are in the [rule documentation](rules_en.md#chatpunishment---chat-punishment). Under `mute` the message is no longer broadcast and the sender sees "You have been muted"; every other mode broadcasts the rewritten text to everyone and the original never appears.
+
+Player names resolve through the vanilla profile mechanism (same as /ban): online names tab-complete, offline players resolve by UUID through the profile cache, and unknown players get the vanilla error — no guessed profiles. Punishments are stored by UUID in `<world>/carpet-pry-addition/chatpunish.json` and survive restarts and relogs; expiry is evaluated lazily on read and cleaned up when saving.
+
+Commands, private messages and system messages are unaffected; with the rule off, chat stays untouched and records are kept.
+
+### Related Rule
+
+**chatPunishment** - master switch; while off the commands are hidden and stored punishments are kept (unexpired ones resume when re-enabled).
+
+### Examples
+
+```
+/chatpunish set Steve tape            # Steve's chat becomes the tape text (permanent)
+/chatpunish set Steve cat 1h          # Steve's chat gets 喵~ appended for 1 hour
+/chatpunish set Steve mute 30m        # mute for 30 minutes
+/chatpunish list                      # view active punishments (name, mode, time left or permanent)
+/chatpunish clear Steve               # clear Steve's punishment
 ```

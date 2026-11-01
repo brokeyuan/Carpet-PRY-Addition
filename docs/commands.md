@@ -28,6 +28,7 @@
   - [/tptoset](#tptoset---服务器管理)
 - [/timer - 计时器](#timer---计时器)
 - [/countdown - 旧版倒计时（兼容入口）](#countdown---旧版倒计时兼容入口)
+- [/chatpunish - 聊天惩罚](#chatpunish---聊天惩罚)
 
 ---
 
@@ -922,4 +923,47 @@ simple 默认无声，`/timer sound on` 可为当前会话显式开启；up 正�
 /tpto sc                                      # 一服一地址，直接转移
 /tptoset removeserver sc                      # 删除服务器
 /tptoset reload                               # 手改 tpto.json 后重读
+```
+
+---
+
+## /chatpunish - 聊天惩罚
+
+> **所属规则**：`chatPunishment`
+
+### 语法
+
+```
+/chatpunish set <玩家> <模式> [时长]
+/chatpunish clear <玩家>
+/chatpunish list
+```
+
+`<模式>` 为 `mute` / `tape` / `cat` / `idiot` / `censor` / `villager` / `stutter` / `reverse` 之一（字面量，自动补全）。`[时长]` 为 `数字+s/m/h/d`（如 `10m`、`1h`、`1d`），缺省永久；到期自动解除，按真实时间计算。
+
+### 权限
+
+- 仅管理员可用（OP 等级 4），控制台可用
+- 规则 `chatPunishment` 关闭时整棵命令树隐藏
+
+### 功能描述
+
+对指定玩家的公共聊天施加惩罚，每名玩家同时只生效一种模式，再次 `set` 直接覆盖。八种模式的效果与示例见[规则文档](rules.md#chatpunishment---聊天惩罚)。禁言模式下公共消息不再广播，发送者收到「你已被禁言」提示；其余模式向全体广播转换后的文本，原始内容不再出现。
+
+玩家名走原版档案解析（同 /ban）：在线自动补全，离线玩家经档案缓存解析 UUID，未知玩家由原版报错，不凭猜测建档。惩罚按 UUID 存于 `<存档>/carpet-pry-addition/chatpunish.json`，重启与重连不丢失；到期读取时惰性判定，落盘时清理。
+
+不影响玩家的命令、私聊与系统消息；规则关闭时不改聊天、不清记录。
+
+### 相关规则
+
+**chatPunishment** - 开关整体功能；关闭时命令隐藏、已存惩罚保留（重新开启后未到期者继续生效）。
+
+### 使用示例
+
+```
+/chatpunish set Steve tape            # Steve 的聊天固定为胶带文本（永久）
+/chatpunish set Steve cat 1h          # Steve 的聊天追加 喵~，1 小时后自动解除
+/chatpunish set Steve mute 30m        # 禁言 30 分钟
+/chatpunish list                      # 查看未到期惩罚（名称、模式、剩余时间或永久）
+/chatpunish clear Steve               # 解除 Steve 的惩罚
 ```

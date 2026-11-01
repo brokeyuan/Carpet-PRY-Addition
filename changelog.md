@@ -4,6 +4,7 @@
 
 ### 新增
 
+- 聊天惩罚（`chatPunishment`）：管理员经 /chatpunish 对指定玩家的公共聊天施加八种惩罚（禁言/胶带/猫娘/呆子/屏蔽词/村民/结巴/反转，每玩家一种），支持限时（s/m/h/d，缺省永久，按真实时间到期自动解除）；玩家名走原版档案解析、按 UUID 存于存档 `chatpunish.json`，重启与重连不丢失；改写走原版 ChatDecorator 扩展点、禁言经 ALLOW_CHAT_MESSAGE 取消广播，签名校验不受影响，不影响命令与私聊
 - 跨服传送（`serverTransfer`）：`/tpto` 展示可点击的服务器列表，点击即以本人身份走原版 transfer 协议转移到他服（一服一地址）；`/tptoset` 管理服务器列表（addserver / removeserver / reload），配置存于 `config/carpet-pry-addition/tpto.json`；目标服需开启 `accepts-transfers`
 - 计时器（`countdown`）：新增 /timer 统一入口，正计时（up）与倒计时（down）共用暂停/恢复/停止控制，四种展示位置（bar/center/actionbar/both）与三档效果（simple/normal/fancy）自由搭配；最短 `/timer down 60s`、`/timer up` 即可用，选项词任意顺序，`--` 后整段为名称，silent 一词全静音。fancy 档 60/30 秒节点提示、最后 10 秒逐秒递增音高；倒计时归零展示 3 秒并留结果，正计时停止结算毫秒级用时；最后一份结果存内存可经 /timer 查看。旧 /countdown 语法保留为兼容入口，与 /timer 共用同一会话。默认开启，规则关闭立即清理显示且不产生虚假完成结果
 - `SERVER` 规则类别：标记该类别的规则值跟随服务器（钉值存于 `config/carpet-pry-addition/server-rules.json`，启动时压过存档 carpet.conf），权限类规则不再随存档漂移

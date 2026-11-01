@@ -2,7 +2,7 @@
 
 > Mod ID: `carpet-pry-addition` | 版本: `1.3.1`
 >
-> 共 **37 条**规则（`whoCalledMeSound` / `whoCalledMeHighlight` 作为配套子规则内联在 whoCalledMe 节）
+> 共 **38 条**规则（`whoCalledMeSound` / `whoCalledMeHighlight` 作为配套子规则内联在 whoCalledMe 节）
 >
 > **提示：可以使用 `Ctrl+F` 快速查找自己想要的规则**
 
@@ -39,6 +39,7 @@
   - [peacefulPlayers - 和平的玩家](#peacefulplayers---和平的玩家)
   - [patPatPlayers - 摸摸头](#patpatplayers---摸摸头)
   - [whoCalledMe - 谁在叫我](#whocalledme---谁在叫我)
+  - [chatPunishment - 聊天惩罚](#chatpunishment---聊天惩罚)
 - [生存功能](#生存功能)
   - [playerHat - 玩家帽子](#playerhat---玩家帽子)
   - [playerHeadSkin - 玩家头部皮肤](#playerheadskin---玩家头部皮肤)
@@ -453,6 +454,36 @@
 **配套子规则**：`whoCalledMeSound` 默认 `ding`，可选 `false`、`true`（等同 `ding`）、`ding`、`levelup`、`bell`、`pling`、`hit`，每次提醒连响三声，间隔 6 tick。`whoCalledMeHighlight` 默认 `aqua`，支持 16 种原版颜色、`rainbow` 和 `false`；`false` 不改色，旧值 `none` 等未知值回落默认。
 
 聊天与标题中的在线玩家名按规则色高亮，其余文字保留原样式；`/say` 等系统消息不处理。标题淡入 0.25 秒、停留 3 秒、淡出 0.5 秒；超长内容按 40 个显示宽度单位截断（中文算 2），保留首个命中名字。正版签名聊天可能出现“无法验证”标记，离线服无签名消息不受影响。
+
+### chatPunishment - 聊天惩罚
+
+管理员经 /chatpunish 对指定玩家的公共聊天施加惩罚，每名玩家同时只生效一种模式。
+
+| 属性 | 值 |
+|------|-----|
+| **规则名** | `chatPunishment` |
+| **描述** | 管理员经 /chatpunish 对指定玩家施加聊天惩罚（禁言/胶带/猫娘/呆子/屏蔽词/村民/结巴/反转，每玩家一种），支持限时。不影响命令与私聊。 |
+| **类型** | `boolean` |
+| **默认值** | `false` |
+| **参考选项** | `false`, `true` |
+| **分类** | `PRIMARYUAN`, `COMMAND`, `FEATURE` |
+
+八种模式（以 `今晚去挖矿，谁一起？` 为例）：
+
+| 模式 | 效果 |
+|------|------|
+| `mute` | 取消广播，发送者收到「你已被禁言」 |
+| `tape` | 整句替换为 `呜呜...呜呜......呜呜........` |
+| `cat` | 保留原文，末尾追加 `喵~` |
+| `idiot` | 整句替换为 `阿巴巴阿巴……阿巴！` |
+| `censor` | 整句替换为 `#$%%%！##！！` |
+| `villager` | 整句替换为 `嗯哼～哼嗯～` |
+| `stutter` | 结巴复读：`今、今晚去挖、挖矿，谁、谁一起？`（每 3 字符复读一次，标点与 emoji 不复读但占步长） |
+| `reverse` | 按字素簇反转：`？起一谁，矿挖去晚今`（emoji 组合序列不拆散） |
+
+命令仅管理员可用（OP 等级 4）：`/chatpunish set <玩家> <模式> [时长]` 设置/覆盖惩罚，时长为 `数字+s/m/h/d`（如 `10m`、`1h`、`1d`），缺省永久，到期自动解除；`/chatpunish clear <玩家>` 解除；`/chatpunish list` 列出未到期惩罚。玩家名走原版档案解析（同 /ban）：在线补全、离线走档案缓存，按 UUID 记录、不凭猜测建档。
+
+惩罚按真实时间计时（不依赖 tick 与在线时长），重启与重连不丢失，记录存于 `<存档>/carpet-pry-addition/chatpunish.json`。规则关闭时不改聊天、不清记录，重新开启后未到期惩罚继续生效。改写经原版 ChatDecorator 扩展点作为未签名内容随签名消息广播，签名校验不受影响；仅处理公共聊天，命令、私聊与系统消息不受影响。同时开启 whoCalledMe 时，名字高亮作用于转换后的文本。
 
 ## 生存功能
 

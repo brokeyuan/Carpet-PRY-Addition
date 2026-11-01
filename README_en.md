@@ -11,7 +11,7 @@
 
 ## Introduction
 
-**Carpet-PRY-Addition** is a server-side Fabric extension for [Fabric Carpet](https://github.com/gnembon/fabric-carpet), developed for the **Primaryuan Server**; it also enhances the experience when installed client-side. It adds **37** configurable Carpet rules and **13** root commands (plus /player subcommands), covering fake player enhancements, player scaling, server management, mod compatibility fixes, ported features, player interactions, and survival gameplay expansion.
+**Carpet-PRY-Addition** is a server-side Fabric extension for [Fabric Carpet](https://github.com/gnembon/fabric-carpet), developed for the **Primaryuan Server**; it also enhances the experience when installed client-side. It adds **38** configurable Carpet rules and **14** root commands (plus /player subcommands), covering fake player enhancements, player scaling, server management, mod compatibility fixes, ported features, player interactions, and survival gameplay expansion.
 
 All rules are off by default except the client-side rule `ridingPlayersClientInteract` and `countdown`; enable what you need.
 
@@ -104,6 +104,7 @@ All rules are off by default except the client-side rule `ridingPlayersClientInt
 - `peacefulPlayers`: per-player `/pvp` toggles, `@a` as a server-wide switch
 - `patPatPlayers`: right-click another real player’s head for hearts, sound and a brief crouch (`true` freely, `sneak` while sneaking); opt out with `/patnod off`
 - `whoCalledMe`: notify named players by sound and title, including self-mentions; `mention` limits matching to @names. `whoCalledMeSound` and `whoCalledMeHighlight` control sound and color
+- `chatPunishment`: `/chatpunish` chat punishment — eight modes (mute/tape/cat/idiot/censor/villager/stutter/reverse, one per player, optional duration), persisted by UUID on real time; commands and private messages unaffected
 - `clickThrough`: right-click wall signs/item frames/paintings to open containers mounted directly behind them (sneak keeps vanilla interaction)
 
 ### Survival Features

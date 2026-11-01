@@ -9,6 +9,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import me.primaryuan.carpet.brain.BrainManager;
 import me.primaryuan.carpet.command.CountdownCommand;
+import me.primaryuan.carpet.command.ChatPunishmentCommand;
 import me.primaryuan.carpet.command.HatCommand;
 import me.primaryuan.carpet.command.PvpCommand;
 import me.primaryuan.carpet.command.PatNodCommand;
@@ -19,6 +20,7 @@ import me.primaryuan.carpet.command.TimerCommand;
 import me.primaryuan.carpet.command.TppCommand;
 import me.primaryuan.carpet.command.TptoCommand;
 import me.primaryuan.carpet.handler.clickThrough.ClickThroughHandler;
+import me.primaryuan.carpet.handler.chatPunishment.ChatPunishmentManager;
 import me.primaryuan.carpet.handler.countdown.CountdownManager;
 import me.primaryuan.carpet.handler.entitiesRidingPlayers.EntitiesRidingPlayersHandler;
 import me.primaryuan.carpet.handler.patPatPlayers.PatPatPlayersHandler;
@@ -68,6 +70,7 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
             "playerScale",                    // /scale
             "patPatPlayers",                  // /patnod
             "peacefulPlayers",                // /pvp
+            "chatPunishment",                 // /chatpunish
             "textAnimation",                  // /text
             "serverTransfer"                  // /tpto /tptoset
     );
@@ -101,6 +104,7 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         TimerCommand.register();
         CountdownCommand.register();
         TptoCommand.register();
+        ChatPunishmentCommand.register();
 
         // 和平的玩家（pvp）：加载持久化状态、注册 PVP 伤害拦截与玩家加入登记
         PvpManager.init();
@@ -113,6 +117,9 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
 
         // 谁在叫我：注册聊天监听（聊天中出现其他玩家名字时提示音+title 点名）
         WhoCalledMeHandler.init();
+
+        // 聊天惩罚：注册禁言广播拦截（文本改写经聊天装饰器组合链，无独立注入）
+        ChatPunishmentManager.init();
 
         // 米塔字幕：孤儿实体清扫（启动）与停服清理
         TextAnimationHandler.init();
@@ -206,6 +213,7 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         TptoConfigManager.onServerLoaded(server);
         PvpManager.onServerLoaded(server);
         PatPatPlayersHandler.onServerLoaded(server);
+        ChatPunishmentManager.onServerLoaded(server);
         // SERVER 类规则钉值：晚于 carpet 读存档 carpet.conf，服务器值永远优先
         ServerRuleOverrides.apply(server);
     }
@@ -217,6 +225,7 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         TptoConfigManager.onServerClosed();
         PvpManager.onServerClosed();
         PatPatPlayersHandler.onServerClosed();
+        ChatPunishmentManager.onServerClosed();
         ServerRuleOverrides.onServerClosed();
     }
 
