@@ -57,7 +57,9 @@
     "rule.fakePlayerClones.ClientboundAddEntityPacketMixin",
     "rule.fakePlayerClones.ClientboundAddEntityPacketAccessor",
     "rule.fakePlayerClones.ClientboundPlayerInfoRemovePacketMixin",
-    "rule.fakePlayerClones.ClientboundPlayerInfoRemovePacketAccessor"
+    "rule.fakePlayerClones.ClientboundPlayerInfoRemovePacketAccessor",
+    "rule.fakePlayerClones.PlayerCommandGroupMixin",
+    "rule.fakePlayerClones.PlayerCommandRejoinMixin"
   ],
   "client": [
     "rule.entitiesRidingPlayers.ProjectileUtilMixin",

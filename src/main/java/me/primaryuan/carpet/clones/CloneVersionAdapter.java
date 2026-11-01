@@ -164,6 +164,15 @@ public final class CloneVersionAdapter {
         //#endif
     }
 
+    /** kill 实体（1.21.3+ 带 level 参，1.21~1.21.2 无参） */
+    public static void killEntity(net.minecraft.world.entity.LivingEntity entity) {
+        //#if MC >= 12103
+        entity.kill((net.minecraft.server.level.ServerLevel) entity.level());
+        //#else
+        //$$ entity.kill();
+        //#endif
+    }
+
     /** source 权限 >= OP（26.x PermissionSet，1.21.x hasPermission(2)） */
     public static boolean isGameMaster(net.minecraft.commands.CommandSourceStack source) {
         //#if MC >= 260102
