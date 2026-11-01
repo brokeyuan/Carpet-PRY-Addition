@@ -4,6 +4,7 @@ import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import me.primaryuan.carpet.clones.CloneGroup;
 import me.primaryuan.carpet.clones.CloneGroupRegistry;
 import net.minecraft.commands.arguments.selector.EntitySelector;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -27,6 +28,11 @@ import java.util.UUID;
 @Mixin(EntitySelector.class)
 public abstract class EntitySelectorDedupMixin {
 
+    /** maxResults 读取（private 字段经 accessor） */
+    private static int pry$maxResults(EntitySelector selector) {
+        return ((EntitySelectorAccessor) selector).pry$maxResults();
+    }
+
     @Inject(
             method = "findPlayers",
             at = @At("RETURN"),
@@ -38,7 +44,10 @@ public abstract class EntitySelectorDedupMixin {
             CallbackInfoReturnable<List<net.minecraft.server.level.ServerPlayer>> cir
     ) {
         List<net.minecraft.server.level.ServerPlayer> in = cir.getReturnValue();
-        if (!CarpetPrimaryuanSettings.fakePlayerClones || in.size() <= 1) {
+        // 复数选择器不去重：分身脚本/命令需要按实体定位每个分身（R1 F5）。
+        // 只对"单实体语义"（maxResults==1，如 give/clear 的 player() 参数）去重，
+        // 防止组命令对同一账号重复生效。
+        if (!CarpetPrimaryuanSettings.fakePlayerClones || in.size() <= 1 || pry$maxResults((EntitySelector) (Object) this) > 1) {
             return;
         }
         List<net.minecraft.server.level.ServerPlayer> out = new ArrayList<>(in.size());
@@ -65,7 +74,8 @@ public abstract class EntitySelectorDedupMixin {
             CallbackInfoReturnable<List<? extends net.minecraft.world.entity.Entity>> cir
     ) {
         List<? extends net.minecraft.world.entity.Entity> in = cir.getReturnValue();
-        if (!CarpetPrimaryuanSettings.fakePlayerClones || in.size() <= 1) {
+        if (!CarpetPrimaryuanSettings.fakePlayerClones || in.size() <= 1
+                || pry$maxResults((EntitySelector) (Object) this) > 1) {
             return;
         }
         boolean hasClone = false;

@@ -40,7 +40,14 @@ public abstract class EntityLookupMixin {
         if (!allowed) {
             return;
         }
-        CloneEntityLookupHelper.putClone(unchecked(), entity);
+        try {
+            CloneEntityLookupHelper.putClone(unchecked(), entity);
+            org.apache.logging.log4j.LogManager.getLogger("CarpetPrimaryuan").debug(
+                    "[pry:clones][DIAG] EntityLookup.putClone OK id={} uuid={}", entity.getId(), entity.getUUID());
+        } catch (Throwable t) {
+            org.apache.logging.log4j.LogManager.getLogger("CarpetPrimaryuan").error(
+                    "[pry:clones][DIAG] putClone FAILED id={}", entity.getId(), t);
+        }
         ci.cancel();
     }
 

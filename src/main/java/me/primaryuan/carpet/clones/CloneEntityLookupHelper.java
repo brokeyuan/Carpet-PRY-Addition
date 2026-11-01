@@ -13,6 +13,10 @@ public final class CloneEntityLookupHelper {
 
     private CloneEntityLookupHelper() {}
 
+    public static int byIdSize(EntityLookup<EntityAccess> lookup) {
+        return ((EntityLookupAccessor) lookup).pry$byId().size();
+    }
+
     public static void putClone(EntityLookup<EntityAccess> lookup, EntityAccess entity) {
         EntityLookupAccessor acc = (EntityLookupAccessor) lookup;
         acc.pry$byId().put(entity.getId(), entity);

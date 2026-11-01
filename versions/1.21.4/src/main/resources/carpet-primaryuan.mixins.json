@@ -51,7 +51,8 @@
     "rule.fakePlayerClones.PlayerCommandSpawnMixin",
     "rule.fakePlayerClones.InventorySharedMixin",
     "rule.fakePlayerClones.EntityArgumentDedupMixin",
-    "rule.fakePlayerClones.EntitySelectorDedupMixin"
+    "rule.fakePlayerClones.EntitySelectorDedupMixin",
+    "rule.fakePlayerClones.EntitySelectorAccessor"
   ],
   "client": [
     "rule.entitiesRidingPlayers.ProjectileUtilMixin",
