@@ -10,6 +10,7 @@ import me.primaryuan.carpet.clones.CloneGroup;
 import me.primaryuan.carpet.clones.CloneGroupRegistry;
 import me.primaryuan.carpet.clones.CloneInstanceRegistry;
 import me.primaryuan.carpet.clones.CloneSnapshotManager;
+import me.primaryuan.carpet.clones.CloneVersionAdapter;
 import me.primaryuan.carpet.clones.CloneSpawnManager;
 import me.primaryuan.carpet.i18n.ServerI18n;
 import net.minecraft.commands.CommandSourceStack;
@@ -60,7 +61,22 @@ public final class FakeCloneCommand {
                 .then(Commands.literal("select")
                         .then(Commands.argument("name", StringArgumentType.word())
                                 .then(Commands.argument("cloneId", IntegerArgumentType.integer(1))
-                                        .executes(FakeCloneCommand::select))));
+                                        .executes(FakeCloneCommand::select))))
+                .then(Commands.literal("action")
+                        .then(Commands.argument("action", StringArgumentType.word())
+                                .suggests((c, b) -> net.minecraft.commands.SharedSuggestionProvider.suggest(
+                                        ACTIONS.keySet(), b))
+                                .executes(ctx -> actionGroup(ctx, StringArgumentType.getString(ctx, "action")))
+                                .then(Commands.argument("name", StringArgumentType.word())
+                                        .executes(ctx -> actionOne(ctx,
+                                                StringArgumentType.getString(ctx, "action"),
+                                                StringArgumentType.getString(ctx, "name"),
+                                                null))
+                                        .then(Commands.argument("cloneId", IntegerArgumentType.integer(1))
+                                                .executes(ctx -> actionOne(ctx,
+                                                        StringArgumentType.getString(ctx, "action"),
+                                                        StringArgumentType.getString(ctx, "name"),
+                                                        IntegerArgumentType.getInteger(ctx, "cloneId")))))));
     }
 
     private static int list(CommandContext<CommandSourceStack> ctx) {
@@ -130,6 +146,109 @@ public final class FakeCloneCommand {
         int n = CloneSpawnManager.killGroup(source.getServer(), g);
         source.sendSuccess(() -> Component.literal("[clones] killed " + n + " member(s) of " + name), false);
         return 1;
+    }
+
+    // ===== 动作（复用 Carpet EntityPlayerActionPack；单体与整组共用一套实现） =====
+
+    /** 动作名 -> 执行器 */
+    private static final java.util.Map<String, java.util.function.UnaryOperator<ServerPlayer>> ACTIONS = buildActions();
+
+    private static java.util.Map<String, java.util.function.UnaryOperator<ServerPlayer>> buildActions() {
+        java.util.Map<String, java.util.function.UnaryOperator<ServerPlayer>> m = new java.util.LinkedHashMap<>();
+        var api = new Object() {
+            carpet.helpers.EntityPlayerActionPack pack(ServerPlayer p) {
+                return ((carpet.fakes.ServerPlayerInterface) p).getActionPack();
+            }
+        };
+        m.put("stop", p -> { api.pack(p).stopAll(); return p; });
+        m.put("drop", p -> { api.pack(p).drop(p.getInventory().getSelectedSlot(), false); return p; });
+        m.put("dropstack", p -> { api.pack(p).drop(p.getInventory().getSelectedSlot(), true); return p; });
+        m.put("swaphands", p -> { api.pack(p).start(carpet.helpers.EntityPlayerActionPack.ActionType.SWAP_HANDS, carpet.helpers.EntityPlayerActionPack.Action.once()); return p; });
+        m.put("jump", p -> { api.pack(p).start(carpet.helpers.EntityPlayerActionPack.ActionType.JUMP, carpet.helpers.EntityPlayerActionPack.Action.once()); return p; });
+        m.put("use", p -> { api.pack(p).start(carpet.helpers.EntityPlayerActionPack.ActionType.USE, carpet.helpers.EntityPlayerActionPack.Action.once()); return p; });
+        m.put("attack", p -> { api.pack(p).start(carpet.helpers.EntityPlayerActionPack.ActionType.ATTACK, carpet.helpers.EntityPlayerActionPack.Action.once()); return p; });
+        m.put("sneak", p -> { api.pack(p).setSneaking(true); return p; });
+        m.put("unsneak", p -> { api.pack(p).setSneaking(false); return p; });
+        for (int i = 0; i < 9; i++) {
+            final int idx = i;
+            m.put("slot" + (i + 1), p -> { api.pack(p).setSlot(idx); return p; });
+        }
+        return java.util.Collections.unmodifiableMap(m);
+    }
+
+    private static void op(ServerPlayer p, String action) {
+        var op = ACTIONS.get(action);
+        if (op != null) {
+            op.apply(p);
+        }
+    }
+
+    private static int applyAction(CommandSourceStack source, String action, ServerPlayer p, int cloneId) {
+        op(p, action);
+        final int eid = p.getId();
+        source.sendSuccess(() -> Component.literal("[clones] action " + action + " -> "
+                + CloneVersionAdapter.profileName(p.getGameProfile()) + "#" + cloneId
+                + " (entityId=" + eid + ")"), true);
+        return 1;
+    }
+
+    /** 整组（全部组的全部在线成员）按 cloneId 顺序执行同一动作（同 Tick 顺序结算，共享库存随之顺序更新） */
+    private static int actionGroup(CommandContext<CommandSourceStack> ctx, String action) {
+        CommandSourceStack source = ctx.getSource();
+        if (!ACTIONS.containsKey(action)) {
+            source.sendFailure(Component.literal("[clones] unknown action: " + action
+                    + " (available: " + String.join(", ", ACTIONS.keySet()) + ")"));
+            return 0;
+        }
+        int n = 0;
+        StringBuilder ids = new StringBuilder();
+        for (CloneGroup g : CloneGroupRegistry.all()) {
+            for (ServerPlayer p : g.onlineMembers()) {
+                op(p, action);
+                ids.append('#').append(CloneInstanceRegistry.cloneIdOf(p)).append(' ');
+                n++;
+            }
+        }
+        if (n == 0) {
+            source.sendFailure(Component.literal("[clones] no online clones"));
+            return 0;
+        }
+        final String done = ids.toString();
+        source.sendSuccess(() -> Component.literal("[clones] action " + action
+                + " -> group members: " + done), true);
+        return 1;
+    }
+
+    /** name（可选 cloneId）执行动作：单体精确操作入口 */
+    private static int actionOne(CommandContext<CommandSourceStack> ctx, String action, String name, Integer cloneId) {
+        CommandSourceStack source = ctx.getSource();
+        CloneGroup g = CloneGroupRegistry.byName(name);
+        if (g == null) {
+            source.sendFailure(Component.literal("[clones] unknown group " + name));
+            return 0;
+        }
+        if (!ACTIONS.containsKey(action)) {
+            source.sendFailure(Component.literal("[clones] unknown action: " + action
+                    + " (available: " + String.join(", ", ACTIONS.keySet()) + ")"));
+            return 0;
+        }
+        if (cloneId == null) {
+            int n = 0;
+            for (ServerPlayer p : g.onlineMembers()) {
+                op(p, action);
+                n++;
+            }
+            final int done = n;
+            source.sendSuccess(() -> Component.literal("[clones] action " + action + " -> "
+                    + name + " (" + done + " member(s))"), true);
+            return done > 0 ? 1 : 0;
+        }
+        ServerPlayer target = g.instance(cloneId);
+        if (target == null) {
+            source.sendFailure(Component.literal("[clones] " + name + "#" + cloneId + " not online"));
+            return 0;
+        }
+        return applyAction(source, action, target, cloneId);
     }
 
     private static int rejoin(CommandContext<CommandSourceStack> ctx) {
