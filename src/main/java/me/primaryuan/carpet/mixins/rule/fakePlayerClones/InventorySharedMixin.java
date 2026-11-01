@@ -80,6 +80,51 @@ public abstract class InventorySharedMixin {
         }
     }
 
+    // ===== 漏网写路径补齐（§三审查：dropAll/pickSlot/setSelectedItem/removeItem(ItemStack) 直改 NonNullList） =====
+
+    @Inject(method = "dropAll", at = @At("HEAD"), cancellable = true, require = 0)
+    private void pry$dropAll(CallbackInfo ci) {
+        Inventory auth = pry$authority();
+        if (auth != null) {
+            auth.dropAll();
+            SharedInventoryManager.syncGroup((ServerPlayer) auth.player);
+            SharedInventoryManager.syncEquipment((ServerPlayer) auth.player);
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "pickSlot", at = @At("HEAD"), cancellable = true, require = 0)
+    private void pry$pickSlot(int index, CallbackInfo ci) {
+        Inventory auth = pry$authority();
+        if (auth != null) {
+            auth.pickSlot(index);
+            SharedInventoryManager.syncGroup((ServerPlayer) auth.player);
+            SharedInventoryManager.syncEquipment((ServerPlayer) auth.player);
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "setSelectedItem", at = @At("HEAD"), cancellable = true, require = 0)
+    private void pry$setSelectedItem(ItemStack stack, CallbackInfoReturnable<ItemStack> cir) {
+        Inventory auth = pry$authority();
+        if (auth != null) {
+            cir.setReturnValue(auth.setSelectedItem(stack));
+            SharedInventoryManager.syncGroup((ServerPlayer) auth.player);
+            SharedInventoryManager.syncEquipment((ServerPlayer) auth.player);
+        }
+    }
+
+    @Inject(method = "removeItem(Lnet/minecraft/world/item/ItemStack;)V", at = @At("HEAD"), cancellable = true, require = 0)
+    private void pry$removeItemStack(ItemStack stack, CallbackInfo ci) {
+        Inventory auth = pry$authority();
+        if (auth != null) {
+            auth.removeItem(stack);
+            SharedInventoryManager.syncGroup((ServerPlayer) auth.player);
+            SharedInventoryManager.syncEquipment((ServerPlayer) auth.player);
+            ci.cancel();
+        }
+    }
+
     @Inject(method = "clearContent", at = @At("HEAD"), cancellable = true, require = 0)
     private void pry$clearContent(CallbackInfo ci) {
         Inventory auth = pry$authority();
