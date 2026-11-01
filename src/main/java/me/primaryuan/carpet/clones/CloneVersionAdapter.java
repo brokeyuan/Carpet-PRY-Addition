@@ -1,6 +1,7 @@
 package me.primaryuan.carpet.clones;
 
 import net.minecraft.server.level.ServerLevel;
+import com.mojang.authlib.GameProfile;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 
@@ -111,6 +112,55 @@ public final class CloneVersionAdapter {
         //$$     org.apache.logging.log4j.LogManager.getLogger("CarpetPrimaryuan")
         //$$             .warn("[pry:clones] loadPlayerData failed for {}", profileName(player.getGameProfile()), t);
         //$$ }
+        //#endif
+    }
+
+    /** Inventory selected 槽位（26.x/1.21.5+ getSelectedSlot；1.21~1.21.4 selected 字段） */
+    public static int selectedSlot(net.minecraft.world.entity.player.Inventory inv) {
+        //#if MC >= 12105
+        return inv.getSelectedSlot();
+        //#else
+        //$$ return inv.selected;
+        //#endif
+    }
+
+    /** selected 槽换物（1.21.5+ setSelectedItem；1.21~1.21.4 无此 API，返回 null 由调用方跳过） */
+    public static net.minecraft.world.item.ItemStack setSelectedItem(net.minecraft.world.entity.player.Inventory inv, net.minecraft.world.item.ItemStack stack) {
+        //#if MC >= 12105
+        return inv.setSelectedItem(stack);
+        //#else
+        //$$ return null;
+        //#endif
+    }
+
+    /** Tab 排序值（1.21.3+ getTabListOrder；1.21 恒 0） */
+    public static int tabListOrder(net.minecraft.server.level.ServerPlayer player) {
+        //#if MC >= 12103
+        return player.getTabListOrder();
+        //#else
+        //$$ return 0;
+        //#endif
+    }
+
+    /** GameProfile 属性复制（26.x properties()，1.21.x getProperties()） */
+    public static void copyProperties(GameProfile from, GameProfile to) {
+        //#if MC >= 12110
+        for (var prop : from.properties().entries()) {
+            to.properties().put(prop.getKey(), prop.getValue());
+        }
+        //#else
+        //$$ for (var prop : from.getProperties().entries()) {
+        //$$     to.getProperties().put(prop.getKey(), prop.getValue());
+        //$$ }
+        //#endif
+    }
+
+    /** GameProfile id（26.x id()，1.21.x getId()） */
+    public static java.util.UUID profileId(GameProfile profile) {
+        //#if MC >= 12110
+        return profile.id();
+        //#else
+        //$$ return profile.getId();
         //#endif
     }
 

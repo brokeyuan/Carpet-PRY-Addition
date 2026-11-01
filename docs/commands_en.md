@@ -434,7 +434,12 @@ Available when the `fakePlayerClones` rule is on (level 2+). Multiple real Carpe
 /fakeclone kill <name>                   Remove the whole group gracefully (no death, no drops), saves a snapshot
 /fakeclone rejoin <name>                 Restore member count/dimensions/positions/inventory from the snapshot
 /fakeclone select <name> <cloneId>       Address a single clone (echoes EntityId and position)
+/fakeclone action <action>               Run an action on all clones (settled per cloneId order)
+/fakeclone action <action> <name>        Run an action on that group
+/fakeclone action <action> <name> <id>   Run an action on one specific clone
 ```
+
+Actions: `stop` `drop` `dropstack` `swaphands` `jump` `use` `attack` `sneak` `unsneak` `slot1`~`slot9` (reuses Carpet ActionPack; per-clone action state, no global selection).
 
 ### Notes
 

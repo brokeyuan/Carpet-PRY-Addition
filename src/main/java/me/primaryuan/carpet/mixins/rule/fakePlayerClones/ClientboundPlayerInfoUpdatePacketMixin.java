@@ -2,6 +2,7 @@ package me.primaryuan.carpet.mixins.rule.fakePlayerClones;
 
 import com.mojang.authlib.GameProfile;
 import me.primaryuan.carpet.clones.CloneDisplayIds;
+import me.primaryuan.carpet.clones.CloneVersionAdapter;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket.Action;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket.Entry;
@@ -32,35 +33,44 @@ import net.minecraft.Optionull;
 @Mixin(ClientboundPlayerInfoUpdatePacket.class)
 public abstract class ClientboundPlayerInfoUpdatePacketMixin {
 
-    /** 分身实例 → 显示 UUID 的 Entry（与 Entry(ServerPlayer) 字段语义对齐） */
+    /** 分身实例 → 显示 UUID 的 Entry（字段集按版本：1.21 无 showHat/listOrder） */
     private static Entry pry$entryOf(ServerPlayer player) {
         UUID display = CloneDisplayIds.displayOf(player);
-        if (display == null || display.equals(player.getUUID())) {
-            return new Entry(player.getUUID(),
-                    player.getGameProfile(),
-                    true,
-                    player.connection.latency(),
-                    player.gameMode.getGameModeForPlayer(),
-                    player.getTabListDisplayName(),
-                    player.isModelPartShown(net.minecraft.world.entity.player.PlayerModelPart.HAT),
-                    player.getTabListOrder(),
-                    Optionull.map(player.getChatSession(),
-                            net.minecraft.network.chat.RemoteChatSession::asData));
-        }
         GameProfile old = player.getGameProfile();
-        GameProfile rewritten = new GameProfile(display, old.name());
-        for (var prop : old.properties().entries()) {
-            rewritten.properties().put(prop.getKey(), prop.getValue());
+        GameProfile profile;
+        if (display == null || display.equals(player.getUUID())) {
+            profile = old;
+        } else {
+            profile = new GameProfile(display, CloneVersionAdapter.profileName(old));
+            CloneVersionAdapter.copyProperties(old, profile);
         }
-        return new Entry(display, rewritten,
+        var chatSession = Optionull.map(player.getChatSession(),
+                net.minecraft.network.chat.RemoteChatSession::asData);
+        //#if MC >= 12104
+        return new Entry(CloneVersionAdapter.profileId(profile), profile,
                 true,
                 player.connection.latency(),
                 player.gameMode.getGameModeForPlayer(),
                 player.getTabListDisplayName(),
                 player.isModelPartShown(net.minecraft.world.entity.player.PlayerModelPart.HAT),
-                player.getTabListOrder(),
-                Optionull.map(player.getChatSession(),
-                        net.minecraft.network.chat.RemoteChatSession::asData));
+                CloneVersionAdapter.tabListOrder(player),
+                chatSession);
+        //#elseif MC >= 12103
+        //$$ return new Entry(CloneVersionAdapter.profileId(profile), profile,
+        //$$         true,
+        //$$         player.connection.latency(),
+        //$$         player.gameMode.getGameModeForPlayer(),
+        //$$         player.getTabListDisplayName(),
+        //$$         CloneVersionAdapter.tabListOrder(player),
+        //$$         chatSession);
+        //#else
+        //$$ return new Entry(profile.getId(), profile,
+        //$$         true,
+        //$$         player.connection.latency(),
+        //$$         player.gameMode.getGameModeForPlayer(),
+        //$$         player.getTabListDisplayName(),
+        //$$         chatSession);
+        //#endif
     }
 
     @Redirect(

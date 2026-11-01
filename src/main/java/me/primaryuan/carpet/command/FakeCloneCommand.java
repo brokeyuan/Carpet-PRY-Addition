@@ -161,8 +161,8 @@ public final class FakeCloneCommand {
             }
         };
         m.put("stop", p -> { api.pack(p).stopAll(); return p; });
-        m.put("drop", p -> { api.pack(p).drop(p.getInventory().getSelectedSlot(), false); return p; });
-        m.put("dropstack", p -> { api.pack(p).drop(p.getInventory().getSelectedSlot(), true); return p; });
+        m.put("drop", p -> { api.pack(p).drop(CloneVersionAdapter.selectedSlot(p.getInventory()), false); return p; });
+        m.put("dropstack", p -> { api.pack(p).drop(CloneVersionAdapter.selectedSlot(p.getInventory()), true); return p; });
         m.put("swaphands", p -> { api.pack(p).start(carpet.helpers.EntityPlayerActionPack.ActionType.SWAP_HANDS, carpet.helpers.EntityPlayerActionPack.Action.once()); return p; });
         m.put("jump", p -> { api.pack(p).start(carpet.helpers.EntityPlayerActionPack.ActionType.JUMP, carpet.helpers.EntityPlayerActionPack.Action.once()); return p; });
         m.put("use", p -> { api.pack(p).start(carpet.helpers.EntityPlayerActionPack.ActionType.USE, carpet.helpers.EntityPlayerActionPack.Action.once()); return p; });

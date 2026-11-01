@@ -434,7 +434,12 @@
 /fakeclone kill <name>                   全组正常退出（非死亡、不掉落），并存档组快照
 /fakeclone rejoin <name>                 按快照恢复整组数量/维度/位置/背包
 /fakeclone select <name> <cloneId>       定位指定分身（回显 EntityId 与坐标）
+/fakeclone action <action>               对全部分身执行动作（按 cloneId 顺序结算）
+/fakeclone action <action> <name>        对该组全部分身执行动作
+/fakeclone action <action> <name> <id>   对指定分身执行动作
 ```
+
+可用动作：`stop` `drop` `dropstack` `swaphands` `jump` `use` `attack` `sneak` `unsneak` `slot1`~`slot9`（复用 Carpet ActionPack；动作状态按分身独立维护，无全局选中态）
 
 ### 说明
 

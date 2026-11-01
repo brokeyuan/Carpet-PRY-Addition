@@ -1,5 +1,6 @@
 package me.primaryuan.carpet.mixins.rule.fakePlayerClones;
 
+import me.primaryuan.carpet.clones.CloneVersionAdapter;
 import me.primaryuan.carpet.clones.SharedInventoryManager;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
@@ -108,9 +109,10 @@ public abstract class InventorySharedMixin {
     private void pry$setSelectedItem(ItemStack stack, CallbackInfoReturnable<ItemStack> cir) {
         Inventory auth = pry$authority();
         if (auth != null) {
-            cir.setReturnValue(auth.setSelectedItem(stack));
+            net.minecraft.world.item.ItemStack result = CloneVersionAdapter.setSelectedItem(auth, stack);
             SharedInventoryManager.syncGroup((ServerPlayer) auth.player);
             SharedInventoryManager.syncEquipment((ServerPlayer) auth.player);
+            cir.setReturnValue(result);
         }
     }
 
