@@ -4,6 +4,7 @@ import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import me.primaryuan.carpet.clones.CloneAllowlist;
+import me.primaryuan.carpet.clones.CloneDisplayIds;
 import me.primaryuan.carpet.clones.CloneDistanceManagerHelper;
 import me.primaryuan.carpet.clones.CloneVersionAdapter;
 import me.primaryuan.carpet.clones.CloneGroup;
@@ -78,6 +79,8 @@ public abstract class PlayerListPreRegisterMixin {
             return;
         }
         int cloneId = CloneInstanceRegistry.cloneIdOf(player);
+        // 先缓存显示 UUID（本实例退出产生的 PlayerInfoRemove 包改写用），再注销
+        CloneDisplayIds.markExiting(player);
         group.remove(player);
         CloneInstanceRegistry.remove(player);
         // 组记录保留（供 /fakeclone rejoin），只撤 allowlist——
@@ -131,6 +134,7 @@ public abstract class PlayerListPreRegisterMixin {
                 CloneVersionAdapter.profileName(player.getGameProfile()));
         int cloneId = group.add(player);
         CloneInstanceRegistry.put(player, cloneId);
+        CloneDisplayIds.register(player, player.getUUID(), cloneId);
         // 新成员初始对齐：把权威背包/装备快照到新成员（否则 give 只在主实例）
         me.primaryuan.carpet.clones.SharedInventoryManager.syncGroup(player);
         me.primaryuan.carpet.clones.SharedInventoryManager.syncEquipment(player);

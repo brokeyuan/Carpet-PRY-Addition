@@ -54,7 +54,12 @@
     "rule.fakePlayerClones.InventorySharedMixin",
     "rule.fakePlayerClones.EntityArgumentDedupMixin",
     "rule.fakePlayerClones.EntitySelectorDedupMixin",
-    "rule.fakePlayerClones.EntitySelectorAccessor"
+    "rule.fakePlayerClones.EntitySelectorAccessor",
+    "rule.fakePlayerClones.ClientboundPlayerInfoUpdatePacketMixin",
+    "rule.fakePlayerClones.ClientboundAddEntityPacketMixin",
+    "rule.fakePlayerClones.ClientboundAddEntityPacketAccessor",
+    "rule.fakePlayerClones.ClientboundPlayerInfoRemovePacketMixin",
+    "rule.fakePlayerClones.ClientboundPlayerInfoRemovePacketAccessor"
   ],
   "client": [
     "rule.entitiesRidingPlayers.ProjectileUtilMixin",
