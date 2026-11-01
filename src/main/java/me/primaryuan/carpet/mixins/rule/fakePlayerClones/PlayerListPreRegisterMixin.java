@@ -9,6 +9,7 @@ import me.primaryuan.carpet.clones.CloneDistanceManagerHelper;
 import me.primaryuan.carpet.clones.CloneVersionAdapter;
 import me.primaryuan.carpet.clones.CloneGroup;
 import me.primaryuan.carpet.clones.CloneGroupRegistry;
+import me.primaryuan.carpet.clones.CloneSpawnManager;
 import me.primaryuan.carpet.clones.CloneInstanceRegistry;
 import net.minecraft.network.Connection;
 import net.minecraft.server.level.ServerPlayer;
@@ -106,6 +107,12 @@ public abstract class PlayerListPreRegisterMixin {
         if (!CloneAllowlist.isAllowed(player.getUUID())) {
             return;
         }
+        // 显示 UUID 必须在 placeNewPlayer 内部任何 PlayerInfo/AddEntity 包构造
+        // 之前登记——RETURN 阶段才注册就晚了（包已按真实 UUID 发出）
+        if (!CloneDisplayIds.isClone(player)) {
+            CloneDisplayIds.register(player, player.getUUID(),
+                    CloneSpawnManager.nextCloneId(player.getUUID()));
+        }
         try {
             CloneDistanceManagerHelper.preRegister(player);
         } catch (Throwable t) {
@@ -134,7 +141,6 @@ public abstract class PlayerListPreRegisterMixin {
                 CloneVersionAdapter.profileName(player.getGameProfile()));
         int cloneId = group.add(player);
         CloneInstanceRegistry.put(player, cloneId);
-        CloneDisplayIds.register(player, player.getUUID(), cloneId);
         // 新成员初始对齐：把权威背包/装备快照到新成员（否则 give 只在主实例）
         me.primaryuan.carpet.clones.SharedInventoryManager.syncGroup(player);
         me.primaryuan.carpet.clones.SharedInventoryManager.syncEquipment(player);

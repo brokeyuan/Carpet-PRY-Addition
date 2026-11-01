@@ -21,7 +21,7 @@ public abstract class ClientboundAddEntityPacketMixin {
     @Inject(
             method = "<init>(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/server/level/ServerEntity;)V",
             at = @At("RETURN"),
-            require = 0
+            require = 1
     )
     private void pry$rewriteUuidEntity(net.minecraft.world.entity.Entity entity,
                                        net.minecraft.server.level.ServerEntity serverEntity, CallbackInfo ci) {
@@ -33,7 +33,7 @@ public abstract class ClientboundAddEntityPacketMixin {
     @Inject(
             method = "<init>(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/server/level/ServerEntity;I)V",
             at = @At("RETURN"),
-            require = 0
+            require = 1
     )
     private void pry$rewriteUuidEntityWithBuf(net.minecraft.world.entity.Entity entity,
                                               net.minecraft.server.level.ServerEntity serverEntity,

@@ -101,6 +101,11 @@ public final class CloneGroup {
         return -1;
     }
 
+    /** 预览下一个 cloneId（不消费；HEAD 登记显示 UUID 用） */
+    public int peekNextId() {
+        return nextId;
+    }
+
     public int onlineCount() {
         return members.size();
     }

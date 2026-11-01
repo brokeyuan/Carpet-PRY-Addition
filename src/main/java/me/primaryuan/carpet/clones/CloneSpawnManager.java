@@ -99,6 +99,12 @@ public final class CloneSpawnManager {
         }
     }
 
+    /** HEAD 阶段预估 cloneId（组未建时从 1 起；与 RETURN 入组时的 add() 一致性由调用顺序保证） */
+    public static int nextCloneId(UUID uuid) {
+        CloneGroup g = CloneGroupRegistry.byUuid(uuid);
+        return g == null ? 1 : g.peekNextId();
+    }
+
     /** 整组退出（kill 语义：正常退出非死亡，无掉落）；退出前存组快照 */
     public static int killGroup(MinecraftServer server, CloneGroup group) {
         List<ServerPlayer> members = group.onlineMembers();

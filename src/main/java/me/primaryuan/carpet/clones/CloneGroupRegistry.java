@@ -39,6 +39,12 @@ public final class CloneGroupRegistry {
         return name == null ? null : BY_NAME.get(name.toLowerCase());
     }
 
+    /** 组名反查（未建组返回 name 兜底） */
+    public static String nameOf(UUID uuid) {
+        CloneGroup g = BY_UUID.get(uuid);
+        return g == null ? "unknown" : g.name();
+    }
+
     public static boolean exists(UUID uuid) {
         return BY_UUID.containsKey(uuid);
     }
