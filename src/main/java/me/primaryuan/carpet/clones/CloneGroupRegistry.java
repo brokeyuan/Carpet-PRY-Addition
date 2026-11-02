@@ -72,6 +72,16 @@ public final class CloneGroupRegistry {
         return false;
     }
 
+    /** 是否仍有在线成员或退出/恢复中的组（规则关闭前置检查） */
+    public static boolean hasLiveMembers() {
+        for (CloneGroup g : BY_UUID.values()) {
+            if (g.onlineCount() > 0 || !g.isActive()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** 停服清理 */
     public static void clear() {
         BY_UUID.clear();

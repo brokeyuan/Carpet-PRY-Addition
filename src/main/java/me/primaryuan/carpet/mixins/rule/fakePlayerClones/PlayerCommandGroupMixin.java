@@ -51,7 +51,16 @@ public abstract class PlayerCommandGroupMixin {
             return;
         }
         var group = me.primaryuan.carpet.clones.CloneGroupRegistry.byName(name);
-        if (group == null || group.onlineCount() == 0) {
+        if (group == null) {
+            return;
+        }
+        if (!group.isActive()) {
+            context.getSource().sendFailure(net.minecraft.network.chat.Component.literal(
+                    "[clones] group " + name + " is exiting; retry later"));
+            cir.setReturnValue(0);
+            return;
+        }
+        if (group.onlineCount() == 0) {
             return;
         }
         int n = 0;
@@ -86,10 +95,14 @@ public abstract class PlayerCommandGroupMixin {
         if (group == null || group.onlineCount() == 0) {
             return;
         }
-        int n = 0;
-        for (ServerPlayer p : group.onlineMembers()) {
-            CloneVersionAdapter.killEntity(p);
-            n++;
+        int n = me.primaryuan.carpet.clones.CloneSpawnManager.killGroup(
+                context.getSource().getServer(), group);
+        if (n < 0) {
+            context.getSource().sendFailure(net.minecraft.network.chat.Component.literal(
+                    "[clones] kill " + name + " failed: state=" + group.state()
+                            + " (snapshot/playerdata save failed or already exiting)"));
+            cir.setReturnValue(0);
+            return;
         }
         cir.setReturnValue(n);
     }

@@ -432,6 +432,7 @@ Available when the `fakePlayerClones` rule is on (level 2+). Multiple real Carpe
 /fakeclone status <name>                 Group details (cloneId/EntityId/position/dimension)
 /fakeclone spawn <name>                  Spawn another clone of that identity (same as /player <name> spawn)
 /fakeclone kill <name>                   Remove the whole group gracefully (no death, no drops), saves a snapshot
+/fakeclone kill <name> <cloneId>         Remove one clone gracefully; the group and shared inventory continue
 /fakeclone rejoin <name>                 Restore member count/dimensions/positions/inventory from the snapshot
 /fakeclone select <name> <cloneId>       Address a single clone (echoes EntityId and position)
 /fakeclone action <action>               Run an action on all clones (settled per cloneId order)
@@ -439,14 +440,16 @@ Available when the `fakePlayerClones` rule is on (level 2+). Multiple real Carpe
 /fakeclone action <action> <name> <id>   Run an action on one specific clone
 ```
 
-Actions: `stop` `drop` `dropstack` `swaphands` `jump` `use` `attack` `sneak` `unsneak` `slot1`~`slot9` (reuses Carpet ActionPack; per-clone action state, no global selection).
+Actions: `stop` `drop` `dropstack` `swaphands` `jump` `use` `attack` `sneak` `unsneak` `slot1`~`slot9` (reuses Carpet ActionPack; `slotN` is hotbar slot N, action state and selected slot stay per clone, no global selection).
 
 ### Notes
 
 - `/player <name> spawn` adds one clone per invocation for an existing group instead of reporting "already logged on"; vanilla fakes are unaffected.
 - On exit each member's dimension/position/rotation/game mode is written to `<world>/playerdata/<name>-clones.json`; the shared inventory persists through the primary instance's vanilla playerdata (full data components), so `rejoin` works across restarts.
-- `spawn`/`rejoin` are rejected while a same-UUID real player is online; real players are never kicked by clones.
-- `#cloneId` increments per group and is never reused; the `select` echo lets fake-player scripts address a specific instance.
+- `spawn`/`rejoin` are rejected while a same-UUID real player is online; `carpet fakePlayerClones false` is refused while members are online or exiting — exit the group first.
+- `rejoin` validates the snapshot and all dimensions first; online/exiting groups are rejected and a failed attempt rolls back only its new members.
+- `give`/`clear`/`item`/`enchant`/`loot` run once per account for a clone group; body commands such as `tp`/`execute`/`effect` still run per entity.
+- `#cloneId` increments per group and is never reused; the snapshot stores it, so `cloneId` and display UUIDs survive restarts.
 
 ---
 

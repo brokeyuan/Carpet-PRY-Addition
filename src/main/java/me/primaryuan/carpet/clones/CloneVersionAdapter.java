@@ -74,8 +74,8 @@ public final class CloneVersionAdapter {
         //#endif
     }
 
-    /** placeNewPlayer 后读回 playerdata（1.21 CompoundTag / 1.21.8 ValueInput+Collector / 1.21.10+ TagValueInput） */
-    public static void loadPlayerData(net.minecraft.server.MinecraftServer server, ServerPlayer player) {
+    /** placeNewPlayer 后读回 playerdata；失败返回 false，调用方撤销本次创建 */
+    public static boolean loadPlayerData(net.minecraft.server.MinecraftServer server, ServerPlayer player) {
         //#if MC >= 12110
         net.minecraft.util.ProblemReporter.ScopedCollector collector =
                 new net.minecraft.util.ProblemReporter.ScopedCollector(
@@ -91,9 +91,11 @@ public final class CloneVersionAdapter {
                 player.loadAndSpawnEnderPearls(input);
                 player.loadAndSpawnParentVehicle(input);
             }
+            return true;
         } catch (Throwable t) {
             org.apache.logging.log4j.LogManager.getLogger("CarpetPrimaryuan")
                     .warn("[pry:clones] loadPlayerData failed for {}", profileName(player.getGameProfile()), t);
+            return false;
         } finally {
             collector.close();
         }
@@ -101,16 +103,20 @@ public final class CloneVersionAdapter {
         //$$ try {
         //$$     server.getPlayerList().load(player, net.minecraft.util.ProblemReporter.DISCARDING)
         //$$             .ifPresent(player::load);
+        //$$     return true;
         //$$ } catch (Throwable t) {
         //$$     org.apache.logging.log4j.LogManager.getLogger("CarpetPrimaryuan")
         //$$             .warn("[pry:clones] loadPlayerData failed for {}", profileName(player.getGameProfile()), t);
+        //$$     return false;
         //$$ }
         //#else
         //$$ try {
         //$$     server.getPlayerList().load(player).ifPresent(player::load);
+        //$$     return true;
         //$$ } catch (Throwable t) {
         //$$     org.apache.logging.log4j.LogManager.getLogger("CarpetPrimaryuan")
         //$$             .warn("[pry:clones] loadPlayerData failed for {}", profileName(player.getGameProfile()), t);
+        //$$     return false;
         //$$ }
         //#endif
     }
@@ -142,16 +148,63 @@ public final class CloneVersionAdapter {
         //#endif
     }
 
-    /** GameProfile 属性复制（26.x properties()，1.21.x getProperties()） */
-    public static void copyProperties(GameProfile from, GameProfile to) {
+    /** 空属性 profile */
+    public static GameProfile newProfile(java.util.UUID id, String name) {
+        return new GameProfile(id, name);
+    }
+
+    /**
+     * 复制为带完整属性的新 profile。authlib 7+ 的 PropertyMap 构造器会把内容
+     * 快照为 ImmutableMultimap（创建后不可修改），必须先填好再构造 GameProfile。
+     */
+    public static GameProfile copyProfile(GameProfile source, java.util.UUID id, String name) {
         //#if MC >= 12110
-        for (var prop : from.properties().entries()) {
-            to.properties().put(prop.getKey(), prop.getValue());
-        }
+        com.google.common.collect.Multimap<String, com.mojang.authlib.properties.Property> map =
+                com.google.common.collect.HashMultimap.create();
+        map.putAll(source.properties());
+        return new GameProfile(id, name,
+                new com.mojang.authlib.properties.PropertyMap(map));
         //#else
-        //$$ for (var prop : from.getProperties().entries()) {
-        //$$     to.getProperties().put(prop.getKey(), prop.getValue());
-        //$$ }
+        //$$ GameProfile profile = new GameProfile(id, name);
+        //$$ profile.getProperties().putAll(source.getProperties());
+        //$$ return profile;
+        //#endif
+    }
+
+    /** textures 属性值/签名；无则 null（快照持久化皮肤用） */
+    public static String[] profileTexture(GameProfile profile) {
+        if (profile == null) {
+            return null;
+        }
+        //#if MC >= 12110
+        var props = profile.properties().get("textures");
+        //#else
+        //$$ var props = profile.getProperties().get("textures");
+        //#endif
+        if (props == null || props.isEmpty()) {
+            return null;
+        }
+        var prop = props.iterator().next();
+        return new String[]{prop.value(), prop.signature()};
+    }
+
+    /** 用快照中的 textures 重建 profile（重启后首个成员皮肤） */
+    public static GameProfile profileWithTexture(java.util.UUID id, String name,
+                                                 String value, String signature) {
+        if (value == null) {
+            return newProfile(id, name);
+        }
+        //#if MC >= 12110
+        com.google.common.collect.Multimap<String, com.mojang.authlib.properties.Property> map =
+                com.google.common.collect.HashMultimap.create();
+        map.put("textures", new com.mojang.authlib.properties.Property("textures", value, signature));
+        return new GameProfile(id, name,
+                new com.mojang.authlib.properties.PropertyMap(map));
+        //#else
+        //$$ GameProfile profile = new GameProfile(id, name);
+        //$$ profile.getProperties().put("textures",
+        //$$         new com.mojang.authlib.properties.Property("textures", value, signature));
+        //$$ return profile;
         //#endif
     }
 

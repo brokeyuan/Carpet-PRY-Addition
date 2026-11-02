@@ -33,10 +33,29 @@ public abstract class ServerLevelAddPlayerMixin {
     private net.minecraft.world.entity.Entity pry$noDiscardExistingClone(
             ServerLevel instance, UUID uuid
     ) {
-        boolean guard = CarpetPrimaryuanSettings.fakePlayerClones && CloneAllowlist.isAllowed(uuid);
-        if (guard) {
+        if (CloneAllowlist.isAllowed(uuid)) {
             return null;
         }
         return instance.getEntity(uuid);
+    }
+
+    /** 1.21~1.21.4：addPlayer 通过 getEntities().get(UUID) 查重 */
+    @Redirect(
+            method = "addPlayer",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/world/level/entity/LevelEntityGetter;get(Ljava/util/UUID;)Lnet/minecraft/world/level/entity/EntityAccess;",
+                    remap = true
+            ),
+            require = 0
+    )
+    private net.minecraft.world.level.entity.EntityAccess pry$noDiscardExistingCloneOld(
+            net.minecraft.world.level.entity.LevelEntityGetter<net.minecraft.world.level.entity.EntityAccess> getter,
+            UUID uuid
+    ) {
+        if (CloneAllowlist.isAllowed(uuid)) {
+            return null;
+        }
+        return getter.get(uuid);
     }
 }

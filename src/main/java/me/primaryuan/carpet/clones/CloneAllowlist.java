@@ -47,4 +47,9 @@ public final class CloneAllowlist {
     public static int size() {
         return ALLOWED.size();
     }
+
+    /** 停服/换世界清理 */
+    public static void clear() {
+        ALLOWED.clear();
+    }
 }

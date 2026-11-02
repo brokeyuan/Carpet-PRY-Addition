@@ -135,7 +135,8 @@ public class CarpetPrimaryuanSettings {
     // 同 UUID 假人分身：多个真正的 Carpet 假人共享同一 UUID/GameProfile，
     // 独立位置/EntityId/连接，整组共享背包（M1 原型期仅放行双实例共存验证）
     @Rule(
-            categories = {PRIMARYUAN, BOT}
+            categories = {PRIMARYUAN, BOT},
+            validators = {me.primaryuan.carpet.clones.FakePlayerClonesValidator.class}
     )
     public static boolean fakePlayerClones = false;
 

@@ -104,6 +104,7 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         TptoCommand.register();
         // 同 UUID 假人分身
         FakeCloneCommand.register();
+        me.primaryuan.carpet.clones.CloneSnapshotManager.init();
 
         // 和平的玩家（pvp）：加载持久化状态、注册 PVP 伤害拦截与玩家加入登记
         PvpManager.init();
@@ -221,6 +222,12 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         PvpManager.onServerClosed();
         PatPatPlayersHandler.onServerClosed();
         ServerRuleOverrides.onServerClosed();
+        // 分身注册表/显示 UUID/退出上下文/允许名单全部随本次服务端会话结束
+        me.primaryuan.carpet.clones.CloneDisplayIds.clear();
+        me.primaryuan.carpet.clones.CloneInstanceRegistry.clear();
+        me.primaryuan.carpet.clones.CloneGroupRegistry.clear();
+        me.primaryuan.carpet.clones.CloneAllowlist.clear();
+        me.primaryuan.carpet.clones.CloneInjectProbe.clear();
     }
 
     /** 语言翻译缓存：canHasTranslations 会被反复调用，按语言缓存解析结果 */

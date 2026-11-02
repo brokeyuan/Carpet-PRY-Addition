@@ -88,7 +88,7 @@
 - `fakePlayerDropAll`：`/player dropall` 按设定节奏持续丢出假人背包物品
 - `fakePlayerSendto`：`/player sendto` 建立假人间单向背包物品流
 - `fakePlayerBrain`：`/player <name> brain` 为假人注入 19 种原版生物式 AI（僵尸/骷髅/猪灵/狼/末影人…），纯服务端、零额外实体；支持中文名、`keep` 在本次服务器运行内重上保持与名牌后缀着色
-- `fakePlayerClones`：同 UUID 假人分身——多个真正的 Carpet 假人共享同一身份与皮肤同时在线，独立位置/Entity ID、整组共享背包、真实区块加载；spawn 增量 / kill 全组退出 / rejoin 跨重启恢复，真人登录保护
+- `fakePlayerClones`：同 UUID 假人分身——多个真正的 Carpet 假人共享同一身份与皮肤同时在线，独立位置/Entity ID、整组槽位级共享背包（原地消耗不复制）、真实区块加载；spawn 增量 / kill 全组退出 / rejoin 跨重启恢复，真人登录保护
 
 ### 玩家缩放
 

@@ -81,7 +81,7 @@ Adds a `/player <name> sendto <target>` sub-command creating a one-way item flow
 
 ### Fake Player Clones (`fakePlayerClones`)
 
-Lets multiple real Carpet fake players share one UUID and skin online simultaneously. Each clone keeps its own entity ID, position and dimension; the group shares one authoritative inventory (same-tick edits never duplicate); clones genuinely load chunks and count for mob spawning. `/player <name> spawn` adds a clone per invocation, `/fakeclone kill|rejoin <name>` exits/restores the whole group, snapshots survive restarts, and same-UUID real players are protected.
+Lets multiple real Carpet fake players share one UUID and skin online simultaneously. Each clone keeps its own entity ID, position and dimension; the group shares one slot-level authoritative inventory (in-place consumption and same-tick edits never duplicate); clones genuinely load chunks and count for mob spawning. `/player <name> spawn` adds a clone per invocation, `/fakeclone kill|rejoin <name>` exits/restores the whole group, snapshots survive restarts, and same-UUID real players are protected.
 
 ### Fake Player Brain (`fakePlayerBrain`)
 

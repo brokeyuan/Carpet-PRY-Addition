@@ -1,6 +1,5 @@
 package me.primaryuan.carpet.mixins.rule.fakePlayerClones;
 
-import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import me.primaryuan.carpet.clones.CloneIdentity;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerList;
@@ -10,13 +9,11 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * 同 UUID 分身注入点四：PlayerList.save(ServerPlayer) 每个实例退出/自动保存
- * 都写同一 playerdata/<uuid>.dat，后写覆盖。
+ * 同 UUID 分身组只由主实例写 playerdata。
  *
- * <p>M1 原型策略：分身组的非主实例（playersByUUID 里登记的不是当前玩家）
- * cancel 保存，只有主实例写盘。这样组内背包数据以主实例为准落到原版
- * playerdata，M4 再换成组级统一保存（独立文件 + 快照）。真人无分身时
- * 主实例就是自己，路径零改动。</p>
+ * <p>判定不依赖 fakePlayerClones 当前值：组仍在时规则被外部配置关闭，
+ * 也不能让多实例同时写同一 UUID 存档。整组退出前已显式保存一次，
+ * 退出过程中的逐实例 save 全部跳过。</p>
  */
 @Mixin(PlayerList.class)
 public abstract class PlayerListSaveMixin {
@@ -28,10 +25,8 @@ public abstract class PlayerListSaveMixin {
             require = 0
     )
     private void pry$skipNonPrimaryCloneSave(ServerPlayer player, CallbackInfo ci) {
-        if (!CarpetPrimaryuanSettings.fakePlayerClones) {
-            return;
-        }
-        if (CloneIdentity.isNonPrimaryClone(player)) {
+        me.primaryuan.carpet.clones.CloneInjectProbe.hit("playerList.save");
+        if (CloneIdentity.shouldSkipSave(player)) {
             ci.cancel();
         }
     }

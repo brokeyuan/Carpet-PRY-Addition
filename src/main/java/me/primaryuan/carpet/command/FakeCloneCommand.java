@@ -42,7 +42,7 @@ public final class FakeCloneCommand {
     }
 
     static LiteralArgumentBuilder<CommandSourceStack> build() {
-        return Commands.literal("fakeclone")
+        var root = Commands.literal("fakeclone")
                 .requires(s -> me.primaryuan.carpet.clones.CloneVersionAdapter.isGameMaster(s)
                         && CarpetPrimaryuanSettings.fakePlayerClones)
                 .then(Commands.literal("list").executes(FakeCloneCommand::list))
@@ -54,7 +54,9 @@ public final class FakeCloneCommand {
                                 .executes(FakeCloneCommand::spawn)))
                 .then(Commands.literal("kill")
                         .then(Commands.argument("name", StringArgumentType.word())
-                                .executes(FakeCloneCommand::kill)))
+                                .executes(FakeCloneCommand::kill)
+                                .then(Commands.argument("cloneId", IntegerArgumentType.integer(1))
+                                        .executes(FakeCloneCommand::killOne))))
                 .then(Commands.literal("rejoin")
                         .then(Commands.argument("name", StringArgumentType.word())
                                 .executes(FakeCloneCommand::rejoin)))
@@ -77,6 +79,7 @@ public final class FakeCloneCommand {
                                                         StringArgumentType.getString(ctx, "action"),
                                                         StringArgumentType.getString(ctx, "name"),
                                                         IntegerArgumentType.getInteger(ctx, "cloneId")))))));
+        return root;
     }
 
     private static int list(CommandContext<CommandSourceStack> ctx) {
@@ -124,9 +127,29 @@ public final class FakeCloneCommand {
         String name = StringArgumentType.getString(ctx, "name");
         ServerLevel level = source.getLevel();
         var pos = source.getPosition();
+        if (CloneGroupRegistry.byName(name) == null) {
+            java.util.UUID uuid = CloneSpawnManager.resolveUuid(source.getServer(), name);
+            if (CloneGroupRegistry.isOnlineRealPlayer(source.getServer(), uuid)) {
+                source.sendFailure(Component.literal("[clones] spawn " + name + " failed: real player online"));
+                return 0;
+            }
+            CloneGroupRegistry.getOrCreate(uuid, name);
+            me.primaryuan.carpet.clones.CloneAllowlist.allow(uuid, name);
+            // 首建组交给 Carpet：异步解析完整 profile（含皮肤属性）
+            boolean queued = carpet.patches.EntityPlayerMPFake.createFake(name, source.getServer(),
+                    pos, 0.0, 0.0, level.dimension(), net.minecraft.world.level.GameType.SURVIVAL, false);
+            if (queued) {
+                source.sendSuccess(() -> Component.literal("[clones] spawning first clone of " + name
+                        + " (profile resolving)"), false);
+                return 1;
+            }
+            source.sendFailure(Component.literal("[clones] spawn " + name + " failed"));
+            return 0;
+        }
         ServerPlayer created = CloneSpawnManager.spawnClone(source.getServer(), name, level, pos, 0f, 0f);
         if (created == null) {
-            source.sendFailure(Component.literal("[clones] spawn " + name + " failed (real player online or internal error)"));
+            source.sendFailure(Component.literal("[clones] spawn " + name
+                    + " failed (real player online, exiting, or internal error)"));
             return 0;
         }
         int cid = CloneInstanceRegistry.cloneIdOf(created);
@@ -144,7 +167,36 @@ public final class FakeCloneCommand {
             return 0;
         }
         int n = CloneSpawnManager.killGroup(source.getServer(), g);
+        if (n < 0) {
+            source.sendFailure(Component.literal("[clones] kill " + name
+                    + " failed: state=" + g.state() + " (snapshot/playerdata save failed or already exiting)"));
+            return 0;
+        }
         source.sendSuccess(() -> Component.literal("[clones] killed " + n + " member(s) of " + name), false);
+        return 1;
+    }
+
+    /** 指定单个分身正常退出（组与共享库存继续存在） */
+    private static int killOne(CommandContext<CommandSourceStack> ctx) {
+        CommandSourceStack source = ctx.getSource();
+        String name = StringArgumentType.getString(ctx, "name");
+        int cloneId = IntegerArgumentType.getInteger(ctx, "cloneId");
+        CloneGroup g = CloneGroupRegistry.byName(name);
+        if (g == null) {
+            source.sendFailure(Component.literal("[clones] unknown group " + name));
+            return 0;
+        }
+        ServerPlayer target = g.instance(cloneId);
+        if (target == null) {
+            source.sendFailure(Component.literal("[clones] " + name + "#" + cloneId + " not online"));
+            return 0;
+        }
+        if (CloneSpawnManager.exitMember(source.getServer(), g, target) < 0) {
+            source.sendFailure(Component.literal("[clones] cannot exit " + name + "#" + cloneId
+                    + " (group exiting or member gone)"));
+            return 0;
+        }
+        source.sendSuccess(() -> Component.literal("[clones] requested exit for " + name + "#" + cloneId), false);
         return 1;
     }
 
@@ -171,7 +223,7 @@ public final class FakeCloneCommand {
         m.put("unsneak", p -> { api.pack(p).setSneaking(false); return p; });
         for (int i = 0; i < 9; i++) {
             final int idx = i;
-            m.put("slot" + (i + 1), p -> { api.pack(p).setSlot(idx); return p; });
+            m.put("slot" + (i + 1), p -> { api.pack(p).setSlot(idx + 1); return p; });
         }
         return java.util.Collections.unmodifiableMap(m);
     }
@@ -261,7 +313,7 @@ public final class FakeCloneCommand {
         }
         int n = CloneSnapshotManager.rejoin(source.getServer(), snap);
         if (n < 0) {
-            source.sendFailure(Component.literal("[clones] rejoin " + name + " blocked: real player online"));
+            source.sendFailure(Component.literal("[clones] rejoin " + name + " blocked: " + reason(n)));
             return 0;
         }
         final int restored = n;
@@ -269,6 +321,16 @@ public final class FakeCloneCommand {
         source.sendSuccess(() -> Component.literal("[clones] rejoined " + name
                 + " (" + restored + "/" + total + ")"), false);
         return restored > 0 ? 1 : 0;
+    }
+
+    private static String reason(int code) {
+        return switch (code) {
+            case -1 -> "real player online";
+            case -2 -> "group online or exiting";
+            case -3 -> "member creation failed (this attempt rolled back)";
+            case -4 -> "invalid snapshot data or missing dimension";
+            default -> "error " + code;
+        };
     }
 
     private static int select(CommandContext<CommandSourceStack> ctx) {

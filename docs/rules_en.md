@@ -212,10 +212,11 @@ While a brain is attached, Carpet manual movement, attack and use actions are pa
 Allows multiple real Carpet fake players to share one UUID and skin online at the same time: each clone has its own entity ID, position and dimension, can move, attack and use items independently, the whole group shares one authoritative inventory (same-tick edits never duplicate items), and clones genuinely participate in chunk loading and mob spawning.
 
 - **Spawn**: `/player <name> spawn` adds one clone per invocation (first one creates the group); `/fakeclone spawn <name>` is equivalent.
-- **Exit**: `/fakeclone kill <name>` or `/player <name> kill` removes the whole group gracefully (no death, no drops) and saves a group snapshot.
-- **Restore**: `/fakeclone rejoin <name>` restores the previous member count, dimensions, positions and inventory; works after a server restart.
+- **Inventory**: the group shares one slot store; reads, in-place consumption (`shrink`/durability/component writes), slot replacement and container operations all hit the same item state, while each body keeps its own selected slot and action state. `give`/`clear`/`item`/`enchant`/`loot` apply once per account.
+- **Exit**: `/fakeclone kill <name>` (whole group) and `/player <name> kill` share one exit transaction; `/fakeclone kill <name> <cloneId>` exits one member and keeps the group: save the group snapshot and one authoritative playerdata first, then request a graceful exit (no death, no drops); members are unregistered only after the real disconnect.
+- **Restore**: `/fakeclone rejoin <name>` validates the snapshot and every dimension before restoring count, positions and inventory; online/exiting groups are rejected and a failure rolls back only the members created by that attempt. `cloneId` and display UUIDs stay stable across restarts.
 - **Manage**: `/fakeclone list|status|select` inspect and address a single clone (`#cloneId`).
-- **Protection**: cloning is blocked while a real player with the same UUID is online; group creation and commands require operator level 2+. With the rule off, vanilla Carpet fake players behave unchanged.
+- **Protection**: cloning is blocked while a real player with the same UUID is online; turning the rule off is refused while members are online or exiting; group creation and commands require operator level 2+. With the rule off, vanilla Carpet fake players behave unchanged.
 
 | Attribute | Value |
 |------|-----|

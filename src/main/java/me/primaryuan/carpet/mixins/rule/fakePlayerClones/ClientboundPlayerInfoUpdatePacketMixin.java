@@ -35,14 +35,15 @@ public abstract class ClientboundPlayerInfoUpdatePacketMixin {
 
     /** 分身实例 → 显示 UUID 的 Entry（字段集按版本：1.21 无 showHat/listOrder） */
     private static Entry pry$entryOf(ServerPlayer player) {
+        me.primaryuan.carpet.clones.CloneInjectProbe.hit("playerInfoUpdate");
         UUID display = CloneDisplayIds.displayOf(player);
         GameProfile old = player.getGameProfile();
         GameProfile profile;
         if (display == null || display.equals(player.getUUID())) {
             profile = old;
         } else {
-            profile = new GameProfile(display, CloneVersionAdapter.profileName(old));
-            CloneVersionAdapter.copyProperties(old, profile);
+            profile = CloneVersionAdapter.copyProfile(old, display,
+                    CloneVersionAdapter.profileName(old));
         }
         var chatSession = Optionull.map(player.getChatSession(),
                 net.minecraft.network.chat.RemoteChatSession::asData);
@@ -80,7 +81,7 @@ public abstract class ClientboundPlayerInfoUpdatePacketMixin {
                     target = "(Lnet/minecraft/server/level/ServerPlayer;)Lnet/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket$Entry;",
                     remap = true
             ),
-            require = 0
+            require = 1
     )
     private Entry pry$redirectSingleEntry(ServerPlayer player) {
         return pry$entryOf(player);
@@ -93,7 +94,7 @@ public abstract class ClientboundPlayerInfoUpdatePacketMixin {
                     target = "Ljava/util/stream/Stream;map(Ljava/util/function/Function;)Ljava/util/stream/Stream;",
                     remap = true
             ),
-            require = 0
+            require = 1
     )
     private <R> java.util.stream.Stream<R> pry$redirectMap(java.util.stream.Stream<ServerPlayer> stream,
                                                            java.util.function.Function<? super ServerPlayer, ? extends R> mapper) {

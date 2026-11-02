@@ -50,7 +50,12 @@ public abstract class PlayerCommandRejoinMixin {
                                             int n = CloneSnapshotManager.rejoin(ctx.getSource().getServer(), snap);
                                             if (n < 0) {
                                                 ctx.getSource().sendFailure(Component.literal(
-                                                        "[clones] rejoin " + name + " blocked: real player online"));
+                                                        "[clones] rejoin " + name + " blocked: " + switch (n) {
+                                                            case -1 -> "real player online";
+                                                            case -2 -> "group online or exiting";
+                                                            case -3 -> "member creation failed (rolled back)";
+                                                            default -> "invalid snapshot or missing dimension";
+                                                        }));
                                                 return 0;
                                             }
                                             final int restored = n;
