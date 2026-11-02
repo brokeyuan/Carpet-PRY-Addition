@@ -105,7 +105,7 @@
 - `peacefulPlayers`：`/pvp` 按玩家开关 PVP，`@a` 为全服总开关
 - `patPatPlayers`：右键真人玩家头部产生爱心、轻响与短暂蹲起（`true` 随手摸，`sneak` 潜行摸）；`/patnod off` 可拒绝被摸
 - `whoCalledMe`：聊天点名时用提示音与标题提醒，自己提到自己也生效；`mention` 仅匹配 @名字。`whoCalledMeSound` 与 `whoCalledMeHighlight` 控制音效和颜色
-- `chatPunishment`：`/chatpunish` 聊天惩罚——禁言/胶带/猫娘/呆子/屏蔽词/村民/结巴/反转八种模式（每玩家一种，支持限时），按 UUID 与真实时间持久化，不影响命令与私聊
+- `chatPunishment`：`/chatpunish` 聊天惩罚——禁言/胶带/猫娘/呆子/屏蔽词/村民/结巴/反转八种模式（每玩家一种，支持限时），按 UUID 与真实时间持久化，只改写公共聊天显示，不影响命令与私聊
 - `clickThrough`：右键墙告示牌/挂墙木牌/展示框/画等直接打开背后贴挂的容器（潜行保持原版交互）
 
 ### 生存功能

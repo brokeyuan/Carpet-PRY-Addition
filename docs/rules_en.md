@@ -463,7 +463,7 @@ Admins can punish a player's public chat via /chatpunish; each player can only h
 | Property | Value |
 |----------|-------|
 | **Rule Name** | `chatPunishment` |
-| **Description** | Admins can punish players' public chat via /chatpunish (mute/tape/cat/idiot/censor/villager/stutter/reverse, one per player), with optional duration. Commands and private messages are unaffected. |
+| **Description** | Admins can punish players' public chat via /chatpunish (mute/tape/cat/idiot/censor/villager/stutter/reverse, one per player), with optional duration. Only the default display is rewritten; commands and private messages are unaffected. |
 | **Type** | `boolean` |
 | **Default Value** | `false` |
 | **Suggested Options** | `false`, `true` |
@@ -484,7 +484,7 @@ The eight modes, using `今晚去挖矿，谁一起？` as the example:
 
 Commands are admin-only (permission level 4): `/chatpunish set <player> <mode> [duration]` sets or replaces a punishment; the duration is `number+s/m/h/d` (e.g. `10m`, `1h`, `1d`), permanent when omitted, and lifts automatically on expiry. `/chatpunish clear <player>` removes one, `/chatpunish list` lists active punishments. Player names resolve through the vanilla profile mechanism (same as /ban): online completion, offline lookup via the profile cache, recorded by UUID with no guessed profiles.
 
-Punishments run on real time (no tick or playtime dependency) and survive restarts and relogs; records are stored in `<world>/carpet-pry-addition/chatpunish.json`. With the rule off, chat stays untouched and records are kept; unexpired punishments resume when the rule is re-enabled. Rewriting goes through the vanilla ChatDecorator extension point and is broadcast as unsigned content alongside the signed message, leaving signature validation intact. Only public chat is affected — commands, private messages and system messages are untouched. With whoCalledMe enabled, name highlighting applies to the rewritten text.
+Punishments run on real time (no tick or playtime dependency) and survive restarts and relogs; records are stored in `<world>/carpet-pry-addition/chatpunish.json`. With the rule off, chat stays untouched and records are kept; unexpired punishments resume when the rule is re-enabled. Rewriting goes through the vanilla ChatDecorator extension point and is broadcast as unsigned content alongside the signed message, leaving signature validation intact. Only the default display is replaced; the signed original remains and may be shown by secure-chat settings or the modified marker, so this is not content filtering. Only public chat is affected — commands, private messages and system messages are untouched. With whoCalledMe enabled, both name highlighting and notifications use the rewritten text.
 
 ## Survival Features
 

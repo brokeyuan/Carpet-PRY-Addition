@@ -66,18 +66,26 @@ public final class ChatPunishmentCommand {
     // ==================== 动作 ====================
 
     private static int applyWithDuration(CommandContext<CommandSourceStack> ctx, PunishmentMode mode) throws CommandSyntaxException {
-        Long millis = ChatPunishmentManager.parseDuration(StringArgumentType.getString(ctx, "duration"));
+        String spec = StringArgumentType.getString(ctx, "duration");
+        Long millis = ChatPunishmentManager.parseDuration(spec);
         if (millis == null) {
-            ctx.getSource().sendFailure(ServerI18n.tr("carpetprimaryuan.chatpunish.bad_duration",
-                    StringArgumentType.getString(ctx, "duration")));
+            ctx.getSource().sendFailure(ServerI18n.tr("carpetprimaryuan.chatpunish.bad_duration", spec));
             return 0;
         }
-        return apply(ctx, mode, System.currentTimeMillis() + millis);
+        long expireAt;
+        try {
+            expireAt = ChatPunishmentManager.expiryFrom(System.currentTimeMillis(), millis);
+        } catch (ArithmeticException e) {
+            ctx.getSource().sendFailure(ServerI18n.tr("carpetprimaryuan.chatpunish.bad_duration", spec));
+            return 0;
+        }
+        return apply(ctx, mode, expireAt);
     }
 
     private static int apply(CommandContext<CommandSourceStack> ctx, PunishmentMode mode, long expireAt) throws CommandSyntaxException {
         long now = System.currentTimeMillis();
         int count = 0;
+        boolean failed = false;
         //#if MC < 12110
         //$$ for (com.mojang.authlib.GameProfile profile : GameProfileArgument.getGameProfiles(ctx, "player")) {
         //$$     UUID id = profile.getId();
@@ -87,7 +95,13 @@ public final class ChatPunishmentCommand {
             UUID id = profile.id();
             String name = profile.name();
 //#endif
-            ChatPunishmentManager.set(id, name, mode, expireAt);
+            ChatPunishmentManager.Result result = ChatPunishmentManager.set(id, name, mode, expireAt);
+            if (result != ChatPunishmentManager.Result.APPLIED) {
+                String feedbackName = name;
+                ctx.getSource().sendFailure(failureMessage(result, feedbackName));
+                failed = true;
+                continue;
+            }
             String duration = expireAt == 0
                     ? ServerI18n.tr("carpetprimaryuan.chatpunish.duration_permanent").getString()
                     : ServerI18n.tr("carpetprimaryuan.chatpunish.duration_timed",
@@ -97,11 +111,12 @@ public final class ChatPunishmentCommand {
                     feedbackName, mode.id(), duration), false);
             count++;
         }
-        return count;
+        return failed ? 0 : count;
     }
 
     private static int clear(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         int cleared = 0;
+        boolean failed = false;
         //#if MC < 12110
         //$$ for (com.mojang.authlib.GameProfile profile : GameProfileArgument.getGameProfiles(ctx, "player")) {
         //$$     UUID id = profile.getId();
@@ -111,16 +126,27 @@ public final class ChatPunishmentCommand {
             UUID id = profile.id();
             String name = profile.name();
 //#endif
-            if (ChatPunishmentManager.clear(id)) {
-                String feedbackName = name;
+            ChatPunishmentManager.Result result = ChatPunishmentManager.clear(id);
+            String feedbackName = name;
+            if (result == ChatPunishmentManager.Result.APPLIED) {
                 ctx.getSource().sendSuccess(() -> ServerI18n.tr("carpetprimaryuan.chatpunish.cleared", feedbackName), false);
                 cleared++;
-            } else {
-                String feedbackName = name;
+            } else if (result == ChatPunishmentManager.Result.NOT_FOUND) {
                 ctx.getSource().sendFailure(ServerI18n.tr("carpetprimaryuan.chatpunish.not_found", feedbackName));
+            } else {
+                ctx.getSource().sendFailure(failureMessage(result, feedbackName));
+                failed = true;
             }
         }
-        return cleared;
+        return failed ? 0 : cleared;
+    }
+
+    private static Component failureMessage(ChatPunishmentManager.Result result, String name) {
+        return switch (result) {
+            case READ_ONLY -> ServerI18n.tr("carpetprimaryuan.chatpunish.read_only");
+            case IO_ERROR -> ServerI18n.tr("carpetprimaryuan.chatpunish.save_failed", name);
+            default -> ServerI18n.tr("carpetprimaryuan.chatpunish.save_failed", name);
+        };
     }
 
     private static int list(CommandContext<CommandSourceStack> ctx) {

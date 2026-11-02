@@ -3,11 +3,11 @@ package me.primaryuan.carpet.handler.whoCalledMe;
 import carpet.patches.EntityPlayerMPFake;
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import me.primaryuan.carpet.util.ServerTickScheduler;
-import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.message.v1.ServerMessageDecoratorEvent;
+import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
 import net.minecraft.core.Holder;
 import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.ChatDecorator;
 import net.minecraft.network.chat.ChatType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -26,7 +26,7 @@ import java.util.List;
 
 /**
  * 谁在叫我（whoCalledMe）：聊天消息中出现其他玩家的名字时，给被点名的玩家
- * 弹出 title 显示消息原文，并连响三声提示音（叮 叮 叮）。
+ * 弹出 title 显示聊天框实际显示文本，并连响三声提示音（叮 叮 叮）。
  *
  * <p>纯服务端实现，零 Mixin：挂在 Fabric ServerMessageEvents.CHAT_MESSAGE——
  * 注入点在 PlayerManager.broadcast(SignedMessage, …) 的 HEAD，签名与非签名
@@ -38,7 +38,7 @@ import java.util.List;
  * <p>提示音为 ClientboundSoundPacket 定向单发（发声点在被听者头顶，仅本人
  * 可闻），首声当 tick 末尾、其余按间隔经 ServerTickScheduler 排出；title
  * 先发动画参数（0.25s 淡入 / 3s 停留 / 0.5s 淡出）再发标题，标题文本即
- * 聊天框打出的原文——原版 title 单行不换行，超宽按显示宽度截断（保名优先）。</p>
+ * 聊天框实际显示文本——原版 title 单行不换行，超宽按显示宽度截断（保名优先）。</p>
  */
 public class WhoCalledMeHandler {
 
@@ -70,6 +70,11 @@ public class WhoCalledMeHandler {
         }
         registered = true;
         ServerMessageEvents.CHAT_MESSAGE.register(WhoCalledMeHandler::onChatMessage);
+        // 接入 Fabric 装饰事件而不是接管 MinecraftServer.getChatDecorator：
+        // 后者会跳过 Fabric 自己的 RETURN 注入，旁路其他模组的装饰器。
+        // 样式阶段晚于内容阶段，看到的是 chatPunishment 等改写后的文本。
+        ServerMessageDecoratorEvent.EVENT.register(ServerMessageDecoratorEvent.STYLING_PHASE,
+                WhoCalledMeHandler::decorateChat);
         // 聊天装饰需要服务器实例（在线玩家名集合）；停服置空防悬挂引用
         ServerLifecycleEvents.SERVER_STARTED.register(server -> decoratedServer = server);
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> decoratedServer = null);
@@ -81,13 +86,12 @@ public class WhoCalledMeHandler {
             return;
         }
         boolean mentionMode = "mention".equals(mode);
-        String content = message.signedContent();
+        // 优先看装饰后的显示文本：chatPunishment 等改写只写 unsignedContent，
+        // signedContent 仍是原文；按原文提醒会出现“已被替换掉的名字仍提醒”。
+        Component unsigned = message.unsignedContent();
+        String content = unsigned != null ? unsigned.getString() : message.signedContent();
         if (content == null || content.isBlank()) {
-            Component unsigned = message.unsignedContent();
-            if (unsigned == null) {
-                return;
-            }
-            content = unsigned.getString();
+            return;
         }
         MinecraftServer server = sender.level().getServer();
         // 全体在线真人名（保持原文大小写；匹配在 allHits 内做大小写不敏感，
@@ -188,13 +192,7 @@ public class WhoCalledMeHandler {
 
     // ==================== 聊天名字高亮（ChatDecorator） ====================
 
-    private static final ChatDecorator MENTION_DECORATOR = WhoCalledMeHandler::decorateChat;
     private static MinecraftServer decoratedServer;
-
-    /** MinecraftServerMixin 调用：返回接管后的聊天装饰器（始终接管，规则开关在装饰器内部判定） */
-    public static ChatDecorator wrapChatDecorator(ChatDecorator original) {
-        return MENTION_DECORATOR;
-    }
 
     /**
      * 聊天装饰：消息文本中出现的在线玩家名渲染为高亮色（规则可选，默认水蓝，

@@ -104,7 +104,7 @@ All rules are off by default except the client-side rule `ridingPlayersClientInt
 - `peacefulPlayers`: per-player `/pvp` toggles, `@a` as a server-wide switch
 - `patPatPlayers`: right-click another real player’s head for hearts, sound and a brief crouch (`true` freely, `sneak` while sneaking); opt out with `/patnod off`
 - `whoCalledMe`: notify named players by sound and title, including self-mentions; `mention` limits matching to @names. `whoCalledMeSound` and `whoCalledMeHighlight` control sound and color
-- `chatPunishment`: `/chatpunish` chat punishment — eight modes (mute/tape/cat/idiot/censor/villager/stutter/reverse, one per player, optional duration), persisted by UUID on real time; commands and private messages unaffected
+- `chatPunishment`: `/chatpunish` chat punishment — eight modes (mute/tape/cat/idiot/censor/villager/stutter/reverse, one per player, optional duration), persisted by UUID on real time; only the public chat display is rewritten, commands and private messages unaffected
 - `clickThrough`: right-click wall signs/item frames/paintings to open containers mounted directly behind them (sneak keeps vanilla interaction)
 
 ### Survival Features

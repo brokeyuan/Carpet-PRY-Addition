@@ -128,7 +128,7 @@ Naming a player in chat triggers three sounds and a title; self-mentions also wo
 
 ### Chat Punishment (`chatPunishment`)
 
-Admins can punish a player's public chat via `/chatpunish`, one mode per player with an optional duration (permanent by default): `mute` (cancels the broadcast, sender gets a notice), `tape` / `idiot` / `censor` / `villager` (fixed replacement texts), `cat` (appends `喵~`), `stutter` (deterministic syllable repeats) and `reverse` (grapheme-cluster reversal that keeps emoji intact). Punishments resolve players through the vanilla profile mechanism (same as /ban), are recorded by UUID in the world save and run on real time, so they survive restarts and relogs and lift automatically on expiry. Commands, private messages and system messages are unaffected; the rewrite goes through the vanilla ChatDecorator extension point, leaving chat signatures intact.
+Admins can punish a player's public chat via `/chatpunish`, one mode per player with an optional duration (permanent by default): `mute` (cancels the broadcast, sender gets a notice), `tape` / `idiot` / `censor` / `villager` (fixed replacement texts), `cat` (appends `喵~`), `stutter` (deterministic syllable repeats) and `reverse` (grapheme-cluster reversal that keeps emoji intact). Punishments resolve players through the vanilla profile mechanism (same as /ban), are recorded by UUID in the world save and run on real time, so they survive restarts and relogs and lift automatically on expiry. Commands, private messages and system messages are unaffected; the rewrite goes through the vanilla ChatDecorator extension point and replaces the default display only, leaving chat signatures and the signed original intact.
 
 ### MiSide Subtitles (`textAnimation`)
 

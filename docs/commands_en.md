@@ -949,7 +949,7 @@ Hand edits must obey: `servers` must exist and be an object; `host` a string and
 
 ### Description
 
-Applies a punishment to a player's public chat; each player can only have one punishment at a time, and another `set` replaces it. The effects and examples of the eight modes are in the [rule documentation](rules_en.md#chatpunishment---chat-punishment). Under `mute` the message is no longer broadcast and the sender sees "You have been muted"; every other mode broadcasts the rewritten text to everyone and the original never appears.
+Applies a punishment to a player's public chat; each player can only have one punishment at a time, and another `set` replaces it. The effects and examples of the eight modes are in the [rule documentation](rules_en.md#chatpunishment---chat-punishment). Under `mute` the message is no longer broadcast and the sender sees "You have been muted"; every other mode replaces the default chat display with the rewritten text. The signed original is still carried with the message and may be visible through the client's secure-chat setting or the modified marker; this rule does not promise content hiding or filtering.
 
 Player names resolve through the vanilla profile mechanism (same as /ban): online names tab-complete, offline players resolve by UUID through the profile cache, and unknown players get the vanilla error — no guessed profiles. Punishments are stored by UUID in `<world>/carpet-pry-addition/chatpunish.json` and survive restarts and relogs; expiry is evaluated lazily on read and cleaned up when saving.
 

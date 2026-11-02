@@ -118,7 +118,7 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         // 谁在叫我：注册聊天监听（聊天中出现其他玩家名字时提示音+title 点名）
         WhoCalledMeHandler.init();
 
-        // 聊天惩罚：注册禁言广播拦截（文本改写经聊天装饰器组合链，无独立注入）
+        // 聊天惩罚：注册禁言广播拦截；文本改写走公共聊天回调 Mixin
         ChatPunishmentManager.init();
 
         // 米塔字幕：孤儿实体清扫（启动）与停服清理
