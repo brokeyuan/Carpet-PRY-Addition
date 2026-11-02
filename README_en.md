@@ -87,6 +87,7 @@ All rules are off by default except the client-side rule `ridingPlayersClientInt
 - `fakePlayerDropAll`: paced `/player dropall` dropping of the fake player's inventory
 - `fakePlayerSendto`: `/player sendto` one-way inventory item flow between fake players
 - `fakePlayerBrain`: `/player <name> brain` injects 19 vanilla-mob-style AI modes into fake players (zombie/skeleton/piglin/wolf/enderman/...), pure server-side with zero extra entities; supports CJK names, `keep` across rejoins within the current server run and colored name suffixes
+- `fakePlayerClones`: same-UUID fake player clones — multiple real Carpet fakes share one identity and skin online at once, with independent positions/entity IDs, a slot-level shared inventory (in-place consumption never duplicates) and genuine chunk loading; incremental spawn / group kill / rejoin across restarts, protected from real-player logins
 
 ### Player Scaling
 

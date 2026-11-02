@@ -14,6 +14,7 @@
 - [假人持续清空背包](#假人持续清空背包)
 - [/player sendto - 假人背包链接](#player-sendto---假人背包链接)
 - [/player brain - 假人脑子](#player-brain---假人脑子)
+- [/fakeclone - 同UUID假人分身](#fakeclone---同uuid假人分身)
 - [玩家随地大小变](#玩家随地大小变)
   - [/scale](#scale---玩家大小调节)
 - [骑乘权限命令](#骑乘权限命令)
@@ -418,6 +419,38 @@
 - 假人死亡、下线或被 `/player <name> kill`
 
 卸载后假人恢复静止木桩状态，无任何残留实体或状态（模块不生成任何额外实体）。
+
+---
+
+## /fakeclone - 同UUID假人分身
+
+`fakePlayerClones` 规则开启时可用（等级 2+）。多个真正的 Carpet 假人共享同一 UUID 与皮肤同时在线，独立位置/Entity ID，整组共享背包，真实参与区块加载。
+
+### 命令语法
+
+```
+/fakeclone list                          列出全部分身组
+/fakeclone status <name>                 单组详情（cloneId/EntityId/位置/维度）
+/fakeclone spawn <name>                  为该身份再生成一个分身（等价 /player <name> spawn）
+/fakeclone kill <name>                   全组正常退出（非死亡、不掉落），并存档组快照
+/fakeclone kill <name> <cloneId>         指定单个分身正常退出，组与共享库存继续运行
+/fakeclone rejoin <name>                 按快照恢复整组数量/维度/位置/背包
+/fakeclone select <name> <cloneId>       定位指定分身（回显 EntityId 与坐标）
+/fakeclone action <action>               对全部分身执行动作（按 cloneId 顺序结算）
+/fakeclone action <action> <name>        对该组全部分身执行动作
+/fakeclone action <action> <name> <id>   对指定分身执行动作
+```
+
+可用动作：`stop` `drop` `dropstack` `swaphands` `jump` `use` `attack` `sneak` `unsneak` `slot1`~`slot9`（复用 Carpet ActionPack；`slotN` 对应快捷栏第 N 格，动作状态与选中槽按分身独立维护，无全局选中态）
+
+### 说明
+
+- `/player <name> spawn` 对已建组的身份每执行一次新增一个分身，不再提示"已在线"；普通假人不受影响。
+- 分身退出前把每成员维度/坐标/朝向/游戏模式写入 `<存档>/playerdata/<name>-clones.json`；共享背包走主实例原版 playerdata（含全部数据组件），重启后 `rejoin` 仍可恢复。
+- 同 UUID 真人在线期间 `spawn`/`rejoin` 被拒绝；仍有在线/退出中成员时 `carpet fakePlayerClones false` 被拒绝，先整组退出。
+- `rejoin` 前校验快照与全部维度；在线/退出中的组拒绝重复恢复，任一成员创建失败只撤销本次新增，不留半组。
+- `give`/`clear`/`item`/`enchant`/`loot` 对同组按账号只执行一次；`tp`/`execute`/`effect` 等身体命令仍按实体逐个执行。
+- `#cloneId` 组内从 1 递增、不回收复用；快照保存编号，重启恢复后 `cloneId` 与显示 UUID 不变。
 
 ---
 

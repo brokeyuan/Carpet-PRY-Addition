@@ -344,5 +344,7 @@
   "carpetprimaryuan.command.tptoset.reload_invalid": "§c設定無效: %s；已保留目前清單並暫停寫入",
   "carpetprimaryuan.command.tptoset.write_protected": "§c寫入已暫停：設定檔存在問題，修復後執行 /tptoset reload 恢復",
   "carpetprimaryuan.command.tptoset.save_failed": "§c寫入失敗，設定未變更",
-  "carpet.category.SERVER": "伺服器"
+  "carpet.category.SERVER": "伺服器",
+  "carpet.rule.fakePlayerClones.name": "同UUID假人分身",
+  "carpet.rule.fakePlayerClones.desc": "允許多個真正的假人共享同一UUID與皮膚同時在線，獨立位置與操作，整組共享背包。"
 }

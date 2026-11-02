@@ -14,6 +14,7 @@
 - [Fake Player Continuous Inventory Drop](#fake-player-continuous-inventory-drop)
 - [/player sendto - Fake Player Inventory Link](#player-sendto---fake-player-inventory-link)
 - [/player brain - Fake Player Brain](#player-brain---fake-player-brain)
+- [/fakeclone - Same-UUID Fake Player Clones](#fakeclone---same-uuid-fake-player-clones)
 - [Player Scale Modifiers](#player-scale-modifiers)
   - [/scale](#scale---player-scale-adjustment)
 - [Riding Permission Commands](#riding-permission-commands)
@@ -418,6 +419,38 @@ Inherits Carpet's `/player` command permission check (controlled by Carpet's `co
 - The fake player dying, logging off, or being killed via `/player <name> kill`
 
 After detaching, the fake player returns to a still "mannequin" state with no leftover entities or state (the module never spawns extra entities).
+
+---
+
+## /fakeclone - Same-UUID Fake Player Clones
+
+Available when the `fakePlayerClones` rule is on (level 2+). Multiple real Carpet fake players share one UUID and skin online at the same time, with independent positions/entity IDs, a shared inventory and genuine chunk loading.
+
+### Syntax
+
+```
+/fakeclone list                          List all clone groups
+/fakeclone status <name>                 Group details (cloneId/EntityId/position/dimension)
+/fakeclone spawn <name>                  Spawn another clone of that identity (same as /player <name> spawn)
+/fakeclone kill <name>                   Remove the whole group gracefully (no death, no drops), saves a snapshot
+/fakeclone kill <name> <cloneId>         Remove one clone gracefully; the group and shared inventory continue
+/fakeclone rejoin <name>                 Restore member count/dimensions/positions/inventory from the snapshot
+/fakeclone select <name> <cloneId>       Address a single clone (echoes EntityId and position)
+/fakeclone action <action>               Run an action on all clones (settled per cloneId order)
+/fakeclone action <action> <name>        Run an action on that group
+/fakeclone action <action> <name> <id>   Run an action on one specific clone
+```
+
+Actions: `stop` `drop` `dropstack` `swaphands` `jump` `use` `attack` `sneak` `unsneak` `slot1`~`slot9` (reuses Carpet ActionPack; `slotN` is hotbar slot N, action state and selected slot stay per clone, no global selection).
+
+### Notes
+
+- `/player <name> spawn` adds one clone per invocation for an existing group instead of reporting "already logged on"; vanilla fakes are unaffected.
+- On exit each member's dimension/position/rotation/game mode is written to `<world>/playerdata/<name>-clones.json`; the shared inventory persists through the primary instance's vanilla playerdata (full data components), so `rejoin` works across restarts.
+- `spawn`/`rejoin` are rejected while a same-UUID real player is online; `carpet fakePlayerClones false` is refused while members are online or exiting — exit the group first.
+- `rejoin` validates the snapshot and all dimensions first; online/exiting groups are rejected and a failed attempt rolls back only its new members.
+- `give`/`clear`/`item`/`enchant`/`loot` run once per account for a clone group; body commands such as `tp`/`execute`/`effect` still run per entity.
+- `#cloneId` increments per group and is never reused; the snapshot stores it, so `cloneId` and display UUIDs survive restarts.
 
 ---
 

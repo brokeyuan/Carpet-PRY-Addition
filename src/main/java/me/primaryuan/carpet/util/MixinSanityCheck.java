@@ -64,6 +64,9 @@ public final class MixinSanityCheck {
 
     /** 规则变更时回调（只需关心本类核验涉及的规则名） */
     public static void onRuleChanged(String ruleName) {
+        if (ruleName.equals("fakePlayerClones")) {
+            checkFakePlayerClones();
+        }
         if (ruleName.equals("playerHat") || ruleName.equals("ridingPlayers")
                 || ruleName.equals("pickupPlayers")
                 || ruleName.equals("ridingPlayersClientInteract") || ruleName.equals("fixXaeroLib")
@@ -78,6 +81,7 @@ public final class MixinSanityCheck {
     }
 
     private static void checkAll() {
+        checkFakePlayerClones();
         checkPlayerHat();
         checkRidingClientInteract();
         checkTowerCrossDimensionCarry();
@@ -265,6 +269,169 @@ public final class MixinSanityCheck {
             LOGGER.warn("[pry] playerScale 规则：Player.createAttributes 缺失，scale 属性兜底注入被跳过"
                     + "（原版自带该属性时不影响功能）");
         }
+    }
+
+    /**
+     * fakePlayerClones：关键站点核验。显示包/库存 tick 等稳定入口已改为
+     * require=1（缺方法直接启动失败）；这里覆盖仍为 require=0 的生命周期入口
+     * 与访问器目标，并避免“同参数形状方法”造成的假阳性。
+     */
+    private static void checkFakePlayerClones() {
+        if (!CarpetPrimaryuanSettings.fakePlayerClones) {
+            return;
+        }
+        // 三处 UUID 拦截点
+        if (!methodExists(net.minecraft.world.level.entity.PersistentEntitySectionManager.class,
+                new Class<?>[]{net.minecraft.world.level.entity.EntityAccess.class}, false)
+                && reported.add("fakePlayerClones:addEntityUuid")) {
+            LOGGER.error("[pry] fakePlayerClones 无效：PersistentEntitySectionManager.addEntityUuid 签名漂移，"
+                    + "同 UUID 分身无法进入世界，请向模组作者反馈");
+        }
+        if (!methodExists(net.minecraft.world.level.entity.EntityLookup.class,
+                new Class<?>[]{net.minecraft.world.level.entity.EntityAccess.class}, false)
+                && reported.add("fakePlayerClones:lookupAdd")) {
+            LOGGER.error("[pry] fakePlayerClones 无效：EntityLookup.add 签名漂移，"
+                    + "第二个分身会被静默拒绝，请向模组作者反馈");
+        }
+        if (!methodExists(net.minecraft.server.level.ServerLevel.class,
+                new Class<?>[]{net.minecraft.world.entity.Entity.class}, false)
+                && reported.add("fakePlayerClones:addEntity")) {
+            LOGGER.warn("[pry] fakePlayerClones：ServerLevel.addEntity 形状未匹配（addPlayer 入口需人工复核），"
+                    + "同 UUID 旧实例可能被 DISCARD，请向模组作者反馈");
+        }
+
+        // placeNewPlayer：3 参
+        boolean placeNew = false;
+        for (Method m : net.minecraft.server.players.PlayerList.class.getDeclaredMethods()) {
+            if (m.getParameterCount() == 3
+                    && m.getParameterTypes()[0] == net.minecraft.network.Connection.class
+                    && m.getParameterTypes()[1] == net.minecraft.server.level.ServerPlayer.class
+                    && m.getParameterTypes()[2] == net.minecraft.server.network.CommonListenerCookie.class) {
+                placeNew = true;
+                break;
+            }
+        }
+        if (!placeNew && reported.add("fakePlayerClones:placeNewPlayer")) {
+            LOGGER.error("[pry] fakePlayerClones 无效：PlayerList.placeNewPlayer 签名漂移，"
+                    + "分身预注册与入组失效，请向模组作者反馈");
+        }
+
+        // save 与 remove 形状相同：要求至少两个 1 参 void 方法，避免相互冒充
+        int singlePlayerVoid = 0;
+        for (Method m : net.minecraft.server.players.PlayerList.class.getDeclaredMethods()) {
+            if (m.getParameterCount() == 1
+                    && m.getParameterTypes()[0] == net.minecraft.server.level.ServerPlayer.class
+                    && m.getReturnType() == void.class
+                    && !java.lang.reflect.Modifier.isStatic(m.getModifiers())) {
+                singlePlayerVoid++;
+            }
+        }
+        if (singlePlayerVoid < 2 && reported.add("fakePlayerClones:saveRemove")) {
+            LOGGER.error("[pry] fakePlayerClones：PlayerList.save/remove(ServerPlayer) 入口不完整，"
+                    + "退出保存或成员注销会静默失效，请向模组作者反馈");
+        }
+
+        // 库存访问器目标：items 字段 + 1.21.5+ 的 EntityEquipment
+        boolean hasItems = fieldOfType(net.minecraft.world.entity.player.Inventory.class,
+                net.minecraft.core.NonNullList.class);
+        if (!hasItems && reported.add("fakePlayerClones:inventoryItems")) {
+            LOGGER.error("[pry] fakePlayerClones 无效：Inventory.items 字段漂移，"
+                    + "共享库存无法接管，请向模组作者反馈");
+        }
+        //#if MC >= 12105
+        if (!fieldOfType(net.minecraft.world.entity.player.Inventory.class,
+                net.minecraft.world.entity.EntityEquipment.class)
+                && reported.add("fakePlayerClones:inventoryEquipment")) {
+            LOGGER.error("[pry] fakePlayerClones 无效：Inventory.equipment 字段漂移，"
+                    + "共享装备无法接管，请向模组作者反馈");
+        }
+        if (!fieldOfType(net.minecraft.world.entity.EntityEquipment.class,
+                java.util.EnumMap.class)
+                && reported.add("fakePlayerClones:equipmentMap")) {
+            LOGGER.error("[pry] fakePlayerClones 无效：EntityEquipment.items 字段漂移，"
+                    + "共享装备 map 无法接管，请向模组作者反馈");
+        }
+        //#endif
+        if (!voidNoArgMethod(net.minecraft.world.entity.player.Inventory.class)
+                && reported.add("fakePlayerClones:inventoryTick")) {
+            LOGGER.error("[pry] fakePlayerClones：Inventory.tick 缺失，"
+                    + "物品 tick 去重注入失效（require=1 应已阻止启动）");
+        }
+
+        // 显示包构造点（require=1，缺失会在启动期直接报错；这里给出规则级提示）
+        boolean addPacketCtor = false;
+        for (java.lang.reflect.Constructor<?> c : net.minecraft.network.protocol.game.ClientboundAddEntityPacket.class.getDeclaredConstructors()) {
+            if (c.getParameterCount() == 2
+                    && c.getParameterTypes()[0] == net.minecraft.world.entity.Entity.class) {
+                addPacketCtor = true;
+                break;
+            }
+        }
+        if (!addPacketCtor && reported.add("fakePlayerClones:addEntityPacket")) {
+            LOGGER.error("[pry] fakePlayerClones 无效：ClientboundAddEntityPacket 构造器漂移，"
+                    + "分身显示 UUID 改写失效，请向模组作者反馈");
+        }
+        boolean infoCtor = false;
+        for (java.lang.reflect.Constructor<?> c : net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket.class.getDeclaredConstructors()) {
+            if (c.getParameterCount() == 2
+                    && c.getParameterTypes()[0] == net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket.Action.class) {
+                infoCtor = true;
+                break;
+            }
+        }
+        if (!infoCtor && reported.add("fakePlayerClones:playerInfoPacket")) {
+            LOGGER.error("[pry] fakePlayerClones 无效：ClientboundPlayerInfoUpdatePacket(Action, ServerPlayer) 构造器漂移，"
+                    + "分身 Tab/皮肤显示失效，请向模组作者反馈");
+        }
+
+        // 组命令入口（Carpet 方法名不重映射）
+        if (!hasNamedMethod(carpet.commands.PlayerCommand.class, "spawn")
+                || !hasNamedMethod(carpet.commands.PlayerCommand.class, "kill")
+                || !hasNamedMethod(carpet.commands.PlayerCommand.class, "manipulate")) {
+            if (reported.add("fakePlayerClones:playerCommand")) {
+                LOGGER.error("[pry] fakePlayerClones：Carpet PlayerCommand spawn/kill/manipulate 缺失，"
+                        + "整组命令注入失效，请向模组作者反馈");
+            }
+        }
+
+        // 选择器出口（共享资源命令去重）
+        if (!methodExists(net.minecraft.commands.arguments.EntityArgument.class,
+                new Class<?>[]{com.mojang.brigadier.context.CommandContext.class, String.class}, true)
+                && reported.add("fakePlayerClones:entityArgument")) {
+            LOGGER.warn("[pry] fakePlayerClones：EntityArgument.getPlayers 签名漂移，"
+                    + "共享资源命令去重失效（give 等会对每个分身各执行一次），请向模组作者反馈");
+        }
+    }
+
+    private static boolean fieldOfType(Class<?> owner, Class<?> type) {
+        try {
+            for (java.lang.reflect.Field f : owner.getDeclaredFields()) {
+                if (f.getType() == type) {
+                    return true;
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        return false;
+    }
+
+    private static boolean voidNoArgMethod(Class<?> owner) {
+        for (Method m : owner.getDeclaredMethods()) {
+            if (m.getParameterCount() == 0 && m.getReturnType() == void.class
+                    && !Modifier.isStatic(m.getModifiers())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasNamedMethod(Class<?> owner, String name) {
+        for (Method m : owner.getDeclaredMethods()) {
+            if (m.getName().equals(name) && Modifier.isStatic(m.getModifiers())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

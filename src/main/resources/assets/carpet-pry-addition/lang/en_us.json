@@ -344,5 +344,7 @@
   "carpetprimaryuan.command.tptoset.reload_invalid": "§cInvalid config: %s; current list kept and writes paused",
   "carpetprimaryuan.command.tptoset.write_protected": "§cWrites are paused: fix the config file, then run /tptoset reload",
   "carpetprimaryuan.command.tptoset.save_failed": "§cSave failed; config unchanged",
-  "carpet.category.SERVER": "Server"
+  "carpet.category.SERVER": "Server",
+  "carpet.rule.fakePlayerClones.name": "Fake Player Clones",
+  "carpet.rule.fakePlayerClones.desc": "Allow multiple real Carpet fakes sharing one UUID and skin online at once, with independent positions and a shared inventory."
 }
