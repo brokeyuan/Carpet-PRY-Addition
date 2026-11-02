@@ -64,3 +64,20 @@ give 去重：三个身体，主实例移到远处；distance=0..10 选中 #2/#3
 - 普通真实玩家路径、PlayerReplay 回放路径
 - 真实客户端菜单数据包流（本次仅服务端菜单方法级探针）
 - MSPT、分配量、加载区块数量
+
+## 提交与产物
+
+- 修复提交：`1bd8aaa3eab784288e3a2ed073149191cbc2586a`
+- 构建产物 SHA256：
+
+- `build/libs/carpet-pry-addition-v1.3.1-mc1.21.1.jar`  `bee18539197775fce65f97f0a53531bca29db717a275599244ba26b84d7a7e8f`
+- `build/libs/carpet-pry-addition-v1.3.1-mc1.21.10.jar`  `0289894af42627798b4a048529eaca070db92ea5a07b64f8daa89d6cf99c4741`
+- `build/libs/carpet-pry-addition-v1.3.1-mc1.21.11.jar`  `f273c0b41045dec118249dbc8737be6534236e2923f3d09eda06cab5218ef07b`
+- `build/libs/carpet-pry-addition-v1.3.1-mc1.21.3.jar`  `1115a5cfebe8a17e42a6ff24f6e61660fbabb6d0e7ef6c80b34896d776f4d0c1`
+- `build/libs/carpet-pry-addition-v1.3.1-mc1.21.4.jar`  `5d375f965f5a63de98719896f0130463a49cafc4b45bbc0b43568b09d8f9c11b`
+- `build/libs/carpet-pry-addition-v1.3.1-mc1.21.5.jar`  `279a14e05616218b09715dbaec5ee361bea4faded0dce36e71b564e242473120`
+- `build/libs/carpet-pry-addition-v1.3.1-mc1.21.8.jar`  `6acba3944791352e22ac1a974fd40f207233e4bff34b6c26787c72c80891efed`
+- `build/libs/carpet-pry-addition-v1.3.1-mc1.21.jar`  `18758b44ff9ee090d20094a78d5b7e7b0435eaf96ef637293878f6c778858cea`
+- `build/libs/carpet-pry-addition-v1.3.1-mc26.1.2.jar`  `4f4f39e40db8d639ac03ee0be8944436b28d5655d8546245768dcc3dd87fa411`
+- `build/libs/carpet-pry-addition-v1.3.1-mc26.2.jar`  `87a7faaf14ea795123039cc6f9b05b2269fdd697a3619d66404a1a8795328ed1`
+- `build/libs/carpet-pry-addition-v1.3.1-mc26.3.jar`  `a266ad6f3d76ee654bd6796cd2d0d4acfc29e0bdb35eae9c70f366eeaed4a75e`
