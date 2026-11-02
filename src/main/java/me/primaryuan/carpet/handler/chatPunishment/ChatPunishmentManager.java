@@ -141,6 +141,11 @@ public final class ChatPunishmentManager {
             writable = false;
         }
 
+        /** 当前存储是否可写；坏文件/高版本加载失败后为 false */
+        boolean writable() {
+            return writable;
+        }
+
         /**
          * 设置/覆盖：候选表 → 原子写 → 成功后才发布内存。失败时内存与磁盘不变。
          */
@@ -354,6 +359,11 @@ public final class ChatPunishmentManager {
     /** 解除惩罚；只有落盘成功且原记录仍在生效时返回 APPLIED */
     public static Result clear(UUID id) {
         return STORE.clear(id);
+    }
+
+    /** 当前存储是否可写；坏文件/高版本加载失败后为 false，供 list 区分空表与故障 */
+    public static boolean storageWritable() {
+        return STORE.writable();
     }
 
     /** 当前未到期的全部记录（按名称排序，供 /chatpunish list） */

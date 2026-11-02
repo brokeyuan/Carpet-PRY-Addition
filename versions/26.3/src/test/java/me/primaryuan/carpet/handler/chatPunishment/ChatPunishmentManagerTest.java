@@ -157,12 +157,31 @@ class ChatPunishmentManagerTest {
     void missingFileStartsWritableAndCreatesOnSet(@TempDir Path dir) throws Exception {
         Path file = dir.resolve("chatpunish.json");
         ChatPunishmentManager.ChatPunishStore store = load(file);
+        assertTrue(store.writable());
         assertEquals(ChatPunishmentManager.Result.APPLIED,
                 store.set(ALIVE, "Steve", PunishmentMode.CAT, 0));
         assertTrue(Files.exists(file));
 
         ChatPunishmentManager.ChatPunishStore reloaded = load(file);
         assertEquals(PunishmentMode.CAT, reloaded.punishments.get(ALIVE.toString()).mode());
+    }
+
+    @Test
+    void listGateDistinguishesEmptyFromFault(@TempDir Path dir) throws Exception {
+        Path missing = dir.resolve("missing.json");
+        assertTrue(load(missing).writable(), "missing file is a writable empty table");
+
+        Path empty = dir.resolve("empty.json");
+        write(empty, envelope(""));
+        assertTrue(load(empty).writable(), "valid empty table stays listable");
+
+        Path bad = dir.resolve("bad.json");
+        write(bad, "{not json");
+        assertFalse(load(bad).writable(), "corrupt file must not look like an empty table");
+
+        Path newer = dir.resolve("newer.json");
+        write(newer, "{\"version\":2,\"data\":{\"players\":{}}}");
+        assertFalse(load(newer).writable(), "newer schema must not look like an empty table");
     }
 
     @Test
@@ -193,6 +212,7 @@ class ChatPunishmentManagerTest {
             write(file, badFiles[i]);
             byte[] before = Files.readAllBytes(file);
             ChatPunishmentManager.ChatPunishStore store = load(file);
+            assertFalse(store.writable(), "writable " + i);
             assertEquals(ChatPunishmentManager.Result.READ_ONLY,
                     store.set(ALIVE, "Steve", PunishmentMode.CAT, 0), "set " + i);
             assertEquals(ChatPunishmentManager.Result.READ_ONLY,

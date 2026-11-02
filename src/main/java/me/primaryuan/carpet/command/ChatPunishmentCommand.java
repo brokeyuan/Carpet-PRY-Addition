@@ -150,6 +150,10 @@ public final class ChatPunishmentCommand {
     }
 
     private static int list(CommandContext<CommandSourceStack> ctx) {
+        if (!ChatPunishmentManager.storageWritable()) {
+            ctx.getSource().sendFailure(ServerI18n.tr("carpetprimaryuan.chatpunish.read_only"));
+            return 0;
+        }
         List<ChatPunishmentManager.Entry> entries = ChatPunishmentManager.activeEntries();
         if (entries.isEmpty()) {
             ctx.getSource().sendSuccess(() -> ServerI18n.tr("carpetprimaryuan.chatpunish.list_empty"), false);
