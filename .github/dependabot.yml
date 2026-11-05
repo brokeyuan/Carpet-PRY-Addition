@@ -2,5 +2,7 @@ version: 2
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"
+    # 依赖更新在本地任务分支处理，不自动创建远端版本更新分支。
+    open-pull-requests-limit: 0
     schedule:
       interval: "weekly"

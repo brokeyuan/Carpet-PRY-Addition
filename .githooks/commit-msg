@@ -1,0 +1,4 @@
+#!/bin/sh
+message=$1
+if command -v cygpath >/dev/null 2>&1; then message=$(cygpath -w "$message"); fi
+exec "$(dirname "$0")/run-check" -Mode Message -MessageFile "$message"

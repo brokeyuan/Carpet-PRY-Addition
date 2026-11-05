@@ -67,3 +67,15 @@ canary-watch.log
 /gh-watch*.log
 /test-*.log
 /logs/
+
+# local server/runtime outputs
+/libraries/
+/versions/*/server-*.jar
+__pycache__/
+*.pyc
+
+# local review notes belong outside the source tree
+/REVIEW.md
+/IMPLEMENTATION-PLAN.md
+/FOLLOWUP-REVIEW*.md
+/CLIENT-EXPERIENCE-REVIEW.md
