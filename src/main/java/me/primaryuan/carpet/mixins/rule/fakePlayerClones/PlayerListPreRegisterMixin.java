@@ -71,7 +71,6 @@ public abstract class PlayerListPreRegisterMixin {
         if (!isClonePath(player)) {
             return;
         }
-        me.primaryuan.carpet.clones.CloneInjectProbe.hit("placeNewPlayer.head");
         CloneGroup group = CloneGroupRegistry.getOrCreate(player.getUUID(),
                 CloneVersionAdapter.profileName(player.getGameProfile()));
         int cloneId = group.reserve(player);
@@ -92,7 +91,6 @@ public abstract class PlayerListPreRegisterMixin {
         if (!isClonePath(player)) {
             return;
         }
-        me.primaryuan.carpet.clones.CloneInjectProbe.hit("placeNewPlayer.return");
         if (CloneInstanceRegistry.cloneIdOf(player) >= 0) {
             return;
         }
@@ -112,7 +110,6 @@ public abstract class PlayerListPreRegisterMixin {
 
     @WrapMethod(method = "remove(Lnet/minecraft/server/level/ServerPlayer;)V")
     private void pry$wrapRemove(ServerPlayer player, Operation<Void> original) {
-        me.primaryuan.carpet.clones.CloneInjectProbe.hit("playerList.remove");
         CloneGroup group = CloneGroupRegistry.byUuid(player.getUUID());
         boolean member = group != null && group.members().containsValue(player);
         boolean registeredDisplay = CloneDisplayIds.isClone(player);

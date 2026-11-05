@@ -15,7 +15,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 分身组：一个 UUID/GameProfile 对应一个组，组内成员共享身份与背包（M3）。
+ * 分身组：一个 UUID/GameProfile 对应一个组，组内成员共享身份与背包。
  *
  * <p>主实例语义：在线成员中 cloneId 最小的成员是原版单值查询
  * （getPlayer(uuid) / getPlayerByName）的返回对象。组内精确定位一律走

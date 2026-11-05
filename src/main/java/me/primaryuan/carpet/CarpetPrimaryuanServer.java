@@ -236,7 +236,6 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         me.primaryuan.carpet.clones.CloneInstanceRegistry.clear();
         me.primaryuan.carpet.clones.CloneGroupRegistry.clear();
         me.primaryuan.carpet.clones.CloneAllowlist.clear();
-        me.primaryuan.carpet.clones.CloneInjectProbe.clear();
     }
 
     /** 语言翻译缓存：canHasTranslations 会被反复调用，按语言缓存解析结果 */

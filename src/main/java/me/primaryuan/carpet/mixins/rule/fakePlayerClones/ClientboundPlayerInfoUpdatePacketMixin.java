@@ -35,7 +35,6 @@ public abstract class ClientboundPlayerInfoUpdatePacketMixin {
 
     /** 分身实例 → 显示 UUID 的 Entry（字段集按版本：1.21 无 showHat/listOrder） */
     private static Entry pry$entryOf(ServerPlayer player) {
-        me.primaryuan.carpet.clones.CloneInjectProbe.hit("playerInfoUpdate");
         UUID display = CloneDisplayIds.displayOf(player);
         GameProfile old = player.getGameProfile();
         GameProfile profile;

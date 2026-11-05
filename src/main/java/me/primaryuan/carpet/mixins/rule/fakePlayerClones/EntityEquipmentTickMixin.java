@@ -18,7 +18,6 @@ public abstract class EntityEquipmentTickMixin {
 
     @Inject(method = "tick", at = @At("HEAD"), cancellable = true, require = 1)
     private void pry$skipDuplicateEquipmentTick(Entity entity, CallbackInfo ci) {
-        me.primaryuan.carpet.clones.CloneInjectProbe.hit("equipment.tick");
         if (entity instanceof ServerPlayer player && !SharedInventoryManager.isTickOwner(player)) {
             ci.cancel();
         }

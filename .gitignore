@@ -26,9 +26,6 @@ bin/
 # fabric
 run/
 
-# trae
-.trae/
-
 # build logs
 build_log*.txt
 
@@ -53,10 +50,7 @@ libs/
 # local build/test artifacts (never commit)
 .gradle-user/
 versions/*/logs/
-.zcode/
-
-# local editor settings and workflow monitoring
-.zcodeignore
+# local workflow monitoring
 backfill-watch.log
 canary-watch.log
 

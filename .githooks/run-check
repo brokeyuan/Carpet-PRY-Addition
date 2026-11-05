@@ -1,5 +1,0 @@
-#!/bin/sh
-root=$(git rev-parse --show-toplevel) || exit 1
-ps=$(git config --get pry.powershell)
-if [ -z "$ps" ]; then ps=pwsh; fi
-exec "$ps" -NoProfile -File "$root/tools/Task-Guard.ps1" "$@"

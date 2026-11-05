@@ -25,7 +25,6 @@ public abstract class ClientboundPlayerInfoRemovePacketMixin {
             require = 1
     )
     private void pry$rewriteRemove(List<UUID> profileIds, CallbackInfo ci) {
-        me.primaryuan.carpet.clones.CloneInjectProbe.hit("playerInfoRemove");
         boolean changed = false;
         List<UUID> mapped = new ArrayList<>(profileIds.size());
         for (UUID id : profileIds) {

@@ -1,4 +1,0 @@
-/.githooks/* text eol=lf
-*.cmd text eol=crlf
-*.bat text eol=crlf
-*.ps1 text eol=lf

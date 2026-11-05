@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * 分身 spawn/kill 生命周期管理（M2）。
+ * 分身 spawn/kill 生命周期管理。
  *
  * <p>spawn：以组权威 profile（含 textures）再创建一个同 UUID 假人；首个成员
  * 读一次 playerdata 建立共享存储，后续成员只接入存储，不读盘覆盖。</p>

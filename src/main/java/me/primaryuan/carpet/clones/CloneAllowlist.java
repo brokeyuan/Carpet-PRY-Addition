@@ -8,14 +8,14 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 同 UUID 分身的注入点白名单（M1 原型）。
+ * 同 UUID 分身的注入点白名单。
  *
  * <p>三个实体层 UUID 拦截点（PESM.addEntityUuid / EntityLookup.add /
  * ServerLevel.addPlayer）在放行重复 UUID 前必须先查这里：
  * 只有显式登记为分身允许的 UUID 才走多实例路径，其余一切实体
  * （普通假人、真人、生物）零行为差异。</p>
  *
- * <p>M1 原型期由 /cloneprobe 命令登记与注销；M2 换成 CloneGroupRegistry。</p>
+ * <p>由 CloneGroupRegistry 随分身组的创建和销毁登记与注销。</p>
  */
 public final class CloneAllowlist {
 

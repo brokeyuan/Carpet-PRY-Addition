@@ -25,7 +25,6 @@ public abstract class PlayerListSaveMixin {
             require = 0
     )
     private void pry$skipNonPrimaryCloneSave(ServerPlayer player, CallbackInfo ci) {
-        me.primaryuan.carpet.clones.CloneInjectProbe.hit("playerList.save");
         if (CloneIdentity.shouldSkipSave(player)) {
             ci.cancel();
         }

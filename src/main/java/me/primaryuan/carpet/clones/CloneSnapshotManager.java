@@ -25,7 +25,7 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * 分身组快照持久化（M4）：kill 时把每成员 cloneId/dim/pos/rot/gamemode 写入
+ * 分身组快照持久化：kill 时把每成员 cloneId/dim/pos/rot/gamemode 写入
  * world/playerdata/&lt;name&gt;-clones.json；背包本身由权威 playerdata 承载，
  * 只保存一次。rejoin 先全量校验再逐成员恢复，失败只撤销本次创建。
  */

@@ -7,12 +7,12 @@ import java.lang.reflect.Method;
 
 /**
  * DistanceManager 预注册辅助（mixin 包外普通类，Mixin 0.8.7 禁止直接引用
- * mixins 包内非 mixin 类——M1 实证 IllegalClassLoadError）。
+ * mixins 包内非 mixin 类，否则会抛出 IllegalClassLoadError）。
  *
  * <p>把分身实体登记进出生 chunk 的玩家集合并把 lastSectionPos 预设为出生
  * section，使 placeNewPlayer 内部 ChunkMap.move 的 removePlayer/addPlayer
  * 成对净空。反射实现（accessor mixin 与 ChunkMap$DistanceManager 内部类
- * 映射漂移风险更高；全 11 版本方法名一致，javap 已核）。</p>
+ * 映射漂移风险更高）。</p>
  */
 public final class CloneDistanceManagerHelper {
 

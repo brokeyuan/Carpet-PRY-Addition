@@ -44,7 +44,6 @@ public abstract class ClientboundAddEntityPacketMixin {
     }
 
     private static void pry$rewriteUuid(ServerPlayer player, ClientboundAddEntityPacket self) {
-        me.primaryuan.carpet.clones.CloneInjectProbe.hit("addEntityPacket");
         java.util.UUID display = CloneDisplayIds.displayOf(player);
         if (display != null && !display.equals(player.getUUID())) {
             ((me.primaryuan.carpet.mixins.rule.fakePlayerClones.ClientboundAddEntityPacketAccessor) (Object) self)

@@ -49,7 +49,7 @@ class ChatPunishmentManagerTest {
 
     @Test
     void parseDurationRejectsMultiplicationOverflow() {
-        // 基线探针已复现的两个负值输入：必须拒绝，不能回绕成负数/短时长
+        // 负值输入必须拒绝，不能回绕成负数或短时长。
         assertNull(ChatPunishmentManager.parseDuration("213503982334d"));
         assertNull(ChatPunishmentManager.parseDuration("999999999999d"));
         // 12 位上限内各单位的精确边界仍可解析

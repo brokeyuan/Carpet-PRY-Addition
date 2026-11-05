@@ -153,9 +153,8 @@ public final class MixinSanityCheck {
     }
 
     /**
-     * fixXaeroLib：xaero.lib 的 handle 方法须为静态双参（handler 的签名假设，
-     * 即审查 #29——此前无法本地验证，现于运行时核验）。目标类缺失属"未安装"
-     * 而非失效，降为 warn。
+     * fixXaeroLib：xaero.lib 的 handle 方法须为静态双参。
+     * 目标类缺失视为未安装，以 warn 提示。
      */
     private static void checkFixXaeroLib() {
         if (!CarpetPrimaryuanSettings.fixXaeroLib) {

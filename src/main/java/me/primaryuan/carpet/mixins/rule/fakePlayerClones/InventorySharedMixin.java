@@ -20,7 +20,6 @@ public abstract class InventorySharedMixin {
 
     @Inject(method = "tick", at = @At("HEAD"), cancellable = true, require = 1)
     private void pry$skipDuplicateItemTick(CallbackInfo ci) {
-        me.primaryuan.carpet.clones.CloneInjectProbe.hit("inventory.tick");
         if (((Inventory) (Object) this).player instanceof ServerPlayer player
                 && !SharedInventoryManager.isTickOwner(player)) {
             ci.cancel();
