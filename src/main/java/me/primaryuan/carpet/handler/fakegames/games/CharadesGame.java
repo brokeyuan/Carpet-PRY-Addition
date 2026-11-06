@@ -40,8 +40,9 @@ public final class CharadesGame implements me.primaryuan.carpet.handler.fakegame
             new Word("火箭", "rocket"), new Word("风筝", "kite"),
     };
 
-    private static final int TOTAL_ROUNDS = 8;
     private static final int ROUND_TICKS = 20 * 60;
+
+    private int totalRounds = 8;
 
     private final List<UUID> performers = new ArrayList<>();
     private int round;
@@ -52,10 +53,11 @@ public final class CharadesGame implements me.primaryuan.carpet.handler.fakegame
     @Override
     public void onStart(GameSession session) {
         round = 0;
+        totalRounds = Math.max(1, session.intOption("rounds", 8));
         performers.clear();
         performers.addAll(activePerformers(session.allMembers()));
         session.broadcast(ServerI18n.tr("carpetprimaryuan.fakegames.charades.start",
-                TOTAL_ROUNDS));
+                totalRounds));
         nextRound(session);
     }
 
@@ -76,7 +78,7 @@ public final class CharadesGame implements me.primaryuan.carpet.handler.fakegame
             GameMember member = session.member(id);
             return member == null || member.state != MemberState.ACTIVE || session.player(id) == null;
         });
-        if (phaseNotRunning(session) || round >= TOTAL_ROUNDS
+        if (phaseNotRunning(session) || round >= totalRounds
                 || performers.size() < 2 || session.activeCount() < 2) {
             session.finish(null);
             return;
@@ -88,7 +90,7 @@ public final class CharadesGame implements me.primaryuan.carpet.handler.fakegame
         current = pool[session.level.getRandom().nextInt(pool.length)];
         ServerPlayer performerPlayer = session.player(performer);
         session.broadcast(ServerI18n.tr("carpetprimaryuan.fakegames.charades.round",
-                round, TOTAL_ROUNDS,
+                round, totalRounds,
                 performerPlayer == null ? "?" : performerPlayer.getName().getString()));
         if (performerPlayer != null) {
             performerPlayer.sendSystemMessage(ServerI18n.tr(
