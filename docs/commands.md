@@ -31,6 +31,7 @@
 - [跨服传送命令](#跨服传送命令)
   - [/tpto](#tpto---跨服传送)
   - [/tptoset](#tptoset---服务器管理)
+- [/fakegame - 假游戏](#fakegame---假游戏)
 - [/timer - 计时器](#timer---计时器)
 - [/countdown - 旧版倒计时（兼容入口）](#countdown---旧版倒计时兼容入口)
 - [/chatpunish - 聊天惩罚](#chatpunish---聊天惩罚)
@@ -996,8 +997,73 @@ simple 默认无声，`/timer sound on` 可为当前会话显式开启；up 正�
 /tptoset reload                               # 手改 tpto.json 后重读
 ```
 
-
 ---
+
+## /fakegame - 假游戏
+
+规则 `fakeGames` 控制整棵命令可见性（关闭时不可见）。`/fakegame` 是主入口，`/fg` 是同一棵树的快捷别名。主面板提供游戏列表、当前游戏、排行榜、我的战绩和管理入口（管理仅管理员可见）；所有按钮绑定具体场次 ID，旧邀请或旧按钮会提示场次失效。
+
+```
+/fakegame                          # 主面板
+/fakegame list                     # 全部游戏、人数、简介与可用状态
+/fakegame info <游戏>              # 玩法、胜利条件、可调设置与依赖
+/fakegame create <游戏> [预设]      # 创建准备场次（默认 standard 预设）
+/fakegame join [场次]               # 加入等待中的场次
+/fakegame start [场次]              # 发起者/管理员点击开始，进入 3 秒倒计时
+/fakegame leave [场次]              # 退出本局（随时可用）
+/fakegame cancel [场次]             # 结束并清理本局（发起者/管理员）
+/fakegame status [场次]             # 准备/进行面板、成员、检查与设置
+/fakegame invite [场次]             # 向附近玩家重新发送带场次 ID 的邀请
+/fakegame set <场次> <键> <值>      # 准备阶段修改本局设置
+/fakegame guess <词>                # 你演我猜：提交猜测
+/fakegame goal                      # 123木头人：发起者/管理员在脚下设终点
+/fakegame top [游戏]                # 排行榜（按游戏/模式/难度分榜）
+/fakegame me [游戏]                 # 我的累计战绩
+/fakegame admin                     # 管理员设置面板
+/fakegame admin tempRules on|off    # 局内临时规则总开关（默认关闭）
+/fakegame admin radius <8-128>      # 区域半径上限
+/fakegame admin boundary <4-40>     # 边界粒子刷新周期（tick）
+/fakegame admin preset <名> <半径> <minY> <maxY>
+```
+
+准备阶段不再因人数满足自动开局：发起者在准备面板点击“开始”后才进入倒计时；倒计时期间人数不足、成员离线/死亡/跨维度或 123木头人起点圈失效会返回准备并说明原因。
+
+### 区域与边界
+
+- 区域由管理员预设（`small` / `standard` / `large`，默认半径 32）与服务器级最大半径约束；普通发起者只能选择预设或管理员允许的范围，不能任意扩大。
+- 边界用只发给参与者的粒子弧段持续显示，接近时 ActionBar 提示距离；越界保留 100 tick 宽限，判定与显示共用同一半径和高度。
+- 鞘翅等飞行玩法额外显示并判定高度范围；不生成真实围墙、不修改世界边界、不用强制传送代替提示。
+
+### 游戏列表
+
+| 游戏 | 关键设置 | 玩法 | 胜利条件 |
+|------|---------|------|---------|
+| `grass_is_lava` | mode=fixed/rotate, hazard, interval, evacuate | 固定或轮换危险方块；切换前预告并给撤离时间；水按流体接触判定 | 最后存活者 |
+| `rising_lava` | display=particles/blocks/flood, start_offset, rise_seconds, accelerate | 虚拟液面从场地下方上涨；无人淘汰时逐渐加速，有人淘汰后恢复基础速度 | 最后存活者 |
+| `red_light_green_light` | start_radius, goal=auto/manual | 准备阶段全员进入起点圈；绿灯走红灯停；终点检查水平距离与高度差 | 第一名抵达终点 |
+| `random_bans` | actions=all/basic/oneshot, round_seconds | 持续要求（跳跃/停下/潜行/移动）与限时完成（跳一次/抬头/低头），公布后有宽限 | 最后存活者 |
+| `safe_spot` | spots, rounds, round_seconds | 每轮 1~4 个点，先有效到达者立即得分并关闭该点；已领取归属不重分配 | 固定轮数后积分最高 |
+| `hide_and_seek` | mode=classic/shrink/herb, hide_seconds, seek_seconds | 寻找者躲藏阶段锁定起点；抓捕需视线；缩小感染被抓者转为抓捕者；隐身草模式高草隐身 | 按阵营与时限 |
+| `tag` | mode=freeze/infection, rescue_seconds, duration | 鬼持续接触生效；冰冻解救需持续接触，中断立即重置；感染入伙 | 鬼清场或幸存者撑到时限 |
+| `hot_potato` | fuse, pass_lock | 只有有效攻击命中才传递；短暂禁止立即传回上一名持有者；引线不因传递重置 | 最后存活者 |
+| `king_of_the_hill` | mode=single/rotate/simultaneous, points, rotate_seconds | 1~4 个点独立开启/争夺/得分；关闭的点不得分；多人争夺暂停得分 | 积分最高 |
+| `charades` | rounds | 表演者用动作演题，其他人 `/fakegame guess` 猜词 | 积分最高 |
+| `shooting` | mode=training/speed/accuracy/versus, targets, duration | 准星瞄准，换手键发射（跟随改键）；虚拟射线检查遮挡/距离/频率；不消耗物品 | 比分最高；训练单人可玩 |
+| `elytra` | mode=rings/collect, rings, duration | 用自己的鞘翅按顺序穿环或自由收集；线段求交避免高速漏判 | 完成环线或收集最多 |
+| `snake` | speed, max_length, food_count | 持续行走；收集无主假人后尾巴沿历史路线前进；撞尾巴出局，尾巴落地变回无主假人 | 最后存活或尾巴最长 |
+| `murder_mystery` | script, round_seconds | 当前不可用：剧本导入与阶段机未完成本轮适配 | - |
+| `werewolf` | day_seconds, night_seconds | 当前不可用：阶段机未完成本轮适配 | - |
+| `draw_guess` | mode=classic/relay/same, rounds | 当前不可用：神笔马良尚未并入正式主线 | - |
+
+### 判定与保护
+
+- 虚拟淘汰播放原版不死图腾动画与音效，不消耗图腾、不触发真实死亡、不清背包与经验。
+- 真实死亡（怪物/摔落/真实岩浆）按原版流程处理，同时该玩家自动退出本局。
+- 击退、水流（含熔岩）与攀爬滑落在红灯与跳跃判定中豁免；活塞推力无服务端信号可区分，不在豁免范围。
+- 加入需存活、非旁观、同维度且在区域内；等待/倒计时期间死亡、掉线、跨维度、旁观自动退出，运行期越界保留 100 tick 宽限。
+- 同 tick 多人违规按同批淘汰结算；同 tick 抢点按距离、再按 UUID 稳定排序，不声称超过服务端 tick 精度。
+- 局内临时能力只使用已开启规则或管理员总开关允许的局部适配；退出、淘汰、掉线、跨维度、结束、规则关闭和停服都会清理本局添加的效果。
+- 结果按游戏/模式/关键难度分榜，使用 UUID 入账；取消局不记正常胜场，同局只入账一次。
 
 ## /chatpunish - 聊天惩罚
 

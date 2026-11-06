@@ -11,6 +11,7 @@ import me.primaryuan.carpet.brain.BrainManager;
 import me.primaryuan.carpet.brain.BrainTeams;
 import me.primaryuan.carpet.command.FakeCloneCommand;
 import me.primaryuan.carpet.command.CountdownCommand;
+import me.primaryuan.carpet.command.FgCommand;
 import me.primaryuan.carpet.command.ChatPunishmentCommand;
 import me.primaryuan.carpet.command.HatCommand;
 import me.primaryuan.carpet.command.PvpCommand;
@@ -27,6 +28,9 @@ import me.primaryuan.carpet.replay.ReplayLifecycle;
 import me.primaryuan.carpet.handler.clickThrough.ClickThroughHandler;
 import me.primaryuan.carpet.handler.chatPunishment.ChatPunishmentManager;
 import me.primaryuan.carpet.handler.countdown.CountdownManager;
+import me.primaryuan.carpet.handler.fakegames.FakeGameManager;
+import me.primaryuan.carpet.handler.fakegames.FakeGameResults;
+import me.primaryuan.carpet.handler.fakegames.FakeGameSettings;
 import me.primaryuan.carpet.handler.entitiesRidingPlayers.EntitiesRidingPlayersHandler;
 import me.primaryuan.carpet.handler.patPatPlayers.PatPatPlayersHandler;
 import me.primaryuan.carpet.handler.peacefulPlayers.PvpManager;
@@ -79,6 +83,7 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
             "chatPunishment",                 // /chatpunish
             "textAnimation",                  // /text
             "serverTransfer",                 // /tpto /tptoset
+            "fakeGames",                      // /fg /fakegame
             "playerReplay",                   // /playereplay
             "fakePlayerScript"                // /playerscript
     );
@@ -115,6 +120,7 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         TextCommand.register();
         TimerCommand.register();
         CountdownCommand.register();
+        FgCommand.register();
         TptoCommand.register();
         ChatPunishmentCommand.register();
         // 同 UUID 假人分身
@@ -143,6 +149,9 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
 
         // 通用倒计时：停服清理与玩家加入/退出观众维护（规则关闭清理走规则观察者）
         CountdownManager.get().init();
+
+        // 假游戏（/fg）：停服清理与玩家掉线退出（规则关闭清理走规则观察者）
+        FakeGameManager.get().init();
 
         // 假人背包链接（sendto）：初始化 tick 转移调度、假人下线清理与服务器停止清空监听
         SendtoLinkManager.init();
@@ -228,6 +237,10 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
                 // 规则关闭时无条件清理倒计时（命令树保持可见，提示"功能已关闭"由命令层负责）
                 CountdownManager.onRuleChanged();
             }
+            if (changedRule.name().equals("fakeGames")) {
+                // 规则关闭时安全结束进行中的游戏并清空状态
+                FakeGameManager.onRuleChanged();
+            }
             MixinSanityCheck.onRuleChanged(changedRule.name());
             // SERVER 类规则改即持久化（server-rules.json，不随存档漂移）
             ServerRuleOverrides.onRuleChanged(changedRule);
@@ -244,6 +257,8 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         PvpManager.onServerLoaded(server);
         PatPatPlayersHandler.onServerLoaded(server);
         ChatPunishmentManager.onServerLoaded(server);
+        FakeGameSettings.onServerLoaded(server);
+        FakeGameResults.onServerLoaded(server);
         // SERVER 类规则钉值：晚于 carpet 读存档 carpet.conf，服务器值永远优先
         ServerRuleOverrides.apply(server);
     }
@@ -257,6 +272,8 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         PvpManager.onServerClosed();
         PatPatPlayersHandler.onServerClosed();
         ChatPunishmentManager.onServerClosed();
+        FakeGameSettings.onServerClosed();
+        FakeGameResults.onServerClosed();
         ServerRuleOverrides.onServerClosed();
         // 分身注册表/显示 UUID/退出上下文/允许名单全部随本次服务端会话结束
         me.primaryuan.carpet.clones.CloneDisplayIds.clear();

@@ -287,4 +287,11 @@ public class CarpetPrimaryuanSettings {
     )
     public static boolean clickThrough = false;
 
+    // 假游戏：/fakegame（/fg 别名）小游戏统一入口，含主面板、准备、区域边界、
+    // 排行榜与十六种玩法；纯服务端虚拟判定，失败仅虚拟图腾淘汰，不改世界方块与真实死亡
+    @Rule(
+            categories = {PRIMARYUAN, SURVIVAL, COMMAND}
+    )
+    public static boolean fakeGames = false;
+
 }

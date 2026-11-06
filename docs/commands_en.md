@@ -29,6 +29,7 @@
   - [/tptoset](#tptoset---server-management)
 - [/timer - Timer](#timer---timer)
 - [/countdown - Legacy Countdown](#countdown---legacy-countdown-compatibility-entry)
+- [/fakegame - Fake Games](#fakegame---fake-games)
 - [/chatpunish - Chat Punishment](#chatpunish---chat-punishment)
 
 ---
@@ -902,6 +903,72 @@ The legacy syntax is kept and shares the same manager and active session with /t
 - `/countdown set sound <on|off>` — sounds
 
 Time formats, selectors and permissions match /timer (permission level 2; the disabled rule reports "feature is off").
+## /fakegame - Fake Games
+
+The `fakeGames` rule controls the whole tree (hidden when off). `/fakegame` is the main entry and `/fg` is an alias for the same tree. The main panel links to the game list, current session, leaderboard, personal stats and admin settings (admin only). Every button carries a session ID; old invites or buttons report an expired session.
+
+```
+/fakegame                          # main panel
+/fakegame list                     # all games, player counts, intros and availability
+/fakegame info <game>              # gameplay, win condition, settings and dependencies
+/fakegame create <game> [preset]   # create a lobby (standard preset by default)
+/fakegame join [session]           # join a waiting session
+/fakegame start [session]          # host/admin starts a 3-second countdown
+/fakegame leave [session]          # leave at any time
+/fakegame cancel [session]         # end and clean up (host/admin)
+/fakegame status [session]         # lobby/running panel, members, checks and settings
+/fakegame invite [session]         # resend invites carrying the session ID
+/fakegame set <session> <key> <value>
+/fakegame guess <word>             # charades guess
+/fakegame goal                     # red light green light: set the goal at your feet
+/fakegame top [game]               # leaderboard by game/mode/difficulty
+/fakegame me [game]                # personal stats
+/fakegame admin                    # admin panel
+/fakegame admin tempRules on|off    # in-game temporary rule switch (off by default)
+/fakegame admin radius <8-128>      # maximum region radius
+/fakegame admin boundary <4-40>     # boundary particle interval (ticks)
+/fakegame admin preset <name> <radius> <minY> <maxY>
+```
+
+The lobby no longer auto-starts when the minimum player count is met: the host clicks Start. If a condition fails during the countdown (players, death, disconnect, dimension, or the start circle in Red Light Green Light), the session returns to the lobby with the reason.
+
+### Region and boundary
+
+- Regions come from admin presets (`small` / `standard` / `large`; default radius 32) and the server-level maximum radius; ordinary hosts cannot expand beyond them.
+- The boundary is drawn with participant-only particle arcs; ActionBar warnings appear near the edge. Out-of-bounds keeps a 100-tick grace, and rendering shares the same radius/height as judgement.
+- Elytra-style games also show and enforce a vertical range. No real walls, no world-border changes, no forced teleport as a substitute for warnings.
+
+### Game list
+
+| Game | Key settings | Gameplay | Win condition |
+|------|--------------|----------|---------------|
+| `grass_is_lava` | mode=fixed/rotate, hazard, interval, evacuate | Fixed or rotating hazard blocks with a warning and evacuation time; water uses fluid contact | Last standing |
+| `rising_lava` | display=particles/blocks/flood, start_offset, rise_seconds, accelerate | Virtual surface rises from below the arena; accelerates while nobody is eliminated, resets after an elimination | Last standing |
+| `red_light_green_light` | start_radius, goal=auto/manual | Everyone must be in the start circle; move on green, freeze on red; goal checks horizontal and vertical distance | First to the goal |
+| `random_bans` | actions=all/basic/oneshot, round_seconds | Sustained rules (jump/stop/sneak/move) and one-shot tasks (jump/look up/look down) with reaction grace | Last standing |
+| `safe_spot` | spots, rounds, round_seconds | 1-4 spots per round; first valid arrival scores and closes the spot; claims are not reassigned | Highest score after fixed rounds |
+| `hide_and_seek` | mode=classic/shrink/herb, hide_seconds, seek_seconds | Seeker is anchored while hiding; capture requires line of sight; shrink-infection converts caught hiders; herb mode grants tall-grass invisibility | Team/time based |
+| `tag` | mode=freeze/infection, rescue_seconds, duration | Ghost touch sustains; rescue requires sustained contact and resets on interruption; infection joins the ghosts | Ghosts clear or runners survive |
+| `hot_potato` | fuse, pass_lock | Only effective attacks pass the potato; immediate back-pass is briefly locked; passing does not reset the fuse | Last standing |
+| `king_of_the_hill` | mode=single/rotate/simultaneous, points, rotate_seconds | 1-4 independently shown points; closed points never score; contested points pause scoring | Highest score |
+| `charades` | rounds | Performer acts the word; others guess with `/fakegame guess` | Highest score |
+| `shooting` | mode=training/speed/accuracy/versus, targets, duration | Aim with the crosshair; swap-hand fires (follows rebinding); virtual ray checks occlusion/distance/rate; no item use | Highest score; training supports solo |
+| `elytra` | mode=rings/collect, rings, duration | Use your own elytra; pass rings in order or collect coins; segment intersection avoids high-speed misses | Finish rings or most coins |
+| `snake` | speed, max_length, food_count | Keep moving; collecting an ownerless fake grows a tail that follows your recorded path; hitting a tail eliminates; tails become ownerless fakes | Last standing or longest tail |
+| `murder_mystery` | script, round_seconds | Currently unavailable: script import and phase machine not adapted this round | - |
+| `werewolf` | day_seconds, night_seconds | Currently unavailable: phase machine not adapted this round | - |
+| `draw_guess` | mode=classic/relay/same, rounds | Currently unavailable: Magic Brush is not merged into master | - |
+
+### Judgement and protection
+
+- Virtual elimination plays the vanilla totem animation/sound without consuming a totem, without real death, and without touching inventory or XP.
+- Real deaths follow vanilla while the player leaves the session.
+- Knockback, water/lava flow and climbing are exempt in red-light and jump checks; piston pushes have no server-side signal and are not exempt.
+- Joining requires alive, non-spectator, same dimension and inside the region. Death, disconnect, dimension change and spectator leave automatically; out-of-bounds keeps a 100-tick grace.
+- Multiple violations in one tick resolve as one batch; same-tick spot claims use distance then UUID order, without claiming sub-tick precision.
+- Temporary in-game abilities come only from enabled rules or the admin switch; leaving, elimination, disconnect, dimension change, end, rule disable and server stop clean up every effect added by the session.
+- Results are separated by game/mode/key difficulty and keyed by UUID; cancelled sessions never count as wins and a session is recorded once.
+
 ## Server Transfer Commands
 
 ### /tpto - Server Transfer

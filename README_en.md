@@ -11,7 +11,7 @@
 
 ## Introduction
 
-**Carpet-PRY-Addition** is a server-side Fabric extension for [Fabric Carpet](https://github.com/gnembon/fabric-carpet), developed for the **Primaryuan Server**; it also enhances the experience when installed client-side. It adds **39** main Carpet rules (plus 2 companion settings) and **15** root commands (plus /player subcommands), covering fake player enhancements, player scaling, server management, mod compatibility fixes, ported features, player interactions, and survival gameplay expansion.
+**Carpet-PRY-Addition** is a server-side Fabric extension for [Fabric Carpet](https://github.com/gnembon/fabric-carpet), developed for the **Primaryuan Server**; it also enhances the experience when installed client-side. It adds **40** main Carpet rules (plus 2 companion settings) and **17** root commands (plus /player subcommands), covering fake player enhancements, player scaling, server management, mod compatibility fixes, ported features, player interactions, and survival gameplay expansion.
 
 All rules are off by default except the client-side rule `ridingPlayersClientInteract` and `countdown`; enable what you need.
 
@@ -117,6 +117,7 @@ All rules are off by default except the client-side rule `ridingPlayersClientInt
 - `sleepingDuringTheDay`: sleep during daytime, wake to night
 - `textAnimation`: `/text @a|player <message>` plays MiSide-style subtitles on vanilla clients; the first 12 recipients get entity subtitles and the rest get an actionbar typewriter
 - `countdown`: `/timer down 60s` counts down, `/timer up` counts up, sharing pause/resume/stop controls with four display positions and three effect tiers; legacy /countdown syntax kept for compatibility, on by default
+- `fakeGames`: ten `/fg` mini games (grass is lava, red light green light, tag, hot potato and more), pure server-side virtual judgement; losing is only a virtual totem elimination; only the host or an admin can set `/fg goal` inside the game area
 - `playerHat`: `/hat` or main-hand air use swaps whole hat stacks; the shortcut excludes tools, usable items and a nonempty offhand, and is blocked while the head holds a helmet, turtle shell or totem of undying (`/hat` unaffected); head-slot totems retain death protection
 - `playerHeadSkin`: real and fake players wear a player head to use its full skin; removing it restores the original skin, server-side
 - `betterSnowball`: snowballs deal knockback and damage to players

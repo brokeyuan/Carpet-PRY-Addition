@@ -2,9 +2,7 @@
 
 > Mod ID: `carpet-pry-addition` | Version: `1.3.1`
 >
-
-> Total: **39 main rules** (`whoCalledMeSound` / `whoCalledMeHighlight` are documented inline as companion rules in the whoCalledMe section)
-
+> Total: **40 main rules** (`whoCalledMeSound` / `whoCalledMeHighlight` are documented inline as companion rules in the whoCalledMe section)
 >
 > **Tip: Use `Ctrl+F` to quickly find the rule you want**
 
@@ -51,6 +49,7 @@ Rule values are stored per world in `<world>/carpet.conf` by default. Rules tagg
   - [moreEndCrystalTypes - More End Crystal Types](#moreendcrystaltypes---more-end-crystal-types)
   - [textAnimation - MiSide Subtitles](#textanimation---miside-subtitles)
   - [countdown - Timer](#countdown---timer)
+  - [fakeGames - Fake Games](#fakegames---fake-games)
 - [Server Management](#server-management)
   - [serverTransfer - Server Transfer](#servertransfer---server-transfer)
 - [Player Scaling](#player-scaling)
@@ -654,6 +653,23 @@ Sneaking retains sign editing and frame rotation. Standing signs and banners are
 | **Categories** | `PRIMARYUAN`, `COMMAND` |
 
 Permission level 2, command blocks supported. When the rule is off the command stays visible and reports that it is disabled; an active timer is cleaned up immediately (no fake completion). Timing follows real elapsed time (low TPS does not stretch it); only one timer exists per server and it is cancelled on restart. The fancy tier prompts once at 60/30 seconds and ticks the last 10 seconds with rising pitch; all sounds can be silenced with silent or /timer sound off. Full syntax and behavior in the [command documentation](commands_en.md#timer---timer).
+
+---
+
+### fakeGames - Fake Games
+
+Unified `/fakegame` mini-game entry (`/fg` is an alias): the original ten games plus Shooting Range, Elytra Course and Snake. Murder Mystery, Werewolf and Draw & Guess are listed as unavailable and cannot be created because their script/phase machines or the Magic Brush dependency are not ready in this branch. Pure server-side virtual judgement - no real lava/TNT/coins, no world block changes, no dedicated world; losing only plays a virtual totem animation (entity event 35, visible on vanilla clients) and stops that player's checks. Health, inventory, XP and game mode are untouched; real deaths follow vanilla.
+
+| Property | Value |
+|----------|-------|
+| **Rule Name** | `fakeGames` |
+| **Description** | Enables `/fakegame`: panel, lobby/start, region boundary, leaderboard and 16 games. Pure server-side virtual judgement; no block changes, inventory loss or real death. |
+| **Type** | `boolean` |
+| **Default Value** | `false` |
+| **Suggested Options** | `false`, `true` |
+| **Categories** | `PRIMARYUAN`, `SURVIVAL`, `COMMAND` |
+
+With the rule off the whole tree is hidden and a running session ends safely. The panel links to games, current session, leaderboard, personal stats and admin settings. Invites and buttons carry a session ID, so old buttons cannot affect the next game. The host starts from the lobby; a failed countdown condition returns to the lobby with the reason. Regions come from admin presets (standard, radius 32 by default) and ordinary hosts cannot expand them. Boundary particles are participant-only with near/out warnings and a 100-tick grace; rendering and judgement share the same range. `/fakegame admin` controls the radius cap, boundary interval and the in-game temporary-rule switch (off by default); local abilities are applied only where adapted and restored on every exit path. Results are split by game/mode/key difficulty, keyed by UUID, stored per world, recorded once, and cancelled sessions never count as wins. See the [command docs](commands_en.md#fakegame---fake-games).
 
 ---
 
