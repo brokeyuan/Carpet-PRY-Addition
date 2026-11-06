@@ -9,25 +9,24 @@ import me.primaryuan.carpet.i18n.ServerI18n;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 /**
- * 射击训练与玩家竞争：准星瞄准，换手键发射。
+ * 射击训练与多人比靶：准星瞄准，原版换手键发射。
  *
- * <p>不绑定物理键码：每 tick 比较主手/副手物品，检测到原版换手结果（两格内容互换）
- * 即视为按下玩家自己的“换手”键，因此跟随客户端改键。虚拟射线检查距离、方块遮挡
- * 与目标半径；发射频率限制为每 5 tick 一次。不发放枪械/弹药，不消耗手持物品。</p>
+ * <p>换手动作由服务端 packet 入口直接接收（不比较主副手物品），因此空手、两手相同物品
+ * 也能发射；动作在有效射击局内被消费，不会真正交换双手，也不会在冷却期间恢复原版换手。
+ * 虚拟射线检查距离、方块遮挡与目标半径；发射频率限制为每 5 tick 一次。
+ * 不发放枪械/弹药，不消耗手持物品。</p>
  */
 public final class ShootingGame implements me.primaryuan.carpet.handler.fakegames.GameLogic {
 
@@ -56,9 +55,6 @@ public final class ShootingGame implements me.primaryuan.carpet.handler.fakegame
         int hits;
         int score;
         int cooldown;
-        ItemStack main = ItemStack.EMPTY;
-        ItemStack off = ItemStack.EMPTY;
-        boolean initialized;
     }
 
     private final List<Target> targets = new ArrayList<>();
@@ -129,7 +125,6 @@ public final class ShootingGame implements me.primaryuan.carpet.handler.fakegame
             targetCounter = 0;
             renderTargets(session);
         }
-        handleSwapFire(session);
         if (--hudCooldown <= 0) {
             hudCooldown = 20;
             sendHud(session);
@@ -147,29 +142,27 @@ public final class ShootingGame implements me.primaryuan.carpet.handler.fakegame
         }
     }
 
-    /** 检测换手：主手/副手内容与上一 tick 互换即视为按下换手键。 */
-    private void handleSwapFire(GameSession session) {
-        for (ServerPlayer player : session.activePlayers()) {
-            Shooter shooter = shooters.computeIfAbsent(player.getUUID(), ignored -> new Shooter());
-            ItemStack currentMain = player.getMainHandItem();
-            ItemStack currentOff = player.getOffhandItem();
-            if (!shooter.initialized) {
-                shooter.main = currentMain.copy();
-                shooter.off = currentOff.copy();
-                shooter.initialized = true;
-                continue;
-            }
-            boolean changed = !ItemStack.matches(currentMain, shooter.main)
-                    || !ItemStack.matches(currentOff, shooter.off);
-            boolean swapped = changed && ItemStack.matches(currentMain, shooter.off)
-                    && ItemStack.matches(currentOff, shooter.main);
-            if (swapped && shooter.cooldown <= 0) {
-                shooter.cooldown = FIRE_COOLDOWN;
-                fire(session, player, shooter);
-            }
-            shooter.main = currentMain.copy();
-            shooter.off = currentOff.copy();
+    /**
+     * 消费一次原版换手输入：冷却中吞掉动作但不发射；冷却结束发射并重新进入冷却。
+     * 返回的冷却值由调用方写回，纯函数便于单测。
+     */
+    static int handleSwapRequest(int cooldown, Runnable fire) {
+        if (cooldown > 0) {
+            return cooldown;
         }
+        fire.run();
+        return FIRE_COOLDOWN;
+    }
+
+    @Override
+    public boolean onSwap(GameSession session, ServerPlayer player) {
+        Shooter shooter = shooters.get(player.getUUID());
+        if (shooter == null) {
+            return false;
+        }
+        shooter.cooldown = handleSwapRequest(shooter.cooldown,
+                () -> fire(session, player, shooter));
+        return true;
     }
 
     private void fire(GameSession session, ServerPlayer player, Shooter shooter) {

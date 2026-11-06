@@ -44,7 +44,8 @@
     "rule.fakePlayerBrain.ServerPlayerMobMixin",
     "rule.whoCalledMe.MinecraftServerMixin",
     "rule.textAnimation.DisplayInvoker",
-    "rule.textAnimation.TextDisplayInvoker"
+    "rule.textAnimation.TextDisplayInvoker",
+    "rule.fakeGames.SwapItemMixin"
   ],
   "client": [
     "rule.entitiesRidingPlayers.ProjectileUtilMixin",

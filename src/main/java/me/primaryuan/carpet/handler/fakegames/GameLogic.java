@@ -43,8 +43,13 @@ public interface GameLogic {
     default void onPlayerLeave(GameSession session, UUID playerId, ServerPlayer player, boolean eliminated) {
     }
 
-    /** 有效攻击命中（游戏内玩家对玩家）。返回 true 表示玩法已处理该次攻击。 */
+    /** 有效攻击命中（游戏内玩家对玩家）。返回 true 表示玩法已处理并消费该次攻击。 */
     default boolean onAttack(GameSession session, ServerPlayer attacker, ServerPlayer victim) {
+        return false;
+    }
+
+    /** 原版换手动作（服务端 packet HEAD）。返回 true 表示消费，不执行原版换手。 */
+    default boolean onSwap(GameSession session, ServerPlayer player) {
         return false;
     }
 

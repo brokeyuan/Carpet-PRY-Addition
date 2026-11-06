@@ -1,6 +1,8 @@
 package me.primaryuan.carpet.handler.fakegames.games;
 
 import me.primaryuan.carpet.handler.fakegames.FakeGameEffects;
+import me.primaryuan.carpet.handler.fakegames.FakeGameTempEffects;
+import me.primaryuan.carpet.handler.fakegames.GameMember;
 import me.primaryuan.carpet.handler.fakegames.GameSession;
 import me.primaryuan.carpet.handler.fakegames.SessionPhase;
 import me.primaryuan.carpet.handler.fakegames.SustainCounter;
@@ -9,7 +11,6 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
@@ -25,14 +26,17 @@ import java.util.UUID;
 /**
  * 躲猫猫：经典、缩小感染、隐身草三种模式。
  *
- * <p>寻找者在躲藏阶段被锁在起点（离开即拉回），不能用移动跟踪；抓捕需要距离
- * 1.8 格内持续 0.5 秒且无墙体遮挡。缩小感染模式中被抓者恢复此前大小并转为
- * 抓捕者，按阵营和时间结算；退出/结束只恢复本局改过的状态。</p>
+ * <p>寻找者在躲藏阶段留在起点等待区：越过边界先预警并给宽限，持续越界则取消本局，
+ * 不再反复强制传送或清零运动；抓捕需要距离 1.8 格内持续 0.5 秒且无墙体遮挡。
+ * 缩小感染模式中被攻击命中的躲藏者恢复此前大小并转为抓捕者，按阵营和时间结算；
+ * 退出/结束只撤销本局添加的临时修饰符与标记。</p>
  */
 public final class HideAndSeekGame implements me.primaryuan.carpet.handler.fakegames.GameLogic {
 
     private static final int CAPTURE_SUSTAIN = 10;
     private static final double CAPTURE_DISTANCE = 1.8;
+    private static final double WAIT_RADIUS = 3.0;
+    private static final int WAIT_GRACE_TICKS = 60;
     private static final int HINT_INTERVAL = 20;
 
     private String mode = "classic";
@@ -40,12 +44,9 @@ public final class HideAndSeekGame implements me.primaryuan.carpet.handler.fakeg
     private final Set<UUID> hunters = new LinkedHashSet<>();
     private final Map<UUID, Vec3> frozen = new HashMap<>();
     private final SustainCounter touchTicks = new SustainCounter(CAPTURE_SUSTAIN);
-    private final Map<UUID, Double> originalScale = new HashMap<>();
     private final Set<UUID> scaled = new LinkedHashSet<>();
     private final Set<UUID> glowing = new LinkedHashSet<>();
-    private final Map<UUID, Boolean> originalGlow = new HashMap<>();
     private final Set<UUID> herbInvisible = new LinkedHashSet<>();
-    private final Map<UUID, Boolean> originalInvisible = new HashMap<>();
     private Vec3 seekerAnchor;
     private int hideTicks;
     private int seekTicks;
@@ -53,6 +54,7 @@ public final class HideAndSeekGame implements me.primaryuan.carpet.handler.fakeg
     private boolean seeking;
     private int hintCooldown;
     private int hudCooldown;
+    private int seekerOutsideTicks;
 
     @Override
     public void onStart(GameSession session) {
@@ -65,13 +67,11 @@ public final class HideAndSeekGame implements me.primaryuan.carpet.handler.fakeg
         hunters.add(seeker);
         frozen.clear();
         touchTicks.clear();
-        originalScale.clear();
         scaled.clear();
         glowing.clear();
-        originalGlow.clear();
         herbInvisible.clear();
-        originalInvisible.clear();
         seeking = false;
+        seekerOutsideTicks = 0;
         phaseLeft = hideTicks;
         ServerPlayer seekerPlayer = session.player(seeker);
         seekerAnchor = seekerPlayer == null ? null : seekerPlayer.position();
@@ -96,7 +96,7 @@ public final class HideAndSeekGame implements me.primaryuan.carpet.handler.fakeg
         if (phaseLeft > 0) {
             phaseLeft--;
             if (!seeking) {
-                lockSeeker(session);
+                tickSeekerWait(session);
                 if (phaseLeft == 0) {
                     beginSeeking(session);
                     return;
@@ -107,7 +107,9 @@ public final class HideAndSeekGame implements me.primaryuan.carpet.handler.fakeg
             }
         }
         if (seeking) {
-            checkCapture(session);
+            if (!"shrink".equals(mode)) {
+                checkCapture(session);
+            }
             if (session.phase != SessionPhase.RUNNING) {
                 return;
             }
@@ -132,18 +134,39 @@ public final class HideAndSeekGame implements me.primaryuan.carpet.handler.fakeg
         }
     }
 
-    /** 躲藏阶段寻找者锁定在起点，移动超过 1 格立即拉回。 */
-    private void lockSeeker(GameSession session) {
+    /** 躲藏阶段：绘制等待区，越界先预警，持续 3 秒越界则取消本局。 */
+    private void tickSeekerWait(GameSession session) {
         ServerPlayer seekerPlayer = session.player(seeker);
         if (seekerPlayer == null || seekerAnchor == null || seekerPlayer.level() != session.level) {
             return;
         }
-        if (seekerPlayer.position().distanceToSqr(seekerAnchor) > 1.0) {
-            seekerPlayer.teleportTo(seekerAnchor.x, seekerAnchor.y, seekerAnchor.z);
-            seekerPlayer.setDeltaMovement(Vec3.ZERO);
-            FakeGameEffects.actionbar(seekerPlayer, ServerI18n.tr(
-                    "carpetprimaryuan.fakegames.hns.wait_anchor"));
+        if (session.phaseTicks % 10 == 0) {
+            me.primaryuan.carpet.handler.fakegames.FakeGameBoundary.markCircle(
+                    session, seekerAnchor.x, seekerAnchor.z, seekerAnchor.y,
+                    WAIT_RADIUS, ParticleTypes.HAPPY_VILLAGER);
         }
+        double dx = seekerPlayer.getX() - seekerAnchor.x;
+        double dz = seekerPlayer.getZ() - seekerAnchor.z;
+        double dy = seekerPlayer.getY() - seekerAnchor.y;
+        boolean outside = outsideWaitArea(dx, dy, dz);
+        if (!outside) {
+            seekerOutsideTicks = 0;
+            return;
+        }
+        seekerOutsideTicks++;
+        if (seekerOutsideTicks % 20 == 0) {
+            int remain = Math.max(0, (WAIT_GRACE_TICKS - seekerOutsideTicks + 19) / 20);
+            FakeGameEffects.actionbar(seekerPlayer, ServerI18n.tr(
+                    "carpetprimaryuan.fakegames.hns.wait_outside", remain));
+        }
+        if (seekerOutsideTicks >= WAIT_GRACE_TICKS) {
+            session.cancel("cancel_seeker_left");
+        }
+    }
+
+    /** 等待区判定：水平半径 3、垂直 3 格；供单测与 tick 共用。 */
+    static boolean outsideWaitArea(double dx, double dy, double dz) {
+        return dx * dx + dz * dz > WAIT_RADIUS * WAIT_RADIUS || Math.abs(dy) > 3.0;
     }
 
     private void beginSeeking(GameSession session) {
@@ -204,6 +227,25 @@ public final class HideAndSeekGame implements me.primaryuan.carpet.handler.fakeg
         }
     }
 
+    /** 缩小感染：有效攻击命中躲藏者才转换身份，不产生真实伤害。 */
+    @Override
+    public boolean onAttack(GameSession session, ServerPlayer attacker, ServerPlayer victim) {
+        if (!"shrink".equals(mode) || !seeking || session.phase != SessionPhase.RUNNING) {
+            return false;
+        }
+        if (attacker == null || victim == null
+                || !hunters.contains(attacker.getUUID())
+                || hunters.contains(victim.getUUID())) {
+            return false;
+        }
+        GameMember member = session.member(victim.getUUID());
+        if (member == null || member.state != me.primaryuan.carpet.handler.fakegames.MemberState.ACTIVE) {
+            return false;
+        }
+        convertToHunter(session, victim);
+        return true;
+    }
+
     /** 缩小感染：目标恢复此前大小并成为抓捕者。 */
     private void convertToHunter(GameSession session, ServerPlayer player) {
         restoreScale(player);
@@ -227,11 +269,14 @@ public final class HideAndSeekGame implements me.primaryuan.carpet.handler.fakeg
                 continue;
             }
             boolean inGrass = isInTallGrass(player);
-            if (inGrass && herbInvisible.add(player.getUUID())) {
-                originalInvisible.putIfAbsent(player.getUUID(), player.isInvisible());
-                player.setInvisible(true);
-            } else if (!inGrass && herbInvisible.remove(player.getUUID())) {
-                player.setInvisible(Boolean.TRUE.equals(originalInvisible.remove(player.getUUID())));
+            if (inGrass) {
+                // 玩家本来已隐身（外部旗帜/效果）时不接管，也不在结束时清除
+                if (!herbInvisible.contains(player.getUUID()) && !player.isInvisible()) {
+                    herbInvisible.add(player.getUUID());
+                    player.setInvisible(true);
+                }
+            } else if (herbInvisible.remove(player.getUUID()) && player.isInvisible()) {
+                player.setInvisible(false);
             }
         }
     }
@@ -242,32 +287,21 @@ public final class HideAndSeekGame implements me.primaryuan.carpet.handler.fakeg
     }
 
     private void scaleDown(ServerPlayer player) {
-        var attribute = player.getAttribute(Attributes.SCALE);
-        if (attribute == null) {
-            return;
+        if (FakeGameTempEffects.applyShrink(player)) {
+            scaled.add(player.getUUID());
         }
-        if (scaled.add(player.getUUID())) {
-            originalScale.putIfAbsent(player.getUUID(), attribute.getBaseValue());
-        }
-        attribute.setBaseValue(0.6);
     }
 
     private void restoreScale(ServerPlayer player) {
-        if (!scaled.remove(player.getUUID())) {
-            return;
+        if (scaled.remove(player.getUUID())) {
+            FakeGameTempEffects.removeShrink(player);
         }
-        var attribute = player.getAttribute(Attributes.SCALE);
-        if (attribute != null) {
-            attribute.setBaseValue(originalScale.getOrDefault(player.getUUID(), 1.0));
-        }
-        originalScale.remove(player.getUUID());
     }
 
     private void markSeeker(GameSession session, ServerPlayer player) {
-        if (player == null) {
+        if (player == null || player.hasGlowingTag()) {
             return;
         }
-        originalGlow.putIfAbsent(player.getUUID(), player.hasGlowingTag());
         player.setGlowingTag(true);
         glowing.add(player.getUUID());
     }
@@ -324,23 +358,21 @@ public final class HideAndSeekGame implements me.primaryuan.carpet.handler.fakeg
         if (player != null) {
             restoreScale(player);
         } else {
+            // 玩家实体已离线：transient modifier 不写入存档，重进后自然不存在
             scaled.remove(id);
-            originalScale.remove(id);
         }
     }
 
     private void restoreGlow(UUID id, ServerPlayer player) {
-        if (glowing.remove(id) && player != null) {
-            player.setGlowingTag(Boolean.TRUE.equals(originalGlow.get(id)));
+        if (glowing.remove(id) && player != null && player.hasGlowingTag()) {
+            player.setGlowingTag(false);
         }
-        originalGlow.remove(id);
     }
 
     private void restoreHerb(UUID id, ServerPlayer player) {
-        if (herbInvisible.remove(id) && player != null) {
-            player.setInvisible(Boolean.TRUE.equals(originalInvisible.get(id)));
+        if (herbInvisible.remove(id) && player != null && player.isInvisible()) {
+            player.setInvisible(false);
         }
-        originalInvisible.remove(id);
     }
 
     @Override
@@ -357,8 +389,6 @@ public final class HideAndSeekGame implements me.primaryuan.carpet.handler.fakeg
         hunters.clear();
         frozen.clear();
         touchTicks.clear();
-        originalScale.clear();
-        originalGlow.clear();
-        originalInvisible.clear();
+        seekerOutsideTicks = 0;
     }
 }

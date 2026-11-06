@@ -76,6 +76,8 @@ public final class GameSession {
 
     private int validateCounter;
     private final Map<UUID, Integer> outOfBoundsTicks = new LinkedHashMap<>();
+    /** 同一攻击者同一 tick 只接受一次游戏攻击，避免多回调重复触发。 */
+    private final Map<UUID, Integer> lastAttackTick = new LinkedHashMap<>();
     private boolean ended;
 
     /** 仅本规则内部使用的玩家查找入口；测试可注入轻量映射。 */
@@ -668,9 +670,39 @@ public final class GameSession {
         return logic.onGuess(this, player, message);
     }
 
-    /** 有效攻击命中的转发入口 */
-    public boolean onAttack(ServerPlayer attacker, ServerPlayer victim) {
-        return logic.onAttack(this, attacker, victim);
+    /** 有效攻击命中的转发入口：仅存活成员、同维度、同 tick 去重。 */
+    public boolean tryAttack(ServerPlayer attacker, ServerPlayer victim) {
+        if (phase != SessionPhase.RUNNING || attacker == null || victim == null
+                || attacker == victim || attacker.level() != level || victim.level() != level) {
+            return false;
+        }
+        GameMember attackerMember = members.get(attacker.getUUID());
+        GameMember victimMember = members.get(victim.getUUID());
+        if (attackerMember == null || victimMember == null
+                || attackerMember.state != MemberState.ACTIVE
+                || victimMember.state != MemberState.ACTIVE) {
+            return false;
+        }
+        if (lastAttackTick.getOrDefault(attacker.getUUID(), Integer.MIN_VALUE) == phaseTicks
+                || attacker.getAttackStrengthScale(0.5f) < 0.9f) {
+            return false;
+        }
+        boolean handled = logic.onAttack(this, attacker, victim);
+        if (handled) {
+            lastAttackTick.put(attacker.getUUID(), phaseTicks);
+            // 输入阶段取消原版 attack 后，需要自行推进攻击冷却，防止连点刷游戏操作
+            attacker.resetAttackStrengthTicker();
+        }
+        return handled;
+    }
+
+    /** 原版换手动作转发入口（仅射击玩法返回 true 并消费）。 */
+    public boolean trySwap(ServerPlayer player) {
+        if (phase != SessionPhase.RUNNING || player == null || player.level() != level) {
+            return false;
+        }
+        GameMember member = members.get(player.getUUID());
+        return member != null && member.state == MemberState.ACTIVE && logic.onSwap(this, player);
     }
 
     // ==================== 区域与校验 ====================

@@ -1043,12 +1043,12 @@ simple 默认无声，`/timer sound on` 可为当前会话显式开启；up 正�
 | `red_light_green_light` | start_radius, goal=auto/manual | 准备阶段全员进入起点圈；绿灯走红灯停；终点检查水平距离与高度差 | 第一名抵达终点 |
 | `random_bans` | actions=all/basic/oneshot, round_seconds | 持续要求（跳跃/停下/潜行/移动）与限时完成（跳一次/抬头/低头），公布后有宽限 | 最后存活者 |
 | `safe_spot` | spots, rounds, round_seconds | 每轮 1~4 个点，先有效到达者立即得分并关闭该点；已领取归属不重分配 | 固定轮数后积分最高 |
-| `hide_and_seek` | mode=classic/shrink/herb, hide_seconds, seek_seconds | 寻找者躲藏阶段锁定起点；抓捕需视线；缩小感染被抓者转为抓捕者；隐身草模式高草隐身 | 按阵营与时限 |
+| `hide_and_seek` | mode=classic/shrink/herb, hide_seconds, seek_seconds | 寻找者躲藏阶段留在起点等待区（越界预警 3 秒后取消）；经典/隐身草抓捕需视线；缩小感染用有效攻击命中转换身份；隐身草模式高草隐身 | 按阵营与时限 |
 | `tag` | mode=freeze/infection, rescue_seconds, duration | 鬼持续接触生效；冰冻解救需持续接触，中断立即重置；感染入伙 | 鬼清场或幸存者撑到时限 |
 | `hot_potato` | fuse, pass_lock | 只有有效攻击命中才传递；短暂禁止立即传回上一名持有者；引线不因传递重置 | 最后存活者 |
 | `king_of_the_hill` | mode=single/rotate/simultaneous, points, rotate_seconds | 1~4 个点独立开启/争夺/得分；关闭的点不得分；多人争夺暂停得分 | 积分最高 |
 | `charades` | rounds | 表演者用动作演题，其他人 `/fakegame guess` 猜词 | 积分最高 |
-| `shooting` | mode=training/speed/accuracy/versus, targets, duration | 准星瞄准，换手键发射（跟随改键）；虚拟射线检查遮挡/距离/频率；不消耗物品 | 比分最高；训练单人可玩 |
+| `shooting` | mode=training/speed/accuracy/versus, targets, duration | 准星瞄准，原版换手动作发射（服务端消费，不交换双手）；虚拟射线检查遮挡/距离/频率；不消耗物品。versus 为多人同场比靶，不是玩家互射 | 比分最高；训练单人可玩 |
 | `elytra` | mode=rings/collect, rings, duration | 用自己的鞘翅按顺序穿环或自由收集；线段求交避免高速漏判 | 完成环线或收集最多 |
 | `snake` | speed, max_length, food_count | 持续行走；收集无主假人后尾巴沿历史路线前进；撞尾巴出局，尾巴落地变回无主假人 | 最后存活或尾巴最长 |
 | `murder_mystery` | script, round_seconds | 当前不可用：剧本导入与阶段机未完成本轮适配 | - |

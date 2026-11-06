@@ -22,6 +22,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -231,10 +232,58 @@ class GameSessionEliminationTest {
     private record Leave(UUID id, int activeAtCallback, long eliminatedStatesAtCallback,
                          boolean playerWasNull) {}
 
+    @Test
+    void attackRequiresRunningActiveMembersAndDeduplicatesSameTick() throws Exception {
+        Fixture fixture = new Fixture(GameType.HOT_POTATO, 3);
+        RecordingLogic logic = new RecordingLogic();
+        logic.handleAttacks = true;
+        GameSession session = fixture.session(logic);
+        fixture.joinAll(session);
+
+        assertFalse(session.tryAttack(fixture.players.get(0), fixture.players.get(1)));
+        session.phase = SessionPhase.RUNNING;
+        assertTrue(session.tryAttack(fixture.players.get(0), fixture.players.get(1)));
+        assertEquals(1, logic.attacks);
+        assertFalse(session.tryAttack(fixture.players.get(0), fixture.players.get(1)),
+                "同一 tick 的重复回调不能重复触发");
+        assertEquals(1, logic.attacks);
+
+        session.phaseTicks++;
+        assertTrue(session.tryAttack(fixture.players.get(0), fixture.players.get(2)));
+        assertEquals(2, logic.attacks);
+
+        fixture.member(session, 1).state = MemberState.LEFT;
+        assertFalse(session.tryAttack(fixture.players.get(0), fixture.players.get(1)));
+        fixture.member(session, 1).state = MemberState.ACTIVE;
+        fixture.players.get(0).stubLevel = fixture.otherLevel;
+        assertFalse(session.tryAttack(fixture.players.get(0), fixture.players.get(1)));
+    }
+
+    @Test
+    void unhandledAttackIsNotConsumed() throws Exception {
+        Fixture fixture = new Fixture(GameType.HOT_POTATO, 2);
+        RecordingLogic logic = new RecordingLogic();
+        GameSession session = fixture.session(logic);
+        fixture.joinAll(session);
+        session.phase = SessionPhase.RUNNING;
+
+        assertFalse(session.tryAttack(fixture.players.get(0), fixture.players.get(1)));
+        assertFalse(session.tryAttack(fixture.players.get(0), fixture.players.get(1)));
+        assertEquals(2, logic.attacks);
+    }
+
     private static final class RecordingLogic implements GameLogic {
         final List<String> events = new ArrayList<>();
         final List<Leave> leaves = new ArrayList<>();
         int endCount;
+        int attacks;
+        boolean handleAttacks;
+
+        @Override
+        public boolean onAttack(GameSession session, ServerPlayer attacker, ServerPlayer victim) {
+            attacks++;
+            return handleAttacks;
+        }
 
         @Override
         public void onPlayerLeave(GameSession session, UUID playerId, ServerPlayer player, boolean eliminated) {
@@ -303,6 +352,8 @@ class GameSessionEliminationTest {
         @Override public boolean isDeadOrDying() { return dead; }
         @Override public boolean isSpectator() { return spectator; }
         @Override public boolean onGround() { return true; }
+        @Override public float getAttackStrengthScale(float adjustTicks) { return 1.0f; }
+        @Override public void resetAttackStrengthTicker() { }
         @Override public Component getName() { return Component.literal("p-" + id.toString().substring(0, 4)); }
         @Override public void sendSystemMessage(Component message) { }
     }

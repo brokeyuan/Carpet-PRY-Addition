@@ -448,6 +448,8 @@ public final class FgCommand {
                 + " §7| " + tr("prepare.phase") + " §f"
                 + ServerI18n.tr("carpetprimaryuan.fakegames.phase."
                 + session.phase.name().toLowerCase(Locale.ROOT)).getString()));
+        player.sendSystemMessage(Component.literal("§7")
+                .append(ServerI18n.tr(session.type.descKey())));
         player.sendSystemMessage(Component.literal("§7" + tr("prepare.region") + " ")
                 .append(session.regionText()));
         player.sendSystemMessage(Component.literal("§7" + tr("prepare.members") + "："));

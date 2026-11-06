@@ -133,10 +133,6 @@ public final class PvpManager {
             if (!(entity instanceof ServerPlayer victim)) return true;
             if (!(source.getEntity() instanceof ServerPlayer attacker)) return true;
             if (attacker == victim) return true;
-            // 同一局假游戏的存活成员之间不套用和平玩家拦截：局内攻击判定只产生虚拟效果
-            if (me.primaryuan.carpet.handler.fakegames.FakeGameManager.allowsPvp(attacker, victim)) {
-                return true;
-            }
             if (isPvpOn(victim) && isPvpOn(attacker)) return true;
             playBlockedAttackSound(victim);
             return false;

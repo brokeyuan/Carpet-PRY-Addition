@@ -72,7 +72,8 @@
     "rule.fakePlayerClones.ClientboundPlayerInfoRemovePacketMixin",
     "rule.fakePlayerClones.ClientboundPlayerInfoRemovePacketAccessor",
     "rule.fakePlayerClones.PlayerCommandGroupMixin",
-    "rule.fakePlayerClones.PlayerCommandRejoinMixin"
+    "rule.fakePlayerClones.PlayerCommandRejoinMixin",
+    "rule.fakeGames.SwapItemMixin"
   ],
   "client": [
     "rule.entitiesRidingPlayers.ProjectileUtilMixin",

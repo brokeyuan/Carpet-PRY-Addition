@@ -2,11 +2,12 @@ package me.primaryuan.carpet.handler.fakegames;
 
 import me.primaryuan.carpet.CarpetPrimaryuanSettings;
 import me.primaryuan.carpet.util.ServerTickScheduler;
-import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -41,25 +42,49 @@ public final class FakeGameManager implements ServerTickScheduler.TickTask {
         initialized = true;
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> shutdown("cancel_server_stop"));
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> onQuit(handler.player));
-        // 有效攻击命中：仅用于热土豆等以攻击为交互的玩法；不取消任何原版伤害
-        ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
-            if (!(entity instanceof ServerPlayer victim)
-                    || !(source.getEntity() instanceof ServerPlayer attacker)
+        // 攻击输入阶段消费：命中合法游戏目标时取消原版 ServerPlayer.attack，
+        // 因此不产生真实伤害、击退、火焰、耐久损耗或击杀统计；未消费的攻击继续走原版/PVP。
+        AttackEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
+            if (!(player instanceof ServerPlayer attacker)
+                    || !(entity instanceof ServerPlayer victim)
                     || attacker == victim) {
-                return true;
+                return InteractionResult.PASS;
             }
             GameSession active = INSTANCE.session;
-            if (active != null && active.phase == SessionPhase.RUNNING
-                    && attacker.distanceToSqr(victim) <= 36.0
-                    && attacker.hasLineOfSight(victim)) {
-                try {
-                    active.onAttack(attacker, victim);
-                } catch (Throwable t) {
-                    LOGGER.error("[FakeGames] onAttack failed", t);
-                }
+            if (active == null || active.phase != SessionPhase.RUNNING
+                    || attacker.level() != active.level || victim.level() != active.level
+                    || !FakeGameCombat.isWithinAttackRange(attacker, victim)
+                    || !attacker.hasLineOfSight(victim)) {
+                return InteractionResult.PASS;
             }
-            return true;
+            try {
+                return active.tryAttack(attacker, victim)
+                        ? InteractionResult.SUCCESS : InteractionResult.PASS;
+            } catch (Throwable t) {
+                LOGGER.error("[FakeGames] attack handling failed", t);
+                return InteractionResult.PASS;
+            }
         });
+    }
+
+    /** 原版换手动作入口（由 Mixin 在 packet HEAD 调用）；只有射击局消费。 */
+    public boolean handleSwap(ServerPlayer player) {
+        GameSession active = session;
+        if (active == null || active.phase != SessionPhase.RUNNING
+                || active.type != GameType.SHOOTING) {
+            return false;
+        }
+        GameMember member = active.member(player.getUUID());
+        if (member == null || member.state != MemberState.ACTIVE) {
+            return false;
+        }
+        try {
+            return active.trySwap(player);
+        } catch (Throwable t) {
+            // 已进入有效射击局时即使表现层异常也消费换手，避免退回原版交换
+            LOGGER.error("[FakeGames] swap handling failed", t);
+            return true;
+        }
     }
 
     /** 规则观察者调用：规则关闭时安全结束进行中的游戏并清空状态 */
@@ -67,17 +92,6 @@ public final class FakeGameManager implements ServerTickScheduler.TickTask {
         if (!CarpetPrimaryuanSettings.fakeGames) {
             INSTANCE.endIfActive("cancel_rule");
         }
-    }
-
-    /** 局内攻击是否应绕过和平玩家 PVP 拦截：同一局、双方都是存活成员。 */
-    public static boolean allowsPvp(ServerPlayer attacker, ServerPlayer victim) {
-        GameSession active = INSTANCE.session;
-        if (active == null || active.phase != SessionPhase.RUNNING) {
-            return false;
-        }
-        GameMember a = active.member(attacker.getUUID());
-        GameMember v = active.member(victim.getUUID());
-        return a != null && v != null && a.state == MemberState.ACTIVE && v.state == MemberState.ACTIVE;
     }
 
     public GameSession current() {
