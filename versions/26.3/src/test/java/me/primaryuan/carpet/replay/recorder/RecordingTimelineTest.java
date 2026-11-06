@@ -56,6 +56,24 @@ class RecordingTimelineTest {
         assertEquals(4, slot.a);
     }
 
+
+    @Test
+    void pausedNewSessionDropsInstantEventsBeforeResume() {
+        RecordingTimeline t = new RecordingTimeline(5);
+        t.pause();
+        t.onMovementInput(InputFlags.FORWARD);
+        t.addUseDown(0, InputEventType.USE_TARGET_AIR, -1);
+        t.addEvent(InputEventType.DIG_START, -1);
+        t.addEntityUse(0, 42);
+        t.addEvent(InputEventType.DROP_ITEM, 0);
+        assertTrue(t.resume(4));
+        t.commitTick("d", frame(1), 0f, 0f);
+        assertEquals(1, t.input().events.size(), "暂停期新会话只能留下恢复时的槽位基线");
+        assertEquals(InputEventType.SELECT_SLOT, t.input().events.get(0).type);
+        assertEquals(0, t.input().events.get(0).tick);
+        assertEquals(InputFlags.FORWARD, t.input().maskAt(0), "恢复首帧使用当前输入基线");
+    }
+
     @Test
     void pauseDropsEventsAndInput() {
         RecordingTimeline t = new RecordingTimeline(0);

@@ -277,17 +277,50 @@ public final class RecordingTask
         {
             return;
         }
-        ReplayParticipant participant = new ReplayParticipant(entry.uuid, entry.name, entry.joinMethod);
-        ReplayParticipant.Segment segment = participant.openSegment(tick);
-        data.participants.add(participant);
+        ReplayParticipant participant = ensureParticipant(data, entry.uuid, entry.name, entry.joinMethod);
         RuntimeParticipant rt = new RuntimeParticipant(participant);
         runtime.put(entry.uuid, rt);
         ServerPlayer p = server.getPlayerList().getPlayer(UUID.fromString(entry.uuid));
-        if (p != null && usable(p))
+        // 暂停期间加入/重连不建立会话：恢复后的下一个 Tick 才开新片段，
+        // 避免暂停期间的瞬时操作写进恢复后的首帧。
+        if (state != State.PAUSED && p != null && usable(p))
         {
-            rt.session = new RecordingSession(p, participant, segment);
+            ReplayParticipant.Segment segment = participant.openSegment(tick);
+            rt.session = createSession(p, rt.participant, segment);
             rt.entityId = p.getId();
         }
+    }
+
+    /**
+     * 同一 UUID 只保留一个 ReplayParticipant；退出后重新邀请必须复用历史对象并追加片段，
+     * 不能再向 data.participants 添加重复身份。
+     */
+    static ReplayParticipant ensureParticipant(ReplayData data, String uuid, String name,
+                                               ReplayParticipant.JoinMethod joinMethod)
+    {
+        ReplayParticipant existing = data.participant(uuid);
+        if (existing == null)
+        {
+            existing = new ReplayParticipant(uuid, name, joinMethod);
+            data.participants.add(existing);
+        }
+        else
+        {
+            existing.joinMethod = joinMethod;
+        }
+        return existing;
+    }
+
+    /** 新会话必须继承任务暂停状态，暂停期间的输入只能同步基线，不能进入轨道 */
+    private RecordingSession createSession(ServerPlayer player, ReplayParticipant participant,
+                                           ReplayParticipant.Segment segment)
+    {
+        RecordingSession session = new RecordingSession(player, participant, segment);
+        if (state == State.PAUSED)
+        {
+            session.pause();
+        }
+        return session;
     }
 
     public void joinDirect(ServerPlayer player, MinecraftServer server)
@@ -363,13 +396,13 @@ public final class RecordingTask
             }
             if (online)
             {
-                if (rt.session == null)
+                if (rt.session == null && state != State.PAUSED)
                 {
                     ReplayParticipant.Segment segment = rt.participant.openSegment(tick);
-                    rt.session = new RecordingSession(p, rt.participant, segment);
+                    rt.session = createSession(p, rt.participant, segment);
                     rt.entityId = p.getId();
                 }
-                if (capture)
+                if (capture && rt.session != null)
                 {
                     rt.session.commitTick();
                 }

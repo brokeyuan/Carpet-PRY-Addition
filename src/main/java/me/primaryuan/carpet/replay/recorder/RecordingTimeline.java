@@ -30,6 +30,8 @@ public final class RecordingTimeline
     private int lastMask = -1;
     private int currentMask;
     private boolean maskDirty;
+    /** 本片段是否已经提交过至少一帧；暂停期间新加入的会话不应维护持续动作状态 */
+    private boolean hasCommittedFrame;
     private int seqTick = -1;
     private int seqInTick;
 
@@ -218,7 +220,7 @@ public final class RecordingTimeline
 
     public InputEvent addUseDown(int hand, byte targetKind, int diagnosticId)
     {
-        if (finished)
+        if (finished || (paused && !hasCommittedFrame))
         {
             return null;
         }
@@ -248,7 +250,7 @@ public final class RecordingTimeline
 
     public InputEvent addUseUp(int hand)
     {
-        if (finished)
+        if (finished || (paused && !hasCommittedFrame))
         {
             return null;
         }
@@ -274,7 +276,7 @@ public final class RecordingTimeline
 
     public InputEvent addEvent(InputEventType type, int hand)
     {
-        if (finished)
+        if (finished || (paused && !hasCommittedFrame))
         {
             return null;
         }
@@ -341,6 +343,7 @@ public final class RecordingTimeline
         maskDirty = false;
         currentSegment.frames.add(frame);
         tick++;
+        hasCommittedFrame = true;
         return true;
     }
 

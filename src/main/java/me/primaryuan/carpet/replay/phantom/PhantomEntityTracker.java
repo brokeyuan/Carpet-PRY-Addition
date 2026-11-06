@@ -344,6 +344,35 @@ public final class PhantomEntityTracker
         return true;
     }
 
+    /**
+     * 权限元数据变化后立即重验现有观看实例：公开转私有后，非创作者且非管理员的
+     * 正在播放/暂停实例都撤下；同时把剩余实例的快照更新为新权限，避免后续 tick 读旧值。
+     */
+    public static void revalidateAccess(MinecraftServer server, String recordingId,
+                                        me.primaryuan.carpet.replay.common.ReplayAccess access,
+                                        String ownerUuid)
+    {
+        if (recordingId == null || access == null)
+        {
+            return;
+        }
+        for (PhantomInstance inst : List.copyOf(ACTIVE.values()))
+        {
+            if (!recordingId.equals(inst.replay.metadata.recordingId))
+            {
+                continue;
+            }
+            inst.replay.metadata.access = access;
+            ServerPlayer viewer = server.getPlayerList().getPlayer(UUID.fromString(inst.viewerUuid));
+            boolean admin = viewer != null && me.primaryuan.carpet.replay.common.ReplayPermissions.isAdmin(viewer);
+            if (viewer == null || !me.primaryuan.carpet.replay.common.ReplayPermissions.canView(
+                    access, ownerUuid, inst.viewerUuid, admin))
+            {
+                end(server, inst.playbackId);
+            }
+        }
+    }
+
     public static void endForViewer(MinecraftServer server, String viewerUuid)
     {
         for (PhantomInstance i : List.copyOf(ACTIVE.values()))

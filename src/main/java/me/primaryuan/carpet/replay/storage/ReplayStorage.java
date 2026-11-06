@@ -598,7 +598,13 @@ public final class ReplayStorage
             return false;
         }
         data.metadata.access = access;
-        return writeAtomic(file(server, recordingId), data);
+        boolean ok = writeAtomic(file(server, recordingId), data);
+        if (ok)
+        {
+            me.primaryuan.carpet.replay.phantom.PhantomEntityTracker.revalidateAccess(
+                    server, recordingId, access, data.metadata.ownerUuid);
+        }
+        return ok;
     }
 
     // ==================== 检查点/恢复 ====================

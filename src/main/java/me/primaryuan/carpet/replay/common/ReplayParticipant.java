@@ -25,7 +25,7 @@ public final class ReplayParticipant
 
     public final String uuid;
     public final String name;
-    public final JoinMethod joinMethod;
+    public JoinMethod joinMethod;
     /** 按开始 Tick 升序、互不重叠的在线片段 */
     public final List<Segment> segments = new ArrayList<>();
     /** 幻影皮肤：参与者自己的 profile（离线也可显示） */
