@@ -35,14 +35,16 @@ public class PlayerRandomStrollGoal extends PlayerGoal {
         this.mob = mob;
         this.speedModifier = speedModifier;
         this.setFlags(EnumSet.of(PlayerGoal.Flag.MOVE));
-        this.setInterval(60); // 平均 3 秒尝试选一个漫步点（原版 1/120 掷骰的等效节奏）
+        this.setInterval(1); // 原版无冷却层（掷骰在 canUse 内），每 2 tick 评估一次
     }
 
     @Override
     public boolean canUse() {
-        // 节流由 canStart() 的 interval 统一承担（原版是每 tick 评估 × 1/120 掷骰，
-        // 等效平均 120 tick 一步；此处 60 tick 评估一次 + 稳定尝试，节奏一致且
-        // 避免"两层节流相乘 = 平均 3 分钟才挪一步"的假死观感）
+        // 原版 canUse：nextInt(reducedTickDelay(interval=120))!=0 → 放过本次评估
+        // （1/60 次评估 ≈ 每 120 游戏刻一次真正选点；移植版同掷骰，无第二层节流）
+        if (this.mob.getRandom().nextInt(this.reducedTickDelay(120)) != 0) {
+            return false;
+        }
         BlockPos dest = this.findRandomWalkablePos();
         if (dest == null) {
             return false;

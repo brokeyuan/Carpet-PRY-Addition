@@ -1,5 +1,6 @@
 package me.primaryuan.carpet.brain.goal;
 
+import me.primaryuan.carpet.brain.BrainTeams;
 import me.primaryuan.carpet.brain.PlayerGoal;
 import me.primaryuan.carpet.brain.PryMob;
 import net.minecraft.world.Difficulty;
@@ -38,7 +39,7 @@ public class PlayerHurtByTargetGoal extends PlayerGoal {
         this.mob = mob;
         this.ignored = ignored;
         this.setFlags(EnumSet.of(PlayerGoal.Flag.TARGET));
-        this.setInterval(2); // 被打要第一时间还手（2 tick 节流）
+        this.setInterval(1); // 原版无内部节流：每 2 tick 评估一次，被打尽快还手
     }
 
     @Override
@@ -48,6 +49,10 @@ public class PlayerHurtByTargetGoal extends PlayerGoal {
                 || attacker == this.mob.asLiving()
                 || attacker.level() != this.mob.level()
                 || (this.ignored != null && attacker.getUUID().equals(this.ignored))) {
+            return false;
+        }
+        // 战斗队伍：同队误伤不触发复仇（复仇名单让位于友军保护）
+        if (BrainTeams.isTeamFriendly(this.mob.asLiving(), attacker)) {
             return false;
         }
         // 旁观/创造不可选 + 和平难度不与玩家敌对（原版 LivingEntity.canAttack 门禁语义）
@@ -67,11 +72,16 @@ public class PlayerHurtByTargetGoal extends PlayerGoal {
     @Override
     public boolean canContinueToUse() {
         LivingEntity target = this.mob.getTarget();
+        if (target == null || !target.isAlive() || target.level() != this.mob.level()) {
+            return false;
+        }
+        // 战斗队伍：追击中目标改为同队 → 立即放弃
+        if (BrainTeams.isTeamFriendly(this.mob.asLiving(), target)) {
+            return false;
+        }
         // 追击上限 48 格（原版 HurtByTargetGoal 无距离上限会追到世界边缘），
         // 攻击者跑出范围即清目标，交还给常规索敌/漫游
-        return target != null && target.isAlive()
-                && target.level() == this.mob.level()
-                && this.mob.distanceToSqr(target) <= 48.0 * 48.0;
+        return this.mob.distanceToSqr(target) <= 48.0 * 48.0;
     }
 
     @Override

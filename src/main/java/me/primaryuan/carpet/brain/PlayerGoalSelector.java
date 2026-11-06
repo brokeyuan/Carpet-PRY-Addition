@@ -12,18 +12,21 @@ import java.util.Map;
  *
  * <p>原版每个生物的脑子里有两个 {@code GoalSelector}：{@code goalSelector} 负责
  * 移动/行为目标，{@code targetSelector} 负责攻击目标选择（通常挂 TARGET 旗标）。
- * 调度规则（与原版一致）：</p>
+ * 调度规则（26.3/1.21.11/1.21 字节码逐版核实，三版一致）：</p>
  *
  * <ol>
- *   <li>每 tick 先推进<b>已激活</b>的目标：{@code canContinueToUse()} 成立则
- *       {@code tick()}，否则 {@code stop()} 并移除；</li>
- *   <li>再按优先级从高到低（数值小优先）尝试启动未激活目标：需通过
- *       {@link PlayerGoal#canStart()} 冷却门控且 {@code canUse()} 成立，
- *       且其旗标与当前运行中目标的旗标<b>不冲突</b>（两目标不会同时抢腿/枪眼/手）。</li>
+ *   <li>{@code Mob.serverAiStep} 以 {@code (tickCount + id) % 2} 奇偶门分两档：
+ *       <b>完整 tick</b>（偶数）＝清理（对运行中目标查 canContinueToUse）→
+ *       goalUpdate（评估未运行目标 canUse 并启动）→ 推进全部运行中目标；
+ *       <b>轻量 tick</b>（奇数）＝只推进 requiresUpdateEveryTick 的运行中目标；</li>
+ *   <li>启动顺序按优先级从高到低（数值小优先），需通过 {@link PlayerGoal#canStart()}
+ *       冷却门控且 {@code canUse()} 成立，且旗标与当前运行中目标<b>不冲突</b>；
+ *       更高优先级候选可抢占运行中的低优先级目标。</li>
  * </ol>
  *
  * <p>这样 6 种模式里的"近战 vs 跟随 vs 漫步 vs 逃跑"天然互斥，不会出现
- * 两个逻辑同时改 zza/xxa 互相打架的"人格分裂"。</p>
+ * 两个逻辑同时改 zza/xxa 互相打架的"人格分裂"。{@code reducedTickDelay} 换算
+ * 依据完整 tick 的评估节奏（每 2 tick 评估一次）。</p>
  */
 public class PlayerGoalSelector {
 
@@ -64,46 +67,68 @@ public class PlayerGoalSelector {
         this.goals.clear();
     }
 
+    /** 移除一个已注册目标（对齐原版 removeGoal：运行中则先 stop 再移出） */
+    public void removeGoal(PlayerGoal goal) {
+        WrappedGoal wrapped = this.goals.remove(goal);
+        if (wrapped != null && wrapped.running) {
+            wrapped.stop();
+            this.runningGoals.remove(wrapped);
+        }
+    }
 
-    /** 每 tick 调度入口（BrainManager 驱动，位于玩家 travel 之前） */
-    public void tick() {
-        Iterator<WrappedGoal> it = this.runningGoals.iterator();
-        while (it.hasNext()) {
-            WrappedGoal wrapped = it.next();
-            if (wrapped.goal.canContinueToUse()) {
+    /** 某 Goal 是否已注册在册（武器形态换装测试与装配自检用） */
+    boolean isRegistered(PlayerGoal goal) {
+        return this.goals.containsKey(goal);
+    }
+
+
+    /**
+     * 每 tick 调度入口（BrainManager 驱动，位于玩家 travel 之前）。
+     *
+     * @param fullTick 完整评估 tick（奇偶门，见类注）：true 才做清理 + 候选评估，
+     *                 两种 tick 都推进运行中目标（轻量 tick 仅限 rUE 目标）
+     */
+    public void tick(boolean fullTick) {
+        if (fullTick) {
+            // goalCleanup：先于 goalUpdate（原版同序）；canContinueToUse 每 2 tick 查一次
+            Iterator<WrappedGoal> it = this.runningGoals.iterator();
+            while (it.hasNext()) {
+                WrappedGoal wrapped = it.next();
+                if (!wrapped.goal.canContinueToUse()) {
+                    wrapped.stop();
+                    it.remove();
+                }
+            }
+            // goalUpdate：候选按优先级升序；要求冷却通过；旗标冲突时允许
+            // 更高优先级（数值更小）的新目标抢占运行中的低优先级目标
+            List<WrappedGoal> candidates = new ArrayList<>();
+            for (WrappedGoal wrapped : this.goals.values()) {
+                if (!wrapped.running && wrapped.goal.canStart()) {
+                    candidates.add(wrapped);
+                }
+            }
+            candidates.sort(Comparator.comparingInt(w -> w.priority));
+            for (WrappedGoal wrapped : candidates) {
+                this.tryStart(wrapped);
+            }
+        }
+        // tickRunningGoals：完整 tick 全部推进；轻量 tick 只推进 requiresUpdateEveryTick
+        for (WrappedGoal wrapped : this.runningGoals) {
+            if (fullTick || wrapped.goal.requiresUpdateEveryTick()) {
                 wrapped.goal.tick();
-            } else {
-                wrapped.stop();
-                it.remove();
             }
-        }
-        // 尝试启动新目标：优先级升序、要求冷却通过；旗标冲突时允许
-        // 更高优先级（数值更小）的新目标抢占运行中的低优先级目标
-        List<WrappedGoal> candidates = new ArrayList<>();
-        for (WrappedGoal wrapped : this.goals.values()) {
-            if (!wrapped.running && wrapped.goal.canStart()) {
-                candidates.add(wrapped);
-            }
-        }
-        candidates.sort(Comparator.comparingInt(w -> w.priority));
-        for (WrappedGoal wrapped : candidates) {
-            this.tryStart(wrapped);
         }
     }
 
     /**
-     * 尝试启动一个候选目标（原版 GoalSelector 的旗标互斥 + 抢占语义）。
-     * 缺少抢占时会出现"漫步中假人对眼前的敌人视而不见"——漫步（低优先级）
-     * 未走完路径前，近战/恐慌（高优先级）一直被旗标互斥拦住。
+     * 尝试启动一个候选目标（原版 GoalSelector 顺序：旗标可替换性先于 canUse——
+     * canUse 可能带实体扫描乃至全局副作用，被旗标挡住的候选不得触发它；
+     * 被抢占目标在候选确认能启动后才停止，不出现"先停旧行为再发现新行为不能启动"）。
      *
      * @return 是否成功启动
      */
     private boolean tryStart(WrappedGoal candidate) {
-        // 先评估候选是否真要启动（canUse 通常带目标扫描/A* 等开销，
-        // 顺序上必须在停止任何运行中目标之前）
-        if (!candidate.goal.canUse()) {
-            return false;
-        }
+        // 先判旗标兼容性与抢占资格（不调用 canUse）
         List<WrappedGoal> preempted = null;
         for (WrappedGoal running : this.runningGoals) {
             if (!conflicts(running, candidate)) {
@@ -116,6 +141,10 @@ public class PlayerGoalSelector {
                 preempted = new ArrayList<>();
             }
             preempted.add(running);
+        }
+        // 资格通过才评估 canUse（可带实体扫描/A* 等开销）
+        if (!candidate.goal.canUse()) {
+            return false;
         }
         if (preempted != null) {
             for (WrappedGoal running : preempted) {

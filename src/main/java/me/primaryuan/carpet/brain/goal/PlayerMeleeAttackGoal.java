@@ -41,9 +41,13 @@ public class PlayerMeleeAttackGoal extends PlayerGoal {
         this.speedModifier = speedModifier;
         this.followingTargetEvenIfNotSeen = followingTargetEvenIfNotSeen;
         this.setFlags(EnumSet.of(PlayerGoal.Flag.MOVE, PlayerGoal.Flag.LOOK));
-        // 短评估间隔：目标锁定后最多 4 tick 内开始追击（canUse 无目标时是
-        // 一次空指针级廉价检查，有目标时才会尝试算路，无空转开销）
-        this.setInterval(4);
+        this.setInterval(1); // 原版 canUse 无节流：每 2 tick 评估一次
+    }
+
+    /** 原版 MeleeAttackGoal 覆写 requiresUpdateEveryTick：tick 内重算/攻击计时按游戏 tick 计 */
+    @Override
+    public boolean requiresUpdateEveryTick() {
+        return true;
     }
 
     @Override
@@ -94,6 +98,12 @@ public class PlayerMeleeAttackGoal extends PlayerGoal {
         this.mob.setAggressive(true);
         this.ticksUntilNextPathRecalculation = 0;
         this.ticksUntilNextAttack = 0;
+        // 对齐原版 MeleeAttackGoal.start()：canUse 里算好的路径立即接管导航，
+        // 不等首个 tick 的重算分支（canUse 的 createPath 与 tick 的 moveTo 是两次
+        // 独立 A*，目标在间隙移动会让第二次建路失败 → 启动即停摆一拍）
+        if (this.path != null) {
+            this.mob.getNavigation().moveTo(this.path, this.speedModifier);
+        }
     }
 
     @Override

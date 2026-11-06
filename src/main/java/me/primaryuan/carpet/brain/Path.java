@@ -29,4 +29,9 @@ public final class Path {
     public BlockPos first() {
         return this.nodes.get(0);
     }
+
+    /** 路径最后一格（终点；空路径不可调用） */
+    public BlockPos last() {
+        return this.nodes.get(this.nodes.size() - 1);
+    }
 }

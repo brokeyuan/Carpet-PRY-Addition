@@ -38,6 +38,7 @@
     "rule.moreEndCrystalTypes.EndCrystalItemMixin",
     "rule.fixEndCrystalSync.ServerEntityMixin",
     "rule.fakePlayerBrain.ServerPlayerBrainMixin",
+    "rule.fakePlayerBrain.PlayerListBrainMixin",
     "rule.fakePlayerBrain.EntityPlayerActionPackBrainMixin",
     "rule.fakePlayerBrain.ServerPlayerMobMixin",
     "rule.chatPunishment.ServerGamePacketListenerMixin",
@@ -73,9 +74,3 @@
     "defaultRequire": 1
   }
 }
-
-
-
-
-
-

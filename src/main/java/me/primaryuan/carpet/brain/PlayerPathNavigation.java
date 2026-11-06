@@ -1,6 +1,7 @@
 package me.primaryuan.carpet.brain;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -42,6 +43,10 @@ public class PlayerPathNavigation {
     private static final double REACH_DIST_SQ = 0.36;
     /** 视线裁剪时允许的最大直线距离（超过则放弃直走，按节点折线走） */
     private static final double LOOKAHEAD_MAX_DIST_SQ = 49.0;
+    /** 扩展允许的最大下落格数（原版陆生寻路允许 3 格坠落） */
+    private static final int MAX_DROP = 3;
+    /** 水面涉水节点默认附加代价（软规避；各模式按原版 water malus 调整） */
+    public static final double DEFAULT_WATER_MALUS = 8.0;
 
     private final Player player;
     private final PryMob prowler;
@@ -55,6 +60,10 @@ public class PlayerPathNavigation {
     private Vec3 lastTickPos;
     private int stuckTicks;
     private int recomputeCount;
+    /** 水面涉水节点附加代价（软规避）：各模式按原版 water malus 在装配时调整 */
+    private double waterMalus = DEFAULT_WATER_MALUS;
+    /** 避日寻路（原版 GroundPathNavigation.avoidSun，RestrictSunGoal 开关） */
+    private boolean avoidSun = false;
 
     public PlayerPathNavigation(Player player) {
         this.player = player;
@@ -108,7 +117,9 @@ public class PlayerPathNavigation {
     /** 装载一条现成路径（规避目标用） */
     public void moveTo(Path path, double speed) {
         this.pathFollowSpeed = speed;
-        this.setPath(path, path != null && !path.isEmpty() ? path.first() : null);
+        // 终点 = 路径最后一格：lastDest 供 isSameDestInProgress 与卡死重算用，
+        // 取首格会让"沿用现路径/卡死重算"锚定在第一步目标上（重算出错误短路径）
+        this.setPath(path, path != null && !path.isEmpty() ? path.last() : null);
     }
 
     /** 为目标实体算一条路径（0 = 精确到目标脚下；>0 = 停在目标周边该距离处） */
@@ -120,7 +131,7 @@ public class PlayerPathNavigation {
     public Path createPath(double x, double y, double z, int distance) {
         BlockPos goal = BlockPos.containing(x, y, z);
         if (distance > 0) {
-            BlockPos near = this.nearestWalkable(goal, distance);
+            BlockPos near = this.nearestStandable(goal, distance);
             goal = near != null ? near : goal;
         }
         return this.computePath(goal);
@@ -129,6 +140,38 @@ public class PlayerPathNavigation {
     /** 修改当前跟随速度（规避目标进/退切换用） */
     public void setSpeedModifier(double speed) {
         this.pathFollowSpeed = speed;
+    }
+
+    /** 设置水面涉水节点附加代价（各模式按原版 water malus 在装配时调整） */
+    public void setWaterMalus(double malus) {
+        this.waterMalus = malus;
+    }
+
+    /**
+     * 开关避日寻路（原版 {@code GroundPathNavigation.setAvoidSun}）。
+     * 开启后每次装载路径执行 {@code trimPath}：身处非露天位置时，把路径截断到
+     * 第一个露天节点之前——走到最近的荫蔽边界即停，不主动走出阴影。
+     */
+    public void setAvoidSun(boolean avoidSun) {
+        this.avoidSun = avoidSun;
+    }
+
+    /** 原版 GroundPathNavigation.trimPath：荫蔽中把路径截断到露天节点之前 */
+    private void trimPathForSun() {
+        if (!this.avoidSun || this.path == null || this.path.isEmpty()) {
+            return;
+        }
+        Level currentLevel = this.player.level();
+        if (currentLevel.canSeeSky(this.player.blockPosition())) {
+            return; // 原版同款：已露天时不截断（路径照走）
+        }
+        for (int i = 0; i < this.path.nodes.size(); i++) {
+            BlockPos node = this.path.nodes.get(i);
+            if (currentLevel.canSeeSky(node)) {
+                this.path.nodes.subList(i, this.path.nodes.size()).clear();
+                return;
+            }
+        }
     }
 
     /** 停止寻路并停下脚步 */
@@ -174,11 +217,17 @@ public class PlayerPathNavigation {
         }
 
         Vec3 feet = this.player.position();
-        // 卡死检测：20 tick 内几乎没位移 → 重算（初始目标保留）
-        if (this.lastTickPos != null && feet.distanceToSqr(this.lastTickPos) < 4.0E-4) {
-            this.stuckTicks++;
-        } else {
-            this.stuckTicks = 0;
+        // 卡死检测：20 tick 内横向几乎没位移 → 重算（初始目标保留）。
+        // 只看水平分量：撞墙跳的垂直位移（起跳+坠落）不重置计数，否则
+        // "原地反复跳"永远不会触发重算（表现为顶着墙无限跳）
+        if (this.lastTickPos != null) {
+            double dx = feet.x - this.lastTickPos.x;
+            double dz = feet.z - this.lastTickPos.z;
+            if (dx * dx + dz * dz < 4.0E-4) {
+                this.stuckTicks++;
+            } else {
+                this.stuckTicks = 0;
+            }
         }
         this.lastTickPos = feet;
         if (this.stuckTicks >= MAX_STUCK_TICKS) {
@@ -270,28 +319,34 @@ public class PlayerPathNavigation {
     private Path createPathToEntity(Entity entity, int distance) {
         BlockPos goal = entity.blockPosition();
         if (distance > 0) {
-            BlockPos near = this.nearestWalkable(goal, distance);
+            BlockPos near = this.nearestStandable(goal, distance);
             goal = near != null ? near : goal;
         }
-        if (this.isWalkableCell(goal.getX(), goal.getY(), goal.getZ())) {
+        if (this.isStandableCell(goal.getX(), goal.getY(), goal.getZ())) {
             return this.computePath(goal);
         }
         // 目标格不可站（目标在水里/墙里）：找其周边最近可站格
-        BlockPos near = this.nearestWalkable(goal, 3);
+        BlockPos near = this.nearestStandable(goal, 3);
         return near != null ? this.computePath(near) : null;
     }
 
-    /** 在 goal 的曼哈顿距离 ≤ radius 的格子里找一个最近可站点（含 goal 本身） */
-    private BlockPos nearestWalkable(BlockPos goal, int radius) {
-        for (int r = 0; r <= radius; r++) {
-            for (int dx = -r; dx <= r; dx++) {
-                for (int dz = -r; dz <= r; dz++) {
-                    if (Math.abs(dx) + Math.abs(dz) > r) {
-                        continue;
-                    }
-                    BlockPos candidate = goal.offset(dx, 0, dz);
-                    if (this.isWalkableCell(candidate.getX(), candidate.getY(), candidate.getZ())) {
-                        return candidate;
+    /**
+     * 在 goal 的曼哈顿距离 ≤ radius 的格子里找一个最近可站点（含 goal 本身）。
+     * 同层扫完再扫上/下一层：平嵌地面（箱口与地面齐平）或抬升一格的箱体，
+     * 可站点在 goal 的 ±1 层——只扫同层会让这类目标永远找不到落点。
+     */
+    private BlockPos nearestStandable(BlockPos goal, int radius) {
+        for (int dy : new int[]{0, 1, -1}) {
+            for (int r = 0; r <= radius; r++) {
+                for (int dx = -r; dx <= r; dx++) {
+                    for (int dz = -r; dz <= r; dz++) {
+                        if (Math.abs(dx) + Math.abs(dz) > r) {
+                            continue;
+                        }
+                        BlockPos candidate = goal.offset(dx, dy, dz);
+                        if (this.isStandableCell(candidate.getX(), candidate.getY(), candidate.getZ())) {
+                            return candidate;
+                        }
                     }
                 }
             }
@@ -306,6 +361,7 @@ public class PlayerPathNavigation {
         this.stuckTicks = 0;
         this.recomputeCount = 0;
         this.lastTickPos = null;
+        this.trimPathForSun(); // 原版 startFollowing 内同点调用（避日开启时截断）
     }
 
     /**
@@ -327,8 +383,8 @@ public class PlayerPathNavigation {
         if (this.isGoalReached(start, goal)) {
             return new Path(List.of());
         }
-        if (!this.isWalkableCell(goal.getX(), goal.getY(), goal.getZ())) {
-            BlockPos near = this.nearestWalkable(goal, 3);
+        if (!this.isStandableCell(goal.getX(), goal.getY(), goal.getZ())) {
+            BlockPos near = this.nearestStandable(goal, 3);
             if (near == null) {
                 return null;
             }
@@ -371,7 +427,10 @@ public class PlayerPathNavigation {
         return closed.contains(key(best.x, best.y, best.z)) ? this.buildPath(best) : null;
     }
 
-    /** 展开上下左右 + 三种高度（持平/爬一格/降一格），带爬坡代价与危险地形惩罚 */
+    /**
+     * 展开上下左右 + 三种高度（持平/爬一格/降一格）+ 下落 2~3 格，
+     * 带爬坡代价与危险地形惩罚。
+     */
     private void expand(PriorityQueue<Node> open, java.util.Map<Long, Node> openMap,
                         Set<Long> closed, Node node, BlockPos goal) {
         for (int dx = -1; dx <= 1; dx++) {
@@ -379,10 +438,12 @@ public class PlayerPathNavigation {
                 if (dx == 0 && dz == 0) {
                     continue;
                 }
+                int nx = node.x + dx;
+                int nz = node.z + dz;
                 // 邻居：优先同层，其次向上、向下（各尝试最近的可站高度）
                 int[] yCandidates = {node.y, node.y + 1, node.y - 1};
                 for (int dy : yCandidates) {
-                    if (!this.isWalkableCell(node.x + dx, dy, node.z + dz)) {
+                    if (!this.isStandableCell(nx, dy, nz)) {
                         continue;
                     }
                     // 高度差超过 1 的邻居本次不支持（爬 1 / 落 1 已覆盖）
@@ -397,28 +458,73 @@ public class PlayerPathNavigation {
                     // 熔岩/火焰格（含头顶）→ 禁行——熔岩与火焰无碰撞箱，
                     // 可站立判定本身不排除它们，必须显式拦截；
                     // 铁轨格 → 高代价软惩罚（原版僵尸"不尝试穿过铁轨"，
-                    // 绕不过去才走）。每步最多 ±1 高差，A* 天然不会生成
-                    // 下落超过 3 格的路径，悬崖规避由此得到保证。
-                    double hazard = this.hazardPenalty(node.x + dx, dy, node.z + dz);
+                    // 绕不过去才走）；水面涉水格 → waterMalus 软惩罚。
+                    // 每步爬升 ≤1；下落由下方 drop 段处理
+                    double hazard = this.hazardPenalty(nx, dy, nz);
                     if (hazard < 0) {
                         continue;
                     }
                     cost += hazard;
-                    long nKey = key(node.x + dx, dy, node.z + dz);
-                    if (closed.contains(nKey)) {
+                    if (this.isWaterCell(nx, dy, nz)) {
+                        cost += this.waterMalus;
+                    }
+                    this.offer(open, openMap, closed, node, nx, dy, nz, goal, cost);
+                }
+                // 下落 2~3 格（原版陆生寻路允许的坠落范围）：
+                // 沿口格（邻居当前层）须"可通行"（本格与头顶无碰撞即可，不要求
+                // 脚下支撑——开放悬崖的沿口脚下必是空）：原版 drop 评估要求沿口
+                // 开放，堵口悬崖不允许下落（撞墙重算循环）
+                if (!this.isPassableCell(nx, node.y, nz)) {
+                    continue;
+                }
+                for (int drop = 2; drop <= MAX_DROP; drop++) {
+                    int ny = node.y - drop;
+                    if (!this.isStandableCell(nx, ny, nz)
+                            || !this.isFallColumnClear(nx, node.y, ny, nz)) {
                         continue;
                     }
-                    double g = node.g + cost;
-                    Node existing = openMap.get(nKey);
-                    if (existing != null && existing.g <= g) {
+                    double hazard = this.hazardPenalty(nx, ny, nz);
+                    if (hazard < 0) {
                         continue;
                     }
-                    Node next = new Node(node.x + dx, dy, node.z + dz, node, g, heuristic(new BlockPos(node.x + dx, dy, node.z + dz), goal));
-                    openMap.put(nKey, next);
-                    open.add(next);
+                    if (this.isWaterCell(nx, ny, nz)) {
+                        hazard += this.waterMalus;
+                    }
+                    this.offer(open, openMap, closed, node, nx, ny, nz, goal, 1.0 + drop * 0.6 + hazard);
                 }
             }
         }
+    }
+
+    /** 向开集登记一个后继节点（g 值更优才更新） */
+    private void offer(PriorityQueue<Node> open, java.util.Map<Long, Node> openMap,
+                       Set<Long> closed, Node node, int x, int y, int z, BlockPos goal, double cost) {
+        long nKey = key(x, y, z);
+        if (closed.contains(nKey)) {
+            return;
+        }
+        double g = node.g + cost;
+        Node existing = openMap.get(nKey);
+        if (existing != null && existing.g <= g) {
+            return;
+        }
+        Node next = new Node(x, y, z, node, g, heuristic(new BlockPos(x, y, z), goal));
+        openMap.put(nKey, next);
+        open.add(next);
+    }
+
+    /** 下落通道：起点下一格到落点上一格全部无碰撞且非熔岩/火焰（含空中火焰） */
+    private boolean isFallColumnClear(int x, int fromY, int toY, int z) {
+        for (int y = fromY - 1; y > toY; y--) {
+            BlockPos pos = new BlockPos(x, y, z);
+            if (!this.level.getBlockState(pos).getCollisionShape(this.level, pos).isEmpty()) {
+                return false;
+            }
+            if (this.isHazardCell(x, y, z)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -466,12 +572,7 @@ public class PlayerPathNavigation {
         return Math.abs(pos.getX() - goal.getX()) <= 1
                 && Math.abs(pos.getZ() - goal.getZ()) <= 1
                 && Math.abs(pos.getY() - goal.getY()) <= 1
-                && this.isWalkableCellForGoal(pos);
-    }
-
-    /** 目标判定专用：目标格本身可站即可（不做待选邻居的严格校验） */
-    private boolean isWalkableCellForGoal(BlockPos pos) {
-        return this.isWalkableCell(pos.getX(), pos.getY(), pos.getZ());
+                && this.isStandableCell(pos.getX(), pos.getY(), pos.getZ());
     }
 
     /** 从终点沿 parent 回溯构建路径（去掉起点格自身） */
@@ -497,6 +598,52 @@ public class PlayerPathNavigation {
      */
     private boolean isWalkableCell(int x, int y, int z) {
         return isWalkableCell(this.level, new BlockPos(x, y, z));
+    }
+
+    /**
+     * A* 节点可站立判定：陆行口径（{@link #isWalkableCell}）或水面涉水口径。
+     * 涉水口径让"目标游进水里/追进浅滩"可建立路径（此前水格一律不可站，
+     * 近战 Goal 建路失败且够不着 → 目标锁死、假人站桩——导航失败无恢复的
+     * 停摆成因之一）；深潜（头格入水）不做。
+     */
+    private boolean isStandableCell(int x, int y, int z) {
+        if (this.isWalkableCell(x, y, z)) {
+            return true;
+        }
+        return this.isSurfaceWaterCell(x, y, z);
+    }
+
+    /** 水面涉水格：脚格浸水、头格露水、本格与头格均无碰撞（栅栏立在水中仍挡路） */
+    private boolean isSurfaceWaterCell(int x, int y, int z) {
+        BlockPos pos = new BlockPos(x, y, z);
+        if (!this.level.getFluidState(pos).is(FluidTags.WATER)) {
+            return false;
+        }
+        if (this.level.getFluidState(pos.above()).is(FluidTags.WATER)) {
+            return false;
+        }
+        return this.level.getBlockState(pos).getCollisionShape(this.level, pos).isEmpty()
+                && this.level.getBlockState(pos.above()).getCollisionShape(this.level, pos.above()).isEmpty();
+    }
+
+    /** 该格是否浸水（水面涉水代价判定用） */
+    private boolean isWaterCell(int x, int y, int z) {
+        return this.level.getFluidState(new BlockPos(x, y, z)).is(FluidTags.WATER);
+    }
+
+    /**
+     * 方格可否"通行"（不要求落地）：本格与头顶格碰撞为空。
+     * 下落沿口专用——开放悬崖的沿口脚下必是空，站立判定会拦截一切合法下落。
+     */
+    private boolean isPassableCell(int x, int y, int z) {
+        return isPassableCell(this.level, x, y, z);
+    }
+
+    /** {@link #isPassableCell(int, int, int)} 的可测形态（与 {@link #isWalkableCell(Level, BlockPos)} 同模式） */
+    public static boolean isPassableCell(Level level, int x, int y, int z) {
+        BlockPos pos = new BlockPos(x, y, z);
+        return level.getBlockState(pos).getCollisionShape(level, pos).isEmpty()
+                && level.getBlockState(pos.above()).getCollisionShape(level, pos.above()).isEmpty();
     }
 
     /**

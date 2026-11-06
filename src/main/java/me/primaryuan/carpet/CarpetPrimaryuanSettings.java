@@ -65,8 +65,6 @@ public class CarpetPrimaryuanSettings {
     public static boolean playerHat = false;
 
     @Rule(
-            options = {"false", "true"},
-            strict = true,
             categories = {PRIMARYUAN, SURVIVAL, FEATURE}
     )
     public static boolean playerHeadSkin = false;

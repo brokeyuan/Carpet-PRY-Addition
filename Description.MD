@@ -85,7 +85,7 @@ Lets multiple real Carpet fake players share one UUID and skin online simultaneo
 
 ### Fake Player Brain (`fakePlayerBrain`)
 
-Give fake players one of 19 mob behavior modes with `/player <name> brain <mode>`. They keep their player body and inventory; no extra entities or items are created. Supports CJK mode names, colored name suffixes and `keep` for rejoins during the current server run.
+Give fake players one of 24 mob behavior modes with `/player <name> brain <mode>`. They keep their player body and inventory; no extra entities or items are created. Supports CJK mode names, colored name suffixes and `keep` for rejoins during the current server run.
 
 ---
 

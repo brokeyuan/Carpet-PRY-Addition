@@ -322,6 +322,10 @@ Reuses Carpet's own permission check on the `/player` command (controlled by Car
 
 Adds a sendto sub-command under Carpet's built-in `/player <name>` command tree, creating **one-way** inventory item flow links between fake players: the source keeps transferring its items to the target.
 
+### Permission
+
+Reuses Carpet's own permission check on the `/player` command (controlled by Carpet's `commandPlayer` rule), with no additional restriction.
+
 ### Command Syntax
 
 - `/player <src> sendto <target>`: create the link and start transferring
@@ -355,23 +359,23 @@ Adds a sendto sub-command under Carpet's built-in `/player <name>` command tree,
 Adds a standalone `brain` sub-command under Carpet's `/player <name>` command tree via a Mixin, attaching/detaching mob-style AI to fake players:
 
 ```text
-/player <name> brain [zombie|babyzombie|skeleton|witherskeleton|drowned|zombiepiglin|pillager|vindicator|irongolem|spider|piglin|piglinbrute|slime|magmacube|fish|enderman|wolf|villager|pig|off] [keep]
+/player <name> brain [zombie|babyzombie|skeleton|witherskeleton|drowned|zombiepiglin|pillager|vindicator|irongolem|spider|piglin|piglinbrute|slime|magmacube|fish|enderman|wolf|villager|pig|allay|fox|witch|coppergolem|off] [keep]
 ```
 
 Mode names follow `/carpet language`: with a Chinese language (zh_cn/zh_tw) completion and input use Chinese names (e.g. `brain 僵尸`); English keys always work. `keep` can be appended to either.
 
 | Argument | Behavior |
 |----------|----------|
-| (none) | Query the current AI mode |
-| `<mode> keep` | Restore the mode and wolf owner when the fake rejoins during this server run; restarting or `brain off` clears it |
+| (none) | Query the current AI mode and diagnostics (target, pathing, movement) |
+| `<mode> keep` | Restore the mode and owner (wolf hate target / allay delivery target) when the fake rejoins during this server run; restarting or `brain off` clears it |
 | `zombie` | Chases players in melee. |
-| `skeleton` | Shoots with a bow and kites targets; consumes inventory arrows. |
+| `skeleton` | Shoots with a bow and kites targets; consumes inventory arrows; seeks shade when burning in daylight. |
 | `pillager` | Shoots with a crossbow; 25-tick charge. |
 | `irongolem` | Attacks hostile mobs and hostile fake players, excluding creepers; retaliates when hurt. |
-| `spider` | Neutral by day, hostile at night with sprinting pursuit. |
-| `wolf` | Follows the command executor and assists in combat; does not teleport to follow. |
-| `villager` | Strolls, panics when hurt and avoids zombies. |
-| `enderman` | Becomes hostile when stared at and sprints in pursuit. |
+| `spider` | Neutral by day, hostile at night with sprinting pursuit and close-range pounce. |
+| `wolf` | Follows the executor and assists in combat (flees first when hurt); stares at players holding food. |
+| `villager` | Lives by the vanilla schedule; a claimed composter is a long-term farmer job ([Villager-Farmer]) kept across gathering/sleep/panic pauses; works crops and composts while at work. |
+| `enderman` | Becomes hostile when stared at (64-block range) and sprints in pursuit. |
 | `babyzombie` | Faster melee pursuit than the zombie mode. |
 | `witherskeleton` | Melee-chases players, iron golems and piglins; avoids wolves. Hits do not apply Wither. |
 | `drowned` | Throws a held trident, otherwise uses melee; alerts nearby drowned and zombified-piglin fakes when hurt. |
@@ -381,9 +385,25 @@ Mode names follow `/carpet language`: with a Chinese language (zh_cn/zh_tw) comp
 | `slime` | Hops while idle and pursues targets in a straight line. |
 | `magmacube` | Uses the same hopping movement and pursuit as slime. |
 | `fish` | Swims, avoids players within 8 blocks, flees when hurt, surfaces for air and flops on land. |
-| `pig` | Strolls when idle and flees when hurt. |
+| `pig` | Strolls when idle, flees when hurt, and follows players holding carrots. |
 | `piglin` | Hostile to players without gold armor; uses melee, crossbows or spears by held weapon, and picks up and equips gear. |
-| `off` | Detaches the brain, restoring Carpet manual control |
+| `allay` | Collects items matching the offhand sample and delivers them to the executing player; console-attached allays have no default target and only deliver to a valid note block. Note-block listening follows the brain session, switches to a note block for 30 seconds and respects a 240-tick delivery cooldown. |
+| `fox` | Picks mature sweet berries, eats FOOD items when actually hungry, hunts chickens/rabbits and avoids wolves. |
+| `witch` | Uses real inventory potions; self-healing drinks potions, attack potions follow the vanilla 60-tick/10-block cycle with target/team/line-of-sight rechecks; no fake throws without stock. |
+| `coppergolem` | Takes up to 16 items from copper chests and books the actual inventory delta; pausing keeps cargo and resumes the matching seek phase, both double-chest halves share one identity; 1.21.10+. |
+| `off` | Detaches the brain, restoring Carpet manual control (combat team kept) |
+
+**Combat teams** (independent of the brain, settable without one):
+
+| Argument | Behavior |
+|----------|----------|
+| `team` | Query the combat team |
+| `team <team>` | Join or switch team (names support Chinese and English, Tab completion for existing teams) |
+| `team off` | Leave the team |
+
+Fakes sharing the same non-empty team name are allies (across brain modes): they never target each other, never retaliate, never join group aggro, staring does not trigger anger, and attacks never land. Switching to the same team mid-combat immediately revokes the invalid targets. Enemies of different or no teams fight under each mode's normal rules; passive modes (pig/fish/villager) are unaffected. Real players never carry team identity; difficulty, creative/spectator and owner-exemption gates stay in effect. Friendly-fire protection is judged at the moment of attack: in-flight projectiles, sweep hits and an already-raised spear thrust (a settle window of at most 1 tick) do not track team changes in flight — vanilla trajectories are not intercepted. Teams are runtime data: brain swap, `brain off` and rejoin keep them; server restart clears them.
+
+While a brain is attached Carpet's manual movement, attack and use commands are suspended; `brain off` or disabling the rule restores them. Death, rejoin and mode switches detach the old brain.
 
 ### Permission
 
@@ -407,8 +427,18 @@ Inherits Carpet's `/player` command permission check (controlled by Carpet's `co
 # Attach skeleton mode (remember to give the fake player a bow and arrows)
 /player Steve brain skeleton
 
+# Two zombie fakes in the same team never fight each other
+/player ZombieA brain zombie
+/player ZombieB brain zombie
+/player ZombieA brain team red
+/player ZombieB brain team red
+
 # Detach the brain, restoring Carpet manual control
 /player Steve brain off
+
+# Query / leave the combat team (kept across brain off)
+/player Steve brain team
+/player Steve brain team off
 ```
 
 ### Automatic Detach Conditions
@@ -767,7 +797,12 @@ Use `||` for a literal `|`; legacy color codes use `&` (e.g. `&c`), `&&` for a l
 
 > **Related rule**: `countdown` (on by default)
 
-The unified entry for count-up and countdown: one active timer per server, both directions sharing pause/resume/stop controls; four display positions and three effect tiers combine freely, and the common cases are one short command. Timing follows real elapsed time (low TPS does not stretch it), implemented purely with server packets — vanilla clients work. Command blocks supported.
+The unified entry for count-up and countdown: one active timer per server, both directions sharing pause/resume/stop controls; four display positions and three effect tiers combine freely, and the common cases are one short command. Timing follows real elapsed time (low TPS does not stretch it), implemented purely with server packets — vanilla clients work.
+
+### Permission
+
+- Permission level 2: admins and command blocks, hidden from regular players
+- When the `countdown` rule is off the command stays visible and reports "feature is off" on use
 
 ### Syntax
 

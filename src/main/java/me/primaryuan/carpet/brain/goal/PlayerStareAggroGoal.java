@@ -1,5 +1,6 @@
 package me.primaryuan.carpet.brain.goal;
 
+import me.primaryuan.carpet.brain.BrainTeams;
 import me.primaryuan.carpet.brain.PlayerGoal;
 import me.primaryuan.carpet.brain.PryMob;
 import net.minecraft.world.Difficulty;
@@ -26,8 +27,10 @@ import java.util.EnumSet;
  */
 public class PlayerStareAggroGoal extends PlayerGoal {
 
-    /** 凝视扫描半径（格，对齐末影人 follow_range 量级） */
-    private static final double RANGE = 24.0;
+    /** 凝视扫描半径（格）：原版 EndermanLookForPlayerGoal 的
+     * startAggroTargetConditions = range(getFollowDistance())，即 FOLLOW_RANGE 64
+     * （26.3 字节码：Enderman.createAttributes 显式覆写 64） */
+    private static final double RANGE = 64.0;
 
     private final PryMob mob;
     private LivingEntity pendingTarget;
@@ -35,15 +38,27 @@ public class PlayerStareAggroGoal extends PlayerGoal {
     public PlayerStareAggroGoal(PryMob mob) {
         this.mob = mob;
         this.setFlags(EnumSet.of(PlayerGoal.Flag.TARGET));
-        this.setInterval(2); // 凝视检测要灵敏（原版每 tick 扫，这里 2 tick 节流）
+        // 原版 EndermanLookForPlayerGoal = NearestAttackableTargetGoal(mob, Player,
+        // 10, mustSee...)：ctor randomInterval=reducedTickDelay(10)=5，canUse 内
+        // nextInt(5) 掷骰——本 Goal 同构（掷骰在 canUse，无第二层节流）
+        this.setInterval(1);
     }
+
+    /** 原版 Nearest 基座 randomInterval 字段值（ctor 折半后） */
+    private static final int RANDOM_INTERVAL = me.primaryuan.carpet.brain.PlayerGoal.reducedTickDelayStatic(10);
 
     @Override
     public boolean canUse() {
+        // 原版 Nearest 基座掷骰：nextInt(randomInterval)!=0 → 放过本次评估
+        if (this.mob.getRandom().nextInt(RANDOM_INTERVAL) != 0) {
+            return false;
+        }
         for (Player looker : this.mob.level().getEntitiesOfClass(Player.class,
                 this.mob.getBoundingBox().inflate(RANGE, 4.0, RANGE))) {
             if (looker == this.mob.asPlayer() || !looker.isAlive()
                     || looker.isSpectator() || looker.isCreative()
+                    // 战斗队伍：同队假人的凝视不触发激怒（特殊激怒同样受友军保护）
+                    || BrainTeams.isTeamFriendly(this.mob.asLiving(), looker)
                     || this.mob.level().getDifficulty() == Difficulty.PEACEFUL) {
                 continue;
             }
@@ -65,9 +80,13 @@ public class PlayerStareAggroGoal extends PlayerGoal {
     @Override
     public boolean canContinueToUse() {
         LivingEntity target = this.mob.getTarget();
+        if (target == null || !target.isAlive()
+                // 战斗队伍：激怒后改为同队 → 立即平息
+                || BrainTeams.isTeamFriendly(this.mob.asLiving(), target)) {
+            return false;
+        }
         // 原版末影人激怒后不因移开视线而平静：只按存活/距离维持仇恨
-        return target != null && target.isAlive()
-                && this.mob.distanceToSqr(target) <= RANGE * RANGE;
+        return this.mob.distanceToSqr(target) <= RANGE * RANGE;
     }
 
     @Override

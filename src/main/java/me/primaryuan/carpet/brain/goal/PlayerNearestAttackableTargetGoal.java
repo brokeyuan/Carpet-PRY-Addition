@@ -1,5 +1,6 @@
 package me.primaryuan.carpet.brain.goal;
 
+import me.primaryuan.carpet.brain.BrainTeams;
 import me.primaryuan.carpet.brain.PlayerGoal;
 import me.primaryuan.carpet.brain.PryMob;
 import net.minecraft.world.Difficulty;
@@ -16,11 +17,13 @@ import java.util.function.Predicate;
  * <p>这是各模式 targetSelector 的核心：按 {@code targetType} + {@code Predicate}
  * 在玩家周围搜最近的目标并写入 {@code getTarget/setTarget}。语义对齐原版：</p>
  * <ul>
- *   <li>{@code randomInterval}=10：每 tick 只有 1/10 概率真正重新搜索
- *       （原版的目标搜索节流，避免每 tick 全量扫描实体列表）；</li>
+ *   <li>{@code randomInterval}=10：原版构造器先 reducedTickDelay（26.3 字节码
+ *       ctor: randomInterval = reducedTickDelay(param)），即 1/10 次评估（≈每 20
+ *       游戏 tick）掷骰一次决定是否真正重搜——移植版同一换算；</li>
  *   <li>{@code mustSee}=true：新目标必须直接可见（对齐原版 TargetingConditions）；
- *       视线记忆只服务<b>当前目标</b>的丢失缓冲（60 tick，约 3 秒，
- *       避免"转身即丢目标"的抖动）；</li>
+ *       视线记忆只服务<b>当前目标</b>的丢失缓冲（原版 unseenMemoryTicks=60，经
+ *       reducedTickDelay 比较 → 30 次隔 tick 更新 ≈ 60 游戏 tick，26.3
+ *       TargetGoal.canContinueToUse 字节码）；</li>
  *   <li>搜索范围显式传入（玩家没有 {@code FOLLOW_RANGE} 属性，不能用
  *       原版的 getFollowDistance）。</li>
  * </ul>
@@ -40,14 +43,16 @@ public class PlayerNearestAttackableTargetGoal<T extends LivingEntity> extends P
     private final boolean mustSee;
     private final Predicate<? super T> selector;
 
-    /** 可见性记忆：连续多少 tick 看不见才放弃 */
-    private final int memoryTicks = 60;
-    /** 运行中复扫周期（tick）：出现明显更近的合法目标时切换（原版锁定语义的增强） */
-    private static final int RETARGET_SCAN_INTERVAL = 20;
-    private int retargetCountdown = RETARGET_SCAN_INTERVAL;
+    /** 可见性记忆（原版 unseenMemoryTicks=60，比较时经 reducedTickDelay → 30 次隔 tick 更新） */
+    private static final int MEMORY_EVALUATIONS = reducedTickDelay(60);
+    /** 运行中复扫周期（评估次数）：出现明显更近的合法目标时切换（自建防抖增强，非原版默认行为，披露） */
+    private static final int RETARGET_SCAN_EVALUATIONS = 10;
+    private int retargetCountdown = RETARGET_SCAN_EVALUATIONS;
     private int unseenTicks;
     /** 本周期搜索到的目标（等待 start 时写入） */
     private LivingEntity pendingTarget;
+    /** 扫描调用计数（测试观测缝：掷骰通过才递增） */
+    int scanCalls;
 
     public PlayerNearestAttackableTargetGoal(PryMob mob, Class<T> targetType, double searchRange,
                                              boolean mustSee, Predicate<? super T> predicate) {
@@ -59,27 +64,61 @@ public class PlayerNearestAttackableTargetGoal<T extends LivingEntity> extends P
         this.mob = mob;
         this.targetType = targetType;
         this.searchRange = searchRange;
-        this.randomInterval = randomInterval;
         this.mustSee = mustSee;
         this.selector = predicate;
         this.setFlags(EnumSet.of(PlayerGoal.Flag.TARGET));
-        // 评估间隔 = 原版 randomInterval 语义的唯一节流层（canUse 内不再掷骰）
-        this.setInterval(Math.max(1, randomInterval));
+        // 原版构造器：this.randomInterval = reducedTickDelay(param)——移植版同一
+        // 换算（param=10 → 5 次评估 ≈ 10 游戏 tick 的候选窗起点，见下方掷骰）
+        this.randomInterval = reducedTickDelay(randomInterval);
+        this.setInterval(1); // 评估频率对齐原版（每 2 tick 一次），掷骰在 canUse 内
     }
 
     @Override
     public boolean canUse() {
-        // 节流由 canStart() 的 interval 统一承担（每 randomInterval tick 评估一次）。
-        // 勿在此处再掷骰——两层节流相乘会把有效扫描频率拖到平均 100 tick 以上，
-        // 表现为"杀完一个目标后长时间不索敌"
+        // 原版 canUse 首分支：randomInterval>0 时 nextInt(randomInterval)!=0 → 跳过
+        // 本次评估（1/randomInterval 的概率真正重搜）；移植版同一掷骰，不叠加第二层节流
+        if (this.randomInterval > 0 && this.mob.getRandom().nextInt(this.randomInterval) != 0) {
+            return false;
+        }
+        this.scanCalls++;
         LivingEntity best = this.findBestTarget();
         this.pendingTarget = best;
         return best != null && this.canAttack(best);
     }
 
+    /** 范围内最近候选（原版 getNearestTarget 的实体查询；离线测试覆写为零查询） */
+    protected LivingEntity findBestTarget() {
+        return findBestTargetDefault();
+    }
+
+    private LivingEntity findBestTargetDefault() {
+        AABB box = this.mob.getBoundingBox().inflate(this.searchRange, 4.0, this.searchRange);
+        double bestSq = this.searchRange * this.searchRange;
+        LivingEntity best = null;
+        for (T candidate : this.mob.level().getEntitiesOfClass(this.targetType, box)) {
+            if (!candidate.isAlive() || !this.selector.test(candidate)) {
+                continue;
+            }
+            if (!this.canAttack(candidate)) {
+                continue;
+            }
+            double sq = this.mob.distanceToSqr(candidate);
+            if (sq <= bestSq) {
+                bestSq = sq;
+                best = candidate;
+            }
+        }
+        return best;
+    }
+
     @Override
     public boolean canContinueToUse() {
         LivingEntity target = this.mob.getTarget();
+        // 战斗队伍：目标中途改为同队 → 立即放弃（含追击维持）。友军判定置于
+        // 链首：目标变更竞态下也先按友军裁决（与存活/难度等门禁结果等价）
+        if (BrainTeams.isTeamFriendly(this.mob.asLiving(), target)) {
+            return false;
+        }
         if (target == null || !target.isAlive()) {
             return false;
         }
@@ -94,7 +133,7 @@ public class PlayerNearestAttackableTargetGoal<T extends LivingEntity> extends P
             return false;
         }
         if (this.mustSee && !this.mob.getSensing().hasLineOfSight(target)
-                && this.unseenTicks > this.memoryTicks) {
+                && this.unseenTicks > MEMORY_EVALUATIONS) {
             return false; // 视野记忆窗口耗尽
         }
         return true;
@@ -102,6 +141,10 @@ public class PlayerNearestAttackableTargetGoal<T extends LivingEntity> extends P
 
     @Override
     public void start() {
+        // 新目标从零计视野记忆与复扫节奏：上一轮运行残留的 unseenTicks 会让
+        // 新目标在首次 canContinueToUse 就被判"视野记忆耗尽"（闪断）
+        this.unseenTicks = 0;
+        this.retargetCountdown = RETARGET_SCAN_EVALUATIONS;
         this.mob.setTarget(this.pendingTarget);
     }
 
@@ -124,7 +167,7 @@ public class PlayerNearestAttackableTargetGoal<T extends LivingEntity> extends P
         // 原版 NearestAttackableTargetGoal 只在目标失效后重搜，锁死首个目标；
         // 这里每 20 tick 扫一次，新目标须比当前目标近 20% 以上才切换，避免等距抖动
         if (--this.retargetCountdown <= 0) {
-            this.retargetCountdown = RETARGET_SCAN_INTERVAL;
+            this.retargetCountdown = RETARGET_SCAN_EVALUATIONS;
             LivingEntity best = this.findBestTarget();
             if (best != null && best != target
                     && this.mob.distanceToSqr(best) < this.mob.distanceToSqr(target) * 0.8) {
@@ -134,30 +177,13 @@ public class PlayerNearestAttackableTargetGoal<T extends LivingEntity> extends P
         }
     }
 
-    /** 在范围内找最近满足谓词的候选 */
-    private LivingEntity findBestTarget() {
-        AABB box = this.mob.getBoundingBox().inflate(this.searchRange, 4.0, this.searchRange);
-        double bestSq = this.searchRange * this.searchRange;
-        LivingEntity best = null;
-        for (T candidate : this.mob.level().getEntitiesOfClass(this.targetType, box)) {
-            if (!candidate.isAlive() || !this.selector.test(candidate)) {
-                continue;
-            }
-            if (!this.canAttack(candidate)) {
-                continue;
-            }
-            double sq = this.mob.distanceToSqr(candidate);
-            if (sq <= bestSq) {
-                bestSq = sq;
-                best = candidate;
-            }
-        }
-        return best;
-    }
-
     /** 原版 TargetingConditions 语义：mustSee 时新候选必须直接可见 */
     private boolean canAttack(LivingEntity target) {
         if (target == null || !this.inRange(target) || !this.acceptsTarget(target)) {
+            return false;
+        }
+        // 战斗队伍：同队候选一律不可选（友军保护优先于一切索敌）
+        if (BrainTeams.isTeamFriendly(this.mob.asLiving(), target)) {
             return false;
         }
         if (this.mustSee) {
@@ -182,6 +208,14 @@ public class PlayerNearestAttackableTargetGoal<T extends LivingEntity> extends P
      */
     @SuppressWarnings("unchecked")
     private boolean acceptsTarget(LivingEntity target) {
+        // 中央自体/玩家门禁：任何模式都不得把自己当目标；玩家旁观/创造不参战。
+        // 这是所有模式共享的底线，不改变“哪些脑主动攻击”的既有语义。
+        if (target == this.mob.asLiving()) {
+            return false;
+        }
+        if (target instanceof Player player && (player.isSpectator() || player.isCreative())) {
+            return false;
+        }
         if (target instanceof Player && this.mob.level().getDifficulty() == Difficulty.PEACEFUL) {
             return false;
         }

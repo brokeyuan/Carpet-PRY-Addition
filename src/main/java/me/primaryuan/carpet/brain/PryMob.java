@@ -186,6 +186,21 @@ public interface PryMob {
         asLiving().startUsingItem(hand);
     }
 
+    /** 睡眠状态转发（PlayerSleepInBedGoal 桩可达面）：原生读 LivingEntity 睡眠状态 */
+    default boolean pryIsSleeping() {
+        return asPlayer().isSleeping();
+    }
+
+    /** 原生 getSleepingPos 转发（桩世界覆写注入测试状态） */
+    default java.util.Optional<net.minecraft.core.BlockPos> pryGetSleepingPos() {
+        return asPlayer().getSleepingPos();
+    }
+
+    /** 原生 stopSleepInBed 转发 */
+    default void pryStopSleepInBed(boolean updateSleeping, boolean sendMessage) {
+        asPlayer().stopSleepInBed(updateSleeping, sendMessage);
+    }
+
     default void stopUsingItem() {
         asLiving().stopUsingItem();
     }
@@ -239,6 +254,57 @@ public interface PryMob {
      * 若此处再手动生成箭矢就属于"凭空造物"红线，故留空。</p>
      */
     default void performRangedAttack(LivingEntity target, float power) {
+    }
+
+    // ===== 玩家身体原语：方块交互与破坏（农民等"用手"的脑共用）=====
+    // 三者均为抽象方法（mixin 实装）：实现在 ServerPlayerGameMode/挥手广播上，
+    // 与 doHurtTarget 同理——接口 default 在 Mixin 合并环境分派不可达。
+
+    /**
+     * 玩家原生右键交互：{@code gameMode.useItemOn}（种植/堆肥/采浆果等一切
+     * "用手对着方块"的入口）。方块命中点取方块中心、面朝上（use 管线不消费
+     * 命中细节的方块等价于玩家平视点按）。调用方自控距离 ≤
+     * {@link #blockReachSq()}（原版由网络包处理器校验，直调 gameMode 绕过它，
+     * 必须在调用侧把门）；消耗/掉落/音效全部走方块自身逻辑。
+     *
+     * @return 交互是否消耗性生效（CONSUME/SUCCESS 视为生效）
+     */
+    boolean pryUseItemOnBlock(BlockPos pos, InteractionHand hand);
+
+    /**
+     * 玩家原生"空手开容器"：以空手栈走 {@code gameMode.useItemOn}。
+     *
+     * <p>26.3/1.21.10 字节码：非潜行时 {@code BlockState.useItemOn}（容器在此
+     * 开菜单）先于 {@code ItemStack.useOn} 执行，所以手持方块不影响开箱；
+     * 但容器被封顶等开箱失败时方块 use 返回 PASS，随后物品 use 会把手中方块
+     * 放到箱顶。传空手栈让失败路径落在空物品上（PASS、不放置），同时
+     * 不触碰玩家物品栏——不需要先把手持物换进背包，也就没有货物换槽失配。</p>
+     */
+    boolean pryOpenContainer(BlockPos pos, InteractionHand hand);
+
+    /**
+     * 玩家原生破坏：{@code gameMode.destroyBlock}（即时破坏方块——作物等
+     * 零硬度方块玩家点一下即碎，掉落/ LootTable/后继更新全走原版）。
+     * 调用方自控距离 ≤ {@link #blockReachSq()}。
+     */
+    boolean pryBreakBlock(BlockPos pos);
+
+    /** 主手挥手广播（交互/破坏后的客户端动画，26.3 起签名有分支） */
+    void prySwingMainHand();
+
+    /**
+     * 玩家原生"右键使用手中物品"（无方块的物品使用：投掷喷溅药水等即刻型）。
+     * 走 gameMode.useItem 全管线（消耗/弹射物/音效原生）。
+     */
+    boolean pryUseItemInHand(InteractionHand hand);
+
+    /**
+     * 玩家方块交互距离的平方（block_interaction_range，默认 4.5 → 20.25）。
+     * 直调 gameMode 不经过网络层距离校验，一切方块动作调用前先过这道门。
+     */
+    default double blockReachSq() {
+        double reach = asPlayer().getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.BLOCK_INTERACTION_RANGE);
+        return reach * reach;
     }
 
     /** 玩家原生近战攻击距离的平方（entity_interaction_range，默认 3.0 → 9.0） */

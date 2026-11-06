@@ -33,6 +33,9 @@ public final class MobFields {
     private PlayerLookControl lookControl;
     private PlayerSensing sensing;
 
+    /** 水面涉水节点代价：跨维度重建导航器时回放（模式装配值不因 /tp 丢失） */
+    private double waterMalus = PlayerPathNavigation.DEFAULT_WATER_MALUS;
+
     public MobFields(ServerPlayer player) {
         this.player = player;
         this.prowler = (PryMob) (Object) player;
@@ -66,8 +69,22 @@ public final class MobFields {
         if (this.navigation == null || this.navigation.level() != this.player.level()) {
             // 惰性创建 + 跨维度重建（/tp 换世界后旧 Level 失效）
             this.navigation = new PlayerPathNavigation(this.player);
+            this.navigation.setWaterMalus(this.waterMalus);
         }
         return this.navigation;
+    }
+
+    /** 设置水面涉水代价（模式装配用；重建导航器时回放） */
+    public void setWaterMalus(double malus) {
+        this.waterMalus = malus;
+        if (this.navigation != null) {
+            this.navigation.setWaterMalus(malus);
+        }
+    }
+
+    /** 当前水面涉水代价（跟随主人 Goal 临时置 0 后恢复原值用） */
+    public double getWaterMalus() {
+        return this.waterMalus;
     }
 
     public PlayerMoveControl getMoveControl() {

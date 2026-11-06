@@ -1,10 +1,17 @@
 package me.primaryuan.carpet.brain;
 
+import me.primaryuan.carpet.brain.goal.PlayerBegGoal;
 import me.primaryuan.carpet.brain.goal.PlayerFollowOwnerGoal;
 import me.primaryuan.carpet.brain.goal.PlayerHurtByTargetGoal;
+import me.primaryuan.carpet.brain.goal.PlayerLeapAtTargetGoal;
+import me.primaryuan.carpet.brain.goal.PlayerLookAtPlayerGoal;
 import me.primaryuan.carpet.brain.goal.PlayerMeleeAttackGoal;
+import me.primaryuan.carpet.brain.goal.PlayerPanicGoal;
+import me.primaryuan.carpet.brain.goal.PlayerRandomLookAroundGoal;
+import me.primaryuan.carpet.brain.goal.PlayerRandomStrollGoal;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -14,12 +21,20 @@ import java.util.UUID;
 /**
  * 狼模式脑（装配器）：跟随主人 + 仇恨同步。
  *
- * <p>装配（全部 MOVE+LOOK 旗标，优先级互斥）：</p>
+ * <p><b>状态映射（单一确定语义）</b>：本模式代表<b>跟随命令执行者的驯服狼</b>
+ * （OwnerHurtBy/OwnerHurtTarget 仇恨同步、FollowOwner、Beg 都是驯服态行为）——
+ * 因此按原版 {@code Wolf$WolfAvoidEntityGoal} 的 {@code !wolf.isTame} 门，
+ * <b>不装配羊驼规避</b>（那是野生狼的规避，与驯服态互斥；26.3 字节码核实）。
+ * 恐慌同理是 {@code TamableAnimalPanicGoal}（环境伤害标签），普通挨打反击。</p>
+ *
+ * <p>装配（26.3 字节码 {@code Wolf.registerGoals} 的驯服态等价）：</p>
  * <ul>
- *   <li>优先级 0 —— 近战：主人下达目标（仇恨同步）时扑咬（{@code PlayerMeleeAttackGoal}，
- *       速度 1.2 ≈ 狼的疾扑）；</li>
- *   <li>优先级 1 —— 跟随：无目标时跟进主人（{@code PlayerFollowOwnerGoal}，保持
- *       经典">8 格跑、>2.5 格走、近了蹲点"的跟随节奏）。</li>
+ *   <li>优先级 0 —— 近战：主人下达目标（仇恨同步）时扑咬（原版
+ *       {@code MeleeAttackGoal(1.0, true)} pri 5，移植版提升到 0 以压过跟随）；</li>
+ *   <li>优先级 1 —— 跟随：无目标时跟进主人（原版 {@code FollowOwnerGoal(1.0,
+ *       10F, 2F)} pri 6：>10 格跟、2 格内停）；</li>
+ *   <li>优先级 1 —— 恐慌（原版 {@code TamableAnimalPanicGoal(1.5)} pri 1：
+ *       受伤/着火逃离）。</li>
  * </ul>
  * <p>因为旗标互斥且近战优先级更高：目标被同步后近战立刻接管（冲向被咬目标），
  * 目标消失后近战 canUse 回落到 false，跟随自动恢复——"有仗打就打，没仗打就跟"。 </p>
@@ -48,12 +63,33 @@ public class WolfBrain extends PlayerBrainController {
 
     @Override
     protected void assemble() {
-        // 自卫反击：谁打狼锁谁（豁免主人——主人误伤不还手，与原版驯服生物一致）
+        // 优先级对齐原版 Wolf.registerGoals（26.3/1.21.11 字节码，驯服态口径）：
+        // Panic 1 > Leap 4 > Melee 5 > FollowOwner 6 > Stroll 8 > Beg 9 > LookAt/RandomLook 10。
+        // AvoidLlama 3 是野生狼行为（!isTame 门），驯服态不装配。
+        //
+        // 目标链：
+        // 自卫反击（原版 HurtByTargetGoal pri 3；OwnerHurtBy/OwnerHurtTarget
+        // 由 syncHate 的仇恨同步表达）
         this.targetSelector.addGoal(1, new PlayerHurtByTargetGoal(this.prowler, this.ownerUuid));
-        // 扑咬：有仇恨目标时立刻冲到目标脸上（近战，速度 1.2 → 疾跑扑杀）
-        this.goalSelector.addGoal(0, new PlayerMeleeAttackGoal(this.prowler, 1.2, true));
-        // 跟随：无目标时跟着主人（原版狼的跟随节奏）
-        this.goalSelector.addGoal(1, new PlayerFollowOwnerGoal(this.prowler, this.ownerUuid, 1.0));
+        // 行为链：
+        // 恐慌（原版 TamableAnimalPanicGoal(1.5, PANIC_ENVIRONMENTAL_CAUSES) pri 1）：
+        // 只认环境伤害（火/岩浆/冰冻/仙人掌/闪电）——普通挨打不恐慌，走 HurtBy 反击
+        this.goalSelector.addGoal(1, new PlayerPanicGoal(this.prowler, 1.5,
+                DamageTypeTags.PANIC_ENVIRONMENTAL_CAUSES));
+        // 扑击（原版 LeapAtTargetGoal(0.4F) pri 4：距目标 2~4 格 1/3 概率扑跳，
+        // MOVE+JUMP 旗标、腾空至落地）
+        this.goalSelector.addGoal(4, new PlayerLeapAtTargetGoal(this.prowler));
+        // 扑咬（原版 MeleeAttackGoal(1.0, true) pri 5）
+        this.goalSelector.addGoal(5, new PlayerMeleeAttackGoal(this.prowler, 1.0, true));
+        // 跟随（原版 FollowOwnerGoal(1.0, 10F, 2F) pri 6：≥10 启动、≤2 结束）
+        this.goalSelector.addGoal(6, new PlayerFollowOwnerGoal(this.prowler, this.ownerUuid, 1.0));
+        // 闲逛（原版 WaterAvoidingRandomStrollGoal pri 8）
+        this.goalSelector.addGoal(8, new PlayerRandomStrollGoal(this.prowler, 1.0));
+        // 乞食（原版 BegGoal(8F) pri 9：8 格内持骨头或狼食物的玩家歪头注视）
+        this.goalSelector.addGoal(9, new PlayerBegGoal(this.prowler));
+        // 看人/随机张望（原版 pri 10 同位）
+        this.goalSelector.addGoal(10, new PlayerLookAtPlayerGoal(this.prowler, Player.class, 8.0F));
+        this.goalSelector.addGoal(10, new PlayerRandomLookAroundGoal(this.prowler));
     }
 
     @Override
@@ -106,8 +142,9 @@ public class WolfBrain extends PlayerBrainController {
     }
 
     /**
-     * 扑咬候选校验：存活、同维度、不是狼自己也不是主人；创造/旁观/和平难度
-     * 玩家不可选——与 {@link PlayerHurtByTargetGoal} 同口径，对齐原版
+     * 扑咬候选校验：存活、同维度、不是狼自己也不是主人；同队假人不可选
+     * （队伍过滤覆盖仇恨同步路径）；创造/旁观/和平难度玩家不可选——与
+     * {@link PlayerHurtByTargetGoal} 同口径，对齐原版
      * {@code TargetingConditions} 的 canBeSeenAsEnemy 语义（invulnerable 恒排除，
      * 原版狼不会把创造玩家锁成目标）。合格返回原引用，否则 null。
      */
@@ -115,7 +152,8 @@ public class WolfBrain extends PlayerBrainController {
         if (target == null || !target.isAlive()
                 || target.level() != this.player.level()
                 || target == this.player
-                || target == owner) {
+                || target == owner
+                || BrainTeams.isTeamFriendly(this.player, target)) {
             return null;
         }
         if (target instanceof Player p && (p.isSpectator() || p.isCreative()

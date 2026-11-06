@@ -1,5 +1,6 @@
 package me.primaryuan.carpet.mixins.rule.fakePlayerBrain;
 
+import me.primaryuan.carpet.brain.BrainTeams;
 import me.primaryuan.carpet.brain.MobFields;
 import me.primaryuan.carpet.brain.PlayerGoalSelector;
 import me.primaryuan.carpet.brain.PlayerLookControl;
@@ -92,16 +93,134 @@ public abstract class ServerPlayerMobMixin implements PryMob {
      * 近战攻击转写（PryMob.doHurtTarget）：玩家原生 attack + 挥手广播。
      * 实现在 mixin 上（而非接口 default）以保证 Mixin 合并后分派可达——
      * 接口 default 在合并环境实测不可达（见 PryMob 注释）。
+     *
+     * <p>此处是近战与史莱姆跳击全部 {@code doHurtTarget} 调用方的中央友伤门：
+     * 目标与本人互为同队假人 → 不出手。长矛刺击伤害由原版动能武器在使用期间
+     * 按碰撞结算、不经过此门（与已离手弹道/扫击同类的边界，docs 披露）。</p>
      */
     @Override
     public boolean doHurtTarget(Entity target) {
+        if (target instanceof LivingEntity living
+                && BrainTeams.isTeamFriendly((ServerPlayer) (Object) this, living)) {
+            return false;
+        }
         ((ServerPlayer) (Object) this).attack(target);
+        this.pry$swingMainHand();
+        return true;
+    }
+
+    /** 主手挥手广播（26.3 起 swing 三参：仅广播观察者，等价旧语义） */
+    @Override
+    public void prySwingMainHand() {
+        this.pry$swingMainHand();
+    }
+
+    @Unique
+    private void pry$swingMainHand() {
         //#if MC >= 260300
-        //$$ // 26.3: swing(hand) 移除，三参 swing(hand, animation, sendToSelf)，false=仅广播观察者（等价旧语义）
-        //$$ ((ServerPlayer) (Object) this).swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, false);
+        //$$ ((ServerPlayer) (Object) this).swing(InteractionHand.MAIN_HAND,
+        //$$         net.minecraft.world.item.component.SwingAnimation.DEFAULT, false);
         //#else
         ((ServerPlayer) (Object) this).swing(InteractionHand.MAIN_HAND);
         //#endif
-        return true;
+    }
+
+    /**
+     * 玩家原生右键方块（PryMob.pryUseItemOnBlock）：走 gameMode.useItemOn 全管线
+     * （冷却/旁观门禁/方块自身 use 逻辑/物品消耗/音效/事件）。命中点取方块中心、
+     * 面朝上——use 管线不消费命中细节的方块（堆肥桶/浆果丛/作物）与玩家平视
+     * 点按等价。距离由调用方按 blockReachSq 把门（此处再兜底一次）。
+     */
+    @Override
+    public boolean pryUseItemOnBlock(net.minecraft.core.BlockPos pos, InteractionHand hand) {
+        ServerPlayer self = (ServerPlayer) (Object) this;
+        if (this.pry$blockTooFar(pos)) {
+            return false;
+        }
+        net.minecraft.world.item.ItemStack stack = self.getItemInHand(hand);
+        // 空手右键开容器是玩家合法操作（木箱/铜箱等），不放空手门
+        net.minecraft.world.InteractionResult result = self.gameMode.useItemOn(
+                self, self.level(), stack, hand,
+                new net.minecraft.world.phys.BlockHitResult(
+                        net.minecraft.world.phys.Vec3.atCenterOf(pos),
+                        net.minecraft.core.Direction.UP, pos, false));
+        return result.consumesAction();
+    }
+
+    /**
+     * 玩家原生"空手开容器"（PryMob.pryOpenContainer）：同 {@link #pryUseItemOnBlock}
+     * 的管线与距离门，但以空手栈交互。容器 use 在非潜行时先于物品 use 执行，
+     * 手持方块不影响开箱；传空手栈是为了让"容器不可用"的失败路径落在空物品上，
+     * 不把手中方块放到箱顶，也不改动玩家物品栏（无换槽 = 无货物槽失配）。
+     */
+    @Override
+    public boolean pryOpenContainer(net.minecraft.core.BlockPos pos, InteractionHand hand) {
+        ServerPlayer self = (ServerPlayer) (Object) this;
+        if (this.pry$blockTooFar(pos)) {
+            return false;
+        }
+        net.minecraft.world.InteractionResult result = self.gameMode.useItemOn(
+                self, self.level(), net.minecraft.world.item.ItemStack.EMPTY, hand,
+                new net.minecraft.world.phys.BlockHitResult(
+                        net.minecraft.world.phys.Vec3.atCenterOf(pos),
+                        net.minecraft.core.Direction.UP, pos, false));
+        return result.consumesAction();
+    }
+
+    /** 玩家原生右键使用手中物品（PryMob.pryUseItemInHand）：投掷喷溅药水等即刻型 */
+    @Override
+    public boolean pryUseItemInHand(InteractionHand hand) {
+        ServerPlayer self = (ServerPlayer) (Object) this;
+        net.minecraft.world.item.ItemStack stack = self.getItemInHand(hand);
+        if (stack.isEmpty()) {
+            return false;
+        }
+        net.minecraft.world.InteractionResult result = self.gameMode.useItem(
+                self, self.level(), stack, hand);
+        if (result.consumesAction()) {
+            this.pry$swingMainHand();
+        }
+        return result.consumesAction();
+    }
+
+    /** 玩家原生即时破坏（PryMob.pryBreakBlock）：作物等零硬度方块的原版破坏管线 */
+    @Override
+    public boolean pryBreakBlock(net.minecraft.core.BlockPos pos) {
+        ServerPlayer self = (ServerPlayer) (Object) this;
+        if (this.pry$blockTooFar(pos)) {
+            return false;
+        }
+        boolean destroyed = self.gameMode.destroyBlock(pos);
+        if (destroyed) {
+            this.pry$swingMainHand();
+        }
+        return destroyed;
+    }
+
+    /** 方块交互距离兜底门（网络层校验不覆盖直调 gameMode 的路径） */
+    @Unique
+    private boolean pry$blockTooFar(net.minecraft.core.BlockPos pos) {
+        ServerPlayer self = (ServerPlayer) (Object) this;
+        double reachSq = ((PryMob) (Object) self).blockReachSq();
+        if (self.getEyePosition().distanceToSqr(
+                pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) > reachSq) {
+            return true;
+        }
+        // 直调 gameMode 绕过网络层射线：补一次玩家视线射线，隔墙不可交互。
+        // 目标方块自身命中/MISS/命中点在目标中心之后（低矮作物的射线穿过后
+        // 打到下方耕地）都放行；只有中途被其它方块挡住才算不可达。
+        net.minecraft.world.phys.Vec3 eye = self.getEyePosition();
+        net.minecraft.world.phys.Vec3 center = net.minecraft.world.phys.Vec3.atCenterOf(pos);
+        net.minecraft.world.phys.BlockHitResult hit = self.level().clip(
+                new net.minecraft.world.level.ClipContext(
+                        eye, center,
+                        net.minecraft.world.level.ClipContext.Block.COLLIDER,
+                        net.minecraft.world.level.ClipContext.Fluid.NONE,
+                        self));
+        if (hit.getType() == net.minecraft.world.phys.HitResult.Type.MISS
+                || hit.getBlockPos().equals(pos)) {
+            return false;
+        }
+        return hit.getLocation().distanceToSqr(eye) + 1.0E-6 < eye.distanceToSqr(center);
     }
 }

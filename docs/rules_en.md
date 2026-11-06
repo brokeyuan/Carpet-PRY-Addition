@@ -168,19 +168,19 @@ Adds a sendto sub-command to /player `<name>` creating one-way inventory item fl
 
 ### fakePlayerBrain - Fake Player Brain
 
-Adds 19 mob behavior modes to Carpet fake players with `/player <name> brain`. Fake players keep their player body, inventory and combat; no extra entities or items are created. Server-side only.
+Adds 24 mob behavior modes to Carpet fake players with `/player <name> brain`. Fake players keep their player body, inventory and combat; no extra entities or items are created. Server-side only.
 
 Available modes (`off` restores Carpet manual control). Zombie and zombified-piglin modes also use spears on 26.1.2+:
 
 | Mode | Behavior |
 |------|----------|
 | `zombie` | Chases players in melee. |
-| `skeleton` | Shoots with a bow and kites targets; consumes inventory arrows. |
+| `skeleton` | Targeting ignores weapons: ranged shooting and kiting while holding a bow (consumes inventory arrows), melee with a sword or bare hands; avoids sunlight by day. |
 | `pillager` | Shoots with a crossbow; 25-tick charge. |
 | `irongolem` | Attacks hostile mobs and hostile fake players, excluding creepers; retaliates when hurt. |
 | `spider` | Neutral by day, hostile at night with sprinting pursuit. |
-| `wolf` | Follows the command executor and assists in combat; does not teleport to follow. |
-| `villager` | Strolls, panics when hurt and avoids zombies. |
+| `wolf` | Follows its owner (starts at 10 blocks, stops within 2), assists in combat and leaps; does not panic from melee hits, flees environmental damage, avoids llamas and begs for bones or wolf food. |
+| `villager` | Lives by the vanilla schedule and keeps a claimed composter as a long-term job: [Villager] becomes [Villager-Farmer]; gathering, sleep and panic pauses do not release the post, while destruction, dimension change or detach does. Trading and breeding not implemented. |
 | `enderman` | Becomes hostile when stared at and sprints in pursuit. |
 | `babyzombie` | Faster melee pursuit than the zombie mode. |
 | `witherskeleton` | Melee-chases players, iron golems and piglins; avoids wolves. Hits do not apply Wither. |
@@ -191,13 +191,19 @@ Available modes (`off` restores Carpet manual control). Zombie and zombified-pig
 | `slime` | Hops while idle and pursues targets in a straight line. |
 | `magmacube` | Uses the same hopping movement and pursuit as slime. |
 | `fish` | Swims, avoids players within 8 blocks, flees when hurt, surfaces for air and flops on land. |
-| `pig` | Strolls when idle and flees when hurt. |
+| `pig` | Strolls when idle and flees when hurt; lured by pig food and the carrot on a stick. |
 | `piglin` | Hostile to players without gold armor; uses melee, crossbows or spears by held weapon, and picks up and equips gear. |
+| `allay` | Collects items matching the offhand sample and delivers them to the executing player (console-attached allays have no default target and only deliver to a note block); note-block listening follows the brain session and re-registers across dimensions; 240-tick delivery cooldown and the sample is never delivered as a whole stack. |
+| `fox` | Picks mature sweet berries, eats FOOD items when actually hungry, hunts chickens/rabbits and avoids wolves. |
+| `witch` | Uses real inventory potions; self-healing drinks only drinkable potions, attack potions follow the vanilla 60-tick/10-block cycle with target and line-of-sight rechecks; no fake throws without stock. |
+| `coppergolem` | Takes at most 16 items from copper chests and books the actual inventory delta; pausing keeps the cargo and resumes the matching seek phase, both double-chest halves share one identity; 1.21.10+ only. |
 | `off` | Detaches the brain, restoring Carpet manual control |
 
 While a brain is attached, Carpet manual movement, attack and use actions are paused. `brain off` or disabling the rule restores manual control; death, logoff and mode changes detach the old brain.
 
-**Name suffix and keep**: the name tag and Tab list show the mode in red (hostile), blue (neutral) or green (non-hostile). The suffix follows `/carpet language`; English mode keys always work. Original team prefixes are retained, and team membership is restored on detach. `brain <mode> keep` restores the mode and wolf owner within one second after the fake player rejoins, during the current server run only. Restarting the server or running `brain off` clears it.
+**Combat teams**: `/player <name> brain team <team>` joins a team; same-team fakes are allies (across brain modes), different/no teams fight under each mode's normal rules; see the command docs. Teams are independent of the brain and the name-suffix scoreboard team; runtime data, cleared on restart.
+
+**Name suffix and keep**: the name tag and Tab list show the mode in red (hostile), blue (neutral) or green (non-hostile). The suffix follows `/carpet language`; English mode keys always work. Original team prefixes are retained; on detach the original team is restored only while the fake still belongs to this brain session's temporary team, so an administrator's team change or removal is preserved. `brain <mode> keep` restores the mode and owner (wolf hate target / allay delivery target) within one second after the fake player rejoins, during the current server run only. Restarting the server or running `brain off` clears it.
 
 | Property | Value |
 |----------|-------|

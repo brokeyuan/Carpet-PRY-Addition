@@ -204,7 +204,9 @@ public class PiglinBrain extends PlayerBrainController {
         // 被打反击：无论攻击者穿什么（与原版猪灵被激怒一致，大范围敌对的落地方案）
         this.targetSelector.addGoal(1, new PlayerHurtByTargetGoal(this.prowler, null));
         // 敌视不穿金装的玩家（原版判定：全身均为猪灵可接受盔甲才算中立；
-        // 1.21~1.21.1 叫 isWearingGold，1.21.3+ 更名 isWearingSafeArmor）
+        // 1.21~1.21.1 叫 isWearingGold，1.21.3+ 更名 isWearingSafeArmor）。
+        // 范围 16 = 原版口径：Piglin 未覆写 FOLLOW_RANGE（26.3 字节码，
+        // Mob.createMobAttributes 基座 16；angerNearbyPiglins 扫描框同为 16）
         this.targetSelector.addGoal(2, new PlayerNearestAttackableTargetGoal<>(
                 this.prowler, Player.class, 16.0, 10, true,
                 p -> p != this.player && p.isAlive() && !p.isSpectator() && !p.isCreative()
@@ -214,7 +216,8 @@ public class PiglinBrain extends PlayerBrainController {
                         //#else
                         //$$ && !PiglinAi.isWearingGold(p)));
                         //#endif
-        // 立刻敌对 16 格内的凋灵骷髅（Wiki：成年猪灵会立刻主动攻击）
+        // 立刻敌对 16 格内的凋灵骷髅（Wiki：成年猪灵会立刻主动攻击；16 = 基座
+        // FOLLOW_RANGE，同上）
         this.targetSelector.addGoal(3, new PlayerNearestAttackableTargetGoal<>(
                 this.prowler, WitherSkeleton.class, 16.0, 10, true,
                 w -> w.isAlive()));

@@ -14,10 +14,13 @@ import net.minecraft.world.entity.player.Player;
  *
  * <p>特征 = 离水扑腾：原版写在 aiStep（不经 Goal 调度），移植版以最高优先级
  * Goal 表达"离水压过一切移动"——被冲上岸只会原地扑腾，不会迈步逃跑（原版
- * 水生寻路在陆地算不出路径，行为一致）；水中则游动、受惊逃窜、见真人玩家
- * 靠近就躲（原版鱼类 8 格内避人）。水中上浮/下潜由移动控制器的游泳层翻译：
- * 跳跃输入走原版 {@code aiStep → jumpInLiquid(WATER)} 上浮路径（等价真人按住
- * 跳跃键），下潜交给自然沉降，水平仍是玩家原生行走输入。</p>
+ * 水生寻路在陆地算不出路径，行为一致）；水中则游动、受惊逃窜、见玩家
+ * 靠近就躲（原版 {@code AvoidEntityGoal<Player>(2, 8F, 1.6, 1.4)}）。恐慌速度
+ * 1.25（原版 {@code PanicGoal(1.25)} pri 0）；游动速度 1.0（原版
+ * {@code FishSwimGoal → RandomSwimmingGoal(fish, 1.0)} pri 4）。
+ * 水中上浮/下潜由移动控制器的游泳层翻译：跳跃输入走原版
+ * {@code aiStep → jumpInLiquid(WATER)} 上浮路径（等价真人按住跳跃键），
+ * 下潜交给自然沉降，水平仍是玩家原生行走输入。</p>
  *
  * <p>不做（引擎边界，docs 披露）：深水自由三维巡航——A* 以"可站立格"为节点，
  * 中层水无支撑不成节点，游动沿水底并借台阶式路径上浮；河豚毒刺/鱿鱼喷墨
@@ -70,12 +73,12 @@ public class FishBrain extends PlayerBrainController {
     protected void assemble() {
         // 离水扑腾（最高优先级：原版 aiStep 级行为，离水时压过恐慌与游动）
         this.goalSelector.addGoal(0, new PlayerFlopGoal(this.prowler));
-        // 恐慌（原版 pri 0；降一档让位于扑腾——离水的鱼不迈步逃命）
-        this.goalSelector.addGoal(1, new PlayerPanicGoal(this.prowler));
+        // 恐慌（原版 PanicGoal(1.25) pri 0；降一档让位于扑腾——离水的鱼不迈步逃命）
+        this.goalSelector.addGoal(1, new PlayerPanicGoal(this.prowler, 1.25));
         // 规避玩家（原版 pri 2：8 格内避人，走 1.6/疾 1.4——Goal 层内 7 格内加速）
         this.goalSelector.addGoal(2, new PlayerAvoidEntityGoal<>(
                 this.prowler, Player.class, 8.0F, 1.6, 1.4));
-        // 水中随机游动（原版 pri 4 FishSwimGoal）
-        this.goalSelector.addGoal(4, new PlayerRandomSwimGoal(this.prowler, 0.8));
+        // 水中随机游动（原版 pri 4 FishSwimGoal → RandomSwimmingGoal 1.0）
+        this.goalSelector.addGoal(4, new PlayerRandomSwimGoal(this.prowler, 1.0));
     }
 }

@@ -13,16 +13,22 @@ import net.minecraft.world.entity.player.Player;
 
 /**
  * 史莱姆/岩浆怪模式脑（装配器）：26.3 字节码核实的原版装配
- * （Slime.addTargetingGoals：玩家 pri 1 / 铁傀儡 pri 3；攻击 Goal pri 2）。
+ * （{@code Slime.addTargetingGoals}：玩家 pri 1（interval 10，mustSee）/
+ * 铁傀儡 pri 3（mustSee）；{@code AbstractCubeMob}：攻击 Goal pri 2、
+ * Float pri 1、随机方向 pri 4、连跳 pri 5）。
  *
  * <p>两种方块怪行为同源（岩浆怪仅属性差异），共用本脑。特征 = 跳行移动：
- * idle 永不停跳（{@code PlayerSlimeWanderGoal}），锁定目标后直线跳行追击
+ * idle 永不停跳（{@code PlayerSlimeWanderGoal}，对应原版 RandomDirection +
+ * KeepOnJumping 双 Goal 的等效合并），锁定目标后直线跳行追击
  * （{@code PlayerSlimeAttackGoal}，原版史莱姆无寻路），贴近按玩家原生攻击
  * 管线挥砍。目标链对齐原版：只有玩家与铁傀儡，无 HurtBy 反击 Goal（原版
- * 史莱姆不挂）——被打不记仇，只因"你是玩家"而持续敌对。</p>
+ * 史莱姆不挂）——被打不记仇，只因"你是玩家"而持续敌对。范围 16 = 原版
+ * 索敌口径（26.3 字节码：Slime 未覆写 FOLLOW_RANGE，Mob 基座 16；与
+ * NearestAttackableTargetGoal interval 10 mustSee 一致披露）。</p>
  *
  * <p>不做：死亡分裂（分裂出子史莱姆 = 凭空造物实体，红线）、
- * 按体积定伤害（伤害走玩家攻击管线取主手）。</p>
+ * 按体积定伤害（伤害走玩家攻击管线取主手）、水面浮起（Float 等价由玩家
+ * 原生游泳物理承接）。</p>
  */
 public class SlimeBrain extends PlayerBrainController {
 
@@ -49,8 +55,9 @@ public class SlimeBrain extends PlayerBrainController {
         this.targetSelector.addGoal(3, new PlayerNearestAttackableTargetGoal<>(
                 this.prowler, IronGolem.class, 16.0, 10, true,
                 g -> g.isAlive()));
-        // 行为：跳行追击（pri 2）+ idle 连续起跳（pri 3，无目标时）
+        // 行为：跳行追击（pri 2，原版同位）+ idle 连续起跳（原版 pri 4/5 双 Goal
+        // 的等效合并，移植取 pri 4）
         this.goalSelector.addGoal(2, new PlayerSlimeAttackGoal(this.prowler));
-        this.goalSelector.addGoal(3, new PlayerSlimeWanderGoal(this.prowler));
+        this.goalSelector.addGoal(4, new PlayerSlimeWanderGoal(this.prowler));
     }
 }

@@ -39,11 +39,16 @@ public class PlayerRandomSwimGoal extends PlayerGoal {
         this.mob = mob;
         this.speedModifier = speedModifier;
         this.setFlags(EnumSet.of(PlayerGoal.Flag.MOVE));
-        this.setInterval(40); // 游游停停的鱼节奏（原版 RandomSwimmingGoal 的间歇感）
+        this.setInterval(1); // 原版无冷却层（掷骰在 canUse 内），每 2 tick 评估一次
     }
 
     @Override
     public boolean canUse() {
+        // 原版 RandomStrollGoal.canUse 掷骰（FishSwimGoal 继承 interval=120）：
+        // nextInt(reducedTickDelay(120))!=0 → 放过本次评估，无第二层节流
+        if (this.mob.getRandom().nextInt(this.reducedTickDelay(120)) != 0) {
+            return false;
+        }
         if (!this.mob.asLiving().isInWater()) {
             return false; // 离水交给扑腾 Goal
         }

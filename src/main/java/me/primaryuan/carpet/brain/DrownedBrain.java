@@ -33,8 +33,9 @@ import net.minecraft.world.entity.player.Player;
  * {@code releaseUsingItem()} 走原生 {@code TridentItem.releaseUsing}——掷出的
  * 就是玩家主手的真三叉戟（忠诚回收/耐久扣除全原生）。</p>
  *
- * <p>不做（原版有、移植跳过）：寻水/寻滩/上浮三 Goal（水中环境 Goal，
- * 假人无游泳导航引擎；落水沿用玩家原生浮沉物理）。</p>
+ * <p>不做（原版有、移植跳过）：寻水/寻滩/上浮三 Goal（GoToWater/GoToBeach/
+ * SwimUp，水中环境导航引擎缺失；落水沿用玩家原生浮沉物理）。范围口径 =
+ * 原版 FOLLOW_RANGE 35（Zombie 继承）。</p>
  */
 public class DrownedBrain extends PlayerBrainController {
 
@@ -49,29 +50,34 @@ public class DrownedBrain extends PlayerBrainController {
 
     @Override
     protected void assemble() {
+        // 原版溺尸 WATER 寻路 malus = 0（水中畅通无绕行）；移植版导航器默认
+        // 8.0（陆生怪口径），溺尸装配时经 MobFields 回放字段归零——追下水目标
+        // 时走直线而非绕岸；直写导航器实例会被跨维重建的默认值覆盖
+        this.prowler.fields().setWaterMalus(0.0);
         // 反击 + 群体警报（原版：同时唤醒溺尸与僵尸猪灵两类同伴）
         this.targetSelector.addGoal(1, new PlayerGroupHurtByTargetGoal(
                 this.prowler, Set.of("drowned", "zombiepiglin")));
-        // pri 2 玩家（mustSee）
+        // 范围口径 = 原版 FOLLOW_RANGE 35（26.3 字节码：Drowned extends Zombie，
+        // 继承 Zombie.createAttributes 显式覆写的 35）
         this.targetSelector.addGoal(2, new PlayerNearestAttackableTargetGoal<>(
-                this.prowler, Player.class, 20.0, 10, true,
+                this.prowler, Player.class, 35.0, 10, true,
                 p -> p != this.player && p.isAlive() && !p.isSpectator() && !p.isCreative()));
         // pri 3 村民（mustSee=false：透墙定位，与原版僵尸基座同款）
         this.targetSelector.addGoal(3, new PlayerNearestAttackableTargetGoal<>(
-                this.prowler, AbstractVillager.class, 20.0, 10, false,
+                this.prowler, AbstractVillager.class, 35.0, 10, false,
                 v -> v.isAlive() && !v.isBaby()));
         // pri 3 铁傀儡
         this.targetSelector.addGoal(3, new PlayerNearestAttackableTargetGoal<>(
-                this.prowler, IronGolem.class, 20.0, 10, true,
+                this.prowler, IronGolem.class, 35.0, 10, true,
                 g -> g.isAlive()));
         // pri 3 美西螈（原版与溺尸互为猎物关系）
         this.targetSelector.addGoal(3, new PlayerNearestAttackableTargetGoal<>(
-                this.prowler, Axolotl.class, 16.0, 10, true,
+                this.prowler, Axolotl.class, 35.0, 10, true,
                 a -> a.isAlive()));
-        // pri 5 幼年海龟
+        // pri 5 幼年海龟（BABY_ON_LAND：幼年且不在水中）
         this.targetSelector.addGoal(5, new PlayerNearestAttackableTargetGoal<>(
-                this.prowler, Turtle.class, 20.0, 10, true,
-                t -> t.isBaby()));
+                this.prowler, Turtle.class, 35.0, 10, true,
+                t -> t.isBaby() && !t.isInWater()));
         // 行为：持三叉戟投掷（pri 2）与近战兜底（pri 3）。原版两者同为 pri 2、
         // 靠"同 tick 全量评估 + 插入序"分胜负；移植版有冷却间隔层（近战 4 tick
         // 早于三叉戟 40 tick 成为候选），同优先级会永久互斥——故近战降一档：

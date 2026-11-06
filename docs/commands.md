@@ -322,6 +322,10 @@
 
 通过 Mixin 在 Carpet 自带的 `/player <name>` 命令树下追加独立的 `sendto` 子命令，建立假人之间**单向**的背包物品流链接：源假人持续把背包物品转移给目标。
 
+### 权限
+
+沿用 Carpet `/player` 命令本身的权限检查（由 Carpet 的 `commandPlayer` 规则控制），不额外限制。
+
 ### 命令语法
 
 - `/player <src> sendto <target>`：建立链接并立即开始转移
@@ -355,23 +359,24 @@
 通过 Mixin 在 Carpet 自带的 `/player <name>` 命令树下追加独立的 `brain` 子命令，为假人挂载/卸载生物式 AI：
 
 ```text
-/player <name> brain [zombie|babyzombie|skeleton|witherskeleton|drowned|zombiepiglin|pillager|vindicator|irongolem|spider|piglin|piglinbrute|slime|magmacube|fish|enderman|wolf|villager|pig|off] [keep]
+/player <name> brain [zombie|babyzombie|skeleton|witherskeleton|drowned|zombiepiglin|pillager|vindicator|irongolem|spider|piglin|piglinbrute|slime|magmacube|fish|enderman|wolf|villager|pig|allay|fox|witch|coppergolem|off] [keep]
+/player <name> brain team [<队名>|off]
 ```
 
 模式名跟随 `/carpet language`：语言为中文（zh_cn/zh_tw）时补全与输入用中文（如 `brain 僵尸`），英文键恒可用；两种写法均可加 `keep`。
 
 | 参数 | 行为 |
 |------|------|
-| (无参数) | 查询当前 AI 模式 |
-| `<模式> keep` | 本次服务器运行内，假人重上时恢复模式及狼的主人；重启或 `brain off` 清除 |
+| (无参数) | 查询当前 AI 模式与诊断信息（目标、寻路、移动状态） |
+| `<模式> keep` | 本次服务器运行内，假人重上时恢复模式及主人（狼的仇恨对象、悦灵的交付对象）；重启或 `brain off` 清除 |
 | `zombie` | 近战追击玩家。 |
-| `skeleton` | 持弓远程射击并走位，消耗背包箭矢。 |
+| `skeleton` | 持弓远程射击并走位，消耗背包箭矢；白天露天着火时找暗处躲避。 |
 | `pillager` | 持弩远程射击，上弦 25 tick。 |
 | `irongolem` | 攻击敌对生物与敌对假人，不主动攻击苦力怕；被攻击时反击。 |
-| `spider` | 白天中立，夜间敌对并疾跑追击。 |
-| `wolf` | 跟随执行命令的主人并协助战斗，不传送跟随。 |
-| `villager` | 随机漫步，被攻击时逃跑，并躲避僵尸。 |
-| `enderman` | 被凝视后激怒，疾跑追击。 |
+| `spider` | 白天中立，夜间敌对并疾跑追击，贴近目标扑跳。 |
+| `wolf` | 跟随主人并协助战斗（受伤先逃跑），见手持食物的玩家歪头注视。 |
+| `villager` | 日程驱动的过日子：回床入睡、认领堆肥桶后长期保留农民岗位（[村民-农民]；集合/睡眠/恐慌不释放）、钟下集合；工作时段收割成熟作物、真实种子补种（每种保留 10 个投入堆肥、满级先取骨粉）。 |
+| `enderman` | 被凝视后激怒，疾跑追击（激怒半径 64 格）。 |
 | `babyzombie` | 比普通僵尸更快的近战追击。 |
 | `witherskeleton` | 近战追击玩家、铁傀儡和猪灵类，躲避狼；攻击不附凋零。 |
 | `drowned` | 持三叉戟时远程投掷，否则近战；被攻击时唤醒附近溺尸和僵尸猪灵脑假人。 |
@@ -381,9 +386,23 @@
 | `slime` | 持续跳行，锁定目标后直线跳行追击。 |
 | `magmacube` | 与史莱姆相同，以跳行移动和追击。 |
 | `fish` | 水中游动，躲避 8 格内玩家；受伤逃窜，缺氧上浮，离水扑腾。 |
-| `pig` | 闲时漫步，被攻击时逃跑。 |
+| `pig` | 闲时漫步，被攻击时逃跑，见手持胡萝卜的玩家会跟上来。 |
 | `piglin` | 敌视未穿金装的玩家，按武器近战、用弩或长矛；捡拾并穿戴装备。 |
-| `off` | 卸载脑子，恢复 Carpet 手动控制 |
+| `allay` | 以副手物品为样品（按物品匹配、药水按内容），步行收集匹配掉落物并交付给执行命令的玩家；控制台挂脑无默认对象，只对有效音符盒交付。音符盒监听随脑会话，响起后改向音符盒交付 30 秒，交付冷却 240t。 |
+| `fox` | 采摘成熟甜浆果丛、玩家真正饥饿时吃 FOOD 食物、捕食鸡/兔、躲避狼；白天减少活动（躺卧姿态玩家身体无对应，不伪造）。 |
+| `witch` | 只用背包里的真实药水：低血/着火/水下喝对应饮用型药水；对目标按原版 60t 节拍、10 格射程投喷溅药水，出手前复核目标/同队/视线，缺药不投。 |
+| `coppergolem` | 从铜箱取货（单趟 ≤16，按实际库存差量记账），分类放入空箱或已有同物的箱子；暂停保留余货并恢复寻点，双箱同一容器身份；仅 1.21.10+。 |
+| `off` | 卸载脑子，恢复 Carpet 手动控制（战斗队伍保留） |
+
+**战斗队伍**（与脑子独立，未挂脑也可设置）：
+
+| 参数 | 行为 |
+|------|------|
+| `team` | 查询战斗队伍 |
+| `team <队名>` | 加入或更换队伍（队名支持中英文，Tab 补全已有队名） |
+| `team off` | 退出队伍 |
+
+同一非空队名的假人互为友军（跨脑模式生效）：不互相索敌、不反击、不参与群体围攻、凝视不触发激怒，出手前也不命中；战斗中改为同队立即撤销彼此的非法目标。异队或无队假人按各模式原有敌对规则交战；被动模式（猪/鱼/村民）不受队伍影响。真人不获得队伍身份；难度、创造/旁观、主人豁免等原有门禁不受队伍影响。**边界**：友军保护在"出手瞬间"判定——已离手的远程弹射物、扫击横扫与已举矛的长矛刺击（≤1 tick 结算窗口）飞行途中不追踪改队，原版弹道不拦截。队伍为运行期数据：换脑、`brain off`、下线重上均保留；服务器重启清空。
 
 ### 权限
 
@@ -407,8 +426,18 @@
 # 挂载骷髅模式（记得给假人弓和箭）
 /player Steve brain skeleton
 
+# 两个僵尸组队后互不攻击
+/player ZombieA brain zombie
+/player ZombieB brain zombie
+/player ZombieA brain team red
+/player ZombieB brain team red
+
 # 卸载脑子，恢复 Carpet 手动控制
 /player Steve brain off
+
+# 查询 / 退出战斗队伍（brain off 后队伍仍保留）
+/player Steve brain team
+/player Steve brain team off
 ```
 
 ### 自动卸载条件
@@ -766,7 +795,12 @@ scale
 
 > **所属规则**：`countdown`（默认开启）
 
-正计时与倒计时的统一入口：全局同一时刻只有一个活动计时，两种方向共用暂停/恢复/停止控制；四种展示位置与三档效果自由搭配，常用场景一条短命令完成。计时基于真实经过时间（TPS 低不拉长时长），纯服务端数据包实现，原版客户端可用。命令方块可用。
+正计时与倒计时的统一入口：全局同一时刻只有一个活动计时，两种方向共用暂停/恢复/停止控制；四种展示位置与三档效果自由搭配，常用场景一条短命令完成。计时基于真实经过时间（TPS 低不拉长时长），纯服务端数据包实现，原版客户端可用。
+
+### 权限
+
+- 权限等级 2：管理员与命令方块可用，普通玩家不可见
+- `countdown` 规则关闭时不隐藏命令，执行时提示"功能已关闭"
 
 ### 命令语法
 

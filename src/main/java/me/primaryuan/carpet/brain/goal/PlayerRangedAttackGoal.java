@@ -1,5 +1,6 @@
 package me.primaryuan.carpet.brain.goal;
 
+import me.primaryuan.carpet.brain.BrainTeams;
 import me.primaryuan.carpet.brain.PlayerGoal;
 import me.primaryuan.carpet.brain.PryMob;
 import net.minecraft.util.Mth;
@@ -82,6 +83,12 @@ public class PlayerRangedAttackGoal extends PlayerGoal {
         this.setFlags(EnumSet.of(PlayerGoal.Flag.MOVE, PlayerGoal.Flag.LOOK));
     }
 
+    /** 原版 RangedBowAttackGoal 覆写 requiresUpdateEveryTick：蓄力/冷却计时按游戏 tick 计 */
+    @Override
+    public boolean requiresUpdateEveryTick() {
+        return true;
+    }
+
     @Override
     public boolean canUse() {
         LivingEntity target = this.mob.getTarget();
@@ -133,6 +140,11 @@ public class PlayerRangedAttackGoal extends PlayerGoal {
     public void tick() {
         LivingEntity target = this.mob.getTarget();
         if (target == null) {
+            return;
+        }
+        // 出手前检查（远程）：目标中途改为同队 → 静默收弓，不瞄准不射击
+        if (BrainTeams.isTeamFriendly(this.mob.asLiving(), target)) {
+            this.mob.stopUsingItem();
             return;
         }
         double distSq = this.mob.distanceToSqr(target.getX(), target.getY(), target.getZ());

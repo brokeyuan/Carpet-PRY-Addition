@@ -38,6 +38,9 @@ public class PlayerPickupItemsGoal extends PlayerGoal {
     public PlayerPickupItemsGoal(PryMob mob) {
         this.mob = mob;
         this.setFlags(EnumSet.of(PlayerGoal.Flag.MOVE));
+        // 原版猪灵拾取为 Brain 驱动（PiglinAi.pickUpItem，非 GoalSelector Goal），
+        // 无可对齐的原版周期——本 interval=10 次评估（≈20 tick 搜索节流）为移植
+        // 自建防扫荡节流，披露为"无原版对应"项（非原版随机判定替代）
         this.setInterval(10);
     }
 

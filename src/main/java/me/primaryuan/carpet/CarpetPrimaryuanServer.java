@@ -8,6 +8,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import me.primaryuan.carpet.brain.BrainManager;
+import me.primaryuan.carpet.brain.BrainTeams;
 import me.primaryuan.carpet.command.FakeCloneCommand;
 import me.primaryuan.carpet.command.CountdownCommand;
 import me.primaryuan.carpet.command.ChatPunishmentCommand;
@@ -137,6 +138,9 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         // 假人脑子（brain）：初始化会话周期扫描与停服清理
         // （跨维度不在此处重挂——由 MobFields 检测维度变化重建寻路器并作废旧路径）
         BrainManager.init();
+
+        // 假人战斗队伍（brain team）：停服清空运行期队伍（跨重启不持久化）
+        BrainTeams.init();
 
         // 玩家头部皮肤：头颅变化检测、皮肤还原与异步会话清理
         PlayerHeadSkinHandler.init();

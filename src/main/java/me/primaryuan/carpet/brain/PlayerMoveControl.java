@@ -42,6 +42,8 @@ public class PlayerMoveControl {
     private double speedModifier = 0.0;     // 移动速度系数（0.5 慢走 / 1.0 正常 / 1.2 疾驰）
     private float strafeForward = 0.0F;     // 风筝：前后分量
     private float strafeRight = 0.0F;       // 风筝：左右分量
+    /** 下一次 tick 请求普通玩家跳跃（LeapAtTarget 等；只写原生 jumping 输入） */
+    private boolean jumpRequested = false;
 
     private final Player player;
 
@@ -70,17 +72,35 @@ public class PlayerMoveControl {
         this.operation = Operation.WAIT;
     }
 
+    /**
+     * 请求下一次 tick 的普通玩家跳跃：只置原生 {@code jumping} 输入，由
+     * {@code LivingEntity.aiStep} 走玩家自己的起跳物理，不写 deltaMovement。
+     */
+    public void requestJump() {
+        this.jumpRequested = true;
+    }
+
     /** 是否仍持有未完成的移动指令 */
     public boolean hasWanted() {
         return this.operation != Operation.WAIT;
+    }
+
+    /** 当前操作状态（诊断视图用） */
+    public Operation operation() {
+        return this.operation;
     }
 
     /** 每 tick 推进：把当前操作翻译成玩家原生移动输入 */
     public void tick() {
         // 跳跃输入标志先复位（原版 aiStep 消费 jumping：水中 = 上浮推力、
         // 陆地站立 = 原生起跳——残留 true 会导致假人持续上浮/连跳）；
-        // MOVE_TO 的水中分支按需重新置起
+        // MOVE_TO 的水中分支按需重新置起。显式 requestJump 则在本 tick 后续
+        // aiStep 置 true，走玩家普通跳跃。
         this.player.setJumping(false);
+        if (this.jumpRequested) {
+            this.jumpRequested = false;
+            this.player.setJumping(true);
+        }
         switch (this.operation) {
             case MOVE_TO -> this.tickMoveTo();
             case STRAFE -> this.tickStrafe();

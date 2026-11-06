@@ -1,8 +1,10 @@
 package me.primaryuan.carpet.brain;
 
-import me.primaryuan.carpet.brain.goal.PlayerHurtByTargetGoal;
+import me.primaryuan.carpet.brain.goal.PlayerGroupHurtByTargetGoal;
+import me.primaryuan.carpet.brain.goal.PlayerLookAtPlayerGoal;
 import me.primaryuan.carpet.brain.goal.PlayerMeleeAttackGoal;
 import me.primaryuan.carpet.brain.goal.PlayerNearestAttackableTargetGoal;
+import me.primaryuan.carpet.brain.goal.PlayerRandomLookAroundGoal;
 import me.primaryuan.carpet.brain.goal.PlayerRandomStrollGoal;
 //#if MC >= 12111
 // 1.21.11 起鸡迁入 animal.chicken 子包
@@ -20,6 +22,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Items;
+
+import java.util.List;
+import java.util.Set;
 
 /**
  * 小僵尸模式脑（装配器）：比僵尸更快更急躁的近战追击。
@@ -53,6 +58,33 @@ public class BabyZombieBrain extends PlayerBrainController {
 
     private int mountCooldown;
 
+    /**
+     * 本实例真正建立的骑乘关系（实例字段，不是 UUID 表）：同 UUID 旧实例的
+     * 卸载事件不得清掉新实例的关系，也不得对新实例的载具执行 stopRiding。
+     */
+    private Chicken ownedChicken;
+
+    /** 本脑当前是否骑在指定鸡上（对象身份 + UUID 双校验） */
+    private boolean ridingOwnChicken(Chicken chicken) {
+        return this.ownedChicken == chicken
+                && chicken.getUUID().equals(this.ownedChicken.getUUID());
+    }
+
+    /** 测试观测缝：本脑当前登记的鸡（无则 null） */
+    Chicken ownedChicken() {
+        return this.ownedChicken;
+    }
+
+    /** 释放本脑建立的鸡关系：停掉本脑喂给鸡的导航，不碰鸡的原生 AI/存在状态 */
+    private void releaseOwnedChicken() {
+        if (this.ownedChicken != null) {
+            if (!this.ownedChicken.isRemoved() && this.ownedChicken.getNavigation() != null) {
+                this.ownedChicken.getNavigation().stop();
+            }
+            this.ownedChicken = null;
+        }
+    }
+
     public BabyZombieBrain(ServerPlayer player) {
         super(player);
     }
@@ -85,13 +117,21 @@ public class BabyZombieBrain extends PlayerBrainController {
         }
         var vehicle = this.player.getVehicle();
         if (vehicle != null) {
-            if (!(vehicle instanceof Chicken chicken) || !chicken.isAlive()) {
-                this.player.stopRiding(); // 载具消失：兜底清乘
+            // 手动换乘船/矿车/别人的鸡：不是本脑建立的关系，不强制下车；只清本脑
+            // 可能残留的旧鸡登记（并停掉旧鸡被本脑喂的导航）。
+            if (!(vehicle instanceof Chicken chicken) || !this.ridingOwnChicken(chicken)) {
+                this.releaseOwnedChicken();
+                return;
+            }
+            if (!chicken.isAlive() || chicken.isRemoved()) {
+                this.player.stopRiding(); // 本脑的载具消失：兜底清乘
+                this.releaseOwnedChicken();
                 return;
             }
             // 落水下车（视线/身体进水即视为"碰到水"，比纯眼部判定更保守可靠）
             if (this.player.isInWater() || chicken.isInWater()) {
                 this.player.stopRiding();
+                this.releaseOwnedChicken();
                 this.mountCooldown = MOUNT_RETRY_INTERVAL;
                 return;
             }
@@ -107,7 +147,9 @@ public class BabyZombieBrain extends PlayerBrainController {
             }
             return;
         }
-        // 未骑乘：周期性找鸡骑乘（附近没有鸡就是普通小僵尸，与原版语义呼应）
+        // 未骑乘：手动下车后清掉本脑登记（旧鸡导航停掉）
+        this.releaseOwnedChicken();
+        // 周期性找鸡骑乘（附近没有鸡就是普通小僵尸，与原版语义呼应）
         if (this.mountCooldown > 0) {
             return;
         }
@@ -115,11 +157,25 @@ public class BabyZombieBrain extends PlayerBrainController {
         if (this.player.isInWater()) {
             return; // 水里不上鸡
         }
+        this.tryMountChicken();
+    }
+
+    /** 范围内鸡候选（原版 getEntitiesOfClass(Box)；离线测试覆写为受控候选） */
+    protected List<Chicken> findChickens() {
+        return this.player.level().getEntitiesOfClass(Chicken.class,
+                this.player.getBoundingBox().inflate(5.0, 2.0, 5.0));
+    }
+
+    /** 搜索并尝试骑乘（独立方法供离线测试直驱；资格排除逻辑本体保持真实执行） */
+    protected void tryMountChicken() {
         Chicken best = null;
         double bestSq = CHICKEN_SEARCH_RANGE_SQ;
-        for (Chicken chicken : this.player.level().getEntitiesOfClass(Chicken.class,
-                this.player.getBoundingBox().inflate(5.0, 2.0, 5.0))) {
-            if (!chicken.isAlive() || chicken.isPassenger() || chicken.isBaby()) {
+        for (Chicken chicken : this.findChickens()) {
+            // 候选排除：死亡/移除、已有乘客（isVehicle——多个假人不能共骑一鸡）、
+            // 正在骑乘其它实体、幼年、跨维
+            if (!chicken.isAlive() || chicken.isRemoved()
+                    || chicken.isVehicle() || chicken.isPassenger() || chicken.isBaby()
+                    || chicken.level() != this.player.level()) {
                 continue;
             }
             double sq = this.player.distanceToSqr(chicken);
@@ -129,40 +185,67 @@ public class BabyZombieBrain extends PlayerBrainController {
             }
         }
         if (best != null) {
-            // 实体原生骑乘：force 跳过通用"鸡不可被骑"限制（原版鸡骑士同款）
+            // 实体原生骑乘：force 跳过通用"鸡不可被骑"限制（原版鸡骑士同款）。
+            // 上车前再查一次载客资格（与搜索到上车之间乘客状态可能变化）：
+            // startRiding(force=true) 会绕过载具载客检查——必须在调用侧把关。
+            if (best.isVehicle() || best.isPassenger() || !best.isAlive() || best.isRemoved()) {
+                return;
+            }
             //#if MC >= 12110
-            this.player.startRiding(best, true, true);
+            boolean ridden = this.player.startRiding(best, true, true);
             //#else
-            //$$ this.player.startRiding(best, true);
+            //$$ boolean ridden = this.player.startRiding(best, true);
             //#endif
+            if (ridden) {
+                // 仅在骑乘成功后记录本实例建立的关系（释放只清自己建立的）
+                this.ownedChicken = best;
+            }
         }
     }
 
     @Override
+    public void onDetach() {
+        // 换脑/brain off/规则关闭/死亡：只释放本脑实际建立的骑乘关系。
+        // 手动换乘船/矿车/别人的鸡后 ownedChicken 已清，这里不会强制下车。
+        if (this.ownedChicken != null && this.player.getVehicle() == this.ownedChicken) {
+            this.player.stopRiding();
+        }
+        this.releaseOwnedChicken();
+        super.onDetach();
+    }
+
+    @Override
     protected void assemble() {
-        // 被打反击：小僵尸被打同样火速还手
-        this.targetSelector.addGoal(1, new PlayerHurtByTargetGoal(this.prowler, null));
-        // 追击目标（与成年僵尸同构，范围 16/戴僵尸头 8 = 减半）：
+        // 与成年僵尸同款装配（幼体继承原版 Zombie 全部 Goal，26.3 字节码核实）：
+        // 被打反击并唤醒僵尸猪灵同伴
+        this.targetSelector.addGoal(1, new PlayerGroupHurtByTargetGoal(
+                this.prowler, Set.of("zombiepiglin")));
+        // pri 2 玩家（mustSee，范围 = FOLLOW_RANGE 35 / 戴僵尸头 17.5——
+        // BabyZombie 继承 Zombie 的 createAttributes，26.3 字节码显式 35）
         this.targetSelector.addGoal(2, new PlayerNearestAttackableTargetGoal<>(
-                this.prowler, Player.class, 16.0, 10, true,
+                this.prowler, Player.class, 35.0, 10, true,
                 p -> p != this.player && p.isAlive() && !p.isSpectator() && !p.isCreative()
                         && !p.getItemBySlot(EquipmentSlot.HEAD).is(Items.ZOMBIE_HEAD)));
         this.targetSelector.addGoal(2, new PlayerNearestAttackableTargetGoal<>(
-                this.prowler, Player.class, 8.0, 10, true,
+                this.prowler, Player.class, 17.5, 10, true,
                 p -> p != this.player && p.isAlive() && !p.isSpectator() && !p.isCreative()
                         && p.getItemBySlot(EquipmentSlot.HEAD).is(Items.ZOMBIE_HEAD)));
         this.targetSelector.addGoal(3, new PlayerNearestAttackableTargetGoal<>(
-                this.prowler, AbstractVillager.class, 16.0, 10, false,
+                this.prowler, AbstractVillager.class, 35.0, 10, false,
                 v -> v.isAlive() && !v.isBaby()));
         this.targetSelector.addGoal(4, new PlayerNearestAttackableTargetGoal<>(
-                this.prowler, IronGolem.class, 16.0, 10, true,
+                this.prowler, IronGolem.class, 35.0, 10, true,
                 g -> g.isAlive()));
         this.targetSelector.addGoal(5, new PlayerNearestAttackableTargetGoal<>(
-                this.prowler, Turtle.class, 16.0, 10, true,
-                t -> t.isBaby()));
-        // 行为：疾速近战（1.5：Wiki"移动速度比成年僵尸快 50%" → 原生疾跑）
-        this.goalSelector.addGoal(1, new PlayerMeleeAttackGoal(this.prowler, 1.5, true));
-        // 空闲漫游
-        this.goalSelector.addGoal(2, new PlayerRandomStrollGoal(this.prowler, 1.5));
+                this.prowler, Turtle.class, 35.0, 10, true,
+                t -> t.isBaby() && !t.isInWater()));
+        // 行为：近战（原版 ZombieAttackGoal(1.0, false)）；幼体移速加成以
+        // 速度系数 1.5 表达（原版 BABY 速度修正 +50%，假人不改属性——红线），
+        // 玩家身体走原生疾跑，方向性一致；失视线收手同成年僵尸
+        this.goalSelector.addGoal(3, new PlayerMeleeAttackGoal(this.prowler, 1.5, false));
+        // 空闲漫游（原版 pri 7）+ 看人/随机张望（原版 pri 8）
+        this.goalSelector.addGoal(7, new PlayerRandomStrollGoal(this.prowler, 1.5));
+        this.goalSelector.addGoal(8, new PlayerLookAtPlayerGoal(this.prowler, Player.class, 8.0F));
+        this.goalSelector.addGoal(8, new PlayerRandomLookAroundGoal(this.prowler));
     }
 }
