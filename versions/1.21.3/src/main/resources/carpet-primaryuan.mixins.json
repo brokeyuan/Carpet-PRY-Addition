@@ -68,7 +68,11 @@
     "rule.fakePlayerClones.ClientboundPlayerInfoRemovePacketAccessor",
     "rule.fakePlayerClones.PlayerCommandGroupMixin",
     "rule.fakePlayerClones.PlayerCommandRejoinMixin",
-    "rule.fakeGames.SwapItemMixin"
+    "rule.fakeGames.SwapItemMixin",
+    "rule.playerHead.AnvilMenuAccessor",
+    "rule.playerHead.ItemCombinerMenuAccessor",
+    "rule.playerHead.AnvilMenuMixin",
+    "rule.playerHead.CopyComponentsFunctionMixin"
   ],
   "client": [
     "rule.entitiesRidingPlayers.ProjectileUtilMixin",

@@ -11,6 +11,7 @@
   - [/tpp](#tpp---fake-player-pearl-teleport)
   - [/tppset](#tppset---station-management)
 - [/hat - Player Hat](#hat---player-hat)
+- [/head - Head Management](#head---head-management)
 - [Fake Player Continuous Inventory Drop](#fake-player-continuous-inventory-drop)
 - [/player sendto - Fake Player Inventory Link](#player-sendto---fake-player-inventory-link)
 - [/player brain - Fake Player Brain](#player-brain---fake-player-brain)
@@ -233,6 +234,42 @@ With `playerHat` enabled, main-hand air use also swaps whole stacks when the off
 ```bash
 # Hold a diamond block and wear it on your head
 /hat
+```
+
+---
+
+## /head - Head Management
+
+> **Rule**: `universalHead`
+
+### Syntax
+
+```
+/head universal <target> [count]
+```
+
+### Permission
+
+- Visible and usable while `universalHead` is enabled and the source is an admin (permission level 4)
+- Console passes at level 4; command blocks are refused rather than escalated for not being a player
+- The whole `/head` tree is hidden while the rule is disabled
+
+### Description
+
+Gives universal heads to an online player, count 1-64 (default 1). A newly given head has no skin yet and its lore says "Skin source: not selected". Put it in an anvil, type a player name and take the result to fix that player's skin; rename again to switch. The result cannot be taken while a lookup is pending, and a failed, timed-out or texture-less lookup consumes no experience, leaves the head untouched and reports once.
+
+Whether wearing it changes your full skin is controlled by `playerHeadSkin`. Skins and external names survive placement, mining, trading and restarts with the item/block entity; normal creative pick-block gives a plain head, while Ctrl+pick carries the components.
+
+The target is the online player who receives the item; the "recipient" field of a memorial head is archive text, a different concept.
+
+### Usage Examples
+
+```bash
+# Give one universal head
+/head universal Steve
+
+# Give eight
+/head universal Steve 8
 ```
 
 ---

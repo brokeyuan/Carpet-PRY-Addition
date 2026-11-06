@@ -2,7 +2,7 @@
 
 > Mod ID: `carpet-pry-addition` | 版本: `1.3.1`
 >
-> 共 **40 条**主规则（`whoCalledMeSound` / `whoCalledMeHighlight` 作为配套子规则内联在 whoCalledMe 节）
+> 共 **41 条**主规则（`whoCalledMeSound` / `whoCalledMeHighlight` 作为配套子规则内联在 whoCalledMe 节）
 >
 > **提示：可以使用 `Ctrl+F` 快速查找自己想要的规则**
 
@@ -44,6 +44,7 @@
 - [生存功能](#生存功能)
   - [playerHat - 玩家帽子](#playerhat---玩家帽子)
   - [playerHeadSkin - 玩家头部皮肤](#playerheadskin---玩家头部皮肤)
+  - [universalHead - 通用头颅](#universalhead---通用头颅)
   - [betterSnowball - 更好的雪球](#bettersnowball---更好的雪球)
   - [invisibleInTallGrass - 隐身草](#invisibleintallgrass---隐身草)
   - [moreEndCrystalTypes - 更多种类的末地水晶](#moreendcrystaltypes---更多种类的末地水晶)
@@ -554,6 +555,28 @@
 - 优先使用头颅自带皮肤；只有名字或 UUID 时通过原版服务异步解析，等待或失败时保留原皮肤。无有效皮肤来源的玩家头颅与生物头不换肤。
 - 仅改变皮肤，名字、UUID、游戏状态不变，头颅仍显示。纯服务端，不需要换肤模组；不依赖 `playerHat`，正常戴上玩家头颅即可。
 - 真人自身刷新可能短暂加载；打开外部容器或鼠标拿着物品时，延后至关闭容器、放回物品后刷新自身，其他玩家即时可见。
+
+---
+
+---
+
+### universalHead - 通用头颅
+
+管理员发放可重复换肤的玩家头颅：在铁砧把名字改成皮肤来源玩家名，查询成功后领取即固定该玩家皮肤；再次改名可换成其他玩家。佩戴后是否全身换肤仍由 `playerHeadSkin` 决定。
+
+| 属性 | 值 |
+|------|-----|
+| **规则名** | `universalHead` |
+| **描述** | 管理员发放的玩家头颅，在铁砧改名为皮肤来源玩家名后固定该皮肤，可反复改名切换 |
+| **类型** | `boolean` |
+| **默认值** | `false` |
+| **参考选项** | `false`, `true` |
+| **分类** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE`, `COMMAND` |
+
+- 只处理 `/head universal` 发放、带 PRY 标记的玩家头颅；普通玩家头颅、生物头与其它模组物品保持原行为。两条新规则都不要求 `playerHat` 或 `playerHeadSkin` 开启。
+- 铁砧只在名称真正改变时查询：输入先防抖，同名并发请求合并，缓存有容量与过期时间。查询期间结果槽为空并拒绝普通点击、Shift 点击、数字键与丢弃；成功后只给结果物品写入原版 `PROFILE`，输入物品和原版经验消耗路径保持不变。
+- 账号不存在、没有有效纹理、超时或查询失败时保留输入物品与原有皮肤，不消耗经验，并提示一次。改名、换输入、关菜单、断线、死亡、跨维度、关闭规则或停服后，迟到结果一律失效。
+- 放置、挖掘与重启后，皮肤、外部名称和档案随物品/方块实体保存；默认创造拾取得到普通头颅，Ctrl+拾取（带数据）才会带上组件。完整卸载模组后的数据往返不作保证。
 
 ---
 

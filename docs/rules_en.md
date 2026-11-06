@@ -2,7 +2,7 @@
 
 > Mod ID: `carpet-pry-addition` | Version: `1.3.1`
 >
-> Total: **40 main rules** (`whoCalledMeSound` / `whoCalledMeHighlight` are documented inline as companion rules in the whoCalledMe section)
+> Total: **41 main rules** (`whoCalledMeSound` / `whoCalledMeHighlight` are documented inline as companion rules in the whoCalledMe section)
 >
 > **Tip: Use `Ctrl+F` to quickly find the rule you want**
 
@@ -44,6 +44,7 @@ Rule values are stored per world in `<world>/carpet.conf` by default. Rules tagg
 - [Survival Features](#survival-features)
   - [playerHat - Player Hat](#playerhat---player-hat)
   - [playerHeadSkin - Player Head Skin](#playerheadskin---player-head-skin)
+  - [universalHead - Universal Head](#universalhead---universal-head)
   - [betterSnowball - Better Snowball](#bettersnowball---better-snowball)
   - [invisibleInTallGrass - Invisibility Grass](#invisibleintallgrass---invisibility-grass)
   - [moreEndCrystalTypes - More End Crystal Types](#moreendcrystaltypes---more-end-crystal-types)
@@ -555,6 +556,28 @@ Real players and Carpet fake players use a player head's full skin while wearing
 - Uses the head's embedded skin first; name-only or UUID-only heads are resolved asynchronously through vanilla services. Keeps the original skin while waiting or on failure. Mob heads and player heads without a valid skin source do not change the skin.
 - Changes only the skin: name, UUID, and game state stay intact, and the equipped head remains visible. Server-side; no skin mod required. Works independently of `playerHat`: equipping a player head normally is enough.
 - Refreshing a real player's own view may briefly show a loading screen. With an external container open or an item held by the cursor, self-refresh waits until the container is closed and the item is put back; other players see the change immediately.
+
+---
+
+---
+
+### universalHead - Universal Head
+
+Admin-given player heads that can be re-skinned repeatedly: rename one in an anvil to a player name and, once the lookup succeeds, taking the result fixes that player's skin; rename again to switch. Whether wearing it also changes your full skin is still controlled by `playerHeadSkin`.
+
+| Property | Value |
+|------|-----|
+| **Rule Name** | `universalHead` |
+| **Description** | Admin-given player head; rename it in an anvil to a player name to fix that skin, rename again to switch |
+| **Type** | `boolean` |
+| **Default** | `false` |
+| **Suggested Options** | `false`, `true` |
+| **Categories** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE`, `COMMAND` |
+
+- Only player heads created by `/head universal` and carrying the PRY marker are handled. Ordinary player heads, mob heads and items from other mods keep their vanilla behaviour. Neither new rule requires `playerHat` or `playerHeadSkin`.
+- The anvil queries only when the name actually changes: input is debounced, concurrent requests for the same name are merged, and the cache has a size limit and expiry. While a query is pending the result slot is empty and normal click, shift-click, number keys and dropping are refused. On success, only the result item receives the vanilla `PROFILE`; the input item and the vanilla experience cost path are untouched.
+- Unknown accounts, missing textures, timeouts and failed lookups keep both the input item and the previous skin, consume no experience, and report once. Results that arrive after a rename, input swap, menu close, disconnect, death, dimension change, rule disable or server stop are discarded.
+- Skins, external names and the archive survive placement, mining and restarts with the item/block entity. Normal creative pick-block gives a plain head; Ctrl+pick (pick with data) carries the components. Data round-trips after fully removing the mod are not guaranteed.
 
 ---
 

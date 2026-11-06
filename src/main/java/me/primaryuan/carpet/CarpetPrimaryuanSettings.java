@@ -81,6 +81,13 @@ public class CarpetPrimaryuanSettings {
     )
     public static boolean playerHeadSkin = false;
 
+    // 通用头颅：管理员发放的玩家头颅，铁砧改名为皮肤来源玩家名后异步查询并固定该皮肤；
+    // 可反复改名切换，不依赖 playerHat/playerHeadSkin，佩戴后是否全身换肤仍由 playerHeadSkin 决定
+    @Rule(
+            categories = {PRIMARYUAN, SURVIVAL, FEATURE, COMMAND}
+    )
+    public static boolean universalHead = false;
+
     @Rule(
             categories = {PRIMARYUAN, SURVIVAL, FEATURE}
     )

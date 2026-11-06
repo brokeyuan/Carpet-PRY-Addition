@@ -45,7 +45,11 @@
     "rule.whoCalledMe.MinecraftServerMixin",
     "rule.textAnimation.DisplayInvoker",
     "rule.textAnimation.TextDisplayInvoker",
-    "rule.fakeGames.SwapItemMixin"
+    "rule.fakeGames.SwapItemMixin",
+    "rule.playerHead.AnvilMenuAccessor",
+    "rule.playerHead.ItemCombinerMenuAccessor",
+    "rule.playerHead.AnvilMenuMixin",
+    "rule.playerHead.CopyComponentsFunctionMixin"
   ],
   "client": [
     "rule.entitiesRidingPlayers.ProjectileUtilMixin",

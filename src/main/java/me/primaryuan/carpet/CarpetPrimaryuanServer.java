@@ -14,6 +14,7 @@ import me.primaryuan.carpet.command.CountdownCommand;
 import me.primaryuan.carpet.command.FgCommand;
 import me.primaryuan.carpet.command.ChatPunishmentCommand;
 import me.primaryuan.carpet.command.HatCommand;
+import me.primaryuan.carpet.command.HeadCommand;
 import me.primaryuan.carpet.command.PvpCommand;
 import me.primaryuan.carpet.command.PatNodCommand;
 import me.primaryuan.carpet.command.RidingCommand;
@@ -34,6 +35,7 @@ import me.primaryuan.carpet.handler.fakegames.FakeGameSettings;
 import me.primaryuan.carpet.handler.entitiesRidingPlayers.EntitiesRidingPlayersHandler;
 import me.primaryuan.carpet.handler.patPatPlayers.PatPatPlayersHandler;
 import me.primaryuan.carpet.handler.peacefulPlayers.PvpManager;
+import me.primaryuan.carpet.handler.playerHead.HeadAnvilHandler;
 import me.primaryuan.carpet.handler.playerHeadSkin.PlayerHeadSkinHandler;
 import me.primaryuan.carpet.handler.textAnimation.TextAnimationHandler;
 import me.primaryuan.carpet.handler.whoCalledMe.WhoCalledMeHandler;
@@ -85,9 +87,9 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
             "serverTransfer",                 // /tpto /tptoset
             "fakeGames",                      // /fg /fakegame
             "playerReplay",                   // /playereplay
-            "fakePlayerScript"                // /playerscript
+            "fakePlayerScript",               // /playerscript
+            "universalHead"                   // /head universal
     );
-
     @Override
     public String version() {
         return name;
@@ -113,6 +115,7 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         CarpetServer.settingsManager.parseSettingsClass(CarpetPrimaryuanSettings.class);
         TppCommand.register();
         HatCommand.register();
+        HeadCommand.register();
         RidingCommand.register();
         ScaleCommand.register();
         PvpCommand.register();
@@ -165,6 +168,9 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
 
         // 玩家头部皮肤：头颅变化检测、皮肤还原与异步会话清理
         PlayerHeadSkinHandler.init();
+
+        // 通用头颅：铁砧换肤防抖、异步查询缓存与停服清理
+        HeadAnvilHandler.init();
 
         // 玩家回放/假人脚本：tick 与生命周期锚点
         ReplayLifecycle.init();
@@ -240,6 +246,10 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
             if (changedRule.name().equals("fakeGames")) {
                 // 规则关闭时安全结束进行中的游戏并清空状态
                 FakeGameManager.onRuleChanged();
+            }
+            if (changedRule.name().equals("universalHead")) {
+                // 关闭时作废未完成的铁砧换肤请求，已发放物品保持不变
+                HeadAnvilHandler.onRuleChanged();
             }
             MixinSanityCheck.onRuleChanged(changedRule.name());
             // SERVER 类规则改即持久化（server-rules.json，不随存档漂移）
