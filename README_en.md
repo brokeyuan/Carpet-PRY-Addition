@@ -86,8 +86,12 @@ All rules are off by default except the client-side rule `ridingPlayersClientInt
 - `fakePlayerSkinMode` / `fakePlayerSkinSet`: fake player skin mode (default / summon / same skin) and the shared skin player name; applied before spawn when available, with a possible brief default skin during lookup; real players are unaffected
 - `fakePlayerDropAll`: paced `/player dropall` dropping of the fake player's inventory
 - `fakePlayerSendto`: `/player sendto` one-way inventory item flow between fake players
+
 - `fakePlayerBrain`: `/player <name> brain` injects 24 vanilla-mob-style AI modes into fake players (zombie/skeleton/piglin/wolf/enderman/villager-farmer/allay/fox/witch/copper-golem/...), pure server-side with zero extra entities; supports CJK names, `keep` across rejoins within the current server run and colored name suffixes; `brain team` adds cross-mode combat teams
 - `fakePlayerClones`: same-UUID fake player clones — multiple real Carpet fakes share one identity and skin online at once, with independent positions/entity IDs, a slot-level shared inventory (in-place consumption never duplicates) and genuine chunk loading; incremental spawn / group kill / rejoin across restarts, protected from real-player logins
+
+- `playerReplay`: record yourself or invited players and summon phantoms on one shared timeline; preparation-page participant selection, admin direct recording, public/private access and independent viewer instances; packet-only phantoms never touch the world; normal shutdown saves and ends, crash recovery is checkpoint-only
+- `fakePlayerScript`: select one participant from a recording and let an auto-spawned Carpet fake player replay their operations (no result copying, no pathfinding, no in-round correction); offline gaps are concatenated and segment boundaries rebuild baselines; auto-offline, count/infinite rounds, inter-round return-to-start; 1.21/1.21.1 captures riding input only and needs force
 
 ### Player Scaling
 
@@ -122,7 +126,6 @@ All rules are off by default except the client-side rule `ridingPlayersClientInt
 ### Server Management
 
 - `serverTransfer`: `/tpto` lists servers and transfers you as yourself when clicked (one address per server); `/tptoset` manages the server list; the target server needs `accepts-transfers=true`
-
 
 ## Credits
 

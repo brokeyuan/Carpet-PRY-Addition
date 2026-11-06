@@ -1,5 +1,9 @@
 {
-  "carpet.rule.fakePlayerTpp.name": "Fake Player Pearl Station TP",
+    "carpet.rule.playerReplay.name": "Player Replay",
+  "carpet.rule.playerReplay.desc": "Record yourself or invited players and summon phantoms replaying one shared timeline without changing the world; admins may record others directly. Use /playereplay.",
+  "carpet.rule.fakePlayerScript.name": "Fake Player Script",
+  "carpet.rule.fakePlayerScript.desc": "Let a Carpet fake player replay one participant's recorded inputs; results follow the current world. Select a participant for multi-player recordings. Use /playerscript. 1.21/1.21.1 captures riding input only.",
+"carpet.rule.fakePlayerTpp.name": "Fake Player Pearl Station TP",
   "carpet.rule.fakePlayerTpp.desc": "Use fake players to trigger pearl teleport stations, with station completion by internal or display name. /tpp requires Carpet TIS Addition.",
   "carpet.rule.fakePlayerNameSuggestions.name": "Fake Player Name Suggestions",
   "carpet.rule.fakePlayerNameSuggestions.desc": "Customize the fake player names suggested by the /player command, separated by ','",

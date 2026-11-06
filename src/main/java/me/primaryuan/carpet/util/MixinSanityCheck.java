@@ -72,7 +72,8 @@ public final class MixinSanityCheck {
                 || ruleName.equals("ridingPlayersClientInteract") || ruleName.equals("fixXaeroLib")
                 || ruleName.equals("fakePlayerSkinMode") || ruleName.equals("fakePlayerSkinSet")
                 || ruleName.equals("playerScale") || ruleName.equals("playerScalePhysics")
-                || ruleName.equals("playerScaleLinkedEntities")) {
+                || ruleName.equals("playerScaleLinkedEntities")
+                || ruleName.equals("playerReplay") || ruleName.equals("fakePlayerScript")) {
             checkAll();
         }
         if (ruleName.equals("fakePlayerSkinMode") || ruleName.equals("fakePlayerSkinSet")) {
@@ -88,6 +89,41 @@ public final class MixinSanityCheck {
         checkFixXaeroLib();
         checkFakePlayerSkin();
         checkPlayerScale();
+        checkPlayerReplay();
+        checkFakePlayerScript();
+    }
+
+    /** playerReplay：ServerGamePacketListenerImpl.handlePlayerInput(ServerboundPlayerInputPacket)V（捕获入口） */
+    private static void checkPlayerReplay() {
+        if (!CarpetPrimaryuanSettings.playerReplay) {
+            return;
+        }
+        if (methodExists(net.minecraft.server.network.ServerGamePacketListenerImpl.class,
+                new Class<?>[]{net.minecraft.network.protocol.game.ServerboundPlayerInputPacket.class}, false)) {
+            return;
+        }
+        if (reported.add("playerReplay")) {
+            LOGGER.error("[pry] playerReplay 规则无效：handlePlayerInput 签名漂移，"
+                    + "输入捕获被静默跳过，请向模组作者反馈");
+        }
+    }
+
+    /** fakePlayerScript：同款捕获入口 + EntityPlayerActionPack.look(FF) 驱动面 */
+    private static void checkFakePlayerScript() {
+        if (!CarpetPrimaryuanSettings.fakePlayerScript) {
+            return;
+        }
+        boolean capture = methodExists(net.minecraft.server.network.ServerGamePacketListenerImpl.class,
+                new Class<?>[]{net.minecraft.network.protocol.game.ServerboundPlayerInputPacket.class}, false);
+        boolean pack = methodExists(carpet.helpers.EntityPlayerActionPack.class,
+                new Class<?>[]{float.class, float.class}, false);
+        if (capture && pack) {
+            return;
+        }
+        if (reported.add("fakePlayerScript")) {
+            LOGGER.error("[pry] fakePlayerScript 规则无效：捕获或 ActionPack 签名漂移（capture="
+                    + capture + ", pack=" + pack + "），脚本执行被静默跳过，请向模组作者反馈");
+        }
     }
 
     /** playerHat：LivingEntity.isEquippableInSlot(ItemStack, EquipmentSlot)Z（实例方法） */

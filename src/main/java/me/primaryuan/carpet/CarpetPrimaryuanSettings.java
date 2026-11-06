@@ -22,6 +22,18 @@ public class CarpetPrimaryuanSettings {
     )
     public static boolean fakePlayerTpp = false;
 
+    // 玩家回放：录制行为并召唤纯数据包幻影按轨迹重演，不参与真实世界模拟
+    @Rule(
+            categories = {PRIMARYUAN, COMMAND}
+    )
+    public static boolean playerReplay = false;
+
+    // 假人脚本：把录制的操作时间轴交给 Carpet 假人重演操作（不重现结果）
+    @Rule(
+            categories = {PRIMARYUAN, BOT, COMMAND}
+    )
+    public static boolean fakePlayerScript = false;
+
     // 假人名补全建议列表（逗号分隔），空 = 关闭（保持 Carpet 原版建议）
     @Rule(
             options = {"Steve,Alex", "Pry,hsds", "Pry,hsds,Firework,Food", ""},

@@ -1,5 +1,9 @@
 {
-  "carpet.rule.fakePlayerTpp.name": "假人珍珠站傳送",
+    "carpet.rule.playerReplay.name": "玩家回放",
+  "carpet.rule.playerReplay.desc": "錄製自己或受邀玩家並召喚幻影按共同時間軸重演，不改動世界；管理員可直接錄製他人。/playereplay 錄製與播放。",
+  "carpet.rule.fakePlayerScript.name": "假人腳本",
+  "carpet.rule.fakePlayerScript.desc": "把錄影中某位參與者的操作交給 Carpet 假人按原時間軸重演，結果隨目前世界；多人錄影需先選參與者。/playerscript。1.21/1.21.1 僅能錄製騎乘輸入。",
+"carpet.rule.fakePlayerTpp.name": "假人珍珠站傳送",
   "carpet.rule.fakePlayerTpp.desc": "用假人觸發珍珠傳送站，站點支援內部名和顯示名補全。/tpp 需要 Carpet TIS Addition。",
   "carpet.rule.fakePlayerNameSuggestions.name": "假人名稱建議",
   "carpet.rule.fakePlayerNameSuggestions.desc": "自訂 /player 命令建議的假人名稱清單，使用 ',' 分隔",

@@ -21,6 +21,9 @@ import me.primaryuan.carpet.command.TextCommand;
 import me.primaryuan.carpet.command.TimerCommand;
 import me.primaryuan.carpet.command.TppCommand;
 import me.primaryuan.carpet.command.TptoCommand;
+import me.primaryuan.carpet.command.PlayerReplayCommand;
+import me.primaryuan.carpet.command.PlayerScriptCommand;
+import me.primaryuan.carpet.replay.ReplayLifecycle;
 import me.primaryuan.carpet.handler.clickThrough.ClickThroughHandler;
 import me.primaryuan.carpet.handler.chatPunishment.ChatPunishmentManager;
 import me.primaryuan.carpet.handler.countdown.CountdownManager;
@@ -52,6 +55,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class CarpetPrimaryuanServer implements CarpetExtension {
     private static final CarpetPrimaryuanServer INSTANCE = new CarpetPrimaryuanServer();
+    private static MinecraftServer CURRENT_SERVER;
     public static final String shortName = "pry";
     public static final String name = CarpetPrimaryuanMod.getModId();
     public static final String fancyName = "Carpet Primaryuan";
@@ -74,7 +78,9 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
             "peacefulPlayers",                // /pvp
             "chatPunishment",                 // /chatpunish
             "textAnimation",                  // /text
-            "serverTransfer"                  // /tpto /tptoset
+            "serverTransfer",                 // /tpto /tptoset
+            "playerReplay",                   // /playereplay
+            "fakePlayerScript"                // /playerscript
     );
 
     @Override
@@ -84,6 +90,10 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
 
     public static CarpetPrimaryuanServer getInstance() {
         return INSTANCE;
+    }
+
+    public static MinecraftServer currentServer() {
+        return CURRENT_SERVER;
     }
 
     public static void init() {
@@ -110,6 +120,8 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
         // 同 UUID 假人分身
         FakeCloneCommand.register();
         me.primaryuan.carpet.clones.CloneSnapshotManager.init();
+        PlayerReplayCommand.register();
+        PlayerScriptCommand.register();
 
         // 和平的玩家（pvp）：加载持久化状态、注册 PVP 伤害拦截与玩家加入登记
         PvpManager.init();
@@ -144,6 +156,9 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
 
         // 玩家头部皮肤：头颅变化检测、皮肤还原与异步会话清理
         PlayerHeadSkinHandler.init();
+
+        // 玩家回放/假人脚本：tick 与生命周期锚点
+        ReplayLifecycle.init();
 
         // require=0 注入点自检：规则开启但注入被静默跳过时以 error 点名（MixinSanityCheck）
         MixinSanityCheck.init();
@@ -203,6 +218,12 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
             if (COMMAND_VISIBILITY_RULES.contains(changedRule.name())) {
                 CommandHelper.notifyPlayersCommandsChanged(source.getServer());
             }
+            if (changedRule.name().equals("playerReplay") && !CarpetPrimaryuanSettings.playerReplay) {
+                ReplayLifecycle.onPlayerReplayDisabled();
+            }
+            if (changedRule.name().equals("fakePlayerScript") && !CarpetPrimaryuanSettings.fakePlayerScript) {
+                ReplayLifecycle.onFakePlayerScriptDisabled();
+            }
             if (changedRule.name().equals("countdown")) {
                 // 规则关闭时无条件清理倒计时（命令树保持可见，提示"功能已关闭"由命令层负责）
                 CountdownManager.onRuleChanged();
@@ -215,6 +236,7 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
 
     @Override
     public void onServerLoaded(MinecraftServer server) {
+        CURRENT_SERVER = server;
         // 存档级数据加载：此时 carpet 已读入存档 carpet.conf（attachServer 先于扩展
         // 回调）、getWorldPath 可用；单人多次进出世界各自加载、互不残留
         TppConfigManager.onServerLoaded(server);
@@ -229,6 +251,7 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
     @Override
     public void onServerClosed(MinecraftServer server) {
         // 存档级内存态清空：单人切换世界不残留上一世界数据
+        CURRENT_SERVER = null;
         TppConfigManager.onServerClosed();
         TptoConfigManager.onServerClosed();
         PvpManager.onServerClosed();

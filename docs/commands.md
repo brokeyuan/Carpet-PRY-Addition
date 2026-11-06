@@ -10,6 +10,10 @@
 - [假人珍珠传送命令](#假人珍珠传送命令)
   - [/tpp](#tpp---假人珍珠传送)
   - [/tppset](#tppset---站点管理)
+- [玩家回放命令](#玩家回放命令)
+  - [/playereplay](#playereplay---录制与幻影回放)
+- [假人脚本命令](#假人脚本命令)
+  - [/playerscript](#playerscript---录制与假人执行)
 - [/hat - 玩家帽子](#hat---玩家帽子)
 - [假人持续清空背包](#假人持续清空背包)
 - [/player sendto - 假人背包链接](#player-sendto---假人背包链接)
@@ -992,6 +996,7 @@ simple 默认无声，`/timer sound on` 可为当前会话显式开启；up 正�
 /tptoset reload                               # 手改 tpto.json 后重读
 ```
 
+
 ---
 
 ## /chatpunish - 聊天惩罚
@@ -1034,3 +1039,140 @@ simple 默认无声，`/timer sound on` 可为当前会话显式开启；up 正�
 /chatpunish list                      # 查看未到期惩罚（名称、模式、剩余时间或永久）
 /chatpunish clear Steve               # 解除 Steve 的惩罚
 ```
+
+## 玩家回放命令
+
+### /playereplay - 录制与幻影回放
+
+#### 语法
+
+```
+/playereplay                                  # 打开主面板（开始录制/录像列表）
+/playereplay record [名称] | on [名称]        # 进入准备页（默认只录自己）
+/playereplay record begin                     # 开始采集已加入者
+/playereplay record objects                   # 录制对象：邀请/直接添加/移除自己
+/playereplay record invite <玩家>             # 普通玩家邀请；管理员直接添加并通知
+/playereplay record uninvite <玩家UUID>       # 取消尚未回复的邀请
+/playereplay record self on|off               # 加入/移除自己（管理员可只录他人）
+/playereplay record settings                  # 时长与访问范围
+/playereplay record duration <秒>             # 设置录制时长（受服务器上限约束）
+/playereplay record access public|private     # 设置访问范围（邀请后锁定）
+/playereplay record pause|resume              # 暂停/继续（冻结共同时间轴）
+/playereplay record stop | stop               # 结束并保存
+/playereplay record retry                     # 保存失败后重试
+/playereplay record leave                     # 普通受邀者主动退出（管理员直接添加者不可退出）
+/playereplay record discard [confirm <任务ID>] # 放弃（二次确认）
+/playereplay invite accept|deny <任务ID> <令牌>
+/playereplay start [名称] [here] | startid <ID> [here]
+/playereplay loop <名称> | loopid <ID>
+/playereplay pause|resume|end <回放ID> | playings | endall
+/playereplay list [页] | list mine [页] | favlist [页]
+/playereplay info <ID> [来源] [页]             # 详情
+/playereplay rename <ID> <新名称>              # 创作者/管理员
+/playereplay access <ID> public|private        # 创作者/管理员切换访问范围
+/playereplay fav <ID> | unfav <ID>             # 个人收藏（只存引用）
+/playereplay delete <ID> confirm               # 删除（先确认）
+/playereplay panel                            # 刷新面板
+```
+
+#### 权限
+
+- `/playereplay` 根命令：所有玩家可用，需开启 `playerReplay` 或 `fakePlayerScript`。
+- 开始/查看/播放/收藏：按录像访问范围校验；公开录像面向所有具备功能权限的玩家，私有录像仅创作者与管理员。
+- 改名/访问范围/删除：创作者本人或等级 2 管理员；被录制者不会因参与自动取得管理权。
+- 幻影播放与控制：需开启 `playerReplay`；`pause/resume/end` 只能控制自己的观看实例，管理员可控制全部。
+- `endall`：管理员结束全部；普通玩家只结束自己的实例。
+
+#### 功能描述
+
+两条规则共用同一套录制、保存、列表和权限。`record` 先进入准备页，此时不采集；默认录制对象是自己，普通玩家邀请在线玩家并由对方点击同意，管理员可直接添加且无需同意。准备阶段未回复的邀请在点击开始时失效，已同意者加入；录制中仍可继续邀请，接受后从加入时刻开始，不补录此前行为。开始只采集已加入者，不等待未回复邀请。
+
+一份录像使用一个共同时间轴，每名参与者独立视觉/输入轨道和在线片段。正常下线记录离开时刻、幻影消失；仍具参与关系者重连按 UUID 续录，离线前后不连线；普通受邀者主动退出后重连不自动续录。创作者下线不结束任务。暂停冻结共同时间轴，恢复时同步输入/槽位/装备基线并开启新段，不补录暂停期间点击。
+
+主面板空闲时保持“玩家回放”“开始录制”“录像列表”；运行中回放控制放在列表底部或 `playings` 次级页。录制中面板显示录制对象与暂停/结束/放弃/对象/设置按钮，有效时长走动作栏。列表每条整行可点击，格式为 `名称 · yyyy/MM/dd · HH:mm:ss · mm:ss`，支持公开/私有过滤、只看我的、收藏和分页，详情保留来源页码。
+
+#### 参数说明
+
+| 参数 | 说明 |
+|---|---|
+| 名称 | 录像名（1~32 字符，中英文/数字/下划线/连字符），缺省按时间自动命名；身份以稳定录像 ID 为准 |
+| here | 以命令执行者位置与朝向为锚点整体平移+旋转轨迹（仅同维度录像） |
+| 回放ID | 观看实例编号，`start`/`loop` 成功时返回 |
+| 任务ID / 令牌 | 准备任务 UUID 与单次邀请独立令牌；旧按钮不能批准新邀请 |
+
+#### 使用示例
+
+```
+/playereplay record 我的录像       # 进入准备页
+/playereplay record begin          # 开始录制
+/playereplay record stop           # 结束并保存
+/playereplay list                  # 可访问录像列表
+/playereplay info <ID>             # 详情：播放/假人执行/收藏/管理
+/playereplay start <ID>            # 用自己的独立实例播放
+/playereplay loop <ID>             # 无限循环
+/playereplay pause 1               # 暂停自己的回放 1
+/playereplay end 1                 # 结束自己的回放 1
+```
+
+#### 限制
+
+- 单段最长 10 分钟（12000 Tick），最短 30 秒；每人最多 20 段；达到时长自动结束保存。
+- 多人录像参与者上限 16 人；录像按参与者分段保存，离线空档不写帧。
+- 录像保存在 `<存档>/carpet-pry-addition/replay/recordings/<录像ID>.repry`；收藏在 `favorites/<玩家UUID>-favorites.json`，只保存引用。
+- 停服保存已有内容并结束任务，开服不恢复录制/邀请/假人执行；崩溃只恢复最近自动检查点并标记“异常恢复”。
+- 容器 GUI 内拖拽不录制；鼠标视角增量精度为每 Tick 末采样；离线服按玩家名向 Mojang 回填皮肤。
+
+## 假人脚本命令
+
+### /playerscript - 录制与假人执行
+
+#### 语法
+
+```
+/playerscript                                 # 打开脚本面板
+/playerscript record [名称] | record stop     # 与玩家回放共用准备/录制/保存
+/playerscript setup <录像ID>                  # 选择参与者并打开设置页
+/playerscript setup <录像ID> participant <参与者UUID>
+/playerscript setup <录像ID> bot <假人名> | count <次数> | inf | mode reset|continue
+/playerscript run <录像ID>                    # 自动召唤假人并执行，完成自动下线
+/playerscript run <录像ID> force              # 1.21/1.21.1：显式执行仅骑乘/静止交互脚本
+/playerscript run <名称> as <假人>            # 兼容：绑定已在线假人（停止后不下线）
+/playerscript pause|resume|stop|status <假人>
+/playerscript scripts                         # 运行中脚本面板
+/playerscript list
+```
+
+#### 权限
+
+等级 2（游戏管理级）；需开启 `fakePlayerScript`。脚本控制另校验操作者是会话发起人或管理员。
+
+#### 功能描述
+
+从录像中提取指定参与者实际在线的输入片段，去掉离线空档后顺接为脚本，交给自动召唤的 Carpet 假人重演**操作**而非结果：按 W 就尝试前进（被墙挡住也继续），目标方块换成泥土就挖泥土，不等待原结果、不寻路、轮内不纠偏。多人录像先在设置页选择参与者；设置按操作者、录像 ID、参与者 UUID 隔离。没有有效输入内容时拒绝执行。
+
+片段边界先让上一段末帧经过实体 Tick 消费，再释放旧持续动作并重建记录基线；不按录像位置在片段间传送。自动召唤假人结束后自动下线；外部绑定假人只解除控制，不擅自下线。
+
+#### 使用示例
+
+```
+/playerscript record 麦塔                 # 与玩家回放共用的准备入口
+/playereplay record begin                  # 开始录制
+/playereplay record stop                   # 保存
+/playerscript setup <ID>                   # 多人时先选参与者
+/playerscript setup <ID> count 10          # 执行 10 轮
+/playerscript setup <ID> mode reset        # 每轮回到起点（默认接续当前位置）
+/playerscript run <ID>                     # 自动召唤 ReplayBot 执行，完成后自动下线
+/playerscript pause Bot                    # 暂停（假人仍受重力/碰撞；瞬时事件不重复）
+/playerscript status Bot                   # 查看脚本/Tick/轮次/状态
+/playerscript stop Bot                     # 停止并下线（外部绑定的假人不下线）
+```
+
+#### 语义约定
+
+- 时间轴为半开区间 `[0, 时长)`；每轮循环恢复录像首帧的绝对朝向；“回到起点”仅在轮间做明确的位置重置，轮内不纠偏。
+- 不复制录像装备、不补材料、不重置背包/耐久/血量；物品不足按原版结果处理。
+- 暂停时持续使用动作（弓/进食/盾）按原版语义释放，可能有副作用；暂停期间假人仍受重力与碰撞影响。
+- 设置页修改假人名/次数/无限/循环位置后自动重绘，设置与当前录像 ID、参与者 UUID 绑定，不跨录像或跨参与者串用。
+- 暂停恢复会重新开始持续使用（弓/进食/盾）：不恢复旧蓄力，也不返还已消耗材料；恢复不会重发暂停期间的瞬时事件。
+- 1.21/1.21.1 普通步行不发送输入包，`run` 默认拒绝；仅骑乘/静止交互确需执行时追加 `force`。
+- 已知限制：副手使用/攻击降级为主手尝试；容器 GUI 拖拽不录制；攻击冷却由服务端物理约束（与录制时节奏可略有偏差）。

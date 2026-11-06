@@ -2,7 +2,9 @@
 
 > Mod ID: `carpet-pry-addition` | Version: `1.3.1`
 >
+
 > Total: **37 main rules** (`whoCalledMeSound` / `whoCalledMeHighlight` are documented inline as companion rules in the whoCalledMe section)
+
 >
 > **Tip: Use `Ctrl+F` to quickly find the rule you want**
 
@@ -788,3 +790,42 @@ Size is captured at spawn and does not track later player changes. Existing modi
 - Armor stands, spawn-egg mobs and player-built golems inherit size.
 - Projectiles, dropped items, frames, boats, minecarts, TNT, end crystals and paintings are unaffected.
 - Dispensers, spawners and other block devices do not trigger it.
+
+### playerReplay - Player Replay
+
+Records the actions of the creator or invited players (movement, rotation, pose, equipment, animation). With the rule enabled, `/playereplay` summons phantoms replaying one shared timeline. `playerReplay` and `fakePlayerScript` share the same recording, storage, list and permission system: recordings live on the server and players need no client mod. Phantoms are pure packet-driven visual entities: not in the player list, no world simulation, no block/entity/drop changes.
+
+| Property | Value |
+|---|---|
+| Rule | `playerReplay` |
+| Type | boolean |
+| Default | false |
+| Options | false / true |
+| Categories | PRIMARYUAN, COMMAND |
+
+- Record: `/playereplay record [name]` opens the preparation page (self by default); `record begin` starts, `record pause/resume` controls, `record stop` saves, `record discard` discards.
+- Participants: normal players invite online players and need consent; administrators can add directly without consent and may remove themselves to record others only. Unanswered preparation invites expire when recording starts; invitations may continue during recording and late joiners are recorded from their join tick.
+- Playback: `/playereplay start [name] [here]`, `startid <ID> [here]`, `loop`/`loopid`; `pause/resume/end <playback ID>` controls only your own viewer instance. Each viewer has an independent clock/pause/end; players not watching receive no phantom packets.
+- Lists show only recordings the player may access. Public recordings are visible to all players with the feature permission; private recordings only to the creator and administrators. Creators manage their own recordings, administrators manage all.
+- Each participant has independent visual/input tracks and online segments keyed by UUID; offline gaps contain no frames. Reconnecting participants with an active relationship resume from the current common tick; invited participants who actively left do not auto-resume.
+- Pausing freezes the common timeline. Resume starts a new segment for each online participant and rebuilds input baselines; paused clicks are never backfilled.
+- Default duration is 10 minutes and can be adjusted before recording. Reaching the limit ends and saves automatically. Duration and access are locked once an invite is sent; access may be changed after saving.
+
+### fakePlayerScript - Fake Player Script
+
+Hands one participant's recorded inputs (7 movement inputs, rotation, attack/dig, use/release, slot switch, drop, hand swap) to a Carpet fake player that replays **operations**, not results: walks into walls, digs whatever is in front, no pathfinding, no in-round correction, no teleporting. Supports once/repeat/loop, pause/resume and exclusive bot control.
+
+| Property | Value |
+|---|---|
+| Rule | `fakePlayerScript` |
+| Type | boolean |
+| Default | false |
+| Options | false / true |
+| Categories | PRIMARYUAN, BOT, COMMAND |
+
+- Record through the same preparation/recording/save flow as `/playereplay`; `/playerscript record [name]` is an alias for the shared entry.
+- Run: `/playerscript setup <recording ID>` selects a participant and configures bot name/count/infinite/round position; `run <recording ID>` auto-spawns a bot and `run <name> as <bot>` binds an online bot (not taken offline on stop).
+- Multi-participant recordings require participant selection first. Settings are isolated by operator, recording ID and participant UUID; single-participant recordings skip the extra step.
+- Scripts keep only the selected participant's real online segments, concatenated without offline gaps. At a segment boundary the previous tail frame is consumed by an entity tick first, then old continuous actions are released and the baseline rebuilt; no teleporting to recorded positions.
+- Refuse execution when there is no valid input, never claiming a complete replay. Control: `pause/resume/stop/status <bot>`; one bot runs only one script at a time.
+- Known limits: off-hand use/attack falls back to main hand; container GUI drags are not recorded; 1.21/1.21.1 emit no ordinary walking/jumping input, so only riding input is captured and `run` requires an explicit `force`.

@@ -1,3 +1,4 @@
+
 Carpet PRY Addition is a server-side Fabric extension for the [fabric-carpet](https://github.com/gnembon/fabric-carpet) mod, developed for the **Primaryuan Server**. It adds 37 main Carpet rules (plus 2 companion settings) and 15 new commands (plus `/player` extensions) covering bug fixes, fake player enhancements, player interaction, and survival gameplay expansion.
 
 ---
@@ -170,6 +171,14 @@ Living entities spawned directly by a player using an item (armor stands, spawn-
 
 Admins maintain a list of target servers (one address and port per server); `/tpto` shows them as clickable chat entries, and clicking one transfers that player to the target using the vanilla transfer protocol (no proxy, no client mod). `/tptoset addserver|removeserver|reload` manages the list, persisted in `config/carpet-pry-addition/tpto.json`. The target server must set `accepts-transfers=true` in `server.properties`.
 
+### Player Replay (`playerReplay`)
+
+Record yourself or invited players and summon packet-only phantoms on one shared timeline. Phantoms never appear in the player list and never touch blocks, entities or drops. A preparation page selects participants first: normal players invite online players and need consent, while administrators may add players directly. One recording keeps a shared clock with independent per-participant visual/input tracks and online segments; offline gaps contain no frames. `/playereplay` also provides the shared recording list, detail pages, public/private access, per-player favorites and independent viewer instances. Server restart never resumes a recording; normal shutdown saves and ends it. Offline servers backfill skins from Mojang.
+
+### Fake Player Script (`fakePlayerScript`)
+
+Use the same recordings as `/playereplay`, select one participant in `/playerscript setup <ID>`, and let an auto-spawned Carpet fake player replay **operations**, not outcomes: walks into walls, digs whatever is in front, never pathfinds or corrects position mid-round. Only the participant's real online segments are concatenated; segment boundaries release old continuous actions and rebuild the baseline. Configurable count/infinite rounds, inter-round return-to-start or continue, auto-offline on finish, brain-takeover rejection. 1.21/1.21.1 only captures riding input; `run ... force` is required there.
+
 ---
 
 ## Other Features
@@ -183,7 +192,6 @@ Admins maintain a list of target servers (one address and port per server); `/tp
 ---
 
 ## Before You Download
-
 
 - **Required dependencies:** [fabric-carpet](https://modrinth.com/mod/carpet) and [Fabric API](https://modrinth.com/mod/fabric-api) must be installed on the server.
 - **Fabric Loader >= 0.16.0** is required.

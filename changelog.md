@@ -4,8 +4,10 @@
 
 ### 新增
 
+
 - 聊天惩罚（`chatPunishment`）：管理员经 /chatpunish 对指定玩家的公共聊天施加八种惩罚（禁言/胶带/猫娘/呆子/屏蔽词/村民/结巴/反转，每玩家一种），支持限时（s/m/h/d，缺省永久，按真实时间到期自动解除）；玩家名走原版档案解析、按 UUID 存于存档 `chatpunish.json`，重启与重连不丢失；改写走原版 ChatDecorator 扩展点、禁言经 ALLOW_CHAT_MESSAGE 取消广播，签名校验不受影响，不影响命令与私聊
 - 同UUID假人分身（`fakePlayerClones`）：多个真正的 Carpet 假人共享同一 UUID 与皮肤同时在线，独立 Entity ID/位置/维度，整组共享背包（权威状态，同 Tick 修改不复制）；`/player <name> spawn` 增量生成分身，`/fakeclone kill` 全组正常退出并存档快照，`/fakeclone rejoin` 跨重启恢复整组位置与背包；同 UUID 真人登录保护；分身真实参与区块加载与怪物生成判定；规则关闭时普通假人行为不变
+
 - 跨服传送（`serverTransfer`）：`/tpto` 展示可点击的服务器列表，点击即以本人身份走原版 transfer 协议转移到他服（一服一地址）；`/tptoset` 管理服务器列表（addserver / removeserver / reload），配置存于 `config/carpet-pry-addition/tpto.json`；目标服需开启 `accepts-transfers`
 - 计时器（`countdown`）：新增 /timer 统一入口，正计时（up）与倒计时（down）共用暂停/恢复/停止控制，四种展示位置（bar/center/actionbar/both）与三档效果（simple/normal/fancy）自由搭配；最短 `/timer down 60s`、`/timer up` 即可用，选项词任意顺序，`--` 后整段为名称，silent 一词全静音。fancy 档 60/30 秒节点提示、最后 10 秒逐秒递增音高；倒计时归零展示 3 秒并留结果，正计时停止结算毫秒级用时；最后一份结果存内存可经 /timer 查看。旧 /countdown 语法保留为兼容入口，与 /timer 共用同一会话。默认开启，规则关闭立即清理显示且不产生虚假完成结果
 - `SERVER` 规则类别：标记该类别的规则值跟随服务器（钉值存于 `config/carpet-pry-addition/server-rules.json`，启动时压过存档 carpet.conf），权限类规则不再随存档漂移
@@ -21,6 +23,15 @@
 - 四期修正（三期复核 5 项）：床头规范化接入睡眠主流程全链（扫描→去重→认领→入睡→释放统一用床头，离床尾更近也按床头登记，getSleepingPos 床头/床尾都算本人占用，不再出现同床两键与醒睡循环）；史莱姆空闲跳行等待跨落地周期保留（start 不再清零，canContinueToUse 复用 canUse 常驻运行，落地从剩余等待继续，不立即重跳）；漫步与随机游泳恢复原版 nextInt(reducedTickDelay(120)) 掷骰（删固定 60 次评估节流），凝视激怒同步对齐 Nearest 基座掷骰；POI 寻路"连续失败"改真连续序列（实际进展即清零，与无进展宽限、总寻路预算三通道分离，到位停留暂停预算）；无进展宽限改 gameTime 差值 20 游戏刻（原次数制实际约 40 刻），start/stop 全状态复位
 - 五期修正（四期复核 3 项）：床连接方向纠正——getConnectedDirection(HEAD) 已内部反向指向床尾，删除移植层多余的 getOpposite（双版本字节码核实；旧实现检查床头前方格子，完整床被误拒）；史莱姆空闲跳行双时钟——Goal 改 rUE（跳跃等待每游戏 tick 递减，不再慢一倍），方向重掷在 tick 内奇偶分频保持原版每 2 tick 评估（不因 rUE 加倍）；睡眠寻路预算在入睡期间持续刷新差值基准（夜间睡眠时长不进预算，醒来重新寻路不会立即拉黑有效床）。测试侧新增生产 readBedState 读块缝（真实 RED_BED BlockState 四 FACING 全链验证，不再覆写生产方向计算），床方块 Holder 手动绑定 #minecraft:beds 标签对齐服务端语义
 - 六期修正（五期复核 3 项）：史莱姆空闲跳行 tick 顶部加 onGround/目标双门（腾空与目标出现时不递减等待、不输出移动——原版 MoveControl onGround 前置门对齐）；床配对检查补全——生产 isOtherHalfStillBed/isOtherHalfOf 增加 PART=FOOT、FACING 一致、FOOT 回指床头三重校验（旁边另一床的 HEAD 或朝向不符的 FOOT 不能冒充床尾），probeBed 映射点非床头拒绝；小僵尸骑鸡载客资格——搜索与上车前排除已有乘客（isVehicle）/正在骑乘其它实体/死亡/移除/幼年/跨维的鸡，骑乘关系登记表只记本脑建立的，新增 PlayerList.remove HEAD 注入在 save 与 RootVehicle 卸载链前驱散骑乘（下线时鸡留在世界不随玩家卸载），换脑/off/onDetach 只释放本脑关系
+
+- `playerReplay` 玩家回放：录制行为并召唤幻影按原视觉轨迹重演，幻影为纯数据包实体，不改动世界；新增无参数聊天面板（录制/列表/详情/回放按钮），录制支持暂停续录（段边界不插值），离线服自动回填皮肤（/playereplay）。操作成功后自动刷新面板，录制时长走动作栏提示；录像列表单行条目、操作集中详情页；新增按玩家持久化的录像收藏（/playereplay fav|unfav|favlist）。
+- `fakePlayerScript` 假人脚本：录制操作后交给自动召唤的 Carpet 假人按原时间轴重演操作，不复制结果、不寻路、轮内不纠偏；支持设置页（假人名/次数/无限/轮间回起点或接续）、完成自动下线、brain 互斥、无参数聊天面板（/playerscript）。
+- `playerReplay` / `fakePlayerScript` 多人回放系统：准备页先选录制对象（普通邀请需同意、管理员可直接添加且被添加者不能主动退出），任务 UUID 稳定，录制中可继续邀请并从加入时刻采集；一份录像一个共同时间轴，每名参与者独立视觉/输入轨道与在线片段，离线空档不写帧、重连按 UUID 续录；公开/私有访问、个人收藏、创作者/管理员管理与按观看者独立的多人幻影实例；停服保存并结束、开服不恢复，崩溃只恢复最近检查点并标记异常恢复。
+
+### 修复
+
+- `fakePlayerScript`：快捷栏槽位按 Carpet 1~9 接口转换、丢弃改为当前选中槽；真实松弓 `USE_UP.hand=-1` 可释放；末帧与轮末帧留一个实体 Tick 消费后再结算/下线，轮间回起点不再提前一帧；暂停恢复重建挖掘/使用长按，录制暂停期松开不再遗留；补实体右键（INTERACT/INTERACT_AT 去重）；外部假人接管先清原动作并强制首帧；暂停状态检查死亡/断线；保存后轮换数量改为“当前-上限”；设置绑定录像 ID 并自动重绘；仅开假人脚本也能进录像列表；输入轨道摊销扩容、事件游标与同 Tick 序号计数
+- `fakePlayerScript`：1.21/1.21.1 修正 xxa/zza 轴映射；普通步行不发送输入包，`run` 默认拒绝并需 `force` 显式执行骑乘/静止脚本
 
 ### 变更
 

@@ -994,6 +994,7 @@ Hand edits must obey: `servers` must exist and be an object; `host` a string and
 /tptoset reload                               # re-read after hand edits
 ```
 
+
 ---
 
 ## /chatpunish - Chat Punishment
@@ -1036,3 +1037,102 @@ Commands, private messages and system messages are unaffected; with the rule off
 /chatpunish list                      # view active punishments (name, mode, time left or permanent)
 /chatpunish clear Steve               # clear Steve's punishment
 ```
+
+## Player Replay Commands
+
+### /playereplay - Recording and Phantom Playback
+
+#### Syntax
+
+```
+/playereplay                                  # main panel (start recording / recording list)
+/playereplay record [name] | on [name]        # preparation page (self by default)
+/playereplay record begin                     # start capturing joined participants
+/playereplay record objects                   # invite / direct-add / remove self
+/playereplay record invite <player>           # normal invite; administrators add directly
+/playereplay record uninvite <player UUID>    # cancel an unanswered invite
+/playereplay record self on|off               # include/remove self
+/playereplay record settings                  # duration and access
+/playereplay record duration <seconds>        # adjust duration within server limit
+/playereplay record access public|private     # access (locked after an invite)
+/playereplay record pause|resume              # pause/resume shared timeline
+/playereplay record stop | stop               # stop and save
+/playereplay record retry                     # retry a failed save
+/playereplay record leave                     # normal invitee leaves; direct-added players cannot
+/playereplay record discard [confirm <task ID>]
+/playereplay invite accept|deny <task ID> <token>
+/playereplay start [name] [here] | startid <ID> [here]
+/playereplay loop <name> | loopid <ID>
+/playereplay pause|resume|end <playback ID> | playings | endall
+/playereplay list [page] | list mine [page] | favlist [page]
+/playereplay info <ID> [source] [page]
+/playereplay rename <ID> <new name>           # creator/administrator
+/playereplay access <ID> public|private       # creator/administrator
+/playereplay fav <ID> | unfav <ID>            # personal reference only
+/playereplay delete <ID> confirm
+/playereplay panel
+```
+
+#### Permissions
+
+- Root command: all players, with `playerReplay` or `fakePlayerScript` enabled.
+- Recording/list/playback/favorites: checked against the recording's access. Public recordings are available to all players with the feature permission; private recordings only to the creator and administrators.
+- Rename/access/delete: creator or level-2 administrator; being recorded never grants management rights.
+- Phantom playback/control requires `playerReplay`; `pause/resume/end` only control your own viewer instance, administrators may control all.
+- `endall`: administrators end all; normal players end only their own instances.
+
+#### Description
+
+Both rules share one recording, storage, list and permission system. `record` opens a preparation page and captures nothing yet. The default target is yourself; normal players invite online players and require consent, administrators add directly without consent. Unanswered preparation invites expire when recording starts, accepted participants join; invitations may continue during recording and late joiners are captured from their join tick. Starting captures only joined participants and never waits for unanswered invites.
+
+One recording has one shared timeline; each participant owns independent visual/input tracks and online segments. A normal logout records the leave tick and hides the phantom; participants with an active relationship reconnect by UUID at the current tick, with no line drawn across the gap. A normal invitee who actively leaves does not auto-resume. The creator going offline does not end the task. Pausing freezes the shared timeline; resume rebuilds input/slot/equipment baselines and starts a new segment without backfilling paused clicks.
+
+The idle main panel keeps only “玩家回放”, “开始录制” and “录像列表”. Running playback controls live in the list footer or the `playings` subpage. During recording the panel shows participants and pause/stop/discard/objects/settings buttons; effective duration is shown on the action bar. Each list row is one clickable line formatted as `name · yyyy/MM/dd · HH:mm:ss · mm:ss`, with public/private filters, “mine only”, favorites and pagination; detail pages preserve source page.
+
+#### Limits
+
+- Maximum 10 minutes (12000 ticks), minimum 30 seconds, 20 recordings per player; auto-stop and save at the limit.
+- Up to 16 participants; recordings are stored per participant segment and offline gaps contain no frames.
+- Files: `<world>/carpet-pry-addition/replay/recordings/<recording ID>.repry`; favorites at `favorites/<player UUID>-favorites.json` as references only.
+- Normal shutdown saves and ends tasks; server restart does not resume recording, invites or scripts. A crash recovers only the latest automatic checkpoint and marks it as “recovered (incomplete)”.
+- Container GUI drags are not recorded; view rotation is sampled at tick end; offline servers backfill skins from Mojang by player name.
+
+## Fake Player Script Commands
+
+### /playerscript - Recording and Fake Player Execution
+
+#### Syntax
+
+```
+/playerscript                                 # script panel
+/playerscript record [name] | record stop     # shared preparation/recording/save
+/playerscript setup <recording ID>            # select participant and open settings
+/playerscript setup <recording ID> participant <participant UUID>
+/playerscript setup <recording ID> bot <name> | count <n> | inf | mode reset|continue
+/playerscript run <recording ID>              # auto-spawn and execute, auto-offline on finish
+/playerscript run <recording ID> force        # 1.21/1.21.1 only: riding/stationary scripts
+/playerscript run <name> as <bot>             # bind an online fake (not taken offline on stop)
+/playerscript pause|resume|stop|status <bot>
+/playerscript scripts
+/playerscript list
+```
+
+#### Permissions
+
+Level 2 (game master); requires `fakePlayerScript`. Script control additionally checks that the operator is the session owner or an administrator.
+
+#### Description
+
+The script uses only the selected participant's real online input segments, concatenated without offline gaps, and lets an auto-spawned Carpet fake player replay **operations**, not outcomes: walks into walls, digs whatever is in front, never pathfinds or corrects position mid-round. Multi-participant recordings require participant selection in the setup page; settings are isolated by operator, recording ID and participant UUID. Execution is refused when no valid input exists.
+
+At segment boundaries the previous tail frame is consumed by an entity tick first, then old continuous actions are released and the recorded baseline rebuilt; no teleporting between segments. Auto-spawned bots go offline on finish; externally bound bots are only released, never taken offline.
+
+#### Semantics
+
+- Half-open timeline `[0, duration)`; each loop restores the first frame's absolute look direction; “return to start” is only an explicit inter-round reset, never an in-round correction.
+- Equipment is not copied, materials are not supplied, inventory/durability/health are not reset; missing items follow vanilla behavior.
+- Pausing releases continuous use actions (bow/eating/shield) with normal side effects; the bot remains subject to gravity and collision while paused.
+- Setup edits refresh the panel and stay bound to the recording ID and participant UUID.
+- Pause/resume restarts continuous use; old charge is not restored and consumed materials are not refunded; instant events are not replayed.
+- 1.21/1.21.1 emit no ordinary walking input, so `run` refuses by default; append `force` only for riding/stationary interactions.
+- Known limits: off-hand use/attack falls back to main hand; container GUI drags are not recorded; attack cooldown follows server physics and may differ slightly from the recording.
