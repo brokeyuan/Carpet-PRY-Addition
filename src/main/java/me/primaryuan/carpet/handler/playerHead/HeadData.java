@@ -43,12 +43,23 @@ public final class HeadData {
     private static final String KEY_SOURCE_ID = "source_id";
     private static final String KEY_TEXTURE = "texture";
     private static final String KEY_SIGNATURE = "signature";
+    private static final String KEY_MEMORIAL = "memorial";
+    private static final String KEY_FORMAL = "name";
+    private static final String KEY_EVENT = "event";
+    private static final String KEY_DATE = "date";
+    private static final String KEY_RECIPIENT = "recipient";
+    private static final String KEY_NOTE = "note";
 
     private final Kind kind;
     private String sourceName;
     private UUID sourceId;
     private String textureValue;
     private String textureSignature;
+    private String formalName;
+    private String eventName;
+    private String eventDate;
+    private String recipient;
+    private String note;
 
     public HeadData(Kind kind) {
         this.kind = kind;
@@ -58,8 +69,39 @@ public final class HeadData {
         return new HeadData(Kind.UNIVERSAL);
     }
 
+    public static HeadData memorial(String formalName, String eventName, String eventDate,
+                                    String recipient, String note) {
+        HeadData data = new HeadData(Kind.MEMORIAL);
+        data.formalName = formalName;
+        data.eventName = eventName;
+        data.eventDate = eventDate;
+        data.recipient = recipient;
+        data.note = note == null ? "" : note;
+        return data;
+    }
+
     public Kind kind() {
         return kind;
+    }
+
+    public String formalName() {
+        return formalName == null ? "" : formalName;
+    }
+
+    public String eventName() {
+        return eventName == null ? "" : eventName;
+    }
+
+    public String eventDate() {
+        return eventDate == null ? "" : eventDate;
+    }
+
+    public String recipient() {
+        return recipient == null ? "" : recipient;
+    }
+
+    public String note() {
+        return note == null ? "" : note;
     }
 
     public String sourceName() {
@@ -111,6 +153,18 @@ public final class HeadData {
         data.textureSignature = stringValue(tag, KEY_SIGNATURE, "");
         if (data.textureValue.isEmpty()) data.textureValue = null;
         if (data.textureSignature.isEmpty()) data.textureSignature = null;
+        if (kind == Kind.MEMORIAL) {
+            //#if MC >= 12105
+            CompoundTag memorial = tag.getCompoundOrEmpty(KEY_MEMORIAL);
+            //#else
+            //$$ CompoundTag memorial = tag.getCompound(KEY_MEMORIAL);
+            //#endif
+            data.formalName = stringValue(memorial, KEY_FORMAL, "");
+            data.eventName = stringValue(memorial, KEY_EVENT, "");
+            data.eventDate = stringValue(memorial, KEY_DATE, "");
+            data.recipient = stringValue(memorial, KEY_RECIPIENT, "");
+            data.note = stringValue(memorial, KEY_NOTE, "");
+        }
         return data;
     }
 
@@ -126,6 +180,15 @@ public final class HeadData {
         if (sourceId != null) tag.putString(KEY_SOURCE_ID, sourceId.toString());
         if (textureValue != null) tag.putString(KEY_TEXTURE, textureValue);
         if (textureSignature != null) tag.putString(KEY_SIGNATURE, textureSignature);
+        if (kind == Kind.MEMORIAL) {
+            CompoundTag memorial = new CompoundTag();
+            memorial.putString(KEY_FORMAL, formalName());
+            memorial.putString(KEY_EVENT, eventName());
+            memorial.putString(KEY_DATE, eventDate());
+            memorial.putString(KEY_RECIPIENT, recipient());
+            memorial.putString(KEY_NOTE, note());
+            tag.put(KEY_MEMORIAL, memorial);
+        }
         return tag;
     }
 

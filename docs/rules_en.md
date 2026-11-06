@@ -2,7 +2,7 @@
 
 > Mod ID: `carpet-pry-addition` | Version: `1.3.1`
 >
-> Total: **41 main rules** (`whoCalledMeSound` / `whoCalledMeHighlight` are documented inline as companion rules in the whoCalledMe section)
+> Total: **42 main rules** (`whoCalledMeSound` / `whoCalledMeHighlight` are documented inline as companion rules in the whoCalledMe section)
 >
 > **Tip: Use `Ctrl+F` to quickly find the rule you want**
 
@@ -45,6 +45,7 @@ Rule values are stored per world in `<world>/carpet.conf` by default. Rules tagg
   - [playerHat - Player Hat](#playerhat---player-hat)
   - [playerHeadSkin - Player Head Skin](#playerheadskin---player-head-skin)
   - [universalHead - Universal Head](#universalhead---universal-head)
+  - [memorialHead - Memorial Head](#memorialhead---memorial-head)
   - [betterSnowball - Better Snowball](#bettersnowball---better-snowball)
   - [invisibleInTallGrass - Invisibility Grass](#invisibleintallgrass---invisibility-grass)
   - [moreEndCrystalTypes - More End Crystal Types](#moreendcrystaltypes---more-end-crystal-types)
@@ -578,6 +579,27 @@ Admin-given player heads that can be re-skinned repeatedly: rename one in an anv
 - The anvil queries only when the name actually changes: input is debounced, concurrent requests for the same name are merged, and the cache has a size limit and expiry. While a query is pending the result slot is empty and normal click, shift-click, number keys and dropping are refused. On success, only the result item receives the vanilla `PROFILE`; the input item and the vanilla experience cost path are untouched.
 - Unknown accounts, missing textures, timeouts and failed lookups keep both the input item and the previous skin, consume no experience, and report once. Results that arrive after a rename, input swap, menu close, disconnect, death, dimension change, rule disable or server stop are discarded.
 - Skins, external names and the archive survive placement, mining and restarts with the item/block entity. Normal creative pick-block gives a plain head; Ctrl+pick (pick with data) carries the components. Data round-trips after fully removing the mod are not guaranteed.
+
+---
+
+### memorialHead - Memorial Head
+
+Admin-created collectible player head whose skin is fixed at creation time: formal name, event, date, recipient and note live in the item's custom data, while the external name can be renamed freely in an anvil without touching the archive.
+
+| Property | Value |
+|------|-----|
+| **Rule Name** | `memorialHead` |
+| **Description** | Admin-created collectible head with a fixed skin and a complete memorial archive; external renames never change the formal information |
+| **Type** | `boolean` |
+| **Default** | `false` |
+| **Suggested Options** | `false`, `true` |
+| **Categories** | `PRIMARYUAN`, `SURVIVAL`, `FEATURE`, `COMMAND` |
+
+- Only player heads created by `/head fixed` and carrying the PRY marker are handled. Ordinary player heads, mob heads and items from other mods keep their vanilla behaviour. Neither new rule requires `playerHat` or `playerHeadSkin`.
+- The skin is looked up at creation time and stored as a texture snapshot; it does not follow later skin changes of the source account. Unknown accounts, missing textures, timeouts and failures refuse creation instead of giving a half-made item. "Fixed skin" means the snapshot is fixed; it does not promise that the remote texture image service stays available forever.
+- The anvil only changes the external display name. Renaming the head to something else or clearing the name keeps the formal name, event, date, recipient and note visible in the lore, and never changes the skin or the internal archive.
+- The date is entirely admin-provided as a real `YYYY-MM-DD` date; the server's current date is never substituted.
+- After placement, mining, trading, hoppers and restarts, the type, texture snapshot, archive and any external rename survive with the item/block entity. Normal creative pick-block gives a plain head; Ctrl+pick carries the components. Data round-trips after fully removing the mod are not guaranteed.
 
 ---
 

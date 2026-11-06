@@ -90,4 +90,48 @@ class HeadDataTest {
         assertNotNull(lore);
         assertFalse(lore.lines().isEmpty());
     }
+
+    @Test void memorialArchiveSurvivesExternalRename() {
+        HeadData data = HeadData.memorial("纪念名称", "周年活动", "2026-11-07", "张三", "说明文字");
+        data.applySkin(new HeadSkin(UUID.randomUUID(), "Notch", "texture-value", "sig"));
+        ItemStack stack = HeadItems.memorial(data);
+
+        assertTrue(HeadItems.isMemorial(stack));
+        assertEquals("纪念名称", stack.get(DataComponents.CUSTOM_NAME).getString());
+        assertNotNull(stack.get(DataComponents.PROFILE), "创建时即写入纹理快照");
+
+        // 玩家把外部名称改成别的或清空，正式档案与纹理快照不受影响。
+        stack.set(DataComponents.CUSTOM_NAME, Component.literal("我的宝贝"));
+        HeadData renamed = HeadData.read(stack);
+        assertEquals("纪念名称", renamed.formalName());
+        stack.remove(DataComponents.CUSTOM_NAME);
+        HeadData cleared = HeadData.read(stack);
+        assertEquals("纪念名称", cleared.formalName());
+        assertEquals("周年活动", cleared.eventName());
+        assertEquals("2026-11-07", cleared.eventDate());
+        assertEquals("张三", cleared.recipient());
+        assertEquals("说明文字", cleared.note());
+        assertEquals("Notch", cleared.sourceName());
+        assertEquals("texture-value", cleared.skin().value());
+        assertEquals("sig", cleared.skin().signature());
+
+        HeadItems.applyLore(stack, cleared);
+        // 单测环境没有 Carpet 翻译表，Lore 行显示翻译键；这里核对档案派生的行数完整。
+        assertEquals(6, stack.get(DataComponents.LORE).lines().size(),
+                "正式名称/活动/日期/颁发对象/说明/皮肤来源各一行");
+        assertTrue(HeadItems.isMemorial(stack));
+    }
+
+    @Test void skinChangeDoesNotRewriteMemorialFields() {
+        HeadData data = HeadData.memorial("正式", "活动", "2026-01-01", "对象", "备注");
+        data.applySkin(new HeadSkin(UUID.randomUUID(), "Notch", "v1", null));
+        data.applySkin(new HeadSkin(UUID.randomUUID(), "Herobrine", "v2", null));
+        assertEquals("正式", data.formalName());
+        assertEquals("活动", data.eventName());
+        assertEquals("2026-01-01", data.eventDate());
+        assertEquals("对象", data.recipient());
+        assertEquals("备注", data.note());
+        assertEquals("Herobrine", data.sourceName());
+        assertEquals("v2", data.skin().value());
+    }
 }

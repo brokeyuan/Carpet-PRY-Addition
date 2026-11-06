@@ -24,14 +24,33 @@ public final class HeadItems {
         return stack;
     }
 
+    /** 纪念头颅：固定皮肤快照，外部名称初始为正式名称，档案完整写入自定义数据。 */
+    public static ItemStack memorial(HeadData data) {
+        ItemStack stack = new ItemStack(Items.PLAYER_HEAD);
+        data.write(stack);
+        applySkin(stack, data.skin());
+        stack.set(DataComponents.CUSTOM_NAME, Component.literal(data.formalName()));
+        applyLore(stack, data);
+        return stack;
+    }
+
     /** 把档案派生的 Lore 写回物品；外部自定义名称与 PROFILE 不受影响。 */
     public static void applyLore(ItemStack stack, HeadData data) {
         if (data == null) return;
-        List<Component> lines = new ArrayList<>(4);
+        List<Component> lines = new ArrayList<>(6);
         if (data.kind() == HeadData.Kind.UNIVERSAL) {
             lines.add(line(data.hasTexture()
                     ? ServerI18n.tr("carpetprimaryuan.head.lore.source", data.sourceName())
                     : ServerI18n.tr("carpetprimaryuan.head.lore.unset")));
+        } else if (data.kind() == HeadData.Kind.MEMORIAL) {
+            lines.add(line(ServerI18n.tr("carpetprimaryuan.head.lore.memorial_name", data.formalName())));
+            lines.add(line(ServerI18n.tr("carpetprimaryuan.head.lore.memorial_event", data.eventName())));
+            lines.add(line(ServerI18n.tr("carpetprimaryuan.head.lore.memorial_date", data.eventDate())));
+            lines.add(line(ServerI18n.tr("carpetprimaryuan.head.lore.memorial_recipient", data.recipient())));
+            if (!data.note().isEmpty()) {
+                lines.add(line(ServerI18n.tr("carpetprimaryuan.head.lore.memorial_note", data.note())));
+            }
+            lines.add(line(ServerI18n.tr("carpetprimaryuan.head.lore.source", data.sourceName())));
         }
         stack.set(DataComponents.LORE, new ItemLore(lines));
     }
@@ -45,6 +64,11 @@ public final class HeadItems {
     public static boolean isUniversal(ItemStack stack) {
         HeadData data = HeadData.read(stack);
         return data != null && data.kind() == HeadData.Kind.UNIVERSAL;
+    }
+
+    public static boolean isMemorial(ItemStack stack) {
+        HeadData data = HeadData.read(stack);
+        return data != null && data.kind() == HeadData.Kind.MEMORIAL;
     }
 
     private static Component line(Component text) {

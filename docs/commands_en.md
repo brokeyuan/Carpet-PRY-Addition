@@ -240,25 +240,28 @@ With `playerHat` enabled, main-hand air use also swaps whole stacks when the off
 
 ## /head - Head Management
 
-> **Rule**: `universalHead`
+> **Rules**: `universalHead`, `memorialHead`
 
 ### Syntax
 
 ```
 /head universal <target> [count]
+/head fixed <target> <skin source> <formal name> <event> <date> <recipient> [note]
 ```
 
 ### Permission
 
-- Visible and usable while `universalHead` is enabled and the source is an admin (permission level 4)
+- `/head universal` requires `universalHead`; `/head fixed` requires `memorialHead`; both require an admin source (permission level 4)
 - Console passes at level 4; command blocks are refused rather than escalated for not being a player
-- The whole `/head` tree is hidden while the rule is disabled
+- With both rules disabled the whole `/head` tree is hidden; enabling only one shows only that subcommand
 
 ### Description
 
-Gives universal heads to an online player, count 1-64 (default 1). A newly given head has no skin yet and its lore says "Skin source: not selected". Put it in an anvil, type a player name and take the result to fix that player's skin; rename again to switch. The result cannot be taken while a lookup is pending, and a failed, timed-out or texture-less lookup consumes no experience, leaves the head untouched and reports once.
+`universal` gives universal heads to an online player, count 1-64 (default 1). A newly given head has no skin yet and its lore says "Skin source: not selected". Put it in an anvil, type a player name and take the result to fix that player's skin; rename again to switch. The result cannot be taken while a lookup is pending, and a failed, timed-out or texture-less lookup consumes no experience, leaves the head untouched and reports once.
 
-Whether wearing it changes your full skin is controlled by `playerHeadSkin`. Skins and external names survive placement, mining, trading and restarts with the item/block entity; normal creative pick-block gives a plain head, while Ctrl+pick carries the components.
+`fixed` creates a memorial head. Arguments are: target player, skin source player, formal name, event name, memorial date, recipient, and an optional note. Quote names that contain spaces; the trailing note takes the rest of the line. The formal name, event, date, recipient and note are stored in the item's custom data and shown in the lore. The external display name starts as the formal name and can later be renamed or cleared in an anvil without changing the archive or the skin. The skin is looked up at creation time and stored as a texture snapshot; unknown accounts, missing textures, timeouts and failures give no half-made item. The date must be typed explicitly as a real `YYYY-MM-DD` date; the server date is never substituted.
+
+Both subcommands refuse the grant when the target has no inventory space and never split the give or drop items. Whether wearing a head changes your full skin is controlled by `playerHeadSkin`. Skins, external names and the archive survive placement, mining, trading and restarts with the item/block entity; normal creative pick-block gives a plain head, while Ctrl+pick carries the components.
 
 The target is the online player who receives the item; the "recipient" field of a memorial head is archive text, a different concept.
 
@@ -270,6 +273,9 @@ The target is the online player who receives the item; the "recipient" field of 
 
 # Give eight
 /head universal Steve 8
+
+# Create a memorial head (quote names containing spaces)
+/head fixed Steve Notch "Server Anniversary" "Third Anniversary" 2026-11-07 "All Players" "Thanks for being here"
 ```
 
 ---

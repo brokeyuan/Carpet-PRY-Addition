@@ -88,8 +88,10 @@ public class CarpetPrimaryuanServer implements CarpetExtension {
             "fakeGames",                      // /fg /fakegame
             "playerReplay",                   // /playereplay
             "fakePlayerScript",               // /playerscript
-            "universalHead"                   // /head universal
+            "universalHead",                  // /head universal
+            "memorialHead"                    // /head fixed
     );
+
     @Override
     public String version() {
         return name;

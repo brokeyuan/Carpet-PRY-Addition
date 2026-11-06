@@ -88,6 +88,13 @@ public class CarpetPrimaryuanSettings {
     )
     public static boolean universalHead = false;
 
+    // 纪念头颅：管理员创建、皮肤固定并携带完整纪念档案的收藏头颅；
+    // 外部名称可随意修改，正式名称、活动、日期、颁发对象与说明保存在物品自定义数据中
+    @Rule(
+            categories = {PRIMARYUAN, SURVIVAL, FEATURE, COMMAND}
+    )
+    public static boolean memorialHead = false;
+
     @Rule(
             categories = {PRIMARYUAN, SURVIVAL, FEATURE}
     )
