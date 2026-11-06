@@ -2,6 +2,7 @@ package me.primaryuan.carpet.brain;
 
 import carpet.patches.EntityPlayerMPFake;
 import me.primaryuan.carpet.util.TestRegistries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Scoreboard;
 import org.junit.jupiter.api.AfterEach;
@@ -14,7 +15,9 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -200,6 +203,81 @@ class BrainLifecycleTeamsTest {
 
         restoreTeam.invoke(null, newInstance);
         assertNull(scoreboard(newInstance).getPlayersTeam(newInstance.getScoreboardName()));
+    }
+
+    @Test
+    void preexistingSameNameTeamIsNeverClaimedOrDeleted() throws Exception {
+        BrainTestStubs.FakePlayer fake = fakeWithWorld();
+        Scoreboard scoreboard = scoreboard(fake);
+        String name = fake.getScoreboardName();
+        String baseName = "pry_brain_zombie_" + fake.getUUID();
+        PlayerTeam external = scoreboard.addPlayerTeam(baseName);
+        external.setPlayerPrefix(Component.literal("外部前缀"));
+        external.setAllowFriendlyFire(false);
+        scoreboard.addPlayerToTeam("outsider", external);
+
+        applyTeam.invoke(null, brainOf(fake), fake, "zombie");
+        PlayerTeam used = scoreboard.getPlayersTeam(name);
+
+        assertNotNull(used);
+        assertNotSame(external, used, "同名既有队伍不得被认领为临时队");
+        assertTrue(used.getName().startsWith(baseName + "_"), "冲突时使用唯一临时队名");
+        assertSame(external, scoreboard.getPlayerTeam(baseName), "外部队伍对象保留");
+        assertTrue(external.getPlayers().contains("outsider"), "外部成员保留");
+        assertEquals("外部前缀", external.getPlayerPrefix().getString(), "外部队伍属性保留");
+        assertFalse(external.isAllowFriendlyFire(), "外部队伍选项保留");
+
+        restoreTeam.invoke(null, fake);
+        assertSame(external, scoreboard.getPlayerTeam(baseName), "卸载不得删除同名外部队伍");
+        assertTrue(external.getPlayers().contains("outsider"), "卸载不得移除外部成员");
+        assertNull(scoreboard.getPlayerTeam(used.getName()), "本会话临时队正常清理");
+    }
+
+    @Test
+    void deletedAndRecreatedTemporaryTeamIsNotTouched() throws Exception {
+        BrainTestStubs.FakePlayer fake = fakeWithWorld();
+        Scoreboard scoreboard = scoreboard(fake);
+        String name = fake.getScoreboardName();
+        applyTeam.invoke(null, brainOf(fake), fake, "zombie");
+        PlayerTeam owned = scoreboard.getPlayersTeam(name);
+        assertNotNull(owned);
+        String ownedName = owned.getName();
+
+        // 管理员删除临时队后以同名重建：新对象不能被旧会话刷新或删除
+        scoreboard.removePlayerTeam(owned);
+        PlayerTeam recreated = scoreboard.addPlayerTeam(ownedName);
+        recreated.setPlayerSuffix(Component.literal("外部后缀"));
+        scoreboard.addPlayerToTeam("outsider", recreated);
+
+        BrainManager.refreshSuffix(fake, "zombie", "mode_zombie");
+        assertEquals("外部后缀", recreated.getPlayerSuffix().getString(),
+                "同名重建队伍的后缀不得被旧会话改写");
+
+        restoreTeam.invoke(null, fake);
+        assertSame(recreated, scoreboard.getPlayerTeam(ownedName), "同名重建队伍对象保留");
+        assertTrue(recreated.getPlayers().contains("outsider"), "同名重建队伍成员保留");
+        assertEquals("外部后缀", recreated.getPlayerSuffix().getString());
+    }
+
+    @Test
+    void otherMembersPreventWholeTeamDeletion() throws Exception {
+        BrainTestStubs.FakePlayer fake = fakeWithWorld();
+        Scoreboard scoreboard = scoreboard(fake);
+        String name = fake.getScoreboardName();
+        PlayerTeam original = scoreboard.addPlayerTeam("pry_test_original");
+        scoreboard.addPlayerToTeam(name, original);
+
+        applyTeam.invoke(null, brainOf(fake), fake, "zombie");
+        PlayerTeam owned = scoreboard.getPlayersTeam(name);
+        assertNotNull(owned);
+        scoreboard.addPlayerToTeam("outsider", owned);
+
+        restoreTeam.invoke(null, fake);
+
+        assertEquals(original, scoreboard.getPlayersTeam(name), "假人仍恢复原队伍");
+        assertSame(owned, scoreboard.getPlayerTeam(owned.getName()), "有其他成员时不整队删除");
+        assertTrue(owned.getPlayers().contains("outsider"), "其他成员归属保留");
+        assertFalse(owned.getPlayers().contains(name), "本假人已移出临时队");
     }
 
     @Test

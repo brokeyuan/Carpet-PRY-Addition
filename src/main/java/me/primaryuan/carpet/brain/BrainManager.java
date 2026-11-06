@@ -67,12 +67,14 @@ public final class BrainManager {
     private static final Map<UUID, KeepRecord> KEEP = new HashMap<>();
 
     /**
-     * 本会话实际拥有的计分板临时队及挂载前原队伍。按绑定实例记录，
-     * 同 UUID 的旧实例事件不得接触新实例的队伍状态。
+     * 本会话实际创建的计分板临时队及挂载前原队伍。保存对象引用而非仅队名：
+     * 同名队伍被删除后重建会产生新对象，旧会话不得按名字误认领/删除新队。
+     * createdBySession 标记该对象是否由本会话创建，便于回滚时区分外部队伍。
      */
-    private record TeamState(ServerPlayer sessionPlayer, String temporaryTeam, String originalTeam) {}
+    private record TeamState(ServerPlayer sessionPlayer, PlayerTeam temporaryTeam,
+                             PlayerTeam originalTeam, boolean createdBySession) {}
 
-    /** UUID → 本会话队伍状态（只在仍属本会话临时队时恢复原队伍） */
+    /** UUID → 本会话队伍状态（只在当前队伍仍是本会话对象时恢复/刷新） */
     private static final Map<UUID, TeamState> TEAM_STATES = new HashMap<>();
 
     /** 本模组脑队伍名前缀（每模式一队，后缀 = [模式名]） */
@@ -558,22 +560,32 @@ public final class BrainManager {
         };
     }
 
+    /** 为本次会话选择一个尚未被占用的临时队名；已有同名队伍一律不认领。 */
+    private static String uniqueTeamName(Scoreboard scoreboard, String baseName) {
+        if (scoreboard.getPlayerTeam(baseName) == null) {
+            return baseName;
+        }
+        for (int i = 1; i < 1000; i++) {
+            String candidate = baseName + "_" + i;
+            if (scoreboard.getPlayerTeam(candidate) == null) {
+                return candidate;
+            }
+        }
+        return baseName + "_" + UUID.randomUUID().toString().substring(0, 8);
+    }
+
     /** 挂载后把假人加入本模式的计分板队伍（头顶名牌/Tab 显示 [模式名] 后缀） */
     private static void applyTeam(PlayerBrainController brain, ServerPlayer player, String mode) {
         Scoreboard scoreboard = player.level().getServer().getScoreboard();
         String name = player.getScoreboardName();
         PlayerTeam previous = scoreboard.getPlayersTeam(name);
-        String temporaryTeam = TEAM_PREFIX + mode + "_" + player.getUUID();
-        // 先记录本会话实际拥有的队名与原队伍：后续任一步失败，回滚只清理这一队。
-        // 若玩家已在本会话同名临时队中（崩溃残留），不把它当作可恢复的原队伍。
-        String originalTeam = previous != null && !previous.getName().equals(temporaryTeam)
-                ? previous.getName() : null;
-        TEAM_STATES.put(player.getUUID(), new TeamState(player, temporaryTeam, originalTeam));
-        // 每假人一队：原队伍前缀要"接"到头顶，共享队会让同模式假人互相泄漏前缀
-        PlayerTeam team = scoreboard.getPlayerTeam(temporaryTeam);
-        if (team == null) {
-            team = scoreboard.addPlayerTeam(temporaryTeam);
-        }
+        String baseName = TEAM_PREFIX + mode + "_" + player.getUUID();
+        // 同名既有队伍可能是外部队伍（或旧会话残留）：不认领、不改写、不删除，
+        // 改用唯一队名。对象身份是后续刷新/清理的唯一所有权凭据。
+        String temporaryTeam = uniqueTeamName(scoreboard, baseName);
+        PlayerTeam team = scoreboard.addPlayerTeam(temporaryTeam);
+        TEAM_STATES.put(player.getUUID(),
+                new TeamState(player, team, previous, true));
         // 原队伍行为面整体继承（挂脑不改变原队伍归属带来的行为：颜色、友伤保护、
         // 隐身可见、名字/死亡消息可见性、碰撞规则）——只复制前缀会让假人进入
         // 临时队后丢失原队伍的全部队务语义
@@ -610,8 +622,11 @@ public final class BrainManager {
             return;
         }
         Scoreboard scoreboard = player.level().getServer().getScoreboard();
-        PlayerTeam team = scoreboard.getPlayerTeam(state.temporaryTeam());
-        if (team == null) {
+        PlayerTeam team = state.temporaryTeam();
+        // 必须同时满足：当前所属队 == 本会话对象，且该名字下仍是同一对象。
+        // 管理员删除后同名重建的是新对象，旧会话不得改写其后缀。
+        if (scoreboard.getPlayersTeam(player.getScoreboardName()) != team
+                || scoreboard.getPlayerTeam(team.getName()) != team) {
             return;
         }
         team.setPlayerSuffix(Component.literal(
@@ -631,24 +646,24 @@ public final class BrainManager {
         }
         Scoreboard scoreboard = player.level().getServer().getScoreboard();
         String name = player.getScoreboardName();
+        PlayerTeam owned = state.temporaryTeam();
         PlayerTeam current = scoreboard.getPlayersTeam(name);
-        boolean stillInTemporary = current != null
-                && current.getName().equals(state.temporaryTeam());
-        if (stillInTemporary) {
-            scoreboard.removePlayerFromTeam(name, current);
-            String previous = state.originalTeam();
-            if (previous != null) {
-                // getPlayerTeam=按队伍名查（getPlayersTeam 是按玩家名查所属队伍，勿混用）
-                PlayerTeam team = scoreboard.getPlayerTeam(previous);
-                if (team != null) {
-                    scoreboard.addPlayerToTeam(name, team);
-                }
+        boolean stillInOwned = current == owned
+                && scoreboard.getPlayerTeam(owned.getName()) == owned;
+        if (stillInOwned) {
+            scoreboard.removePlayerFromTeam(name, owned);
+            PlayerTeam previous = state.originalTeam();
+            // 原队伍也按对象校验：被删除后同名重建的外部队伍不自动恢复。
+            if (previous != null && scoreboard.getPlayerTeam(previous.getName()) == previous) {
+                scoreboard.addPlayerToTeam(name, previous);
             }
         }
-        // 本会话临时队独立清理（即使玩家已被外部改到别的队，也不能留下空壳）
-        PlayerTeam temporary = scoreboard.getPlayerTeam(state.temporaryTeam());
-        if (temporary != null) {
-            scoreboard.removePlayerTeam(temporary);
+        // 只清理本会话创建且仍由本会话持有的对象；同名重建的新对象不碰。
+        // 有其他成员时保留队伍，避免把外部成员的归属一并删掉。
+        if (state.createdBySession()
+                && scoreboard.getPlayerTeam(owned.getName()) == owned
+                && owned.getPlayers().isEmpty()) {
+            scoreboard.removePlayerTeam(owned);
         }
         TEAM_STATES.remove(player.getUUID(), state);
     }
