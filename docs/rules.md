@@ -3,7 +3,7 @@
 > Mod ID: `carpet-pry-addition` | 版本: `1.3.1`
 >
 
-> 共 **37 条**主规则（`whoCalledMeSound` / `whoCalledMeHighlight` 作为配套子规则内联在 whoCalledMe 节）
+> 共 **39 条**主规则（`whoCalledMeSound` / `whoCalledMeHighlight` 作为配套子规则内联在 whoCalledMe 节）
 
 >
 > **提示：可以使用 `Ctrl+F` 快速查找自己想要的规则**
