@@ -47,7 +47,6 @@ public final class TagGame implements me.primaryuan.carpet.handler.fakegames.Gam
     private int timeLeft;
     private int hintCooldown;
     private final Set<UUID> glowing = new LinkedHashSet<>();
-    private final Map<UUID, Boolean> originalGlow = new HashMap<>();
 
     @Override
     public void onStart(GameSession session) {
@@ -63,7 +62,6 @@ public final class TagGame implements me.primaryuan.carpet.handler.fakegames.Gam
         touchTicks.clear();
         frozen.clear();
         glowing.clear();
-        originalGlow.clear();
         String modeKey = infection ? "infection" : "freeze";
         ServerPlayer ghostPlayer = session.player(firstGhost);
         session.broadcast(ServerI18n.tr("carpetprimaryuan.fakegames.tag.start_" + modeKey,
@@ -277,17 +275,15 @@ public final class TagGame implements me.primaryuan.carpet.handler.fakegames.Gam
 
     private void markGhosts(GameSession session) {
         for (UUID id : ghosts) {
-            ServerPlayer player = session.player(id);
-            if (player != null) {
-                originalGlow.putIfAbsent(id, player.hasGlowingTag());
-                player.setGlowingTag(true);
-                glowing.add(id);
-            }
+            markGhost(session, session.player(id));
         }
     }
 
     private void markGhost(GameSession session, ServerPlayer player) {
-        originalGlow.putIfAbsent(player.getUUID(), player.hasGlowingTag());
+        if (player == null || player.hasGlowingTag()) {
+            // 玩家原本就在发光：不接管，结束时也不清除
+            return;
+        }
         player.setGlowingTag(true);
         glowing.add(player.getUUID());
     }
@@ -358,10 +354,10 @@ public final class TagGame implements me.primaryuan.carpet.handler.fakegames.Gam
         if (!glowing.remove(id)) {
             return;
         }
-        if (player != null) {
-            player.setGlowingTag(Boolean.TRUE.equals(originalGlow.get(id)));
+        // 只撤销本局仍处于开启状态的标记；管理员局中关闭或改状态时不写回旧快照
+        if (player != null && player.hasGlowingTag()) {
+            player.setGlowingTag(false);
         }
-        originalGlow.remove(id);
     }
 
     @Override
@@ -374,6 +370,5 @@ public final class TagGame implements me.primaryuan.carpet.handler.fakegames.Gam
         touchTicks.clear();
         rescueCounters.clear();
         glowing.clear();
-        originalGlow.clear();
     }
 }
